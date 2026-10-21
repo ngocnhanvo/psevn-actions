@@ -1,0 +1,31 @@
+name: PSE WordPress copied-domain correction (one field)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-wp-domain-fix-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-wordpress-domain-correction
+  cancel-in-progress: false
+jobs:
+  correct-copied-domain:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Correct only inherited PSE WordPress General Info domain and verify
+        env:
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: node scripts/pse-fix-copied-domain.mjs
