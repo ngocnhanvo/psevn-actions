@@ -27,3 +27,19 @@ Previous blocked run #39596101423 failed before checkout because SOURCE_REPO_PAT
 1. Review PSE-specific domain, identity, WordPress API and deployment configuration, without changing the inherited build/cache/incremental architecture.
 2. Review/redact old domain references before enabling PSE-only Actions workflows; retain only needed CI workflows.
 3. Test code offline and staging with correct PSE environment, then follow the PSE code-mode approval path for any production action.
+
+
+## Branch normalization (2026-10-21)
+Requested layout from PSE project context:
+- `psevn-astro`: `github` = development/test, `master` = production. Both now exist, both at `13cb5a21f5ccecde149ffc9e3d53afdaa9f67795` during initial import (source EduResearch Astro code was identical between `github` and `master` except implementation status documentation).
+- `psevn-php`: `master` now holds imported backend snapshot `93fbcc5f01b43bd80bb55bf541065b1b554bfaaf`.
+- `psevn-actions`: `main` kept; `knowledge`: `main` kept. Knowledge proposal branches are outside PSE cleanup scope.
+
+Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39599552679) completed and removed the PHP `import/eduresearch-baseline` temporary ref after verifying it exactly matched `master`.
+
+**PARTIALLY BLOCKED (GitHub administrative permission):**
+- Astro and PHP repositories still have `main` as their GitHub default branch; both `main` branches contain only original bootstrap README.
+- `SOURCE_REPO_PAT` has sufficient Contents rights for reading/writing/deleting non-default refs, but GitHub returned HTTP 403 (`Resource not accessible by personal access token`) when trying to PATCH each repository's `default_branch`.
+- No attempt was made to delete either current default branch. A guarded workflow `.github/workflows/pse-branch-finalize.yml` remains ready to re-run after the existing PAT is granted **Repository permissions → Administration: Read and write** for `psevn-astro` and `psevn-php`, or after the repository owner manually changes the two default branches (Astro → github; PHP → master).
+- Once defaults switch, this guarded workflow will delete only `psevn-astro/main` at `d20d0604b01c288c0fd6229d4007a10c7bd08e97` and `psevn-php/main` at `e97ffce51f14e02effca0459198e286ee1a030d9`, refusing deletion if changed.
+- No production deploy/build/FTP/WordPress action taken. Source EduResearch repositories were not changed.
