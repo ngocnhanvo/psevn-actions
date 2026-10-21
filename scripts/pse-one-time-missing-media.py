@@ -11,7 +11,13 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 FILE="Banner-Page-PC.jpg"
-SOURCE_URL="https://api-nghiencuukhoahoc.webnvn.com/wp-content/uploads/2026/09/"+FILE
+SOURCE_HOSTS=(
+    "admin.xuongmunonbaohiem.io.vn",
+    "admin.esc.vn",
+    "api-nghiencuukhoahoc.webnvn.com",
+    "xuongmunonbaohiem.io.vn",
+    "nghiencuukhoahoc.webnvn.com",
+)
 PSE_URL="https://admin-pse.webnvn.com/wp-content/uploads/2026/09/"+FILE
 FTP_HOST="vt108159.server.idn.vn"
 DOCROOT="/domains/admin-pse.webnvn.com/public_html/wp-content/uploads"
@@ -22,15 +28,22 @@ assert parsed.hostname==FTP_HOST and parsed.scheme in ("ftp","ftps")
 assert not parsed.username and not parsed.password and not parsed.path.strip("/")
 assert os.environ.get("FTP_USERNAME") and os.environ.get("FTP_PASSWORD")
 assert b"admin-pse.webnvn.com" in os.environ["ENV_FILE"].encode()
-req=Request(SOURCE_URL,headers={"User-Agent":"PSE-OneTimeMediaImport/1.0"})
-try:
-    with urlopen(req,timeout=28,context=ssl.create_default_context()) as r:
-        assert r.status==200, "Source image not available"
-        image=r.read(12*1024*1024+1)
-except Exception as e:
-    print("PSE_MEDIA_IMPORT source_http=FAIL class="+type(e).__name__)
+image=None
+for hostname in SOURCE_HOSTS:
+    url="https://"+hostname+"/wp-content/uploads/2026/09/"+FILE
+    try:
+        with urlopen(Request(url,headers={"User-Agent":"PSE-OneTimeMediaImport/1.0"}),
+                     timeout=10,context=ssl.create_default_context()) as r:
+            candidate=r.read(12*1024*1024+1)
+        if 1000 < len(candidate) <= 12*1024*1024 and candidate.startswith(b"\xff\xd8\xff"):
+            image=candidate
+            print("PSE_MEDIA_IMPORT source_selected="+hostname)
+            break
+    except Exception:
+        pass
+if image is None:
+    print("PSE_MEDIA_IMPORT source_http=NOT_FOUND_IN_APPROVED_SOURCES")
     raise SystemExit(1)
-assert 1000 < len(image) <= 12*1024*1024 and image.startswith(b"\xff\xd8\xff")
 sha=hashlib.sha256(image).hexdigest()
 print("PSE_MEDIA_IMPORT source_verified=PASS bytes="+str(len(image)))
 ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=24)
