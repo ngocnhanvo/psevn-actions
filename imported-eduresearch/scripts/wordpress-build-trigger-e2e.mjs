@@ -110,6 +110,32 @@ try {
     timeout: 30000,
   });
 
+  // Reconcile completed GitHub run through WordPress' existing AJAX status API
+  // before making a new dispatch; only the server may release its matching lock.
+  const state = await page.evaluate(async () => {
+    const form = new URLSearchParams({
+      action: 'vcs_check_build_status',
+      nonce: globalThis.vcsBuild.nonce,
+    });
+    const response = await fetch(globalThis.vcsBuild.ajax_url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: form.toString(),
+    });
+    if (!response.ok) throw new Error('WordPress build status API request failed');
+    const json = await response.json();
+    if (json?.success !== true) throw new Error('WordPress build status API refused status check');
+    return {
+      state: String(json?.data?.status || 'unknown'),
+      active: json?.data?.build_active === true,
+    };
+  });
+  console.log('PSE_WP_BUILD_STATUS_CHECK=' + state.state);
+  if (state.active || ['loading', 'queued', 'in_progress'].includes(state.state)) {
+    throw new Error('WordPress still reports an active build; do not dispatch another one');
+  }
+
   const result = await page.evaluate(async () => {
     const body = new URLSearchParams({
       action: 'vcs_trigger_build',
