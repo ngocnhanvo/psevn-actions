@@ -69,11 +69,14 @@ jobs:
             if [ "$current" = "$wanted" ]; then
               echo "$repo default already $wanted"
             elif [ "$current" = "main" ]; then
-              gh api --method PATCH "repos/$repo" -f "default_branch=$wanted" --jq '.default_branch'
+              if ! gh api --method PATCH "repos/$repo" -f "default_branch=$wanted" --jq '.default_branch'; then
+                echo "::warning::Cannot switch default on $repo (requires Administration: write); retaining main safely."
+                return 0
+              fi
               actual="$(gh api "repos/$repo" --jq '.default_branch')"
               if [ "$actual" != "$wanted" ]; then
-                echo "::error::Failed to set $repo default to $wanted"
-                exit 1
+                echo "::warning::Default remains $actual on $repo; retaining main safely."
+                return 0
               fi
               echo "$repo default changed from main to $wanted"
             else
@@ -106,10 +109,16 @@ jobs:
             gh api --method DELETE "repos/$repo/git/refs/heads/$branch"
             echo "Removed obsolete $repo/$branch ($expected)"
           }
-          if [ "$(gh api repos/ngocnhanvo/psevn-astro --jq '.default_branch')" != "github" ]; then exit 1; fi
-          if [ "$(gh api repos/ngocnhanvo/psevn-php --jq '.default_branch')" != "master" ]; then exit 1; fi
-          delete_if_exact ngocnhanvo/psevn-astro main d20d0604b01c288c0fd6229d4007a10c7bd08e97
-          delete_if_exact ngocnhanvo/psevn-php main e97ffce51f14e02effca0459198e286ee1a030d9
+          if [ "$(gh api repos/ngocnhanvo/psevn-astro --jq '.default_branch')" = "github" ]; then
+            delete_if_exact ngocnhanvo/psevn-astro main d20d0604b01c288c0fd6229d4007a10c7bd08e97
+          else
+            echo "::warning::Retaining Astro main because it is the default branch"
+          fi
+          if [ "$(gh api repos/ngocnhanvo/psevn-php --jq '.default_branch')" = "master" ]; then
+            delete_if_exact ngocnhanvo/psevn-php main e97ffce51f14e02effca0459198e286ee1a030d9
+          else
+            echo "::warning::Retaining PHP main because it is the default branch"
+          fi
           delete_if_exact ngocnhanvo/psevn-php import/eduresearch-baseline 93fbcc5f01b43bd80bb55bf541065b1b554bfaaf
       - name: Report final branch layout
         run: |
