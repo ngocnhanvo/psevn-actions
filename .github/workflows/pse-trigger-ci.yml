@@ -1,0 +1,61 @@
+name: PSE GitHub Trigger isolation CI (NO BUILD)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-trigger-ci-check
+      - scripts/pse-trigger-boundary-check.py
+      - .github/workflows/pse-trigger-ci.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-trigger-boundary-ci
+  cancel-in-progress: false
+
+jobs:
+  php-trigger-isolation:
+    name: Check PSE PHP GitHub Trigger source only
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout PSE Actions CI checks
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout only PSE PHP master (no runtime deploy)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+          path: source-php
+      - name: Verify PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          php -l source-php/wp-content/mu-plugins/esc-github-trigger-config.php
+      - name: Assert repository/domain/token build boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-trigger-boundary-check.py
+          python3 scripts/pse-trigger-boundary-check.py
+      - name: Verify PSE production build remains disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "NO_ASTRO_BUILD=PASS"
+          echo "NO_REPOSITORY_DISPATCH=PASS"
+          echo "NO_FTP_UPLOAD=PASS"
+          {
+            echo "### PSE Build Website PHP isolation source audit"
+            echo "- PHP syntax: PASS"
+            echo "- Tenant/token/domain checks: PASS"
+            echo "- No WordPress login, no repository dispatch, no build, no FTP."
+            echo "- The live PSE WordPress plugin remains unchanged until separately approved PHP deployment."
+          } >> "$GITHUB_STEP_SUMMARY"
