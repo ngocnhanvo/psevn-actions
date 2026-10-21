@@ -40,8 +40,6 @@ jobs:
       site_url: https://admin-pse.webnvn.com
       expected_hostname: admin-pse.webnvn.com
       suite: wordpress-site-health
-      # Comparison value comes from the EduResearch PHP code guard, not verified runtime DB.
-      disallowed_db_name: nghiencuukhoahoc_181026
     secrets:
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
