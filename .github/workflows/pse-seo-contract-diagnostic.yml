@@ -1,0 +1,58 @@
+name: PSE WordPress SEO REST contract diagnosis (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-seo-contract-diagnostic-request]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - name: Inspect WordPress REST metadata fields without printing SEO content
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request
+          from urllib.parse import urlsplit
+          vals={}
+          for line in os.environ.get('ENV_FILE','').splitlines():
+              if '=' in line and not line.strip().startswith('#'):
+                  k,v=line.strip().split('=',1)
+                  vals[k.strip()]=v.strip().strip('"').strip("'")
+          wp=urlsplit(vals.get('WC_URL',''))
+          client=urlsplit(vals.get('WC_URL_CLIENT',''))
+          assert wp.scheme=='https' and client.scheme=='https'
+          assert wp.hostname and client.hostname and wp.hostname!=client.hostname
+          for suffix in ('?sitemap_meta=1',''):
+              url=wp.scheme+'://'+wp.hostname+'/wp-json/esc-seo-files/v1/public'+suffix
+              req=urllib.request.Request(url,headers={'Accept':'application/json','Cache-Control':'no-cache'})
+              label='meta' if suffix else 'full'
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as resp:
+                      data=json.load(resp)
+                  x=data.get('sitemap',{})
+                  site=urlsplit(str(data.get('site','')))
+                  robots=str(data.get('robots',''))
+                  llms=str(data.get('llms',''))
+                  print('SEO_'+label+'_http=200')
+                  print('SEO_'+label+'_version_ok='+str(data.get('version')==1))
+                  print('SEO_'+label+'_site_equals_frontend='+str(site.hostname==client.hostname))
+                  print('SEO_'+label+'_site_source_domain='+str('nghiencuukhoahoc' in str(data.get('site','')).lower()))
+                  print('SEO_'+label+'_mode='+str(x.get('mode','none')))
+                  print('SEO_'+label+'_revision_valid='+str(x.get('revision')=='legacy' or (isinstance(x.get('revision'),str) and len(x['revision'])==36)))
+                  print('SEO_'+label+'_arrays_ok='+str(isinstance(x.get('extra'),list) and isinstance(x.get('exclude'),list)))
+                  print('SEO_'+label+'_xml_empty='+str(x.get('xml')==''))
+                  print('SEO_'+label+'_robots_user_agent='+str('User-agent:' in robots))
+                  print('SEO_'+label+'_llms_has_frontend_home='+str((']('+client.scheme+'://'+client.hostname+'/') in llms))
+                  print('SEO_'+label+'_has_inherited_source='+str(any('nghiencuukhoahoc' in z.lower() for z in (robots,llms))))
+              except Exception as exc:
+                  print('SEO_'+label+'_error_class='+type(exc).__name__)
+                  raise
+          print('SEO_AUDIT_NO_WRITES=PASS')
+          PY
