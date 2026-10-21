@@ -1,0 +1,54 @@
+name: PSE release architecture verification (NO BUILD)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-release-boundary-ci.yml
+      - .github/workflows/pse-production-deploy.yml
+      - scripts/pse-production-boundary-check.py
+      - scripts/pse-remote-unzip.py
+      - scripts/pse-resumable-ftp.sh
+      - scripts/pse-published-sitemap-revision.py
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Read PSE Actions scripts
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read only PSE PHP master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Read only PSE Astro master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-astro
+          persist-credentials: false
+      - name: Check YAML syntax and PHP/Python/Bash syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; YAML.parse_file(ARGV.fetch(0)); puts "PSE_WORKFLOW_YAML=PASS"' .github/workflows/pse-production-deploy.yml
+          php -l source-php/pse-unzip.php
+          python3 -m py_compile scripts/pse-remote-unzip.py scripts/pse-published-sitemap-revision.py scripts/pse-production-boundary-check.py
+          bash -n scripts/pse-resumable-ftp.sh
+          node --check source-astro/scripts/sync-seo-files.mjs
+      - name: Verify tenant guards and inherited deploy architecture
+        run: python3 scripts/pse-production-boundary-check.py
+      - name: Report static validation only
+        run: |
+          echo 'PSE release isolation source validation PASS. No Astro build, dispatch, WordPress change or FTP write.' >> "$GITHUB_STEP_SUMMARY"
