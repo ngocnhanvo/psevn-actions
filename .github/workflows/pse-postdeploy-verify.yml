@@ -1,0 +1,73 @@
+name: PSE production SSR postdeploy check (READ ONLY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-postdeploy-verify-trigger
+permissions:
+  contents: read
+jobs:
+  live-ssr:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - name: Verify live PSE home, notebook and unauthenticated SSR session
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,time,urllib.request,urllib.error
+          from urllib.parse import urlsplit
+          values={}
+          for line in os.environ.get('ENV_FILE','').splitlines():
+              if line.strip().startswith('WC_URL_CLIENT='):
+                  values['client']=line.split('=',1)[1].strip().strip('"').strip("'")
+              if line.strip().startswith('WC_URL='):
+                  values['wp']=line.split('=',1)[1].strip().strip('"').strip("'")
+          frontend=urlsplit(values.get('client',''))
+          wordpress=urlsplit(values.get('wp',''))
+          if not (frontend.scheme=='https' and wordpress.scheme=='https'
+                  and frontend.hostname and wordpress.hostname
+                  and frontend.hostname!=wordpress.hostname
+                  and frontend.path in ('','/') and not frontend.query and not frontend.fragment
+                  and not frontend.username and not frontend.password):
+              raise SystemExit('PSE_LIVE_VERIFY=FAIL_INVALID_ENV')
+          if any(x in frontend.hostname.lower() for x in ('nghiencuukhoahoc','xuongmunonbaohiem')):
+              raise SystemExit('PSE_LIVE_VERIFY=FAIL_IMPORTED_DOMAIN')
+          base=frontend.scheme+'://'+frontend.hostname
+          def fetch(route):
+              req=urllib.request.Request(base+route,
+                  headers={'Accept':'application/json' if route.startswith('/api/') else 'text/html',
+                           'Cache-Control':'no-cache','User-Agent':'PSE-Live-PostDeploy/1.0'})
+              try:
+                  with urllib.request.urlopen(req,timeout=16) as r:
+                      return r.status,r.headers.get('Content-Type',''),r.read(3500)
+              except urllib.error.HTTPError as e:
+                  return e.code,e.headers.get('Content-Type',''),e.read(3500)
+          last=None
+          for attempt in range(3):
+              try:
+                  home=fetch('/')
+                  session=fetch('/api/auth/me')
+                  notebook=fetch('/so-tay')
+                  status=(home[0],session[0],notebook[0])
+                  last=status
+                  if home[0]==200 and 'html' in home[1].lower() and session[0]==401 \
+                      and 'json' in session[1].lower() \
+                      and json.loads(session[2]).get('authenticated') is False \
+                      and notebook[0]==200:
+                      print('PSE_LIVE_SSR_HOME=PASS')
+                      print('PSE_LIVE_SSR_PRIVATE_AUTH=PASS')
+                      print('PSE_LIVE_SSR_NOTEBOOK=PASS')
+                      print('PSE_LIVE_VERIFY=PASS GET_ONLY')
+                      raise SystemExit(0)
+              except Exception as e:
+                  last=('NETWORK_ERROR',type(e).__name__)
+              if attempt!=2: time.sleep(4)
+          print('PSE_LIVE_VERIFY=FAIL_SAFE last_status='+str(last))
+          raise SystemExit(1)
+          PY
