@@ -15,6 +15,7 @@ on:
     branches: [main]
     paths:
       - .pse-shared-playwright-smoke-trigger
+      - .pse-shared-playwright-sitehealth-trigger
 
 permissions:
   contents: read
@@ -22,7 +23,7 @@ permissions:
 jobs:
   public-smoke:
     name: Test PSE public website
-    if: github.event_name == 'push' || inputs.suite == 'smoke'
+    if: (github.event_name == 'push' && github.event.head_commit.message != 'test: trigger read-only PSE WordPress site health') || (github.event_name == 'workflow_dispatch' && inputs.suite == 'smoke')
     uses: ngocnhanvo/knowledge-actions/.github/workflows/playwright.yml@main
     with:
       site_url: https://pse.webnvn.com
@@ -31,7 +32,7 @@ jobs:
 
   wordpress-site-health:
     name: Test PSE WordPress Site Health without disclosing DB_NAME
-    if: github.event_name == 'workflow_dispatch' && inputs.suite == 'wordpress-site-health'
+    if: (github.event_name == 'workflow_dispatch' && inputs.suite == 'wordpress-site-health') || (github.event_name == 'push' && github.event.head_commit.message == 'test: trigger read-only PSE WordPress site health')
     uses: ngocnhanvo/knowledge-actions/.github/workflows/playwright.yml@main
     with:
       site_url: https://admin-pse.webnvn.com
