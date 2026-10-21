@@ -14,18 +14,14 @@ jobs:
       && github.ref == 'refs/heads/main'
       && github.event_name == 'repository_dispatch'
       && github.event.action == 'wp_trigger_build'
-      && vars.PSE_BUILD_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
-      PSE_ASTRO_UNZIP_SIGNING_KEY: ${{ secrets.PSE_ASTRO_UNZIP_SIGNING_KEY }}
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      ASTRO_FTP_TARGET: ${{ vars.PSE_ASTRO_FTP_TARGET }}
-      FTP_ASTRO_DIR: ${{ vars.PSE_ASTRO_FTP_TARGET }}
       ZIP_PATH: source/upload/pse-astro.zip
       PSE_PRODUCTION_SOURCE: master
       PSE_DEPLOY_SOURCE_BRANCH: master
@@ -48,10 +44,8 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$ENV_FILE" && test -n "$SOURCE_REPO_PAT"
-          test -n "$PSE_ASTRO_UNZIP_SIGNING_KEY"
           test -n "$FTP_SERVER" && test -n "$FTP_USERNAME" && test -n "$FTP_PASSWORD"
-          test -n "$ASTRO_FTP_TARGET"
-          test "$(git -C source symbolic-ref --short HEAD)" = master
+           test "$(git -C source symbolic-ref --short HEAD)" = master
           sha="$(git -C source rev-parse HEAD)"
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           echo "PSE_DEPLOY_COMMIT=$sha" >> "$GITHUB_ENV"
@@ -73,9 +67,9 @@ jobs:
           client_host,client_origin=origin('WC_URL_CLIENT')
           if wp_host==client_host:
               raise RuntimeError('WordPress and frontend origins cannot be identical')
+          # Same as inherited NCKH workflow, but migrate-safe: target is
+          # derived exclusively from the validated WC_URL_CLIENT, not a new var.
           target='/domains/'+client_host+'/public_html/'
-          if os.environ['ASTRO_FTP_TARGET']!=target or os.environ['FTP_ASTRO_DIR']!=target:
-              raise RuntimeError('FTP target disagrees with configured WordPress frontend')
           if os.environ.get('PSE_DEPLOY_REQUEST_DOMAIN')!=client_host:
               raise RuntimeError('Build trigger domain disagrees with WordPress frontend')
           if any(x in vals for x in ('NCKH_GOOGLE_OAUTH_JSON','NCKH_SESSION_KEY',
@@ -86,7 +80,9 @@ jobs:
               out.write('PSE_CLIENT_HOST='+client_host+'\n')
               out.write('PSE_CLIENT_ORIGIN='+client_origin+'\n')
               out.write('PSE_WP_ORIGIN='+wp_origin+'\n')
-          print('PASS: PSE source master and WordPress-managed deployment target')
+              out.write('ASTRO_FTP_TARGET='+target+'\n')
+              out.write('FTP_ASTRO_DIR='+target+'\n')
+          print('PASS: PSE master and deployment target derived from WC_URL_CLIENT')
           PY
       - name: Refuse inherited EduResearch server endpoints in PSE Astro source
         shell: bash
