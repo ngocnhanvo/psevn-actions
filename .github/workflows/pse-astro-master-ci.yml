@@ -1,0 +1,74 @@
+name: PSE Astro master isolation verification (NO BUILD)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-astro-master-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  production-source-tests:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout only Astro PRODUCTION source for offline tests
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Confirm checked out source is PSE master
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "master"
+          echo "PSE_MASTER_SOURCE_COMMIT=$(git rev-parse HEAD)"
+          ! grep -Eqi "nghiencuukhoahoc|xuongmunonbaohiem" \
+              src/lib/nckh/serverWp.ts \
+              src/lib/nckh/serverSession.ts \
+              src/lib/nckh/privateRuntime.ts
+          echo "PSE_MASTER_RUNTIME_ORIGIN_BOUNDARY=PASS"
+      - name: Install pnpm wrapper
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Set up Node 24 and pnpm download cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Run approved PSE OAuth, security, WordPress, SEO and site-brand tests
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run \
+            src/lib/nckh/serverWp.test.ts \
+            src/lib/nckh/privateRuntime.test.ts \
+            src/lib/nckh/serverSession.test.ts \
+            src/lib/nckh/googleOidc.test.ts \
+            src/lib/nckh/publicBrand.test.ts \
+            src/lib/nckh/authNavigation.test.ts \
+            src/lib/nckh/googlePopupCompletion.test.ts \
+            src/lib/nckh/articleEditor.test.ts \
+            src/lib/wordpress/pages/getData.image-errors.test.ts \
+            scripts/generate-sitemap-robots.test.ts \
+            scripts/sync-seo-files.nckh.test.ts \
+            scripts/sync-seo-files.test.ts
+          echo "PSE_MASTER_TESTS=PASS"
+      - name: Explicitly confirm no Astro build or live deploy
+        run: |
+          echo "NO_ASTRO_BUILD=PASS"
+          echo "NO_FTP_UPLOAD=PASS"
+          echo "NO_GITHUB_DISPATCH=PASS"
