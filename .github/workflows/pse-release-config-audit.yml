@@ -78,3 +78,46 @@ jobs:
           print('PSE_RELEASE_READ_ONLY_AUDIT=PASS')
           print('NO_ASTRO_BUILD=PASS NO_FTP=PASS NO_DISPATCH=PASS')
           PY
+      - name: Check public PSE unzip protocol readiness marker without deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          import ssl
+          import urllib.request
+          from urllib.parse import urlsplit
+          raw=os.environ.get('ENV_FILE','')
+          vals={}
+          for line in raw.splitlines():
+              hit=re.match(r'^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*
+,line)
+              if hit: vals[hit.group(1)]=hit.group(2).strip().strip('"\'')
+          origin=vals.get('WC_URL','')
+          parsed=urlsplit(origin)
+          valid=(parsed.scheme=='https' and bool(parsed.hostname)
+                 and not parsed.username and not parsed.password
+                 and parsed.path in ('','/') and not parsed.query and not parsed.fragment
+                 and parsed.port in (None,443)
+                 and not any(x in parsed.hostname.lower() for x in ('nghiencuukhoahoc','xuongmunonbaohiem')))
+          if not valid:
+              print('PSE_SIGNED_UNZIP_MARKER=UNVERIFIED_INVALID_PSE_WP_ORIGIN')
+          else:
+              class NoRedirect(urllib.request.HTTPRedirectHandler):
+                  def redirect_request(self,*args,**kwargs):
+                      return None
+              getter=urllib.request.build_opener(NoRedirect,
+                  urllib.request.HTTPSHandler(context=ssl.create_default_context()))
+              req=urllib.request.Request('https://'+parsed.hostname+'/pse-unzip-v2.ready',
+                  headers={'User-Agent':'PSE-Release-Readiness/1.0','Accept':'text/plain'},
+                  method='GET')
+              try:
+                  with getter.open(req,timeout=10) as resp:
+                      body=resp.read(90)
+                      ready=(resp.status==200 and body.strip()==b'PSE_ASTRO_UNZIP_PROTOCOL=2')
+                  print('PSE_SIGNED_UNZIP_MARKER='+('PASS' if ready else 'MISSING_OR_INVALID'))
+              except Exception:
+                  print('PSE_SIGNED_UNZIP_MARKER=MISSING_OR_UNAVAILABLE')
+          print('PSE_UNZIP_CHECK_MODE=GET_ONLY')
+          PY
