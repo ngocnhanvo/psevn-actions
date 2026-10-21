@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""Temporary, visibly labeled PSE-only 404-media placeholders for cloned pages.
+
+No existing files are overwritten; only eleven verified-missing legacy image
+names in PSE WordPress wp-content/uploads/2026/09 are created. Replacing these
+with original images later requires no changes to WordPress page content.
+"""
+import ftplib
+import hashlib
+import io
+import os
+import secrets
+import ssl
+from urllib.parse import urlsplit
+from urllib.request import Request, urlopen
+from PIL import Image, ImageDraw, ImageFont
+
+JPG=("255A5533.jpg","255A5708.jpg","255A5787.jpg","255A6030.jpg",
+     "Banner-Page-PC.jpg","gioithieu.jpg","h3_01.jpg","h6_01.jpg","h7_01.jpg")
+PNG=("tieu-chuan-QR.png","tieu-chuan-iso-2015.png")
+FILES=JPG+PNG
+WP_HOST="admin-pse.webnvn.com"
+ROOT="/domains/"+WP_HOST+"/public_html/wp-content/uploads"
+DIR=ROOT+"/2026/09"
+expected_ftp="vt108159.server.idn.vn"
+raw=os.environ.get("FTP_SERVER","")
+if "://" not in raw:raw="ftp://"+raw
+u=urlsplit(raw)
+assert u.scheme in ("ftp","ftps") and u.hostname==expected_ftp
+assert not u.username and not u.password and not u.path.strip("/")
+assert os.environ.get("FTP_USERNAME") and os.environ.get("FTP_PASSWORD")
+assert 'WC_URL=https://'+WP_HOST in os.environ.get("ENV_FILE","")
+
+def placeholder(name):
+    width,height=960,540
+    im=Image.new("RGB",(width,height),(245,246,248))
+    d=ImageDraw.Draw(im)
+    d.rectangle((24,24,width-24,height-24),outline=(165,173,184),width=3)
+    d.line((24,24,width-24,height-24),fill=(214,218,223),width=3)
+    d.line((width-24,24,24,height-24),fill=(214,218,223),width=3)
+    d.rectangle((120,194,width-120,346),fill=(255,255,255),outline=(150,156,167),width=2)
+    d.text((width//2,235),"PSE - MISSING MEDIA",anchor="mm",fill=(50,55,66))
+    d.text((width//2,291),name,anchor="mm",fill=(95,100,110))
+    output=io.BytesIO()
+    if name.lower().endswith(".png"):im.save(output,format="PNG")
+    else:im.save(output,format="JPEG",quality=87)
+    return output.getvalue()
+ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=22)
+try:
+    ftp.connect(u.hostname,u.port or 21)
+    ftp.auth()
+    ftp.login(os.environ["FTP_USERNAME"],os.environ["FTP_PASSWORD"])
+    ftp.prot_p()
+    for path in (ROOT,ROOT+"/2026",DIR):
+        try:ftp.cwd(path)
+        except ftplib.error_perm:
+            if path==ROOT:raise
+            ftp.mkd(path)
+            ftp.cwd(path)
+        assert ftp.pwd().rstrip("/")==path, "FTP path mismatch"
+    ftp.voidcmd("TYPE I")
+    print("PSE_MEDIA_PLACEHOLDER ftps_identity=PASS destination="+DIR)
+    created=0
+    skipped=0
+    for name in FILES:
+        try:
+            size=ftp.size(name)
+        except ftplib.error_perm as e:
+            if not str(e).startswith("550"):raise
+            size=None
+        if size is not None:
+            skipped+=1
+            print("PSE_MEDIA_PLACEHOLDER existing_protected="+name)
+            continue
+        b=placeholder(name)
+        temporary=".pse-missing-media-"+secrets.token_hex(12)+".tmp"
+        try:
+            ftp.storbinary("STOR "+temporary,io.BytesIO(b))
+            got=io.BytesIO()
+            ftp.retrbinary("RETR "+temporary,got.write)
+            assert hashlib.sha256(got.getvalue()).digest()==hashlib.sha256(b).digest(), "sha mismatch"
+            ftp.rename(temporary,name)
+            created+=1
+            print("PSE_MEDIA_PLACEHOLDER created="+name+" verified=PASS")
+        finally:
+            try:ftp.delete(temporary)
+            except Exception:pass
+    print("PSE_MEDIA_PLACEHOLDER total_created="+str(created)+" protected_existing="+str(skipped))
+finally:
+    try:ftp.quit()
+    except Exception:ftp.close()
+
+missing=[]
+for name in FILES:
+    url="https://"+WP_HOST+"/wp-content/uploads/2026/09/"+name
+    try:
+        req=Request(url,headers={"User-Agent":"PSE-Missing-Media-Restore/1.0","Cache-Control":"no-cache"})
+        with urlopen(req,timeout=15,context=ssl.create_default_context()) as r:
+            sample=r.read(24)
+        if not ((name.endswith(".jpg") and sample.startswith(b"\xff\xd8\xff")) or
+                (name.endswith(".png") and sample.startswith(b"\x89PNG"))):
+            missing.append(name)
+    except Exception:
+        missing.append(name)
+print("PSE_MEDIA_PLACEHOLDER published="+("PASS" if not missing else "FAIL"))
+for name in missing:print("PSE_MEDIA_PLACEHOLDER published_missing="+name)
+if missing:raise SystemExit(1)
+print("PSE_MEDIA_PLACEHOLDER placeholders_must_be_replaced_with_originals=YES")
