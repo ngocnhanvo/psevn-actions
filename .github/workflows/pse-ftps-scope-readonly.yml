@@ -1,0 +1,32 @@
+name: PSE FTPS account scope (READ ONLY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-ftps-scope-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-ftps-scope-readonly
+  cancel-in-progress: false
+jobs:
+  ftps-scope:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout shared read-only FTP audit helper
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/knowledge-actions
+          ref: e88a49f6ede7abed0987a2c464bb6040158cac75
+          persist-credentials: false
+      - name: Verify FTP login root, account ref and allowed CWD paths
+        env:
+          PROJECT_NAME: PSE
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+        run: python3 scripts/ftp-scope-readonly.py
