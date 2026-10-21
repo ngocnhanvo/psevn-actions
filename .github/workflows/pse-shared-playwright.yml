@@ -11,11 +11,13 @@ on:
         options:
           - smoke
           - wordpress-site-health
+          - wordpress-build-trigger-audit
   push:
     branches: [main]
     paths:
       - .pse-shared-playwright-smoke-trigger
       - .pse-shared-playwright-sitehealth-trigger
+      - .pse-shared-build-trigger-audit-trigger
 
 permissions:
   contents: read
@@ -24,7 +26,7 @@ jobs:
   public-smoke:
     name: Test PSE public website
     if: >-
-      (github.event_name == 'push' && github.event.head_commit.message != 'test: trigger read-only PSE WordPress site health') || (github.event_name == 'workflow_dispatch' && inputs.suite == 'smoke')
+      (github.event_name == 'push' && github.event.head_commit.message == 'test: trigger read-only PSE public smoke') || (github.event_name == 'workflow_dispatch' && inputs.suite == 'smoke')
     uses: ngocnhanvo/knowledge-actions/.github/workflows/playwright.yml@main
     with:
       site_url: https://pse.webnvn.com
@@ -42,6 +44,19 @@ jobs:
       suite: wordpress-site-health
       # SHA-256 of the named DB guarded in EduResearch PHP source; runtime is checked separately.
       disallowed_db_sha256: 4cc8a9aafa3629a68481c065d2702f8c9f716fddefa554b954530e5b6906553c
+    secrets:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+
+  wordpress-build-trigger-audit:
+    name: Read-only audit of PSE WP Build Website dashboard
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.suite == 'wordpress-build-trigger-audit') || (github.event_name == 'push' && github.event.head_commit.message == 'test: trigger read-only PSE build UI audit')
+    uses: ngocnhanvo/knowledge-actions/.github/workflows/playwright.yml@main
+    with:
+      site_url: https://admin-pse.webnvn.com
+      expected_hostname: admin-pse.webnvn.com
+      suite: wordpress-build-trigger-audit
     secrets:
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
