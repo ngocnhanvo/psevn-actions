@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/knowledge-actions
-          ref: 91ddb0185d635ff4802efeca8d6b6937516686ee
+          ref: 1d6ebfb13075c0c5c67633f0abab4e9906eb33d2
           persist-credentials: false
       - name: Install TLS-capable lftp read-only client
         shell: bash
