@@ -91,9 +91,11 @@ jobs:
           raw=os.environ.get('ENV_FILE','')
           vals={}
           for line in raw.splitlines():
-              hit=re.match(r'^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*
-,line)
-              if hit: vals[hit.group(1)]=hit.group(2).strip().strip('"\'')
+              line=line.strip()
+              if line.startswith('export '):
+                  line=line[7:].strip()
+              if line.startswith('WC_URL='):
+                  vals['WC_URL']=line.split('=',1)[1].strip().strip('"').strip("'")
           origin=vals.get('WC_URL','')
           parsed=urlsplit(origin)
           valid=(parsed.scheme=='https' and bool(parsed.hostname)
