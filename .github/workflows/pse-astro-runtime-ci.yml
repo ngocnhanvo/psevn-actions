@@ -1,0 +1,48 @@
+name: PSE Astro API and OAuth isolation tests (NO BUILD)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-astro-runtime-ci.yml
+permissions:
+  contents: read
+jobs:
+  unit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout PSE Astro DEVELOPMENT source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: github
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Set up pnpm without installing app
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Set up Node 24 and pnpm store cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Inventory inherited site URLs by filename only
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'PSE_STALE_SOURCE_FILENAME_INVENTORY_START'
+          git -C source grep -l -F 'nghiencuukhoahoc' -- src scripts 2>/dev/null | head -70 || true
+          echo 'PSE_STALE_SOURCE_FILENAME_INVENTORY_END'
+      - name: Run isolated REST and OAuth/session unit tests
+        working-directory: source
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run src/lib/nckh/serverWp.test.ts src/lib/nckh/privateRuntime.test.ts src/lib/nckh/serverSession.test.ts
+      - name: Confirm no Astro build or deploy
+        run: echo 'PSE_ASTRO_UNIT=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS'
