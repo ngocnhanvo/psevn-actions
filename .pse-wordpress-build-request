@@ -1,2 +1,3 @@
 Owner requested one PSE production Astro Build from WordPress. Signer preflight must PASS first, then submit via WP authenticated AJAX. Never directly dispatch GitHub or build unrelated projects.
 Retry exactly once after PSE WP ACF domain was corrected and verified at run 39647849379. Signed check must pass before authenticated WordPress Build Website dispatch.
+One user-approved retry after 11 missing cloned WordPress media paths were restored as temporary labeled placeholders, run 39650103943. Signed preflight must pass. Trigger via PSE WordPress PHP only.
