@@ -39,7 +39,7 @@ jobs:
           echo 'PSE_STALE_SOURCE_FILENAME_INVENTORY_START'
           grep -RIlF 'nghiencuukhoahoc' source/src source/scripts 2>/dev/null | head -70 || true
           echo 'PSE_STALE_SOURCE_FILENAME_INVENTORY_END'
-      - name: Run isolated REST, OAuth/session and both SEO contract suites
+      - name: Verify PSE REST, OAuth, revision-aware and generic SEO regressions
         working-directory: source
         run: |
           pnpm install --frozen-lockfile --prefer-offline
