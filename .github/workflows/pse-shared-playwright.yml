@@ -1,0 +1,44 @@
+name: PSE shared Playwright checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Read-only browser test'
+        type: choice
+        required: true
+        default: smoke
+        options:
+          - smoke
+          - wordpress-site-health
+  push:
+    branches: [main]
+    paths:
+      - .pse-shared-playwright-smoke-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  public-smoke:
+    name: Test PSE public website
+    if: github.event_name == 'push' || inputs.suite == 'smoke'
+    uses: ngocnhanvo/knowledge-actions/.github/workflows/playwright.yml@main
+    with:
+      site_url: https://pse.webnvn.com
+      expected_hostname: pse.webnvn.com
+      suite: smoke
+
+  wordpress-site-health:
+    name: Test PSE WordPress Site Health without disclosing DB_NAME
+    if: github.event_name == 'workflow_dispatch' && inputs.suite == 'wordpress-site-health'
+    uses: ngocnhanvo/knowledge-actions/.github/workflows/playwright.yml@main
+    with:
+      site_url: https://admin-pse.webnvn.com
+      expected_hostname: admin-pse.webnvn.com
+      suite: wordpress-site-health
+      # Comparison value comes from the EduResearch PHP code guard, not verified runtime DB.
+      disallowed_db_name: nghiencuukhoahoc_181026
+    secrets:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
