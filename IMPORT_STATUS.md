@@ -171,3 +171,18 @@ Audit used public certificate metadata, read-only FTP commands (PWD/NLST/CWD) an
 - GET-only probe of public `pse-unzip-v2.ready` returned `MISSING_OR_UNAVAILABLE` (not proof of precise cause). No unpack/FTP occurred.
 - All missing settings, safe activation order and audit links: [docs/PSE_RELEASE_READINESS.md](docs/PSE_RELEASE_READINESS.md).
 - **STOP:** Do not enable build or deploy. WordPress PSE PHP must be deployed/verified separately, PSE-signed unzip key configured on both sides, and PSE-only FTP target variable set. Build may then be invoked **only via WordPress PHP Build Website** after separate approval.
+
+## CORRECTION: restore inherited NCKH build architecture; no extra PSE secrets — 2026-10-21
+
+This supersedes earlier notes requiring `PSE_ASTRO_UNZIP_SIGNING_KEY`, `PSE_ASTRO_FTP_TARGET`, `PSE_BUILD_ENABLED`, `PSE_ASTRO_DEPLOY_READY`, `PSE_ASTRO_DEPLOY_TARGET` and `PSE_GITHUB_ACTIONS_TOKEN`: **none are required by current PSE GitHub source after this correction**. They were added unnecessarily during cloning.
+
+Architecture again uses the original five Actions secrets: `ENV_FILE`, `SOURCE_REPO_PAT`, `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`. Astro branch `master` and `build-git`/pnpm cache/`.cache` are preserved. The FTP target is automatically derived from validated `WC_URL_CLIENT`; no hardcoded fixed-domain PHP gate. WordPress admin dispatch destination is strictly `psevn-actions` and the forbidden EduResearch DB is still rejected.
+
+Signed unzip v2 is retained (not disabled): GitHub computes HMAC with existing `SOURCE_REPO_PAT`, and WordPress PSE verifies using existing `VCS_GH_ACTIONS_TOKEN` (must match; otherwise the preflight aborts). No extra key. WordPress's existing GitHub Trigger token-loading convention is restored. The signed unpack endpoint and v2 ready marker still need to be published to the PSE WordPress hosting.
+
+Proof (all READ-ONLY/static, no build/deploy):
+- [GitHub Trigger PHP CI #39644517466](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644517466) PASS, including PHP syntax, lock/status regression and PSE repo/DB/token checks.
+- [PSE release architecture CI #39644478427](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644478427) PASS for workflow, PHP unpack, Python signed client, FTPS script and SEO Save token.
+- [Existing-secrets-only audit #39644145362](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644145362): five existing secrets PRESENT; FTP target DERIVED; `PSE_RELEASE_PREREQUISITES=READY_FOR_FURTHER_VERIFICATION`; ready marker GET still `MISSING_OR_UNAVAILABLE`. This does NOT establish production WordPress PHP readiness.
+
+Next: when code-mode/deploy permission permits, deploy updated PSE PHP only to PSE WordPress; verify the v2 marker, runtime GitHub token and HMAC preflight; only then use **the WordPress Build Website button** for a real build. There has been no Astro build, FTP write, WordPress production modification or GitHub dispatch from this correction. Updated guidance: [docs/PSE_RELEASE_READINESS.md](docs/PSE_RELEASE_READINESS.md).
