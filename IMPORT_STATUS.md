@@ -162,3 +162,12 @@ Audit used public certificate metadata, read-only FTP commands (PWD/NLST/CWD) an
 - Verified log: `FTP_PROBE tls_login=PASS`, `target_directory=PASS`, `write=PASS`, `read_back_sha256=PASS`, `cleanup_delete=PASS`, `FTP_PROBE=PASS write_read_delete_verified`.
 - No existing website files were overwritten, no Astro build/deploy, WordPress trigger, DB write, or other FTP modification occurred.
 - **Remaining:** PSE-only build workflow/activation route is not ready; the source PHP trigger still uses `PSE_ASTRO_DEPLOY_READY` as an explicit fail-closed switch. Cross-project isolation was only probed with directory CWD and not exhaustively validated for all possible alternate paths.
+
+## PSE master runtime and release audit checkpoint — 2026-10-21
+
+- Verified 11/11 modified PSE Astro files have identical Git blob SHA on `github` and `master` (history diverges; no additional content migration needed).
+- [Master branch CI #39642245691](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642245691): 12 Vitest groups PASS from production `psevn-astro/master` commit `ee151a065be1fddfdecceca288c3a1f5a747bda8`, runtime source origin guard PASS, no build, FTP or dispatch.
+- [Read-only config audit #39642844620](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642844620): `ENV_FILE`, `SOURCE_REPO_PAT`, three FTP credentials present; both runtime origin URLs valid and distinct, no inherited EduResearch URL. `PSE_ASTRO_UNZIP_SIGNING_KEY` and variable `PSE_ASTRO_FTP_TARGET` missing; `PSE_BUILD_ENABLED` absent (locked). `PSE_RELEASE_PREREQUISITES=INCOMPLETE_DO_NOT_DEPLOY`.
+- GET-only probe of public `pse-unzip-v2.ready` returned `MISSING_OR_UNAVAILABLE` (not proof of precise cause). No unpack/FTP occurred.
+- All missing settings, safe activation order and audit links: [docs/PSE_RELEASE_READINESS.md](docs/PSE_RELEASE_READINESS.md).
+- **STOP:** Do not enable build or deploy. WordPress PSE PHP must be deployed/verified separately, PSE-signed unzip key configured on both sides, and PSE-only FTP target variable set. Build may then be invoked **only via WordPress PHP Build Website** after separate approval.
