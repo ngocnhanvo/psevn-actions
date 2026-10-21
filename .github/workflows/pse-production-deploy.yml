@@ -76,7 +76,7 @@ jobs:
               raise RuntimeError('FTP target disagrees with configured WordPress frontend')
           if os.environ.get('PSE_DEPLOY_REQUEST_DOMAIN')!=client_host:
               raise RuntimeError('Build trigger domain disagrees with WordPress frontend')
-          if any(x in vals for x in ('PSE_GOOGLE_OAUTH_JSON','PSE_SESSION_KEY',
+          if any(x in vals for x in ('NCKH_GOOGLE_OAUTH_JSON','NCKH_SESSION_KEY',
                                      'PSE_GOOGLE_OAUTH_JSON','PSE_SESSION_KEY',
                                      'GOOGLE_OAUTH_STAGING_JSON')):
               raise RuntimeError('Private runtime credentials cannot be written into build .env')
@@ -86,6 +86,17 @@ jobs:
               out.write('PSE_WP_ORIGIN='+wp_origin+'\n')
           print('PASS: PSE source master and WordPress-managed deployment target')
           PY
+      - name: Refuse inherited EduResearch server endpoints in PSE Astro source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq 'nghiencuukhoahoc|api-nghiencuukhoahoc' \
+              source/src/lib/nckh/serverWp.ts \
+              source/src/lib/nckh/serverSession.ts \
+              source/src/lib/nckh/privateRuntime.ts; then
+            echo "::error::PSE Astro still contains EduResearch backend or private runtime references"
+            exit 1
+          fi
       - name: Check signed unzip staging destination before any build or FTP
         shell: bash
         run: |
@@ -194,7 +205,7 @@ jobs:
               if not compiled.is_file():
                   raise RuntimeError("Missing WordPress SEO metadata: " + name)
               raw = compiled.read_bytes()
-              if not raw or b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
+              if not raw or b"nghiencuukhoahoc.webnvn.com" in raw or b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
                   raise RuntimeError("Invalid compiled SEO metadata: " + name)
               published[name] = raw
 
@@ -203,7 +214,7 @@ jobs:
               if not compiled.is_file():
                   raise RuntimeError("Saved sitemap XML missing from build")
               raw = compiled.read_bytes()
-              if b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
+              if b"nghiencuukhoahoc.webnvn.com" in raw or b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
                   raise RuntimeError("Sitemap refers to another project")
               try:
                   xmlroot = ET.fromstring(raw)
