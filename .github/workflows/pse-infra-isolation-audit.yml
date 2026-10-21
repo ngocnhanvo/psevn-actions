@@ -34,10 +34,10 @@ jobs:
             for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD WP_ADMIN_USERNAME WP_ADMIN_PASSWORD SOURCE_REPO_PAT; do
               if [ -n "${!name}" ]; then
                 echo "| $name | yes |"
-                echo "SECRET_STATUS $name=present"
+                echo "SECRET_STATUS $name=present" >&2
               else
                 echo "| $name | no |"
-                echo "SECRET_STATUS $name=absent"
+                echo "SECRET_STATUS $name=absent" >&2
               fi
             done
             echo ""
