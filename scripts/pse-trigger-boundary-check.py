@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline tenant-boundary assertions for PSE WordPress GitHub Trigger.
 
+Enforces inherited VCS_GH_ACTIONS_TOKEN plus PSE repository/DB isolation.
 Never connect to WordPress, GitHub API, DB or FTP. Never dispatch a build.
 """
 from pathlib import Path
