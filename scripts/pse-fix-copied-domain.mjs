@@ -61,8 +61,17 @@ try {
    await field.fill(target);
    const save=page.locator('#publish').first();
    if(!(await save.count()))throw Error('No WordPress Publish/Update button');
-   await save.click();
-   await page.waitForLoadState('domcontentloaded',{timeout:45000});
+   await Promise.all([
+     page.waitForNavigation({waitUntil:'domcontentloaded',timeout:45000}),
+     save.click(),
+   ]);
+   // WordPress classic-editor Save is a full POST navigation; verify its
+   // persisted ACF field before opening any other page.
+   await page.goto(absolute.href,{waitUntil:'domcontentloaded',timeout:45000});
+   const stored=page.locator('.acf-field[data-name="domain"] input[type="text"]').first();
+   if(!(await stored.count()) || (await stored.inputValue()).trim()!==target)
+      throw Error('Saved WordPress ACF domain failed immediate readback');
+   console.log('PSE_WP_ACF_DOMAIN_SAVED=PASS');
    await page.goto(origin+'/wp-admin/admin.php?page=vcs-production-site',{
      waitUntil:'domcontentloaded',timeout:45000
    });
