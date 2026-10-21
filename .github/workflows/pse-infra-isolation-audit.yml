@@ -58,3 +58,33 @@ jobs:
             echo "PUBLIC_HTTP_STATUS $url=${status:-failed}"
           done
           echo "Anonymous endpoint checks cannot reveal database names or FTP account roots." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Probe FTPS directory permissions (read-only; no listing or writes)
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FTP_SERVER" ] || [ -z "$FTP_USERNAME" ] || [ -z "$FTP_PASSWORD" ]; then
+            echo "FTPS_PROBE credentials=absent"
+            exit 0
+          fi
+          sudo apt-get update -qq >/dev/null 2>&1
+          sudo apt-get install -y -qq --no-install-recommends lftp >/dev/null 2>&1
+          tmp="$(mktemp)"
+          trap 'rm -f "$tmp"' EXIT
+          probe() {
+            local label="$1" command="$2"
+            if timeout --signal=TERM --kill-after=3s 25s lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "ftp://$FTP_SERVER" -e "set cmd:fail-exit yes; set net:max-retries 1; set net:timeout 8; set ftp:passive-mode yes; set ftp:ssl-force yes; set ftp:ssl-protect-data yes; set ssl:verify-certificate yes; $command; bye" >"$tmp" 2>&1; then
+              echo "FTPS_PROBE $label=yes"
+            else
+              echo "FTPS_PROBE $label=no_or_unverified"
+            fi
+          }
+          probe connection "pwd"
+          probe candidate_pse_frontend "cd /domains/pse.webnvn.com/public_html/; pwd"
+          probe candidate_pse_wordpress "cd /domains/admin-pse.webnvn.com/public_html/; pwd"
+          probe old_eduresearch_root "cd /domains/nghiencuukhoahoc.webnvn.com/public_html/; pwd"
+          echo "FTPS_PROBE note=read_only_candidate_paths_not_proof_of_database_separation"
