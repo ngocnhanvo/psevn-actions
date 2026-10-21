@@ -1,38 +1,38 @@
-# PSE — kiểm tra và chuẩn bị phát hành Astro
+# PSE Astro — cấu hình build kế thừa EduResearch (không thêm secrets/variables)
 
-**Trạng thái: đang khóa build và deploy production.** Không bật chỉ vì các unit test đều PASS.
+**Chốt kiến trúc:** Giữ luồng WordPress PHP Build Website → `repository_dispatch: wp_trigger_build` của `psevn-actions` → lấy `psevn-astro/master` → `pnpm run build-git` + `.cache` → FTPS PSE → signed unzip v2 PSE. Không tự xây thêm hệ thống release hay tự chạy build từ GitHub Actions.
 
-## Đã kiểm chứng
+## Secrets có sẵn, không phát sinh key/variable mới
 
-- 11 file PSE được đồng bộ về nội dung giữa `psevn-astro/github` (DEV) và `master` (PROD), dù lịch sử commit hai nhánh có thể khác nhau.
-- [PSE master isolation CI #39642245691](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642245691): 12 nhóm Vitest PASS, chặn runtime EduResearch, không build hoặc FTP.
-- [PSE release boundary CI #39639152254](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39639152254): kiểm thử cú pháp và cấu trúc workflow PASS, không build.
-- [FTPS one-file permission #39632993155](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39632993155): kết nối FTPS đã xác minh, ghi/đọc/hash/xóa **một file thử nghiệm** ở thư mục frontend PSE PASS.
-- [PSE release config audit #39642844620](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642844620): các secret FTP và `ENV_FILE` có mặt, không có URL của source project, nhưng phát hành chưa sẵn sàng. Endpoint `pse-unzip-v2.ready` chưa xác minh được qua HTTPS GET.
+Repo `ngocnhanvo/psevn-actions` dùng đúng 5 secrets của cơ chế nguồn:
 
-## Cần cấu hình trước khi được phép chạy build
+- `ENV_FILE`: bao gồm `WC_URL` (WordPress PSE), `WC_URL_CLIENT` (frontend PSE).
+- `SOURCE_REPO_PAT`: checkout nguồn và ký HMAC unzip v2 theo đúng giao thức EduResearch.
+- `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`: FTPS riêng của PSE.
 
-Tại **ngocnhanvo/psevn-actions → Settings → Secrets and variables → Actions**:
+**Không cần** `PSE_ASTRO_UNZIP_SIGNING_KEY`, `PSE_ASTRO_FTP_TARGET`, `PSE_BUILD_ENABLED`, `PSE_ASTRO_DEPLOY_READY`, `PSE_ASTRO_DEPLOY_TARGET` hay `PSE_GITHUB_ACTIONS_TOKEN`. Các yêu cầu đó do lần chuyển đổi trước tự thêm và đã được rút khỏi mã nguồn.
 
-1. **Secret `PSE_ASTRO_UNZIP_SIGNING_KEY`**: còn thiếu. Tạo một khóa ngẫu nhiên riêng cho PSE, dài ít nhất 32 ký tự (nên sinh bằng `openssl rand -hex 32` trên máy tin cậy). Thiết lập **cùng giá trị khóa** vào WordPress PSE, qua hằng số `PSE_ASTRO_UNZIP_SIGNING_KEY` trong cấu hình hosting không được commit. Tuyệt đối không dùng `SOURCE_REPO_PAT` hoặc khóa của EduResearch, không đưa khóa vào file `.env` public, GitHub log hay bình luận.
-2. **Variable `PSE_ASTRO_FTP_TARGET`**: còn thiếu. Đường dẫn đã được FTPS kiểm chứng với frontend hiện tại là `/domains/pse.webnvn.com/public_html/`. Workflow sẽ từ chối phát hành nếu biến này không khớp với domain frontend lấy từ `WC_URL_CLIENT` trong `ENV_FILE`. Khi đổi domain, cập nhật URL và target trong **cấu hình dự án**, không sửa hằng số hostname trong PHP.
-3. **Variable `PSE_BUILD_ENABLED`**: để **`false`** trong giai đoạn chuẩn bị (hiện đang thiếu và tương đương khóa). Chỉ đặt thành `true` sau khi các điều kiện còn lại PASS và chủ dự án duyệt phát hành.
+Thư mục FTP được suy ra tự động từ `WC_URL_CLIENT` dưới dạng `/domains/<frontend-host>/public_html/` và đối chiếu với domain mà nút Build Website gửi từ **Thông tin chung WordPress**. Đây không phải điều kiện hardcode hostname vào PHP. Nếu đổi domain, kiểm tra và cập nhật `WC_URL_CLIENT` và trường domain của WordPress.
 
-Tại **WordPress PSE / hosting**:
+## Token ký giải nén: kế thừa, không bỏ chữ ký
 
-4. Kiểm tra `pse-unzip.php` và file đánh dấu `pse-unzip-v2.ready` đã được triển khai trên WordPress PSE từ đúng repo `psevn-php/master`. Dấu hiệu thành công: `GET https://<WordPress origin>/pse-unzip-v2.ready` trả đúng `PSE_ASTRO_UNZIP_PROTOCOL=2`. Audit trước đó chưa xác minh được, không khẳng định file thiếu chỉ từ một lần GET lỗi.
-5. `PSE_GITHUB_ACTIONS_TOKEN` phải là token riêng dành cho việc dispatch `psevn-actions`. `VCS_GH_REPO` phải là `psevn-actions`. Chỉ bật `PSE_ASTRO_DEPLOY_READY=true` sau khi cấu hình ký/đích FTP/endpoint hoạt động và được kiểm thử. Không mang secrets source project sang.
-6. Đồng bộ các thay đổi PHP mới vào WordPress PSE theo **chế độ code được phép** trước khi thao tác thực tế trong giao diện Build Website. Code-mode `normal` không tự FTP upload PHP hoặc kích hoạt build.
+- WordPress PSE dùng `VCS_GH_ACTIONS_TOKEN` trong cấu hình GitHub Trigger hiện hữu. Plugin hỗ trợ `VCS_GH_TOKEN` cho GitHub API theo cách cũ.
+- PHP `pse-unzip.php` dùng `VCS_GH_ACTIONS_TOKEN` để xác minh HMAC signed unzip v2; runner dùng `SOURCE_REPO_PAT` để ký. **Hai giá trị phải khớp**, như cơ chế source EduResearch. Nếu không khớp, preflight tự từ chối, không deploy.
+- Khóa không được in trong log hay commit. Việc nhiều dự án chia sẻ PAT là lựa chọn vận hành sẵn có, song quyền của token cần được kiểm soát vì rủi ro ảnh hưởng chéo.
 
-## Kiểm tra lại theo thứ tự
+## Những phần đã xác minh
 
-1. Chạy workflow `PSE release configuration readiness (NO BUILD)` để xác minh secrets/vars, origin/target và marker bằng GET. **Audit job PASS không đồng nghĩa đủ điều kiện deploy**; đọc `PSE_RELEASE_PREREQUISITES`.
-2. Chạy `PSE release architecture verification (NO BUILD)` để xác minh cú pháp, guards, signed unzip v2 và SEO Save-token.
-3. Chạy `PSE Astro master isolation verification (NO BUILD)` nếu có sửa mã Astro production; không cần lặp lại khi không đổi mã.
-4. Bật các khóa **chỉ sau khi được duyệt** và thực hiện build thực tế **qua nút Build Website của WordPress/PHP**. Không phát lệnh `repository_dispatch` trực tiếp chỉ để thử.
+- Frontend PSE truy cập được đúng thư mục FTP và thử STOR/RETR/SHA256/DELE thành công: [#39632993155](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39632993155).
+- PSE Astro `master` được kiểm tra offline 12 nhóm test PASS: [#39642245691](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642245691).
+- Pipeline PSE riêng dùng repo `psevn-astro` và `psevn-actions`, không chạy `nghiencuukhoahoc-actions`.
 
-Luồng build dự kiến dùng `psevn-astro/master`, pnpm store + `.cache`, `build-git` kế thừa, giữ nguyên logic chỉ chuyển `sitemap.xml` khi người dùng bấm Lưu. Deploy ZIP tới đúng thư mục frontend PSE và kích hoạt bằng giao thức signed unzip v2. Không đẩy build sang EduResearch.
+## Bước còn cần thực hiện
 
-## Những gì chưa được làm
+1. Đồng bộ **mã PHP PSE mới** từ `psevn-php/master` lên hosting PSE theo chế độ thao tác được phép, gồm plugin GitHub Trigger, MU-plugin, `pse-unzip.php` và `pse-unzip-v2.ready`. Không upload sang hosting EduResearch.
+2. Xác minh marker `GET <WC_URL>/pse-unzip-v2.ready` trả về `PSE_ASTRO_UNZIP_PROTOCOL=2`. Nguồn gốc EduResearch cũng sử dụng marker protocol v2; đây là file endpoint, không phải key mới.
+3. Xác minh token GitHub Trigger hiện hữu ở WordPress PSE hoạt động và có cùng giá trị ký với `SOURCE_REPO_PAT` của PSE Actions bằng **preflight chữ ký**, không công khai token.
+4. Kiểm tra domain quản lý bởi WordPress khớp `WC_URL_CLIENT`, sau đó thử **Build Website từ WordPress** khi được người dùng cho phép. Không dùng dispatch thủ công để thay thế nút Build.
 
-Không có build Astro production, không upload ZIP, chưa triển khai PHP production, chưa ký lệnh unzip, chưa bật `PSE_BUILD_ENABLED` hoặc `PSE_ASTRO_DEPLOY_READY`. Các việc này đòi hỏi cấu hình hợp lệ, kiểm thử tiếp và phê duyệt tương ứng.
+**Bảo toàn tối ưu nguồn:** pnpm store + `.cache`, `build-git`, sitemap XML chỉ truyền khi có lượt Lưu mới. Preflight vẫn từ chối source khác, token không đúng, path không khớp và ZIP không có metadata/SSR.
+
+**Giới hạn:** Những thay đổi trong GitHub không đồng nghĩa đã triển khai WordPress hosting. Chưa chạy build/deploy production trong lần điều chỉnh này.
