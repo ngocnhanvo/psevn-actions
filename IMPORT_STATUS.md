@@ -150,3 +150,15 @@ Audit used public certificate metadata, read-only FTP commands (PWD/NLST/CWD) an
 - [CWD read-only test #39631752458](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631752458): account can CWD to `public_html`, `/domains/pse.webnvn.com/public_html`, `/domains/admin-pse.webnvn.com/public_html`; CWD to `/domains/nghiencuukhoahoc.webnvn.com/public_html` and its relative equivalent returned denied/not-found. This establishes the frontend directory's existence and read-level accessibility for the configured PSE FTP account, not guaranteed write permission or exhaustive cross-project ACL separation.
 - A more expansive older FTP certificate/discovery audit [#39630990438](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39630990438) timed out; the targeted, independently validated tests above supersede its connectivity diagnostics.
 - **Still outstanding**: do not build/deploy yet; no FTP PUT has verified write privileges; ensure PSE-only unzip/activation route and Astro build workflow exist and are locked to `psevn-astro/master`. PHP source build trigger remains gated by `PSE_ASTRO_DEPLOY_READY` and was not uploaded to production by this check. No content was written, altered, or deleted.
+
+## PSE FTPS temporary write/read/delete permission test — 2026-10-21
+
+**PASS for PSE frontend FTP write permission and cleanup; this is NOT approval to deploy Astro.**
+
+- User explicitly authorized a temporary test write in PSE FTP.
+- [GitHub Actions run #39632993155](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39632993155) succeeded.
+- The strict-TLS probe in `knowledge-actions/scripts/ftp-pse-write-probe.py` authenticated using PSE repository FTP secrets, required exact FTP hostname `vt108159.server.idn.vn`, changed directory to **`/domains/pse.webnvn.com/public_html`** and verified remote `PWD` matched before any write.
+- Generated a single random-name hidden text probe of fewer than 100 bytes, required its name to be absent before writing, performed `STOR`, read it back with `RETR` and compared SHA-256, then deleted **only that probe file** with `DELE`.
+- Verified log: `FTP_PROBE tls_login=PASS`, `target_directory=PASS`, `write=PASS`, `read_back_sha256=PASS`, `cleanup_delete=PASS`, `FTP_PROBE=PASS write_read_delete_verified`.
+- No existing website files were overwritten, no Astro build/deploy, WordPress trigger, DB write, or other FTP modification occurred.
+- **Remaining:** PSE-only build workflow/activation route is not ready; the source PHP trigger still uses `PSE_ASTRO_DEPLOY_READY` as an explicit fail-closed switch. Cross-project isolation was only probed with directory CWD and not exhaustively validated for all possible alternate paths.
