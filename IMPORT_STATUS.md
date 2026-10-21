@@ -64,3 +64,13 @@ Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/r
 2. Verify FTP account scope, real remote deployment directories, and inability of the PSE deploy account to overwrite the EduResearch website. A shared physical FTP server is acceptable if rights and directories are isolated.
 3. Convert old hardcoded Astro WordPress API/origin/private-runtime paths and WordPress Build Website repo/site-domain guards to PSE-specific verified settings, retaining existing build architecture and protective checks.
 4. Build PSE-specific deployment workflow only after verifying destination and permissions; use the WordPress/PHP Build Website trigger for Astro, not an independent build path.
+
+### Follow-up FTPS credential/path probe — 2026-10-21
+- Run: https://github.com/ngocnhanvo/psevn-actions/actions/runs/39603222624 (PASS, read-only).
+- Connection using the `psevn-actions` FTP secrets: **FTPS login/PWD succeeded** using TLS with certificate verification enabled.
+- Tested candidate paths (CWD/PWD only; no LIST/GET/PUT/DELETE):
+  - `/domains/pse.webnvn.com/public_html/`: no_or_unverified
+  - `/domains/admin-pse.webnvn.com/public_html/`: no_or_unverified
+  - `/domains/nghiencuukhoahoc.webnvn.com/public_html/`: no_or_unverified
+- Important: all candidate paths failed or were not verified, which may reflect FTP chroot or differing remote-root mappings. It is **not proof** of separate FTP accounts or permission isolation; the true PSE FTP deployment path remains unverified.
+- No remote files were listed or changed, no build/deploy performed. Do not reuse the old EduResearch absolute FTP path in the PSE workflow.
