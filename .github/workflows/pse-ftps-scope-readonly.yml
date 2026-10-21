@@ -16,34 +16,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 7
     steps:
-      - name: Checkout shared read-only FTP audit helper
+      - name: Checkout shared certificate-verified FTPS audit
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/knowledge-actions
-          ref: 3d80587c4bc6d25d3a807c74865d69eccb47375b
+          ref: 1060e30ac63a94b1b92c75564040578e5e48da51
           persist-credentials: false
-      - name: Inspect public FTP TLS certificate and test matching DNS name
+      - name: Resolve trusted FTPS hostname, authenticate and inspect directory scope
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: python3 scripts/ftp-public-certificate-readonly.py
-      - name: Verify strict FTPS TLS handshake and authenticated PWD
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        run: python3 scripts/ftp-tls-handshake-readonly.py
-      - name: Install TLS-capable lftp read-only client
-        shell: bash
-        run: |
-          sudo apt-get update -qq >/dev/null 2>&1
-          sudo apt-get install -y -qq --no-install-recommends lftp >/dev/null 2>&1
-      - name: Verify FTP login root, account ref and allowed CWD paths
-        env:
-          PROJECT_NAME: PSE
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
-        run: python3 scripts/ftp-scope-readonly.py
