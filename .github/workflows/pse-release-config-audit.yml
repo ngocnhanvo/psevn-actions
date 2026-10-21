@@ -17,13 +17,10 @@ jobs:
     timeout-minutes: 3
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
-      PSE_ASTRO_UNZIP_SIGNING_KEY: ${{ secrets.PSE_ASTRO_UNZIP_SIGNING_KEY }}
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      PSE_ASTRO_FTP_TARGET: ${{ vars.PSE_ASTRO_FTP_TARGET }}
-      PSE_BUILD_ENABLED: ${{ vars.PSE_BUILD_ENABLED }}
     steps:
       - name: Report missing PSE runtime settings by name only
         shell: bash
@@ -32,10 +29,8 @@ jobs:
           python3 - <<'PY'
           import os,re
           from urllib.parse import urlsplit
-          secret_names=('ENV_FILE','PSE_ASTRO_UNZIP_SIGNING_KEY','SOURCE_REPO_PAT',
-                        'FTP_SERVER','FTP_USERNAME','FTP_PASSWORD')
-          variable_names=('PSE_ASTRO_FTP_TARGET','PSE_BUILD_ENABLED')
-          for name in secret_names+variable_names:
+          secret_names=('ENV_FILE','SOURCE_REPO_PAT','FTP_SERVER','FTP_USERNAME','FTP_PASSWORD')
+          for name in secret_names:
               value=os.environ.get(name,'')
               print('PSE_RELEASE_SETTING '+name+'='+('present' if value else 'missing'))
           raw=os.environ.get('ENV_FILE','')
@@ -58,14 +53,12 @@ jobs:
           blocked=any('nghiencuukhoahoc' in parsed.get(k,'').lower()
                       for k in ('WC_URL','WC_URL_CLIENT'))
           print('PSE_RELEASE_ENV source_project_url='+('FORBIDDEN' if blocked else 'not_detected'))
-          enabled=os.environ.get('PSE_BUILD_ENABLED')=='true'
-          print('PSE_PRODUCTION_BUILD_GATE='+('ENABLED' if enabled else 'LOCKED'))
-          target=os.environ.get('PSE_ASTRO_FTP_TARGET','')
           host=urlsplit(client).hostname
-          ready=bool(host and target==f'/domains/{host}/public_html/')
-          print('PSE_RELEASE_ENV ftp_target_matches_frontend='+('yes' if ready else 'no_or_unverified'))
-          # This is a static config-readiness verdict, never authorization to deploy.
-          # The WordPress PHP gate and all production workflow checks remain separate.
+          ready=bool(host and re.fullmatch(r'[a-z0-9][a-z0-9.-]*[a-z0-9]', host)
+                     and '..' not in host and '.' in host)
+          print('PSE_RELEASE_ENV ftp_target_derived_from_client='+('yes' if ready else 'no'))
+          print('PSE_BUILD_TRIGGER_MODE=WORDPRESS_PHP_ONLY')
+          # Static readiness reports do not dispatch builds or sign unpack requests.
           prerequisites = (
               all(os.environ.get(k,'') for k in secret_names)
               and ready and not blocked
