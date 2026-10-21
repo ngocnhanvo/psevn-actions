@@ -64,5 +64,17 @@ jobs:
           host=urlsplit(client).hostname
           ready=bool(host and target==f'/domains/{host}/public_html/')
           print('PSE_RELEASE_ENV ftp_target_matches_frontend='+('yes' if ready else 'no_or_unverified'))
+          # This is a static config-readiness verdict, never authorization to deploy.
+          # The WordPress PHP gate and all production workflow checks remain separate.
+          prerequisites = (
+              all(os.environ.get(k,'') for k in secret_names)
+              and ready and not blocked
+              and urlsplit(wp).scheme=='https'
+              and urlsplit(client).scheme=='https'
+              and wp.rstrip('/')!=client.rstrip('/')
+          )
+          print('PSE_RELEASE_PREREQUISITES='+('READY_FOR_FURTHER_VERIFICATION' if prerequisites
+                 else 'INCOMPLETE_DO_NOT_DEPLOY'))
+          print('PSE_RELEASE_READ_ONLY_AUDIT=PASS')
           print('NO_ASTRO_BUILD=PASS NO_FTP=PASS NO_DISPATCH=PASS')
           PY
