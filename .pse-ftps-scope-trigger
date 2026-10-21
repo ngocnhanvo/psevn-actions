@@ -5,3 +5,4 @@ Verify TLS certificate and authenticated FTP PWD, fail closed before directory p
 Inspect certificate DNS SAN before any credentialed FTP session.
 Certificate-only OpenSSL metadata fallback, never sending FTP credentials to unverified server.
 Use verified FTPS certificate DNS host and authenticated read-only directory probe.
+Recheck following user's FTP_SERVER correction, read-only TLS/authentication and directory mapping; no build or upload.
