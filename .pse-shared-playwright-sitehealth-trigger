@@ -3,3 +3,4 @@ Retry only after YAML condition syntax fix. No DB/FTP write.
 Retry with expanded Site Health accordion and sanitized layout diagnostics.
 Inspect only generic WordPress Database row titles for localization, without field values.
 Final localized parser smoke: recognizes Vietnamese Tên database. No DB value or credentials in logs.
+Cross-project read-only DB-name hash comparison; PSE must differ from EduResearch source reference.
