@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           echo 'PSE_STALE_SOURCE_FILENAME_INVENTORY_START'
-          git -C source grep -l -F 'nghiencuukhoahoc' -- src scripts 2>/dev/null | head -70 || true
+          grep -RIlF 'nghiencuukhoahoc' source/src source/scripts 2>/dev/null | head -70 || true
           echo 'PSE_STALE_SOURCE_FILENAME_INVENTORY_END'
       - name: Run isolated REST and OAuth/session unit tests
         working-directory: source
