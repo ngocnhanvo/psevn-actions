@@ -315,7 +315,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json,urllib.request,urllib.error,time
+          import json,os,urllib.request,urllib.error,time
           base=os.environ['PSE_CLIENT_ORIGIN']
           def fetch(path):
               req=urllib.request.Request(base+path,headers={
