@@ -1,0 +1,57 @@
+name: PSE infrastructure isolation audit (READ ONLY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-infra-audit-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-infra-isolation-audit
+  cancel-in-progress: false
+jobs:
+  read-only-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check presence of configuration secrets without revealing values
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## PSE Actions secret presence (names only)"
+            echo "| Secret | Present |"
+            echo "|---|---|"
+            for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD WP_ADMIN_USERNAME WP_ADMIN_PASSWORD SOURCE_REPO_PAT; do
+              if [ -n "${!name}" ]; then
+                echo "| $name | yes |"
+              else
+                echo "| $name | no |"
+              fi
+            done
+            echo ""
+            echo "Secret presence does not establish database/FTP isolation. No credential value was printed or used to log in."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Probe public WordPress endpoint availability (anonymous GET only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Public endpoint probes"
+            echo "| Endpoint | HTTP status |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for url in 'https://admin-pse.webnvn.com/wp-json/' 'https://api-nghiencuukhoahoc.webnvn.com/wp-json/' 'https://pse.webnvn.com/' 'https://nghiencuukhoahoc.webnvn.com/'; do
+            status="$(curl --silent --location --output /dev/null --write-out '%{http_code}' --max-time 12 --connect-timeout 6 --max-redirs 3 "$url" || true)"
+            echo "| $url | ${status:-failed} |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo "Anonymous endpoint checks cannot reveal database names or FTP account roots." >> "$GITHUB_STEP_SUMMARY"
