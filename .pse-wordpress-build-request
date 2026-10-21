@@ -2,3 +2,4 @@ Owner requested one PSE production Astro Build from WordPress. Signer preflight 
 Retry exactly once after PSE WP ACF domain was corrected and verified at run 39647849379. Signed check must pass before authenticated WordPress Build Website dispatch.
 One user-approved retry after 11 missing cloned WordPress media paths were restored as temporary labeled placeholders, run 39650103943. Signed preflight must pass. Trigger via PSE WordPress PHP only.
 Owner-approved retry after completed build failure and missing-media placeholder repair. Reconcile GitHub outcome via WordPress status AJAX before dispatch; do not forcibly clear locks or bypass PHP. Do not retry automatically more than once.
+Owner-authorized targeted retry after SEO REST site/revision/llms API fully passed read-only validation run 39653368846. Preserve WP single-build lock and call Build only through authenticated WordPress; no direct dispatch.
