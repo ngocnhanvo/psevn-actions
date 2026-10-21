@@ -74,3 +74,16 @@ Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/r
   - `/domains/nghiencuukhoahoc.webnvn.com/public_html/`: no_or_unverified
 - Important: all candidate paths failed or were not verified, which may reflect FTP chroot or differing remote-root mappings. It is **not proof** of separate FTP accounts or permission isolation; the true PSE FTP deployment path remains unverified.
 - No remote files were listed or changed, no build/deploy performed. Do not reuse the old EduResearch absolute FTP path in the PSE workflow.
+
+## Shared Playwright infrastructure — 2026-10-21
+
+**Implemented and tested:** `ngocnhanvo/knowledge-actions` (public) hosts a reusable `.github/workflows/playwright.yml` with Playwright `1.64.0`/Chromium Docker image. Each caller owns the target site and optional WordPress credentials. PSE calls it from `.github/workflows/pse-shared-playwright.yml`; the engine has no central project credentials.
+
+- Public PSE desktop/mobile smoke: [#39612921299](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39612921299) PASS.
+- Second public smoke: [#39613176502](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39613176502) PASS; npm cache restored (around 11MB); browser image contains Chromium.
+- WordPress PSE Site Health: [#39614955441](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39614955441) PASS, authenticated with PSE-specific WP secrets, detected actual DB name in Site Health without logging it.
+- This confirms WordPress Site Health browser access, **not** that PSE and EduResearch databases are different. The source project's runtime name has not been verified in the same way.
+- First attempts at the Site Health suite needed YAML syntax and Vietnamese label parser fixes; the final run above supersedes the failing diagnostic runs.
+- Common operating guidance submitted for review in [knowledge PR #9](https://github.com/ngocnhanvo/knowledge/pull/9), not merged automatically per Knowledge CONTRIBUTING policy.
+- No WordPress writes, DB writes, FTP uploads, Astro builds or production deployment occurred. Avoid sharing credentials or DB names in public Actions logs.
+
