@@ -98,3 +98,26 @@ Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/r
 - This establishes distinct database names at the current application configurations, **not** separate MySQL hosts/accounts/grants or FTP directory isolation.
 - **Still to fix before PSE deployment:** inherited PSE Astro serverWp/serverSession/privateRuntime old-domain references and WordPress Build Website trigger old project checks. Never assume separate DB names means API, credentials, or FTP isolation is complete.
 - No database writes, FTP writes, website builds, deployments, or user-data changes occurred.
+
+## GitHub Build Trigger isolation audit — 2026-10-21 (READ ONLY)
+
+**Overall verdict: FAIL — PSE build path is NOT isolated. EduResearch's own path is coherent.**
+
+Evidence from live authenticated WordPress browser audits, using per-project credentials through `ngocnhanvo/knowledge-actions`, without clicking Build or triggering any build dispatch:
+- PSE: [run #39620767162](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39620767162): `github_plugin_script=yes`, `cloudflare_plugin_script=no`, `passive_status_poll=seen`, **`status_repo=nghiencuukhoahoc-actions`**, `build_button_disabled=no`, `button_clicks=0 build_dispatches=0`; PASS for read-only browser execution.
+- EduResearch: [run #39621283041](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39621283041): `github_plugin_script=yes`, `cloudflare_plugin_script=no`, `passive_status_poll=seen`, **`status_repo=nghiencuukhoahoc-actions`**, `build_button_disabled=yes`, `button_clicks=0 build_dispatches=0`; PASS. A transient earlier login navigation timeout was retried with navigation hardening.
+- Passive status polling yields the GitHub Actions status/dashboard repository; it does **not** prove the result of actually pressing Build. No build was requested.
+
+Source code static cross-check:
+- PSE PHP `wp-content/plugins/github-trigger/vcs-build-trigger.php` still hardcodes `NCKH_ACTIONS_REPO='nghiencuukhoahoc-actions'`, EduResearch DB_NAME and API site_url as trigger authorization guards, and EduResearch's payload `site_domain`. Given independently verified distinct PSE runtime database name, the source guard would **reject PSE build** if deployed identically; do not rely on this accidental stop as correct routing.
+- PSE PHP `wp-content/mu-plugins/esc-github-trigger-config.php` still contains inherited Blue Sea default `VCS_GH_REPO`, while the GitHub Trigger plugin separately pins NCKH. Source copies also contain an obsolete Cloudflare Trigger plugin with embedded credentials; it is not loaded on either live Build page per browser checks, but should be audited/retired and the credential rotated without reproducing it.
+- No PSE-specific Astro production build/deploy workflow exists in `psevn-actions/.github/workflows`. Its import/test/cleanup workflows are NOT a production deployment pipeline; 30 inherited NCKH workflows remain disabled reference files.
+- EduResearch `nghiencuukhoahoc-actions/.github/workflows/nckh-deploy.yml` is bound to `nghiencuukhoahoc-astro/master`, EduResearch FTP target, API URL, and a repository_dispatch domain guard for EduResearch. It also supports workflow_dispatch and issue-based triggers that should be reviewed against the WordPress-only Build Website policy; no alternative build trigger was exercised.
+
+Required for correct PSE isolation:
+1. Configure PSE PHP GitHub Trigger with **PSE-specific exact** repository `ngocnhanvo/psevn-actions`, PSE `site_url`, independently verified PSE DB identity, and PSE dispatch payload, maintaining fail-closed guards and build lock/snapshot/force-build semantics.
+2. Replace/disable inherited MU-plugin repo defaults and remove or isolate dormant legacy Cloudflare trigger, with appropriate credential rotation.
+3. Configure `psevn-actions` PSE-only production workflow, sourcing `ngocnhanvo/psevn-astro/master`, validating PSE environment and real isolated FTP destination. Preserve inherited build/cache architecture; **initiate Astro builds only via the WordPress/PHP Build Website tool** under code-mode approval.
+4. Perform offline/static tests, authenticated read-only status tests, and staging-level isolated dispatch tests only after authorization and environment verification; do not trigger production as an isolation test.
+
+Audit changed only CI read-only browser suites/docs; **no WordPress PHP FTP upload, website deployment, database mutation, or GitHub repository_dispatch build**.
