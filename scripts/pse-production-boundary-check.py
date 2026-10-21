@@ -22,6 +22,7 @@ expected_workflow=[
     "pse-resumable-ftp.sh", "pse-remote-unzip.py unpack",
     "PSE_CLIENT_ORIGIN", "PSE_CLIENT_HOST",
     "PSE_DEPLOY_REQUEST_DOMAIN", "PSE_ASTRO_FTP_TARGET",
+    "PSE_ASTRO_UNZIP_SIGNING_KEY",
     "pse-staging-build.json", ".pse-sitemap-deploy-state.json",
 ]
 for item in expected_workflow:
@@ -33,7 +34,7 @@ assert "ngocnhanvo/nghiencuukhoahoc-" not in workflow, "Wrong project repository
 assert "nghiencuukhoahoc.webnvn.com" in workflow, "Missing cloned-domain leakage checks"
 assert "nghiencuukhoahoc.webnvn.com" not in workflow.split("      - name: Package only")[0], "Source domain in critical build preflight"
 
-for token in ("PSE_GITHUB_ACTIONS_TOKEN","PSE_ASTRO_DEPLOY_READY","PSE_ASTRO_DEPLOY_TARGET",
+for token in ("PSE_ASTRO_UNZIP_SIGNING_KEY","PSE_ASTRO_DEPLOY_READY","PSE_ASTRO_DEPLOY_TARGET",
               "pse-staging-build.json","pse-astro.zip","X_ESC_DEPLOY_TIMESTAMP",
               "X_ESC_DEPLOY_SIGNATURE","hash_equals","ZipArchive","rollback",
               "PSE site identity"):
@@ -42,8 +43,9 @@ assert "DB_NAME === 'nghiencuukhoahoc_181026'" in php, "Wrong source DB must be 
 assert "https://api-nghiencuukhoahoc.webnvn.com" not in php, "Source API leaked"
 assert ready=="PSE_ASTRO_UNZIP_PROTOCOL=2"
 for token in ("PSE_ASTRO_UNZIP_PROTOCOL=2","/pse-unzip.php","pse-staging-build.json",
-              "SOURCE_REPO_PAT","sha256","SIGNED_UNZIP_SUCCESS"):
+              "PSE_ASTRO_UNZIP_SIGNING_KEY","sha256","SIGNED_UNZIP_SUCCESS"):
     assert token in client, "Signed activation port missing "+token
+assert "SOURCE_REPO_PAT" not in client, "Shared source PAT must never sign PSE deployments"
 assert "set ssl:verify-certificate yes" in ftp, "TLS chain verification must remain enabled"
 assert "set ssl:verify-certificate no" not in ftp, "Insecure FTP client"
 assert "PSE_CLIENT_HOST" in ftp and "pse-astro.zip" in ftp
