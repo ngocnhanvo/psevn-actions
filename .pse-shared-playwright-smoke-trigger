@@ -1,1 +1,2 @@
 One-time shared Playwright public smoke test. No WordPress login, secret passing, FTP, build or production deploy.
+Second smoke run to verify npm download-cache reuse, without browser installation or admin login.
