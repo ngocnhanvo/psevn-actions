@@ -1,1 +1,2 @@
 Run only independent production PSE HTTP GET checks after successful Astro build / signed unzip on run 39653619702. No WordPress build, FTP writes, or Github dispatch.
+Repeat HTTP-only PSE SSR verification after one successful Passenger tmp/restart.txt signal, run 39655037371. No build, no FTP writes on this run.
