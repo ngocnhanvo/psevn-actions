@@ -1,0 +1,68 @@
+name: PSE release configuration readiness (NO BUILD)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-release-config-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  config:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      PSE_ASTRO_UNZIP_SIGNING_KEY: ${{ secrets.PSE_ASTRO_UNZIP_SIGNING_KEY }}
+      SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      PSE_ASTRO_FTP_TARGET: ${{ vars.PSE_ASTRO_FTP_TARGET }}
+      PSE_BUILD_ENABLED: ${{ vars.PSE_BUILD_ENABLED }}
+    steps:
+      - name: Report missing PSE runtime settings by name only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re
+          from urllib.parse import urlsplit
+          secret_names=('ENV_FILE','PSE_ASTRO_UNZIP_SIGNING_KEY','SOURCE_REPO_PAT',
+                        'FTP_SERVER','FTP_USERNAME','FTP_PASSWORD')
+          variable_names=('PSE_ASTRO_FTP_TARGET','PSE_BUILD_ENABLED')
+          for name in secret_names+variable_names:
+              value=os.environ.get(name,'')
+              print('PSE_RELEASE_SETTING '+name+'='+('present' if value else 'missing'))
+          raw=os.environ.get('ENV_FILE','')
+          parsed={}
+          for line in raw.splitlines():
+              hit=re.match(r'^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$',line)
+              if hit:
+                  parsed[hit[1]]=hit[2].strip().strip('"\'')
+          for name in ('WC_URL','WC_URL_CLIENT'):
+              uri=urlsplit(parsed.get(name,''))
+              valid=(uri.scheme=='https' and bool(uri.hostname)
+                     and not uri.username and not uri.password
+                     and uri.port in (None,443) and uri.path in ('','/')
+                     and not uri.query and not uri.fragment)
+              print('PSE_RELEASE_ENV '+name+'='+('valid_https_origin' if valid else 'missing_or_invalid'))
+          wp=parsed.get('WC_URL','')
+          client=parsed.get('WC_URL_CLIENT','')
+          print('PSE_RELEASE_ENV backend_differs_from_frontend='+(
+              'yes' if wp and client and wp.rstrip('/')!=client.rstrip('/') else 'unverified'))
+          blocked=any('nghiencuukhoahoc' in parsed.get(k,'').lower()
+                      for k in ('WC_URL','WC_URL_CLIENT'))
+          print('PSE_RELEASE_ENV source_project_url='+('FORBIDDEN' if blocked else 'not_detected'))
+          enabled=os.environ.get('PSE_BUILD_ENABLED')=='true'
+          print('PSE_PRODUCTION_BUILD_GATE='+('ENABLED' if enabled else 'LOCKED'))
+          target=os.environ.get('PSE_ASTRO_FTP_TARGET','')
+          host=urlsplit(client).hostname
+          ready=bool(host and target==f'/domains/{host}/public_html/')
+          print('PSE_RELEASE_ENV ftp_target_matches_frontend='+('yes' if ready else 'no_or_unverified'))
+          print('NO_ASTRO_BUILD=PASS NO_FTP=PASS NO_DISPATCH=PASS')
+          PY
