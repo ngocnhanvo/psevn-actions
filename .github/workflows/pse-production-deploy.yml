@@ -45,7 +45,7 @@ jobs:
           set -euo pipefail
           test -n "$ENV_FILE" && test -n "$SOURCE_REPO_PAT"
           test -n "$FTP_SERVER" && test -n "$FTP_USERNAME" && test -n "$FTP_PASSWORD"
-           test "$(git -C source symbolic-ref --short HEAD)" = master
+          test "$(git -C source symbolic-ref --short HEAD)" = master
           sha="$(git -C source rev-parse HEAD)"
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           echo "PSE_DEPLOY_COMMIT=$sha" >> "$GITHUB_ENV"
