@@ -140,3 +140,13 @@ Required before a PSE build/deploy:
 4. Retest strict TLS login and FTP directory mapping without writing site files. Keep `PSE_ASTRO_DEPLOY_READY` off until explicitly verified.
 
 Audit used public certificate metadata, read-only FTP commands (PWD/NLST/CWD) and local HMAC fingerprints; **no upload, deletion, DB access, WordPress changes or website build occurred**.
+
+## Updated PSE FTP_SERVER validation and directory CWD — 2026-10-21 (read-only)
+
+**PASS for connection + certificate + authentication + PSE frontend directory visibility; production deploy readiness is still NOT granted.**
+
+- [Configuration check #39631226550](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631226550): actual `FTP_SERVER` secret now matches verified FTPS certificate DNS hostname `vt108159.server.idn.vn` (only PASS/FAIL logged; zero connections).
+- [Strict FTPS login #39631468377](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631468377): control connection PASS, CA and hostname verification PASS, FTP USER/PASS PASS, server-side `PWD` PASS.
+- [CWD read-only test #39631752458](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631752458): account can CWD to `public_html`, `/domains/pse.webnvn.com/public_html`, `/domains/admin-pse.webnvn.com/public_html`; CWD to `/domains/nghiencuukhoahoc.webnvn.com/public_html` and its relative equivalent returned denied/not-found. This establishes the frontend directory's existence and read-level accessibility for the configured PSE FTP account, not guaranteed write permission or exhaustive cross-project ACL separation.
+- A more expansive older FTP certificate/discovery audit [#39630990438](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39630990438) timed out; the targeted, independently validated tests above supersede its connectivity diagnostics.
+- **Still outstanding**: do not build/deploy yet; no FTP PUT has verified write privileges; ensure PSE-only unzip/activation route and Astro build workflow exist and are locked to `psevn-astro/master`. PHP source build trigger remains gated by `PSE_ASTRO_DEPLOY_READY` and was not uploaded to production by this check. No content was written, altered, or deleted.
