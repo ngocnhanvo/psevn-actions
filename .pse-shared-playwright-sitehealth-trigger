@@ -1,3 +1,4 @@
 Read-only Playwright Site Health database name comparison using PSE-only GitHub secrets. No database name, credentials or cookies printed. No deployment.
 Retry only after YAML condition syntax fix. No DB/FTP write.
 Retry with expanded Site Health accordion and sanitized layout diagnostics.
+Inspect only generic WordPress Database row titles for localization, without field values.
