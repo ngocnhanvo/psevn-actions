@@ -1,0 +1,1 @@
+Run only independent production PSE HTTP GET checks after successful Astro build / signed unzip on run 39653619702. No WordPress build, FTP writes, or Github dispatch.
