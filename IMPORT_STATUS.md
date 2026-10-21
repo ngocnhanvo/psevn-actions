@@ -87,3 +87,14 @@ Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/r
 - Common operating guidance submitted for review in [knowledge PR #9](https://github.com/ngocnhanvo/knowledge/pull/9), not merged automatically per Knowledge CONTRIBUTING policy.
 - No WordPress writes, DB writes, FTP uploads, Astro builds or production deployment occurred. Avoid sharing credentials or DB names in public Actions logs.
 
+
+## Database-name isolation verified via live WordPress Site Health — 2026-10-21
+
+**PASS (database names are different).** Independent authenticated read-only Playwright tests used per-project secrets and the common `ngocnhanvo/knowledge-actions` Chromium workflow.
+
+- EduResearch runtime: [run #39619046477](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39619046477), `WORDPRESS_SITE_HEALTH_DATABASE_NAME=FOUND`, `DATABASE_REFERENCE_MATCH=PASS`; runtime DB name matches the exact name in the guarded EduResearch PHP source.
+- PSE runtime: [run #39619058092](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39619058092), `WORDPRESS_SITE_HEALTH_DATABASE_NAME=FOUND`, `DATABASE_DIFFERENCE=PASS`; PSE runtime DB name is different from that independently verified EduResearch DB name.
+- Comparison used SHA-256 of the known source name; neither runtime name nor passwords or session material was printed in public workflow logs.
+- This establishes distinct database names at the current application configurations, **not** separate MySQL hosts/accounts/grants or FTP directory isolation.
+- **Still to fix before PSE deployment:** inherited PSE Astro serverWp/serverSession/privateRuntime old-domain references and WordPress Build Website trigger old project checks. Never assume separate DB names means API, credentials, or FTP isolation is complete.
+- No database writes, FTP writes, website builds, deployments, or user-data changes occurred.
