@@ -34,8 +34,10 @@ jobs:
             for name in FTP_SERVER FTP_USERNAME FTP_PASSWORD WP_ADMIN_USERNAME WP_ADMIN_PASSWORD SOURCE_REPO_PAT; do
               if [ -n "${!name}" ]; then
                 echo "| $name | yes |"
+                echo "SECRET_STATUS $name=present"
               else
                 echo "| $name | no |"
+                echo "SECRET_STATUS $name=absent"
               fi
             done
             echo ""
@@ -53,5 +55,6 @@ jobs:
           for url in 'https://admin-pse.webnvn.com/wp-json/' 'https://api-nghiencuukhoahoc.webnvn.com/wp-json/' 'https://pse.webnvn.com/' 'https://nghiencuukhoahoc.webnvn.com/'; do
             status="$(curl --silent --location --output /dev/null --write-out '%{http_code}' --max-time 12 --connect-timeout 6 --max-redirs 3 "$url" || true)"
             echo "| $url | ${status:-failed} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "PUBLIC_HTTP_STATUS $url=${status:-failed}"
           done
           echo "Anonymous endpoint checks cannot reveal database names or FTP account roots." >> "$GITHUB_STEP_SUMMARY"
