@@ -16,13 +16,13 @@ required_trigger = [
     "private const PSE_SITE_URL = 'https://admin-pse.webnvn.com';",
     "private const PSE_FRONTEND_DOMAIN = 'pse.webnvn.com';",
     "private const FORBIDDEN_SOURCE_DB = 'nghiencuukhoahoc_181026';",
-    "VCS_GH_REPO !== self::PSE_ACTIONS_REPO",
-    "DB_NAME === self::FORBIDDEN_SOURCE_DB",
-    "untrailingslashit(site_url()) !== self::PSE_SITE_URL",
-    "!defined('PSE_ASTRO_DEPLOY_READY')",
-    "PSE_ASTRO_DEPLOY_READY !== true",
-    "!defined('PSE_GITHUB_ACTIONS_TOKEN')",
-    "trim(PSE_GITHUB_ACTIONS_TOKEN) === ''",
+    "VCS_GH_REPO === self::PSE_ACTIONS_REPO",
+    "DB_NAME !== self::FORBIDDEN_SOURCE_DB",
+    "untrailingslashit(site_url()) === self::PSE_SITE_URL",
+    "defined('PSE_ASTRO_DEPLOY_READY')",
+    "PSE_ASTRO_DEPLOY_READY === true",
+    "defined('PSE_GITHUB_ACTIONS_TOKEN')",
+    "trim(PSE_GITHUB_ACTIONS_TOKEN) !== ''",
     "$repo = self::PSE_ACTIONS_REPO;",
     "'site_domain'  => self::PSE_FRONTEND_DOMAIN",
     "'event_type' => 'wp_trigger_build'",
@@ -45,6 +45,9 @@ for label, body in (("trigger", trigger), ("MU config", mu)):
 assert "VCS_GH_ACTIONS_TOKEN" not in trigger, "legacy Actions token still used"
 assert re.search(r'\$token\s*=\s*defined\([\'"]PSE_GITHUB_ACTIONS_TOKEN', trigger)
 assert trigger.count("$repo = self::PSE_ACTIONS_REPO;") >= 2, "trigger and poll must use PSE repo"
-assert trigger.count("PSE_ASTRO_DEPLOY_READY !== true") == 1, "missing duplicate or accidental gate change"
+assert trigger.count("PSE_ASTRO_DEPLOY_READY === true") == 1, "missing or duplicated readiness guard"
+assert "private function is_pse_deploy_ready(): bool" in trigger
+assert "if (!$this->is_pse_deploy_ready()" in trigger
+assert "$build_button_disabled = !$pse_deploy_ready" in trigger
 print("PSE_GITHUB_TRIGGER_BOUNDARY=PASS (static, non-deploy)")
 print("PSE_READINESS_DEFAULT=LOCKED_UNTIL_PSE_ASTRO_DEPLOY_READY")
