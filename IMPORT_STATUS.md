@@ -121,3 +121,22 @@ Required for correct PSE isolation:
 4. Perform offline/static tests, authenticated read-only status tests, and staging-level isolated dispatch tests only after authorization and environment verification; do not trigger production as an isolation test.
 
 Audit changed only CI read-only browser suites/docs; **no WordPress PHP FTP upload, website deployment, database mutation, or GitHub repository_dispatch build**.
+
+## FTPS identity and deploy-directory audit — 2026-10-21
+
+**STATUS: PARTIALLY VERIFIED; DO NOT ENABLE PSE ASTRO DEPLOY.** This section supersedes earlier "lftp pwd succeeded" claims: lftp's local PWD command alone is NOT sufficient proof of authenticated FTP login.
+
+Evidence:
+- Strict Python FTP_TLS verification against the existing `FTP_SERVER` failed in BOTH repos with `hostname_mismatch`, not merely a missing login secret: [PSE #39628662089](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39628662089), [EduResearch #39628654792](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39628654792).
+- The server presents a CA-trusted certificate for public DNS name **`vt108159.server.idn.vn`**. DNS for this hostname resolved to the same endpoint as the existing configured server.
+- A **strict, authenticated** PSE FTPS session using this DNS name succeeded, including server `257 PWD`: [PSE #39629421226](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39629421226) (certificate inspection/authentication step PASS; overall workflow FAIL because its subsequent gate intentionally tested the original mismatched `FTP_SERVER`).
+- Across [PSE #39628096159](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39628096159) and [EduResearch #39628100492](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39628100492), both repos had the same HMAC fingerprint for `FTP_SERVER` endpoint and for the shared `SOURCE_REPO_PAT` key, but **different** account-name HMAC fingerprints. Their configured FTP login names therefore differ, without exposing them publicly.
+- FTP root `NLST` and all tested candidate directory `CWD` results were unavailable/negative; none proves directory permissions or proper frontend FTP mapping. Later attempts [PSE #39629957952](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39629957952) and [EduResearch #39629939362](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39629939362) hit connection timeouts. Additional repeated probing was stopped.
+
+Required before a PSE build/deploy:
+1. Set each repository's `FTP_SERVER` to the certificate-matching hostname **`vt108159.server.idn.vn`** (only after confirming it is the intended server). The secret values cannot be changed via this audit.
+2. Verify **authenticated** PSE FTP directory mapping/permission to `pse.webnvn.com` and inability to access EduResearch frontend assets; account-name difference alone does not establish ACL isolation.
+3. Confirm the PSE Astro FTP deployment destination, signed remote unzip target, and PSE WordPress trigger readiness independently. No guessed `/domains/.../public_html` path is authorized.
+4. Retest strict TLS login and FTP directory mapping without writing site files. Keep `PSE_ASTRO_DEPLOY_READY` off until explicitly verified.
+
+Audit used public certificate metadata, read-only FTP commands (PWD/NLST/CWD) and local HMAC fingerprints; **no upload, deletion, DB access, WordPress changes or website build occurred**.
