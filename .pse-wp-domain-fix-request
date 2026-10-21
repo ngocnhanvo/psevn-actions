@@ -1,1 +1,2 @@
 User approved completing PSE build: correct only cloned WordPress general-info 'domain' field from nghiencuukhoahoc.id.vn to the validated PSE Actions WC_URL_CLIENT. No other WordPress fields or websites touched.
+Retry PSE-only one-field update with awaited WordPress navigation and persistent ACF readback (previous attempt did not persist).
