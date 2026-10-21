@@ -1,0 +1,79 @@
+name: PSE Node SSR hosting diagnosis (FTP READ ONLY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-node-hosting-diag-trigger
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: Read only Node startup markers, Passenger/PM2 routing hints
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,re
+          from urllib.parse import urlsplit
+          raw=os.environ.get('FTP_SERVER','').strip()
+          if '://' not in raw:raw='ftp://'+raw
+          u=urlsplit(raw)
+          if not(u.hostname=='vt108159.server.idn.vn'
+                 and u.scheme in ('ftp','ftps') and not u.username and not u.password):
+              raise SystemExit('PSE_NODE_FTP=HOST_INVALID')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          root='/domains/pse.webnvn.com/public_html'
+          try:
+              ftp.connect(u.hostname,u.port or 21,timeout=18)
+              ftp.auth()
+              ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.cwd(root)
+              assert ftp.pwd().rstrip('/')==root
+              print('PSE_NODE_FTP=PASS')
+              for item in ('server','server/entry.mjs','client','client/index.html',
+                           '.htaccess','app.js','server.js','package.json','node_modules',
+                           'tmp','tmp/restart.txt','pm2-reload.txt','pse-staging-build.json'):
+                  try:
+                      status=ftp.size(item)
+                      ok=status is not None
+                  except (ftplib.error_perm,ftplib.error_temp):
+                      # For directories SIZE often returns 550 even if present.
+                      try:
+                          ftp.cwd(root+'/'+item)
+                          ok=True
+                      except ftplib.all_errors:
+                          ok=False
+                  finally:
+                      ftp.cwd(root)
+                  print('PSE_NODE_MARKER '+item.replace('/','_').replace('.','_')+'='+('PRESENT' if ok else 'MISSING_OR_UNVERIFIED'))
+              try:
+                  size=ftp.size('.htaccess')
+                  if size and size<=32768:
+                      output=io.BytesIO()
+                      ftp.retrbinary('RETR .htaccess',output.write)
+                      rawtxt=output.getvalue().decode('utf8','replace')
+                      for directive in ('PassengerEnabled','PassengerAppRoot','PassengerBaseURI','PassengerStartupFile',
+                                        'PassengerNodejs','PassengerAppType','PassengerFriendlyErrorPages',
+                                        'RewriteEngine','RewriteRule','ProxyPass','SetHandler'):
+                          print('PSE_NODE_CONFIG '+directive+'='+('SET' if re.search(r'(?im)^\s*'+directive+r'\b',rawtxt) else 'ABSENT'))
+                  else:print('PSE_NODE_CONFIG htaccess=NOT_READABLE')
+              except ftplib.all_errors:
+                  print('PSE_NODE_CONFIG htaccess=NOT_AVAILABLE')
+              print('PSE_NODE_AUDIT=READ_ONLY_PASS')
+          except Exception as e:
+              print('PSE_NODE_AUDIT=FAIL_'+type(e).__name__)
+              raise SystemExit(1)
+          finally:
+              try:ftp.close()
+              except Exception:pass
+          PY
