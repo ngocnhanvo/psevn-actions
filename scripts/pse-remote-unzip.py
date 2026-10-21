@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Signed Astro ZIP deployment for PSE. Uses a dedicated PSE unzip signing key.
+"""Signed Astro ZIP deployment for PSE. Uses the inherited SOURCE_REPO_PAT token.
 
 verify: read-only readiness + signed target check, before FTP upload.
 unpack: verify artifact identity, then POST an authenticated unzip instruction.
@@ -101,8 +101,8 @@ def main():
     _, client_host = validate_url(client_url)
     backend, _ = validate_url(admin_url)
     # PSE origin is WordPress-managed; a domain migration changes ENV_FILE,
-    # not this deploy tool. The signed PSE-only PHP endpoint verifies tenant,
-    # WordPress frontend domain, deploy readiness and exact configured FTP path.
+    # not this deploy tool. The signed PSE-only PHP endpoint verifies the
+    # tenant, WordPress-managed frontend domain and FTP destination.
     if not backend or backend == client_url:
         raise ValueError("Invalid PSE WordPress origin")
     ftp_target = os.environ["ASTRO_FTP_TARGET"].strip()
@@ -114,11 +114,9 @@ def main():
     # WordPress-administered frontend origin. Never infer deployment from caller.
     if ftp_target != derived:
         raise ValueError("PSE FTP target differs from configured frontend origin")
-    if ftp_target != derived and ftp_target != explicit_override:
-        raise ValueError("FTP path differs from WC_URL_CLIENT without an explicit override")
-    token = os.environ["PSE_ASTRO_UNZIP_SIGNING_KEY"]
-    if len(token) < 32:
-        raise ValueError("Dedicated PSE unzip signing key is unavailable")
+    token = os.environ["SOURCE_REPO_PAT"]
+    if len(token) < 20:
+        raise ValueError("Existing SOURCE_REPO_PAT is unavailable")
     common = {
         "host": client_host,
         "target": ftp_target,
