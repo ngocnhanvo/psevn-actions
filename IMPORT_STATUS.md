@@ -43,3 +43,24 @@ Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/r
 - No attempt was made to delete either current default branch. A guarded workflow `.github/workflows/pse-branch-finalize.yml` remains ready to re-run after the existing PAT is granted **Repository permissions → Administration: Read and write** for `psevn-astro` and `psevn-php`, or after the repository owner manually changes the two default branches (Astro → github; PHP → master).
 - Once defaults switch, this guarded workflow will delete only `psevn-astro/main` at `d20d0604b01c288c0fd6229d4007a10c7bd08e97` and `psevn-php/main` at `e97ffce51f14e02effca0459198e286ee1a030d9`, refusing deletion if changed.
 - No production deploy/build/FTP/WordPress action taken. Source EduResearch repositories were not changed.
+
+## Infrastructure isolation audit — 2026-10-21
+
+**Result: NOT VERIFIED AS ISOLATED; application code still references source EduResearch environment. Do not deploy imported PSE source yet.**
+
+- Completed read-only audit: https://github.com/ngocnhanvo/psevn-actions/actions/runs/39602614690
+- PSE Actions GitHub secrets confirmed PRESENT (names only): `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `WP_ADMIN_USERNAME`, `WP_ADMIN_PASSWORD`, `SOURCE_REPO_PAT`.
+- Public read-only GET probes: `https://admin-pse.webnvn.com/wp-json/` HTTP 200, `https://api-nghiencuukhoahoc.webnvn.com/wp-json/` HTTP 200; each frontend root HTTP 200. This does NOT establish database isolation.
+- There is no committed PSE runtime `wp-config.php` with the actual database name/host/credentials. `wp-config-sample.php` is a template only. Database identity of deployed WordPress PSE versus EduResearch cannot be determined from GitHub.
+- PSE Astro `src/lib/nckh/serverWp.ts` hardcodes EduResearch WordPress API; `src/lib/nckh/serverSession.ts` hardcodes EduResearch origin/host; `src/lib/nckh/privateRuntime.ts` locks private runtime to EduResearch domain.
+- PSE PHP `wp-content/plugins/github-trigger/vcs-build-trigger.php` still points to `nghiencuukhoahoc-actions` and enforces EduResearch-only `DB_NAME` and `site_url()` values in the build trigger guard. Those source guards must NOT simply be deleted or bypassed.
+- PSE Actions live workflows: source import, branch finalization, read-only infrastructure isolation audit. No PSE FTP deploy workflow configured. The 30 inherited EduResearch workflows are deliberately stored as nonexecutable `.txt` references. Their old FTP path `/domains/nghiencuukhoahoc.webnvn.com/public_html/` is not a PSE deployment target.
+- FTP secrets PRESENT does not prove target/account/path isolation. No FTP connection, upload, deletion, or directory traversal was attempted.
+- PSE Astro branches only `github` and `master`; PSE PHP only `master`; PSE Actions only `main`, after successful branch cleanup https://github.com/ngocnhanvo/psevn-actions/actions/runs/39601722164. Both PSE Astro and PHP GitHub defaults currently `master`.
+- Source repositories and running websites were not modified by the audit; no production build/deploy was performed.
+
+### Required before deploying PSE
+1. Verify on hosting that PSE and EduResearch WordPress use different database identifiers/users and preferably independent privileges. Do not reveal passwords. Record sanitized identity and isolation evidence.
+2. Verify FTP account scope, real remote deployment directories, and inability of the PSE deploy account to overwrite the EduResearch website. A shared physical FTP server is acceptable if rights and directories are isolated.
+3. Convert old hardcoded Astro WordPress API/origin/private-runtime paths and WordPress Build Website repo/site-domain guards to PSE-specific verified settings, retaining existing build architecture and protective checks.
+4. Build PSE-specific deployment workflow only after verifying destination and permissions; use the WordPress/PHP Build Website trigger for Astro, not an independent build path.
