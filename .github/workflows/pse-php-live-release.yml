@@ -1,0 +1,64 @@
+name: PSE WordPress PHP Trigger release (FTP VERIFIED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-php-live-release-request
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-wp-php-release
+  cancel-in-progress: false
+jobs:
+  wordpress-php:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout PSE Actions deploy script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout only PSE WordPress PHP master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: PHP syntax and project identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source-php/pse-unzip.php
+          php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          php -l source-php/wp-content/mu-plugins/esc-github-trigger-config.php
+          php -l source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
+          php source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
+          test "$(cat source-php/pse-unzip-v2.ready)" = 'PSE_ASTRO_UNZIP_PROTOCOL=2'
+          python3 -m py_compile scripts/pse-php-live-release.py
+      - name: Release only PSE WordPress PHP files with protected FTPS
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-php-live-release.py
+      - name: Probe live WordPress PSE unzip ready marker (NO BUILD)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for retry in 1 2 3; do
+            if [ "$(curl --proto '=https' --tlsv1.2 -fsSL --max-time 20 --max-redirs 0 https://admin-pse.webnvn.com/pse-unzip-v2.ready)" = 'PSE_ASTRO_UNZIP_PROTOCOL=2' ]; then
+              echo "PSE_WP_UNZIP_READY_MARKER=PASS"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "PSE_WP_UNZIP_READY_MARKER=FAIL"
+          exit 1
