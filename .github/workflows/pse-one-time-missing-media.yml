@@ -1,0 +1,28 @@
+name: PSE one-time missing WordPress media import
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-media-import-request
+permissions:
+  contents: read
+jobs:
+  import-one-missing-jpeg:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Restore only missing Banner Page JPG to PSE WordPress media
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-one-time-missing-media.py
+          python3 scripts/pse-one-time-missing-media.py
