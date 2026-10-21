@@ -20,6 +20,7 @@ jobs:
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+      PSE_ASTRO_UNZIP_SIGNING_KEY: ${{ secrets.PSE_ASTRO_UNZIP_SIGNING_KEY }}
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
@@ -47,6 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$ENV_FILE" && test -n "$SOURCE_REPO_PAT"
+          test -n "$PSE_ASTRO_UNZIP_SIGNING_KEY"
           test -n "$FTP_SERVER" && test -n "$FTP_USERNAME" && test -n "$FTP_PASSWORD"
           test -n "$ASTRO_FTP_TARGET"
           test "$(git -C source symbolic-ref --short HEAD)" = master
