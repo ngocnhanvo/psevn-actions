@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Signed Astro ZIP deployment for PSE. Uses existing GitHub Trigger PAT.
+"""Signed Astro ZIP deployment for PSE. Uses a dedicated PSE unzip signing key.
 
 verify: read-only readiness + signed target check, before FTP upload.
 unpack: verify artifact identity, then POST an authenticated unzip instruction.
@@ -116,9 +116,9 @@ def main():
         raise ValueError("PSE FTP target differs from configured frontend origin")
     if ftp_target != derived and ftp_target != explicit_override:
         raise ValueError("FTP path differs from WC_URL_CLIENT without an explicit override")
-    token = os.environ["SOURCE_REPO_PAT"]
-    if len(token) < 20:
-        raise ValueError("GitHub SOURCE_REPO_PAT is unavailable")
+    token = os.environ["PSE_ASTRO_UNZIP_SIGNING_KEY"]
+    if len(token) < 32:
+        raise ValueError("Dedicated PSE unzip signing key is unavailable")
     common = {
         "host": client_host,
         "target": ftp_target,
