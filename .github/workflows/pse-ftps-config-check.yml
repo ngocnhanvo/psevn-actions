@@ -1,0 +1,45 @@
+name: PSE FTPS hostname configuration (NO NETWORK)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-ftps-config-check.yml
+permissions:
+  contents: read
+jobs:
+  verify-hostname:
+    name: Confirm FTP_SERVER matches validated TLS certificate hostname
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check FTP_SERVER hostname without logging secret or connecting
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, sys
+          from urllib.parse import urlsplit
+          server=os.environ.get('FTP_SERVER','').strip()
+          if not server:
+              print('FTP_SERVER_CONFIG=FAIL missing_secret')
+              sys.exit(1)
+          if '://' not in server:
+              server='ftp://'+server
+          try:
+              uri=urlsplit(server)
+              valid=(uri.scheme in ('ftp','ftps')
+                     and uri.hostname is not None
+                     and not uri.username and not uri.password
+                     and not uri.path.strip('/'))
+              correct=valid and uri.hostname.lower()=='vt108159.server.idn.vn'
+          except ValueError:
+              correct=False
+          print('FTP_SERVER_MATCHES_TRUSTED_CERTIFICATE_NAME=' + ('PASS' if correct else 'FAIL'))
+          print('FTP_SERVER_VALUE_LOGGED=no')
+          print('FTP_CONNECTION_ATTEMPTS=0')
+          if not correct: sys.exit(1)
+          PY
