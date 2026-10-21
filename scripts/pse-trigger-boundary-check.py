@@ -16,10 +16,8 @@ required_trigger = [
     "private const FORBIDDEN_SOURCE_DB = 'nghiencuukhoahoc_181026';",
     "VCS_GH_REPO === self::PSE_ACTIONS_REPO",
     "DB_NAME !== self::FORBIDDEN_SOURCE_DB",
-    "defined('PSE_ASTRO_DEPLOY_READY')",
-    "PSE_ASTRO_DEPLOY_READY === true",
-    "defined('PSE_GITHUB_ACTIONS_TOKEN')",
-    "trim(PSE_GITHUB_ACTIONS_TOKEN) !== ''",
+    "defined('VCS_GH_ACTIONS_TOKEN')",
+    "trim($token) !== ''",
     "$repo = self::PSE_ACTIONS_REPO;",
     "'site_domain'  => get_site_domain()",
     "'event_type' => 'wp_trigger_build'",
@@ -27,8 +25,8 @@ required_trigger = [
 ]
 required_mu = [
     "define('VCS_GH_REPO', 'psevn-actions');",
-    "'/pse-github-trigger-token.php'",
-    "define('PSE_GITHUB_ACTIONS_TOKEN'",
+    "'/esc-github-trigger-token.php'",
+    "define('VCS_GH_TOKEN'",
 ]
 for label, body, values in (("trigger", trigger, required_trigger), ("MU config", mu, required_mu)):
     for value in values:
@@ -38,16 +36,16 @@ for label, body in (("trigger", trigger), ("MU config", mu)):
     assert "NCKH_ACTIONS_REPO" not in body, f"{label}: leftover NCKH dispatch constant"
     assert "nghiencuukhoahoc-actions" not in body, f"{label}: wrong Actions repo"
     assert "xuongmunonbaohiem-actions" not in body, f"{label}: wrong Blue Sea Actions repo"
-    assert "esc-github-trigger-token.php" not in body, f"{label}: inherited token file"
+    assert "pse-github-trigger-token.php" not in body, f"{label}: new redundant token file"
 assert "PSE_SITE_URL" not in trigger and "PSE_FRONTEND_DOMAIN" not in trigger, "Hardcoded project domain found"
 assert "untrailingslashit(site_url()) === self::" not in trigger, "Fixed WordPress domain gate remains"
 assert "'site_domain'  => get_site_domain()" in trigger, "Build payload must reflect WordPress managed domain"
-assert "VCS_GH_ACTIONS_TOKEN" not in trigger, "legacy Actions token still used"
-assert re.search(r'\$token\s*=\s*defined\([\'"]PSE_GITHUB_ACTIONS_TOKEN', trigger)
+assert "PSE_GITHUB_ACTIONS_TOKEN" not in trigger, "extra PSE GitHub credential is forbidden"
+assert "PSE_ASTRO_DEPLOY_READY" not in trigger, "extra PHP readiness flag is forbidden"
+assert re.search(r'\$token\s*=\s*defined\([\'"]VCS_GH_ACTIONS_TOKEN', trigger)
 assert trigger.count("$repo = self::PSE_ACTIONS_REPO;") >= 2, "trigger and poll must use PSE repo"
-assert trigger.count("PSE_ASTRO_DEPLOY_READY === true") == 1, "missing or duplicated readiness guard"
 assert "private function is_pse_deploy_ready(): bool" in trigger
 assert "if (!$this->is_pse_deploy_ready()" in trigger
 assert "$build_button_disabled = !$pse_deploy_ready" in trigger
 print("PSE_GITHUB_TRIGGER_BOUNDARY=PASS (static, non-deploy)")
-print("PSE_READINESS_DEFAULT=LOCKED_UNTIL_PSE_ASTRO_DEPLOY_READY")
+print("PSE_TRIGGER_GUARD=EXISTING_TOKEN_REPO_AND_DATABASE")
