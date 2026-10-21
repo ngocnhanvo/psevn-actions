@@ -87,4 +87,12 @@ jobs:
           probe candidate_pse_frontend "cd /domains/pse.webnvn.com/public_html/; pwd"
           probe candidate_pse_wordpress "cd /domains/admin-pse.webnvn.com/public_html/; pwd"
           probe old_eduresearch_root "cd /domains/nghiencuukhoahoc.webnvn.com/public_html/; pwd"
+          # Shared hosts may chroot individual FTPS accounts; relative CWD distinguishes mappings
+          # without listing filenames, reading application files or changing the server.
+          probe ftp_login_public_html "cd public_html; pwd"
+          probe pse_frontend_relative "cd domains/pse.webnvn.com/public_html; pwd"
+          probe pse_wp_relative "cd domains/admin-pse.webnvn.com/public_html; pwd"
+          probe pse_frontend_parent "cd ../domains/pse.webnvn.com/public_html; pwd"
+          probe pse_wp_parent "cd ../domains/admin-pse.webnvn.com/public_html; pwd"
+          probe old_eduresearch_relative "cd domains/nghiencuukhoahoc.webnvn.com/public_html; pwd"
           echo "FTPS_PROBE note=read_only_candidate_paths_not_proof_of_database_separation"
