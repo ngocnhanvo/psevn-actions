@@ -53,7 +53,7 @@ try{
        await page.goto(u.href,{waitUntil:'domcontentloaded',timeout:45000});
        const field=page.locator('.acf-field[data-name="domain"] input[type="text"]').first();
        if(await field.count()){
-         const editor=(await field.inputValue()).trim().replace(/^https?:\\/\\//,'').replace(/\\/$/,'');
+         const editor=(await field.inputValue()).trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
          console.log('PSE_GENERAL_INFO_EDITOR_DOMAIN='+editor);
          console.log('PSE_EDITOR_MATCH_ENV='+String(editor===expected).toUpperCase());
        }else{console.log('PSE_GENERAL_INFO_EDITOR_DOMAIN=NOT_FOUND');}
