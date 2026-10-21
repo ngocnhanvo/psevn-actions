@@ -4,3 +4,4 @@ Check only FTP login directory class and shared HMAC key match, without uploads.
 Verify TLS certificate and authenticated FTP PWD, fail closed before directory probes.
 Inspect certificate DNS SAN before any credentialed FTP session.
 Certificate-only OpenSSL metadata fallback, never sending FTP credentials to unverified server.
+Use verified FTPS certificate DNS host and authenticated read-only directory probe.
