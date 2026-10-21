@@ -1,9 +1,10 @@
 name: PSE one-time source import (NO DEPLOY)
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - .github/workflows/pse-source-import.yml
+      - .pse-source-import-trigger
 permissions:
   contents: read
 concurrency:
@@ -27,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/nghiencuukhoahoc-astro
-          ref: github
+          ref: f208bde5e4c137b32a2e30f9515e4fdae29a225d
           token: ${{ secrets.SOURCE_REPO_PAT }}
           persist-credentials: false
           path: input/astro
@@ -35,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/nghiencuukhoahoc-php
-          ref: master
+          ref: c1c6f6d3e4c4710f2b1cda18808b6d57c6f723c0
           token: ${{ secrets.SOURCE_REPO_PAT }}
           persist-credentials: false
           path: input/php
@@ -43,7 +44,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/nghiencuukhoahoc-actions
-          ref: main
+          ref: 875e98cf3d7d2c25f7215e602aa953ee5dbf4283
           token: ${{ secrets.SOURCE_REPO_PAT }}
           persist-credentials: false
           path: input/actions
