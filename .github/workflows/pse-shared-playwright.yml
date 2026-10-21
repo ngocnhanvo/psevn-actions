@@ -40,6 +40,8 @@ jobs:
       site_url: https://admin-pse.webnvn.com
       expected_hostname: admin-pse.webnvn.com
       suite: wordpress-site-health
+      # SHA-256 of the named DB guarded in EduResearch PHP source; runtime is checked separately.
+      disallowed_db_sha256: 4cc8a9aafa3629a68481c065d2702f8c9f716fddefa554b954530e5b6906553c
     secrets:
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
