@@ -1,0 +1,37 @@
+name: PSE FTPS bounded write permission test (ONE FILE)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-ftps-write-probe-trigger
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pse-ftps-write-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Write, verify and remove one temporary PSE file
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout pinned PSE-only FTP probe
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/knowledge-actions
+          ref: 18bd7b67ee43fddde5a9f24de51252b1263a472b
+          persist-credentials: false
+      - name: Compile syntax without connecting
+        run: python3 -m py_compile scripts/ftp-pse-write-probe.py
+      - name: Temporary file STOR/RETR/DELE on PSE frontend only
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: python3 scripts/ftp-pse-write-probe.py
