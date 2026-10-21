@@ -1,2 +1,3 @@
 One-time READ-ONLY FTPS audit for PSE. No RETR, STOR, DELE, rename, WP Admin changes or Astro build.
 Repeat with verified lftp client: PSE. No modifications.
+Check only FTP login directory class and shared HMAC key match, without uploads.
