@@ -1,0 +1,128 @@
+name: NCKH stage-only REST storefront plugin slimming
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  stage_slim:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Deploy guarded REST profile to staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Validate staging-host filter and permission regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source/wp-content/mu-plugins/nckh-staging-rest-profile.php
+          php source/tests/nckh-staging-rest-profile.test.php
+          php source/tests/nckh-research-api.test.php >/dev/null
+          php source/tests/nckh-google-auth.test.php >/dev/null
+          echo 'PASS: plugin profile and private role/OAuth regressions'
+      - name: Deploy one MU file to API staging with remote rollback on smoke failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,io,hashlib,time,sys,json,http.cookiejar,urllib.request,urllib.parse,urllib.error
+          from urllib.parse import urlparse
+          stage_host='api-nghiencuukhoahoc.webnvn.com'
+          base='/domains/'+stage_host
+          target='public_html/wp-content/mu-plugins/nckh-staging-rest-profile.php'
+          source='source/wp-content/mu-plugins/nckh-staging-rest-profile.php'
+          data=open(source,'rb').read()
+          if b"=== 'api-nghiencuukhoahoc.webnvn.com'" not in data or b"/wp-json/nckh/v1/" not in data:
+              sys.exit('STOP: missing exact staging host/path guard')
+          if any(not os.getenv(k) for k in ('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD','WP_USER','WP_PASS')):
+              sys.exit('STOP: required credentials are not configured')
+          endpoint=os.environ['FTP_SERVER']
+          u=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(u.hostname,u.port or 21,timeout=22)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(base)
+          if stage_host not in ftp.pwd():sys.exit('STOP: wrong FTP domain')
+          backup='nckh-config-backups'
+          try:ftp.mkd(backup)
+          except ftplib.error_perm as exc:
+              if not str(exc).startswith('550'):raise
+          stamp=str(int(time.time()))
+          staged=backup+'/nckh-rest-profile-stage-'+stamp+'.txt'
+          oldpath=backup+'/nckh-rest-profile-rollback-'+stamp+'.txt'
+          current=None
+          try:
+              buf=io.BytesIO();ftp.retrbinary('RETR '+target,buf.write)
+              current=buf.getvalue()
+          except ftplib.error_perm as exc:
+              if not str(exc).startswith('550'):raise
+          digest=hashlib.sha256(data).digest()
+          if current is not None and hashlib.sha256(current).digest()==digest:
+              print('No-op: staging already contains this precise profile.')
+              ftp.quit();sys.exit(0)
+          ftp.storbinary('STOR '+staged,io.BytesIO(data))
+          verify=io.BytesIO();ftp.retrbinary('RETR '+staged,verify.write)
+          if hashlib.sha256(verify.getvalue()).digest()!=digest:raise RuntimeError('Stage checksum mismatch')
+          moved=False
+          try:
+              if current is not None:
+                  ftp.rename(target,oldpath);moved=True
+              ftp.rename(staged,target)
+              live=io.BytesIO();ftp.retrbinary('RETR '+target,live.write)
+              if hashlib.sha256(live.getvalue()).digest()!=digest:raise RuntimeError('Live checksum mismatch')
+              root='https://'+stage_host
+              opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+              def req(path,post=None,headers=None):
+                  request=urllib.request.Request(root+path,data=post,headers={
+                      'User-Agent':'NCKH-Stage-Profile-Safety-Probe/1',
+                      'Accept':'application/json','Cache-Control':'no-store',**(headers or {})
+                  },method='POST' if post is not None else 'GET')
+                  try:
+                      with opener.open(request,timeout=22) as r:return r.status,r.headers,r.read(150000)
+                  except urllib.error.HTTPError as err:return err.code,err.headers,err.read(150000)
+              status,h,_=req('/wp-json/nckh/v1/bootstrap')
+              if status not in (401,403):raise RuntimeError('Anonymous NCKH access changed: '+str(status))
+              status,_,_=req('/wp-login.php')
+              if status!=200:raise RuntimeError('WP login failed to load')
+              encoded=urllib.parse.urlencode({'log':os.environ['WP_USER'],'pwd':os.environ['WP_PASS'],
+                  'wp-submit':'Log In','redirect_to':root+'/wp-admin/','testcookie':'1'}).encode()
+              status,_,_=req('/wp-login.php',post=encoded)
+              if status!=200:raise RuntimeError('WP admin session failed')
+              status,_,nonce_bytes=req('/wp-admin/admin-ajax.php?action=rest-nonce')
+              nonce=nonce_bytes.decode('utf-8','replace').strip()
+              if status!=200 or not 8<=len(nonce)<=20:raise RuntimeError('WP admin nonce unavailable')
+              status,h,body=req('/wp-json/nckh/v1/bootstrap',headers={'X-WP-Nonce':nonce})
+              if status!=200 or 'no-store' not in h.get('Cache-Control','').lower():
+                  raise RuntimeError('Private auth bootstrap failed or cache protection missing: '+str(status))
+              result=json.loads(body)
+              if not isinstance(result.get('items'),list) or 'selected' not in result:
+                  raise RuntimeError('Bootstrap contract invalid')
+              print('PASS: isolated storefront exclusions on staging only; anonymous access denied; admin private bootstrap 200/no-store.')
+              print('Rollback preserved privately:',moved)
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if moved:ftp.rename(oldpath,target)
+              print('SAFETY ROLLBACK: restored previous REST profile.')
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY

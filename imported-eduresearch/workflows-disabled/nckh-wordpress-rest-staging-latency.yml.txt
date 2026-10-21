@@ -1,0 +1,113 @@
+name: NCKH WordPress REST staging read-only latency
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  probe:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Probe staging WordPress REST latency'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Read-only staging REST latency with permission checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,json,time,statistics,re,http.cookiejar,urllib.request,urllib.parse,urllib.error
+          base='https://api-nghiencuukhoahoc.webnvn.com'
+          user=os.environ.get('WP_USER','')
+          password=os.environ.get('WP_PASS','')
+          opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+          def get(path,headers=None,post=None):
+              assert path.startswith('/') and not path.startswith('//')
+              req=urllib.request.Request(base+path,data=post,headers={
+                  'User-Agent':'NCKH-Staging-Private-API-Latency-ReadOnly/1',
+                  'Cache-Control':'no-store','Accept':'application/json',
+                  **(headers or {})
+              },method='POST' if post is not None else 'GET')
+              start=time.perf_counter()
+              try:
+                  with opener.open(req,timeout=22) as res:
+                      ttfb=time.perf_counter()-start
+                      body=res.read(250000)
+                      return res.status,ttfb,time.perf_counter()-start,res.headers,body
+              except urllib.error.HTTPError as err:
+                  ttfb=time.perf_counter()-start
+                  body=err.read(250000)
+                  return err.code,ttfb,time.perf_counter()-start,err.headers,body
+          def measure(path,headers,expected,repeat=4):
+              samples=[]
+              phases={}
+              for _ in range(repeat):
+                  status,first,total,h,body=get(path,headers)
+                  if status!=expected:raise RuntimeError('Unexpected private REST status '+str(status))
+                  if expected==200 and 'no-store' not in h.get('Cache-Control','').lower():
+                      raise RuntimeError('Private response is not marked no-store')
+                  samples.append((first,total))
+                  for chunk in h.get('Server-Timing','').split(','):
+                      metric=re.fullmatch(r'[ \t]*(wp-(?:early|plugins|theme|init|rest|total));dur=([0-9]+(?:[.][0-9]+)?)[ \t]*',chunk)
+                      if metric:
+                          phases.setdefault(metric.group(1),[]).append(float(metric.group(2)))
+              ms=lambda n:round(n*1000)
+              label='bootstrap' if path.endswith('/bootstrap') else ('workspace' if path.endswith('/workspace') else ('projects' if path.endswith('/projects') else ('sections' if path.endswith('/sections') else ('skills' if path.endswith('/skills') else 'other'))))
+              print('PATH',label,
+                    'HTTP',expected,'n',repeat,'TTFB_median_ms',ms(statistics.median(x[0] for x in samples)),
+                    'TTFB_min_ms',ms(min(x[0] for x in samples)),
+                    'TTFB_max_ms',ms(max(x[0] for x in samples)),
+                    'total_median_ms',ms(statistics.median(x[1] for x in samples)))
+              if phases:
+                  print('SERVER_PHASE_MEDIAN_MS',label,
+                        ' '.join(name+'='+str(round(statistics.median(values))) for name,values in sorted(phases.items())))
+          # Anonymous route must be blocked; this also measures public WordPress boot.
+          measure('/wp-json/nckh/v1/projects',{},401,3)
+          if not user or not password:
+              print('SKIP: no admin credentials for read-only authenticated timing.')
+              raise SystemExit(0)
+          status,_,_,_,_=get('/wp-login.php')
+          if status!=200:raise RuntimeError('Staging WordPress login unavailable')
+          data=urllib.parse.urlencode({
+              'log':user,'pwd':password,'wp-submit':'Log In',
+              'redirect_to':base+'/wp-admin/','testcookie':'1'
+          }).encode()
+          status,_,_,_,_=get('/wp-login.php',post=data)
+          if status!=200:raise RuntimeError('Staging WordPress login unsuccessful')
+          status,_,_,_,blob=get('/wp-admin/admin-ajax.php?action=rest-nonce')
+          nonce=blob.decode('utf8','replace').strip()
+          if status!=200 or not 8<=len(nonce)<=20:raise RuntimeError('Private REST nonce unavailable')
+          headers={'X-WP-Nonce':nonce}
+          status,_,_,_,blob=get('/wp-json/nckh/v1/projects',headers)
+          if status!=200:raise RuntimeError('Authenticated project list unavailable')
+          data=json.loads(blob)
+          if not isinstance(data,dict) or not isinstance(data.get('items'),list):
+              raise RuntimeError('Unexpected projects response')
+          print('Authenticated GET projects works; no project titles or user data logged.')
+          measure('/wp-json/nckh/v1/projects',headers,200)
+          measure('/wp-json/nckh/v1/bootstrap',headers,200)
+          # Only diagnostic metadata (plugin slugs), no private API payloads printed.
+          status,_,_,_,plugins_blob=get('/wp-json/wp/v2/plugins?status=active',headers)
+          if status==200:
+              try:
+                  plugins_data=json.loads(plugins_blob)
+                  if isinstance(plugins_data,list):
+                      print('ACTIVE_WP_PLUGINS',sorted(str(x.get('plugin','')) for x in plugins_data if isinstance(x,dict)))
+              except ValueError:pass
+          else:
+              print('ACTIVE_WP_PLUGINS_UNAVAILABLE_HTTP',status)
+          projects=data['items']
+          if projects:
+              project_id=int(projects[0]['id'])
+              for suffix in ('/workspace','/sections','/skills'):
+                  measure('/wp-json/nckh/v1/projects/'+str(project_id)+suffix,headers,200)
+          else:
+              print('No accessible projects for this test account; section/skill timing skipped.')
+          print('PASS: GET-only staging REST performance probe; no database writes or production access.')
+          PY

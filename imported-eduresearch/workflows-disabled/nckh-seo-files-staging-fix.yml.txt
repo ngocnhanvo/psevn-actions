@@ -1,0 +1,73 @@
+name: NCKH SEO Files staging save fix
+on:
+  issues:
+    types: [opened, reopened]
+permissions:
+  contents: read
+concurrency:
+  group: nckh-seo-files-staging-writer
+  cancel-in-progress: false
+jobs:
+  seo_files:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.ref == 'refs/heads/main'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Fix staging SEO Files manual sitemap save'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout only EduResearch WP PHP source master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Check project identity, PHP syntax and domain validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source symbolic-ref --short HEAD)" = master
+          grep -Fq 'https://nghiencuukhoahoc.webnvn.com' source/wp-content/mu-plugins/esc-seo-files.php
+          php -l source/wp-content/mu-plugins/esc-seo-files.php
+          php -l source/tests/seo-files.php
+          php -l source/nckh-unzip.php
+          python3 -m py_compile scripts/nckh_unzip_revision_staging.py
+          php source/tests/seo-files.php
+          python3 -m py_compile scripts/nckh_seo_files_admin_staging.py
+          echo "Source PHP master $(git -C source rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install real Chromium for staging administrator save verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'playwright>=1.50,<2'
+          python -m playwright install --with-deps chromium
+      - name: Deploy exactly one staging MU plugin with rollback and test actual save
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python scripts/nckh_seo_files_admin_staging.py
+          echo 'SEO Files: PHP regression, staging FTPS backup, Playwright admin-save, persisted REST sitemap PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Update only signed NCKH staging unzip helper to preserve unchanged sitemap
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 scripts/nckh_unzip_revision_staging.py
+          echo 'Signed unzip: unchanged sitemap carries locally across client swap (no XML transfer)' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Scope: API staging only; no Astro master/production, no other WordPress site' >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,330 @@
+name: Deploy EduResearch Hub Astro via GitHub Trigger (production)
+on:
+  repository_dispatch:
+    types: [wp_trigger_build]
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+concurrency:
+  group: nckh-astro-production-deploy
+  cancel-in-progress: false
+jobs:
+  astro:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.ref == 'refs/heads/main'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'repository_dispatch'
+              && github.event.action == 'wp_trigger_build'
+              && (github.event.client_payload.site_domain == 'nghiencuukhoahoc.webnvn.com'
+                  || github.event.client_payload.site_domain == 'nghiencuukhoahoc.id.vn'))
+          || (github.event_name == 'issues'
+              && github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Deploy Astro master to production'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      ASTRO_FTP_TARGET: /domains/nghiencuukhoahoc.webnvn.com/public_html/
+      FTP_ASTRO_DIR: /domains/nghiencuukhoahoc.webnvn.com/public_html/
+      ZIP_PATH: source/upload/nckh-astro.zip
+      NCKH_PRODUCTION_SOURCE: master
+      NCKH_DEPLOY_SOURCE_BRANCH: master
+    steps:
+      - name: Checkout immutable NCKH deploy scripts
+        uses: actions/checkout@v4
+        with:
+          path: actions-hub
+      - name: Checkout only Astro PRODUCTION branch
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Verify strict stage destination and source provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ENV_FILE" && test -n "$SOURCE_REPO_PAT"
+          test -n "$FTP_SERVER" && test -n "$FTP_USERNAME" && test -n "$FTP_PASSWORD"
+          test "$ASTRO_FTP_TARGET" = /domains/nghiencuukhoahoc.webnvn.com/public_html/
+          test "$(git -C source symbolic-ref --short HEAD)" = master
+          sha="$(git -C source rev-parse HEAD)"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "NCKH_DEPLOY_COMMIT=$sha" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import os,re
+          raw=os.environ['ENV_FILE']
+          vals={}
+          for line in raw.splitlines():
+              m=re.match(r'^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$',line)
+              if m:vals[m[1]]=m[2].strip().strip('"\'')
+          if vals.get('WC_URL','').rstrip('/')!='https://api-nghiencuukhoahoc.webnvn.com':
+              raise RuntimeError('Unexpected WordPress source in build ENV_FILE')
+          if vals.get('WC_URL_CLIENT','').rstrip('/') not in (
+              'https://nghiencuukhoahoc.webnvn.com','https://nghiencuukhoahoc.id.vn'):
+              raise RuntimeError('Unexpected website build origin')
+          if 'NCKH_GOOGLE_OAUTH_JSON' in vals or 'NCKH_SESSION_KEY' in vals or 'GOOGLE_OAUTH_STAGING_JSON' in vals:
+              raise RuntimeError('Refusing to build with public-root Google/session secrets')
+          print('PASS: production WordPress source and Astro master ref verified; no OAuth secret in build env.')
+          PY
+      - name: Check signed unzip staging destination before any build or FTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile actions-hub/scripts/nckh-remote-unzip.py
+          python3 actions-hub/scripts/nckh-remote-unzip.py verify
+      - name: Read deployed sitemap Save token from NCKH FTPS (no XML transfer)
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 -m py_compile actions-hub/scripts/nckh_published_sitemap_revision.py
+          python3 actions-hub/scripts/nckh_published_sitemap_revision.py
+      # GitHub-hosted runners are ephemeral: reuse downloaded packages
+      # keyed by the Astro production lockfile. Never cache node_modules or .env.
+      - name: Set up pnpm 9 (without installing project dependencies)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Set up Node.js 24 with pnpm store cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      # Same production data cache model as Blue Sea: retain Astro's
+      # native .cache across fresh runners. No special Page/section filtering.
+      - name: Restore and update Astro cache
+        uses: actions/cache@v4
+        with:
+          path: source/.cache
+          key: nckh-prod-dot-cache-v2-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            nckh-prod-dot-cache-v2-${{ runner.os }}-
+      - name: Build Astro Production (incremental WordPress data cache)
+        shell: bash
+        working-directory: source
+        run: |
+          set -euo pipefail
+          # Restore verified pnpm store where available; recreate dependencies
+          # from the exact lockfile on every run. Cache miss is still safe.
+          pnpm install --frozen-lockfile --prefer-offline
+          printf '%s\n' "$ENV_FILE" > .env
+          # Keep original Astro build settings from ENV_FILE and WordPress.
+          # Unit tests run separately in non-deploy CI, not in every build.
+          pnpm run build-git
+          node --check dist/server/entry.mjs
+          test -s dist/client/index.html
+          test -s dist/server/entry.mjs
+          ! grep -q 'xuongmunonbaohiem' dist/client/index.html
+          # Verify that the new application has SSR route records, not just a static homepage.
+          find dist/server -type f | grep -Eq 'nckh|auth|so-tay' ||
+            grep -Rq 'api/auth/google/start' dist/server
+          echo "Build source SHA: $(git rev-parse HEAD) (master)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Package only compiled staging output (strictly no .env)
+        shell: bash
+        working-directory: source
+        run: |
+          set -euo pipefail
+          mkdir -p deploy upload
+          # All three root HTML entrypoints and representative _astro CSS/JS
+          # and image assets have been tested by reversible FTPS removal.
+          # Their public URLs continue to return identical content from
+          # the Astro Node runtime client tree. Keep one canonical copy.
+          # Reproducible staging probes: 39211910217, 39212152303,
+          # 39212358489 (CSS/JS/WebP passed), 39212524243 (restored OK).
+          cp -a dist/. deploy/
+          test -s deploy/client/index.html
+          test -s deploy/server/entry.mjs
+          test ! -e deploy/index.html
+          test ! -e deploy/so-tay
+          test ! -e deploy/xem-truoc
+          test ! -e deploy/_astro
+          # Apache serves these three public metadata files from document-root.
+          # The Astro SSR runtime serves app assets from client/, while old root
+          # copies remain unchanged unless explicitly included in the archive.
+          # Whitelist ONLY the public, content-checked metadata; never flatten
+          # HTML, _astro assets, application data or private runtime files.
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          import xml.etree.ElementTree as ET
+
+          root = Path("deploy")
+          origin = "https://nghiencuukhoahoc.webnvn.com"
+          state_file = root / "client" / ".nckh-sitemap-deploy-state.json"
+          if not state_file.is_file():
+              raise RuntimeError("Missing signed-build sitemap Save revision decision")
+          state = json.loads(state_file.read_text())
+          if state.get("origin") != origin or not isinstance(state.get("changed"), bool):
+              raise RuntimeError("Unexpected sitemap deploy decision")
+          rev = state.get("revision")
+          import re
+          if not isinstance(rev, str) or re.fullmatch(r"(?:legacy|[a-f0-9-]{36})", rev) is None:
+              raise RuntimeError("Unexpected sitemap Save revision")
+          # Workflow-local metadata (not uploaded publicly except safe revision
+          # token in the existing nckh-staging-build.json).
+          Path(".nckh-sitemap-package-state.json").write_text(json.dumps(state))
+          state_file.unlink()
+          published = {}
+          for name in ("llms.txt", "robots.txt"):
+              compiled = root / "client" / name
+              if not compiled.is_file():
+                  raise RuntimeError("Missing WordPress SEO metadata: " + name)
+              raw = compiled.read_bytes()
+              if not raw or b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
+                  raise RuntimeError("Invalid compiled SEO metadata: " + name)
+              published[name] = raw
+
+          if state["changed"]:
+              compiled = root / "client" / "sitemap.xml"
+              if not compiled.is_file():
+                  raise RuntimeError("Saved sitemap XML missing from build")
+              raw = compiled.read_bytes()
+              if b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
+                  raise RuntimeError("Sitemap refers to another project")
+              try:
+                  xmlroot = ET.fromstring(raw)
+              except ET.ParseError as e:
+                  raise RuntimeError("Invalid WordPress XML: " + str(e))
+              ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+              if xmlroot.tag != ns + "urlset":
+                  raise RuntimeError("Invalid sitemap namespace")
+              urls = []
+              for item in xmlroot.findall(ns + "url"):
+                  loc = item.find(ns + "loc")
+                  if loc is None or not loc.text:
+                      raise RuntimeError("Missing sitemap loc")
+                  value = loc.text.strip()
+                  p = urlsplit(value)
+                  if p.scheme != "https" or p.netloc != "nghiencuukhoahoc.webnvn.com" or p.query or p.fragment:
+                      raise RuntimeError("Sitemap loc uses unsafe origin")
+                  urls.append(value)
+              if not urls or origin + "/" not in urls or len(urls) != len(set(urls)):
+                  raise RuntimeError("Sitemap homepage missing/duplicate")
+              published["sitemap.xml"] = raw
+              print("SITEMAP SAVE DETECTED: XML included in deploy")
+          else:
+              # The signed PHP activator copies the unchanged public file
+              # locally into the new client directory. Do not send XML.
+              (root / "client" / "sitemap.xml").unlink(missing_ok=True)
+              if (root / "sitemap.xml").exists():
+                  raise RuntimeError("Unchanged sitemap must not be at ZIP root")
+              print("SITEMAP UNCHANGED: XML excluded from deploy; hosting retains prior XML")
+
+          # WordPress already validated and saved robots/llms. Preserve the
+          # administrator's public settings; no staging or one-page policy.
+          for name, data in published.items():
+              (root / name).write_bytes(data)
+          print("PASS: production SEO root files from WP; update sitemap=" + str(state["changed"]))
+          PY
+          echo "$(date +%s)" > deploy/pm2-reload.txt
+          python3 - <<'PY'
+          import json,os
+          sha=os.environ['NCKH_DEPLOY_COMMIT']
+          state=json.load(open('.nckh-sitemap-package-state.json',encoding='utf8'))
+          with open('deploy/nckh-staging-build.json','w',encoding='utf8') as handle:
+              json.dump({
+                  'branch':'master','commit':sha,'target':'nghiencuukhoahoc.webnvn.com',
+                  'sitemap_revision':state['revision'],
+              },handle)
+          PY
+          test ! -e deploy/.env
+          test -s deploy/server/entry.mjs
+          test -s deploy/client/index.html
+          cd deploy
+          zip -q -r ../upload/nckh-astro.zip .
+          cd ..
+          python3 - <<'PY'
+          import json
+          import os
+          from zipfile import ZipFile
+          with ZipFile('upload/nckh-astro.zip') as z:
+              names=z.namelist()
+              if '.env' in names or any(name.startswith('nckh-private-runtime') for name in names):
+                  raise RuntimeError('Refusing archive with private runtime secrets')
+              # No flattened client output must reappear at root.
+              if any(name in names for name in ('index.html','so-tay/index.html','xem-truoc/index.html','_astro/')):
+                  raise RuntimeError('Duplicate application assets outside client/ are forbidden')
+              state=json.load(open('.nckh-sitemap-package-state.json',encoding='utf8'))
+              for static in ('llms.txt','robots.txt'):
+                  if static not in names or ('client/' + static) not in names:
+                      raise RuntimeError('Missing WordPress metadata: ' + static)
+                  if z.read(static) != z.read('client/' + static):
+                      raise RuntimeError('Metadata copies differ: ' + static)
+              present='sitemap.xml' in names and 'client/sitemap.xml' in names
+              absent='sitemap.xml' not in names and 'client/sitemap.xml' not in names
+              if state['changed'] and (not present or z.read('sitemap.xml')!=z.read('client/sitemap.xml')):
+                  raise RuntimeError('Saved sitemap missing or mismatched in archive')
+              if not state['changed'] and not absent:
+                  raise RuntimeError('Unchanged sitemap XML must be excluded from archive')
+              meta=json.loads(z.read('nckh-staging-build.json'))
+              if meta.get('branch')!='master' or meta.get('commit')!=os.environ['NCKH_DEPLOY_COMMIT'] or meta.get('sitemap_revision')!=state['revision']:
+                  raise RuntimeError('Archive revision marker mismatch')
+              for required in ('server/entry.mjs','client/index.html','nckh-staging-build.json'):
+                  if required not in names:raise RuntimeError('Missing staged bundle file: '+required)
+          print('PASS: ZIP contains dev server/client and provenance, no private environment file.')
+          PY
+      - name: Install encrypted FTP client
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v lftp >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends lftp
+          fi
+      - name: Upload compiled staging archive by FTP-TLS
+        shell: bash
+        run: bash actions-hub/scripts/nckh-resumable-ftp.sh
+      - name: Verify provenance and activate staging bundle using signed PHP rollback
+        shell: bash
+        run: python3 actions-hub/scripts/nckh-remote-unzip.py unpack
+      - name: Check staging page and new private SSR route (GET only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error,time
+          base='https://nghiencuukhoahoc.webnvn.com'
+          def fetch(path):
+              req=urllib.request.Request(base+path,headers={
+                  'Accept':'application/json' if path.startswith('/api/') else 'text/html',
+                  'Cache-Control':'no-cache',
+                  'User-Agent':'NCKH-Stage-AfterDeploy/1.0',
+              })
+              try:
+                  with urllib.request.urlopen(req,timeout=18) as r:
+                      return r.status,r.headers.get('Content-Type',''),r.read(3500)
+              except urllib.error.HTTPError as e:
+                  return e.code,e.headers.get('Content-Type',''),e.read(3500)
+          # Node hosting may need a process restart for a newly uploaded bundle.
+          last=None
+          for attempt in range(5):
+              try:
+                  home=fetch('/')
+                  session=fetch('/api/auth/me')
+                  notebook=fetch('/so-tay')
+                  if home[0]==200 and 'html' in home[1].lower() and \
+                      session[0]==401 and 'json' in session[1].lower() and \
+                      json.loads(session[2]).get('authenticated') is False and \
+                      notebook[0]==200:
+                      print('PASS: staging DEV homepage, /so-tay and private Astro auth endpoint served over SSR.')
+                      raise SystemExit(0)
+                  last=(home[0],session[0],notebook[0])
+              except Exception as exc:
+                  last=('request-error',type(exc).__name__)
+              time.sleep(4)
+          print('NOT VERIFIED: staging Node process may need restart; observed:',last)
+          raise SystemExit(1)
+          PY

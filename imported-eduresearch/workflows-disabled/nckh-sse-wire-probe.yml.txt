@@ -1,0 +1,140 @@
+name: NCKH staging SSE wire timing (no AI quota)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-sse-wire-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  direct-wordpress:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Measure authorized staging WordPress SSE delivery without invoking AI
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import http.cookiejar
+          import json
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          BASE = 'https://api-nghiencuukhoahoc.webnvn.com'
+          if not os.environ.get('WP_USER') or not os.environ.get('WP_PASS'):
+              raise RuntimeError('Staging WordPress admin credentials are not configured')
+          cookies = http.cookiejar.CookieJar()
+          client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
+
+          def open_staging(path, body=None, headers=None, timeout=20):
+              if not path.startswith('/') or '://' in path:
+                  raise RuntimeError('Rejected non-staging path')
+              request = urllib.request.Request(
+                  BASE + path, data=body,
+                  headers={'User-Agent': 'NCKH-Staging-Stream-Diagnostic/1',
+                           'Cache-Control': 'no-store',
+                           **(headers or {})},
+              )
+              return client.open(request, timeout=timeout)
+
+          # The existing staging-admin credentials are used only in this runner.
+          # Never print cookies, usernames, passwords, or any server response body.
+          with open_staging('/wp-login.php') as response:
+              response.read(32768)
+          form = urllib.parse.urlencode({
+              'log': os.environ['WP_USER'],
+              'pwd': os.environ['WP_PASS'],
+              'wp-submit': 'Log In',
+              'redirect_to': BASE + '/wp-admin/',
+              'testcookie': '1',
+          }).encode('utf-8')
+          with open_staging('/wp-login.php', form,
+                            {'Content-Type': 'application/x-www-form-urlencoded'}) as response:
+              destination = response.geturl()
+              response.read(32768)
+          if not destination.startswith(BASE + '/wp-admin'):
+              raise RuntimeError('Staging administrator login was not accepted')
+
+          # WordPress core returns the wp_rest nonce for authenticated REST requests.
+          with open_staging('/wp-admin/admin-ajax.php?action=rest-nonce') as response:
+              nonce = response.read(100).decode('ascii', 'replace').strip()
+          if not re.fullmatch(r'[A-Za-z0-9]{8,20}', nonce):
+              raise RuntimeError('Unable to acquire the WordPress REST nonce')
+
+          print('Authenticated staging admin; checking four 32-KiB-padded SSE events without AI calls.')
+          request_start = time.monotonic()
+          try:
+              response = open_staging(
+                  '/wp-json/nckh/v1/ai/stream-probe', b'{"padding_probe":true}',
+                  {'Content-Type': 'application/json',
+                   'Accept': 'text/event-stream',
+                   'Accept-Encoding': 'identity',
+                   'X-WP-Nonce': nonce}, timeout=15,
+              )
+          except urllib.error.HTTPError as exc:
+              raise RuntimeError('Probe REST status ' + str(exc.code) + ' (no AI call made)') from None
+          events = []
+          completed = False
+          with response:
+              if response.status != 200:
+                  raise RuntimeError('Unexpected probe HTTP status')
+              content_type = response.headers.get('Content-Type', '')
+              content_encoding = response.headers.get('Content-Encoding', 'identity')
+              if 'text/event-stream' not in content_type:
+                  raise RuntimeError('Probe endpoint was not served as SSE')
+              current = 'message'
+              while len(events) < 4 or not completed:
+                  line = response.readline(40000)
+                  if not line:
+                      break
+                  if len(line) >= 40000:
+                      raise RuntimeError('Unexpected overlong SSE line')
+                  part = line.decode('utf-8', 'replace').strip()
+                  if part.startswith('event:'):
+                      current = part[6:].strip()
+                  elif part.startswith('data:'):
+                      elapsed = round((time.monotonic() - request_start) * 1000)
+                      if current == 'probe':
+                          data = json.loads(part[5:].strip())
+                          if not isinstance(data.get('seq'), int) or not isinstance(data.get('server_ms'), int):
+                              raise RuntimeError('Unexpected SSE timing fields')
+                          events.append((data['seq'], data['server_ms'], elapsed))
+                      elif current == 'probe-complete':
+                          completed = json.loads(part[5:].strip()).get('ok') is True
+                  elif not part:
+                      current = 'message'
+          if len(events) != 4 or not completed or [x[0] for x in events] != [1, 2, 3, 4]:
+              raise RuntimeError('Incomplete/invalid staging SSE probe; no AI call made')
+          server_span = events[-1][1] - events[0][1]
+          wire_span = events[-1][2] - events[0][2]
+          if not 900 <= server_span <= 10000:
+              raise RuntimeError('SSE sender timings outside expected range')
+          diagnosis = ('BUFFERED_AT_OR_BEFORE_WORDPRESS_PUBLIC_EDGE' if wire_span < 300
+                       else 'PROGRESSIVE_FROM_WORDPRESS_TO_RUNNER' if wire_span >= 800
+                       else 'PARTIALLY_BUFFERED_OR_INCONCLUSIVE')
+          print('Server SSE span:', server_span, 'ms')
+          print('Runner receive span:', wire_span, 'ms')
+          print('Content-Encoding:', content_encoding)
+          print('Wire result (32KiB SSE comment padding):', diagnosis)
+          print('Scope: staging WordPress -> GitHub runner only; Astro browser not tested.')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
+              output.write('### NCKH staging no-quota SSE wire timing\n\n')
+              output.write('| Signal | Measured |\n|---|---|\n')
+              output.write(f'| WordPress server span | {server_span} ms |\n')
+              output.write(f'| GitHub runner arrival span | {wire_span} ms |\n')
+              output.write(f'| HTTP Content-Encoding | {content_encoding} |\n')
+              output.write(f'| 32 KiB SSE-padding diagnosis | {diagnosis} |\n\n')
+              output.write('No Gemini/Groq request, no notebook contents, no AI daily quota consumed. '
+                           'This does not test the Astro Node-to-browser path.\n')
+          PY

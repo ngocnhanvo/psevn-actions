@@ -1,0 +1,134 @@
+name: NCKH staging admin guides deployment
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  deploy-guides:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Deploy staging admin guides'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Check out project-specific PHP source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Strict PHP syntax and isolated security test
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source/wp-content/mu-plugins/nckh-admin-guides.php
+          php -l source/tests/nckh-admin-guides.test.php
+          php source/tests/nckh-admin-guides.test.php
+      - name: Exact-file staging FTPS upload with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import ftplib,hashlib,io,os,time
+          from urllib.parse import urlparse
+          src=open('source/wp-content/mu-plugins/nckh-admin-guides.php','rb').read()
+          assert b"private const HOST = 'api-nghiencuukhoahoc.webnvn.com'" in src
+          assert b"'public' => false" in src and b"'show_in_rest' => false" in src
+          uri=os.environ['FTP_SERVER']
+          parsed=urlparse(uri if '://' in uri else 'ftps://'+uri)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(parsed.hostname,parsed.port or 21,timeout=25)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd('/domains/api-nghiencuukhoahoc.webnvn.com')
+          assert ftp.pwd().endswith('/domains/api-nghiencuukhoahoc.webnvn.com')
+          target='public_html/wp-content/mu-plugins/nckh-admin-guides.php'
+          try:ftp.mkd('nckh-config-backups')
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          old=None
+          try:
+              data=io.BytesIO()
+              ftp.retrbinary('RETR '+target,data.write)
+              old=data.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          sha=hashlib.sha256(src).digest()
+          if old is not None and hashlib.sha256(old).digest()==sha:
+              print('PASS: same staging plugin already installed; no duplicate write')
+              ftp.quit()
+              raise SystemExit(0)
+          suffix=str(int(time.time()))
+          tmp='nckh-config-backups/guides-tmp-'+suffix+'.txt'
+          bak='nckh-config-backups/guides-previous-'+suffix+'.txt'
+          ftp.storbinary('STOR '+tmp,io.BytesIO(src))
+          data=io.BytesIO()
+          ftp.retrbinary('RETR '+tmp,data.write)
+          if hashlib.sha256(data.getvalue()).digest()!=sha:raise RuntimeError('Stage checksum mismatch')
+          backed=False
+          try:
+              if old is not None:
+                  ftp.rename(target,bak)
+                  backed=True
+              ftp.rename(tmp,target)
+              data=io.BytesIO()
+              ftp.retrbinary('RETR '+target,data.write)
+              if hashlib.sha256(data.getvalue()).digest()!=sha:raise RuntimeError('Installed checksum mismatch')
+              print('PASS: one WordPress MU plugin deployed to API staging only')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if backed:ftp.rename(bak,target)
+              raise
+          finally:ftp.quit()
+          PY
+      - name: Verify four editable WordPress-admin documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import http.cookiejar,urllib.request,urllib.parse,urllib.error,os
+          base='https://api-nghiencuukhoahoc.webnvn.com'
+          if not os.environ.get('WP_USER') or not os.environ.get('WP_PASS'):
+              raise RuntimeError('Missing staging WordPress admin secrets')
+          b=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+          def req(path,data=None):
+              with b.open(urllib.request.Request(base+path,data=data,headers={'User-Agent':'NCKH-Guide-Admin-Check'}),timeout=40) as response:
+                  return response.geturl(),response.read(300000).decode('utf-8','replace')
+          req('/wp-login.php')
+          target,_=req('/wp-login.php',urllib.parse.urlencode({'log':os.environ['WP_USER'],'pwd':os.environ['WP_PASS'],'wp-submit':'Log In','redirect_to':base+'/wp-admin/','testcookie':'1'}).encode())
+          if not target.startswith(base+'/wp-admin'):raise RuntimeError('Staging WP admin login failed')
+          url,page=req('/wp-admin/edit.php?post_type=nckh_guide')
+          if not url.startswith(base+'/wp-admin/edit.php'):raise RuntimeError('Admin guide list not accessible')
+          expected=['Hướng dẫn sử dụng dành cho học sinh','Hướng dẫn sử dụng dành cho giáo viên','Hướng dẫn dành cho quản trị viên','Câu hỏi thường gặp và xử lý sự cố']
+          present=[s in page for s in expected]
+          if not all(present):
+              print('Expected document title visibility:',present)
+              raise RuntimeError('Some persisted guide records are missing from staging admin')
+          print('PASS: Four real WordPress guide records created and displayed in admin')
+          anon=urllib.request.build_opener()
+          with anon.open(base+'/wp-admin/edit.php?post_type=nckh_guide',timeout=25) as response:
+              anon_url=response.geturl()
+              anon_page=response.read(60000).decode('utf-8','replace')
+          if anon_url.startswith(base+'/wp-admin/edit.php') or all(s in anon_page for s in expected):
+              raise RuntimeError('Private admin documents leaked to anonymous visitor')
+          print('PASS: Anonymous users cannot browse WordPress guide admin')
+          try:
+              with urllib.request.urlopen(base+'/wp-json/wp/v2/types/nckh_guide',timeout=20) as response:
+                  if response.status==200:raise RuntimeError('Guide type leaked into public WP REST')
+          except urllib.error.HTTPError as e:
+              if e.code not in (401,403,404):raise
+          print('PASS: No public guide REST type')
+          PY

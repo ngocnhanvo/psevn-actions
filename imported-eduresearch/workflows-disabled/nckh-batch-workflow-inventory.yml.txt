@@ -1,0 +1,41 @@
+name: NCKH one-pass workflow inventory
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-batch-workflow-inventory.yml'
+permissions:
+  contents: read
+  issues: write
+jobs:
+  inventory:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Report complete active workflow manifest without deleting anything
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import pathlib,os,json,urllib.request
+          root=pathlib.Path('.github/workflows')
+          files=sorted(p for p in root.glob('*.y*ml') if p.is_file())
+          lines=['### NCKH workflow inventory','Total active YAML files: '+str(len(files)),'']
+          for p in files:
+              text=p.read_text(encoding='utf8')
+              trigger='issues' if '\n  issues:' in '\n'+text else 'other'
+              lines.append('- '+p.name+' ('+trigger+')')
+          body='\n'.join(lines)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:f.write(body)
+          print(body)
+          req=urllib.request.Request(
+              'https://api.github.com/repos/ngocnhanvo/nghiencuukhoahoc-actions/issues/302/comments',
+              data=json.dumps({'body':body}).encode(),method='POST',
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json',
+                       'Content-Type':'application/json','User-Agent':'NCKH-one-pass-inventory'})
+          with urllib.request.urlopen(req,timeout=25) as response:
+              assert response.status==201
+          PY

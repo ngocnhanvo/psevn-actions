@@ -1,0 +1,88 @@
+name: Probe EduResearch Hub staging Astro SSR (read-only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-astro-ssr-staging-probe.yml'
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  probe:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && (github.event_name != 'issues'
+          || (github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Probe staging SSR now'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Probe staging DNS and read-only Astro SSR endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, socket, ssl, sys, urllib.request, urllib.error
+          base = "https://nghiencuukhoahoc.webnvn.com"
+          host = "nghiencuukhoahoc.webnvn.com"
+          print("Staging SSR smoke test (GET only; no credentials; no deploy)", flush=True)
+          try:
+              addresses = sorted({r[4][0] for r in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)})
+              print("DNS resolved: yes; address count:", len(addresses), flush=True)
+          except Exception as e:
+              print("DNS resolved: no; error:", type(e).__name__, str(e)[:180], flush=True)
+              sys.exit(2)
+          checks = [
+              ("/", "homepage"),
+              ("/api/user/info", "private SSR user info - unauthenticated JSON"),
+              ("/api/agent/history", "SSR history - empty array when no sessionId"),
+          ]
+          ok = {}
+          for path, desc in checks:
+              req = urllib.request.Request(base + path, headers={
+                  "User-Agent":"EduResearchHub-SSRSafeProbe/1.0",
+                  "Cache-Control":"no-cache",
+                  "Accept":"application/json" if path.startswith("/api/") else "text/html",
+              }, method="GET")
+              try:
+                  with urllib.request.urlopen(req, timeout=18, context=ssl.create_default_context()) as r:
+                      status = r.status
+                      kind = r.headers.get("Content-Type","").split(";")[0].lower().strip()
+                      cache = r.headers.get("Cache-Control","")
+                      raw = r.read(1000)
+                      final = r.url
+              except urllib.error.HTTPError as e:
+                  status = e.code
+                  kind = e.headers.get("Content-Type","").split(";")[0].lower().strip()
+                  cache = e.headers.get("Cache-Control","")
+                  raw = e.read(500)
+                  final = e.url
+              except Exception as e:
+                  print(desc, ": HTTP failed:",type(e).__name__,str(e)[:160], flush=True)
+                  ok[path]=False
+                  continue
+              is_json = False
+              shape = "n/a"
+              if path.startswith("/api/"):
+                  try:
+                      data = json.loads(raw)
+                      is_json = True
+                      shape = "empty-object" if data=={} else ("empty-array" if data==[] else type(data).__name__)
+                  except Exception:
+                      shape = "non-JSON"
+              print("%s: status=%s type=%s json=%s shape=%s cache=%s redirected=%s" %
+                    (desc,status,kind,is_json,shape,cache[:70],final!=(base+path)),flush=True)
+              if path=="/":
+                  ok[path] = status==200 and "html" in kind
+              elif path=="/api/user/info":
+                  ok[path] = status==200 and is_json and shape=="empty-object" and "no-store" in cache.lower()
+              elif path=="/api/agent/history":
+                  ok[path] = status==200 and is_json and shape=="empty-array"
+          if all(ok.values()) and len(ok)==len(checks):
+              print("PASS: staging homepage and both known Astro SSR GET routes responded as expected.",flush=True)
+          else:
+              print("FAIL: staging SSR has not been proven. No changes were made to staging.",flush=True)
+              sys.exit(1)
+          PY

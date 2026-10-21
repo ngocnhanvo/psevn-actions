@@ -1,0 +1,44 @@
+name: NCKH clean all completed Actions through Oct 19 (preserve active)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-delete-skipped-runs.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '15 * * * *'
+permissions:
+  actions: write
+  contents: read
+  issues: write
+concurrency:
+  group: nckh-delete-skipped-actions-history
+  cancel-in-progress: false
+jobs:
+  skipped_only:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout this project's Actions repository only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate safe skip-only cleanup logic
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/nckh-delete-skipped-runs.py
+          test -f docs/nckh-protected-action-runs-2026-10-19.json
+          grep -Fq 'CUTOFF = "2026-10-19T16:59:59Z"' scripts/nckh-delete-skipped-runs.py
+          grep -Fq 'current.get("status") != "completed"' scripts/nckh-delete-skipped-runs.py
+          grep -Fq 'len(manifest.get("protected_run_ids", [])) < 126' scripts/nckh-delete-skipped-runs.py
+          echo "PASS: only completed runs created through Oct 19 Vietnam; currently active and newer protected."
+      - name: Delete final Oct 19-and-earlier runs; report verified counts
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 -u scripts/nckh-delete-skipped-runs.py

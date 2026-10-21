@@ -1,0 +1,45 @@
+name: NCKH clean completed Actions history (preserve queued)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-actions-history-cleanup.yml'
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: write
+concurrency:
+  group: nckh-actions-history-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout this Actions repository only (no other project)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate cleanup worker before any deletion
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/nckh-cleanup-completed-action-runs.py
+          python3 - <<'PY'
+          import json,pathlib
+          data=json.loads(pathlib.Path('docs/nckh-protected-action-runs-2026-10-19.json').read_text())
+          assert data['repository']=='ngocnhanvo/nghiencuukhoahoc-actions'
+          assert len(set(data['protected_run_ids']))>=126
+          assert data['cutoff_utc'].endswith('Z')
+          print('PASS: historical cutoff and 126 initially queued runs protected')
+          PY
+      - name: Delete completed runs only, respect GitHub limits and auto-stop schedule when done
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -u scripts/nckh-cleanup-completed-action-runs.py

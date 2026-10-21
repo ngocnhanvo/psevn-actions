@@ -1,0 +1,67 @@
+name: NCKH Lighthouse / llms development Chrome QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-lighthouse-llms-chrome.yml'
+      - 'scripts/nckh_lighthouse_llms_chrome.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nckh-lighthouse-llms-source-qa
+  cancel-in-progress: false
+jobs:
+  chrome:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout only Astro development github branch
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-astro
+          ref: github
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Assert correct source and QA-only scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source symbolic-ref --short HEAD)" = github
+          echo "Astro github source: $(git -C source rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          test -s source/public/llms.txt
+          test -s source/src/styles/eduresearch-home.css
+      - name: Run focused Astro and sitemap unit tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install and verify targeted source only
+        shell: bash
+        working-directory: source
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm exec vitest run src/lib/nckh/homeHeader.test.ts scripts/generate-sitemap-robots.test.ts
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Playwright with real Chromium browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'playwright>=1.50,<2'
+          python -m playwright install --with-deps chromium
+      - name: Test contrast and heading fixture in mobile Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/nckh_lighthouse_llms_chrome.py source
+          echo 'Playwright Chromium: source CSS/semantics + llms PASS (no live staging claim).' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No FTP, no production or WordPress writes, no authenticated user data.' >> "$GITHUB_STEP_SUMMARY"

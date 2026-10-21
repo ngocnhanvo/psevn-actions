@@ -1,0 +1,195 @@
+name: NCKH Staging DB Private Backup
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  backup:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Backup WordPress staging DB'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: Checkout NCKH backend source only
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Validate backup code
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source/wp-content/mu-plugins/nckh-staging-db-backup.php
+          grep -Fq "private const HOST = 'api-nghiencuukhoahoc.webnvn.com'" source/wp-content/mu-plugins/nckh-staging-db-backup.php
+          grep -Fq "check_admin_referer('nckh_staging_db_backup')" source/wp-content/mu-plugins/nckh-staging-db-backup.php
+      - name: Safely upload backup handler only to WordPress staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,io,ftplib,hashlib,time
+          from urllib.parse import urlparse
+          src=open('source/wp-content/mu-plugins/nckh-staging-db-backup.php','rb').read()
+          address=os.environ['FTP_SERVER']
+          endpoint=urlparse(address if '://' in address else 'ftps://'+address)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(endpoint.hostname,endpoint.port or 21,timeout=30)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd('/domains/api-nghiencuukhoahoc.webnvn.com')
+          assert 'api-nghiencuukhoahoc.webnvn.com' in ftp.pwd()
+          target='public_html/wp-content/mu-plugins/nckh-staging-db-backup.php'
+          backupdir='nckh-config-backups'
+          try:ftp.mkd(backupdir)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          prior=None
+          try:
+              b=io.BytesIO()
+              ftp.retrbinary('RETR '+target,b.write)
+              prior=b.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(src).digest()
+          if prior is not None and hashlib.sha256(prior).digest()==digest:
+              print('PASS: Staging backup handler already matches source.')
+              ftp.quit()
+              raise SystemExit(0)
+          stamp=str(int(time.time()))
+          staged=backupdir+'/nckh-backup-stage-'+stamp+'.php.txt'
+          previous=backupdir+'/nckh-backup-previous-'+stamp+'.php.txt'
+          ftp.storbinary('STOR '+staged,io.BytesIO(src))
+          verify=io.BytesIO()
+          ftp.retrbinary('RETR '+staged,verify.write)
+          assert hashlib.sha256(verify.getvalue()).digest()==digest
+          renamed=False
+          try:
+              if prior is not None:
+                  ftp.rename(target,previous);renamed=True
+              ftp.rename(staged,target)
+              current=io.BytesIO()
+              ftp.retrbinary('RETR '+target,current.write)
+              assert hashlib.sha256(current.getvalue()).digest()==digest
+              print('PASS: Installed only staging private DB backup handler over FTPS.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if renamed:ftp.rename(previous,target)
+              raise
+          finally:ftp.quit()
+          PY
+      - name: Authenticate WP staging admin and execute backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,re,html.parser,urllib.request,urllib.parse,http.cookiejar
+          base='https://api-nghiencuukhoahoc.webnvn.com'
+          if not os.getenv('WP_USER') or not os.getenv('WP_PASS'):
+              raise RuntimeError('Staging WP admin credentials unavailable')
+          jar=http.cookiejar.CookieJar()
+          browser=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+          def request(path,payload=None,timeout=40):
+              req=urllib.request.Request(base+path,data=payload,headers={'User-Agent':'NCKH-Private-Backup/1','Cache-Control':'no-store'})
+              with browser.open(req,timeout=timeout) as response:
+                  return response.geturl(),response.read(200000)
+          request('/wp-login.php')
+          dest,_=request('/wp-login.php',urllib.parse.urlencode({
+              'log':os.environ['WP_USER'],'pwd':os.environ['WP_PASS'],
+              'wp-submit':'Log In','redirect_to':base+'/wp-admin/','testcookie':'1'
+          }).encode('utf-8'))
+          if not dest.startswith(base+'/wp-admin'):raise RuntimeError('Staging WP administrator login failed')
+          url,page=request('/wp-admin/tools.php?page=nckh-private-backup')
+          if not url.startswith(base+'/wp-admin/tools.php') or b'nckh_staging_db_backup' not in page:
+              raise RuntimeError('Admin backup page or capabilities missing')
+          class FormNonce(html.parser.HTMLParser):
+              def __init__(self):super().__init__();self.value=None
+              def handle_starttag(self,tag,attrs):
+                  fields=dict(attrs)
+                  if tag=='input' and fields.get('name')=='_wpnonce':self.value=fields.get('value')
+          parser=FormNonce()
+          parser.feed(page.decode('utf-8','replace'))
+          if not parser.value or not re.fullmatch('[A-Za-z0-9]{8,20}',parser.value):
+              raise RuntimeError('Invalid backup admin nonce')
+          final,_=request('/wp-admin/admin-post.php',urllib.parse.urlencode({
+              'action':'nckh_staging_db_backup','_wpnonce':parser.value,
+          }).encode('utf-8'),timeout=600)
+          if 'nckh_backup=success' not in final:
+              raise RuntimeError('Server did not confirm completed staging backup')
+          print('PASS: Admin-only staging SQL backup completed server-side.')
+          PY
+      - name: Verify archive in private FTPS directory and delete ephemeral local copy
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,json,ftplib,hashlib,gzip,tempfile,datetime
+          from urllib.parse import urlparse
+          server=os.environ['FTP_SERVER']
+          u=urlparse(server if '://' in server else 'ftps://'+server)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(u.hostname,u.port or 21,timeout=30)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd('/domains/api-nghiencuukhoahoc.webnvn.com/nckh-private-db-backups')
+          files=ftp.nlst()
+          names=sorted(x.split('/')[-1] for x in files if x.endswith('.json') and 'nckh-staging-db-' in x)
+          if not names:raise RuntimeError('Missing private manifest')
+          raw=bytearray()
+          ftp.retrbinary('RETR '+names[-1],raw.extend)
+          manifest=json.loads(raw)
+          when=datetime.datetime.fromisoformat(manifest['created_at_utc'].replace('Z','+00:00'))
+          if (datetime.datetime.now(datetime.timezone.utc)-when).total_seconds()>900:
+              raise RuntimeError('Backup too old')
+          filename=manifest['filename']
+          if '/' in filename or not filename.endswith('.sql.gz'):
+              raise RuntimeError('Unsafe backup filename')
+          if manifest['tables']<5 or manifest['rows']<1:
+              raise RuntimeError('Staging database dump unexpectedly empty')
+          tmp=tempfile.NamedTemporaryFile(prefix='nckh-db-check-',suffix='.gz',delete=False)
+          try:
+              checksum=hashlib.sha256()
+              def transfer(block):
+                  tmp.write(block)
+                  checksum.update(block)
+              ftp.retrbinary('RETR '+filename,transfer,blocksize=65536)
+              tmp.flush();tmp.close()
+              if os.path.getsize(tmp.name)!=manifest['size_bytes'] or checksum.hexdigest()!=manifest['sha256']:
+                  raise RuntimeError('SQL backup checksum mismatch')
+              with gzip.open(tmp.name,'rb') as sql:
+                  first=sql.readline(256)
+                  if b'NCKH isolated staging SQL backup' not in first:
+                      raise RuntimeError('Not the expected SQL dump')
+                  tail=b''
+                  while True:
+                      chunk=sql.read(131072)
+                      if not chunk:break
+                      tail=(tail+chunk)[-100:]
+                  if b'-- END BACKUP' not in tail:
+                      raise RuntimeError('SQL gzip missing completion marker')
+              print('PASS: Current full staging SQL gzip backup verified (compressed SHA256 and decompression).')
+              print('Server-only directory: /domains/api-nghiencuukhoahoc.webnvn.com/nckh-private-db-backups/')
+              print('Filename:',filename)
+              print('Tables:',manifest['tables'],'Rows:',manifest['rows'],'Bytes:',manifest['size_bytes'])
+              print('SHA256:',manifest['sha256'])
+          finally:
+              try:tmp.close()
+              except Exception:pass
+              if os.path.exists(tmp.name):os.unlink(tmp.name)
+              ftp.quit()
+          PY

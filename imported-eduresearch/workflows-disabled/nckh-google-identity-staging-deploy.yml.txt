@@ -1,0 +1,116 @@
+name: NCKH Google Identity WP Staging Deploy
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  staging:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Deploy Google identity staging only'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Validate isolated PHP Google identity logic
+        run: |
+          set -euo pipefail
+          php -l source/wp-content/mu-plugins/nckh-google-auth.php
+          php -l source/tests/nckh-google-auth.test.php
+          php source/tests/nckh-google-auth.test.php
+      - name: Upload precisely one staging MU plugin with checksum + rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,io,hashlib,ftplib,time
+          from urllib.parse import urlparse
+          file='source/wp-content/mu-plugins/nckh-google-auth.php'
+          source=open(file,'rb').read()
+          assert b"private const HOST = 'api-nghiencuukhoahoc.webnvn.com'" in source
+          assert b"private const NS = 'nckh/v1'" in source
+          endpoint=os.environ['FTP_SERVER']
+          p=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(p.hostname,p.port or 21,timeout=24)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd('/domains/api-nghiencuukhoahoc.webnvn.com')
+          if 'api-nghiencuukhoahoc.webnvn.com' not in ftp.pwd():raise RuntimeError('Wrong staging target')
+          target='public_html/wp-content/mu-plugins/nckh-google-auth.php'
+          backup='nckh-config-backups'
+          try:ftp.mkd(backup)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          existing=None
+          try:
+              buff=io.BytesIO();ftp.retrbinary('RETR '+target,buff.write)
+              existing=buff.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          sha=hashlib.sha256(source).digest()
+          if existing is not None and hashlib.sha256(existing).digest()==sha:
+              print('PASS: Staging Google auth MU plugin already at expected checksum.')
+              ftp.quit();raise SystemExit(0)
+          suffix=str(int(time.time()))
+          stage=backup+'/nckh-google-auth-stage-'+suffix+'.php.txt'
+          former=backup+'/nckh-google-auth-previous-'+suffix+'.php.txt'
+          ftp.storbinary('STOR '+stage,io.BytesIO(source))
+          check=io.BytesIO();ftp.retrbinary('RETR '+stage,check.write)
+          if hashlib.sha256(check.getvalue()).digest()!=sha:raise RuntimeError('Stage checksum mismatch')
+          saved=False
+          try:
+              if existing is not None:
+                  ftp.rename(target,former);saved=True
+              ftp.rename(stage,target)
+              check=io.BytesIO();ftp.retrbinary('RETR '+target,check.write)
+              if hashlib.sha256(check.getvalue()).digest()!=sha:raise RuntimeError('Final checksum mismatch')
+              print('PASS: Single PHP identity module deployed to NCKH staging via FTPS.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if saved:ftp.rename(former,target)
+              raise
+          finally:ftp.quit()
+          PY
+      - name: Public REST negative tests - no Google login needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error
+          base='https://api-nghiencuukhoahoc.webnvn.com/wp-json/nckh/v1'
+          def request(path,body=None):
+              headers={'Accept':'application/json','User-Agent':'NCKH-Google-Staging-Negative-Check/1.0'}
+              if body is not None:headers['Content-Type']='application/json'
+              req=urllib.request.Request(base+path,data=json.dumps(body).encode('utf8') if body is not None else None,headers=headers)
+              try:
+                  with urllib.request.urlopen(req,timeout=35) as r:
+                      return r.status,json.loads(r.read(1200))
+              except urllib.error.HTTPError as e:
+                  return e.code,json.loads(e.read(1200))
+          expected=[
+              ('/auth/me',None,(401,403)),
+              ('/auth/google',{},(400,)),
+              ('/auth/google',{'id_token':'invalid-token'},(401,)),
+              ('/projects',None,(401,403)),
+          ]
+          for path,body,statuses in expected:
+              status,data=request(path,body)
+              if status not in statuses or not isinstance(data,dict) or not data.get('code'):
+                  raise RuntimeError('Fail-closed staging auth endpoint check failed for '+path)
+              print('PASS: '+path+' rejects anonymous/malformed access with HTTP '+str(status)+'.')
+          PY

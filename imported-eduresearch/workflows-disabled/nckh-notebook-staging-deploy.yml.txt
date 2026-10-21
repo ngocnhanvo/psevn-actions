@@ -1,0 +1,424 @@
+name: Deploy NCKH notebook backend to staging only
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  stage_notebook:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.ref == 'refs/heads/main'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'issues'
+              && github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Deploy notebook staging only'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: Checkout only NCKH PHP source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: PHP syntax and isolated permission tests before staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source/wp-content/mu-plugins/nckh-private-files.php
+          php -l source/tests/nckh-private-files.test.php
+          php source/tests/nckh-private-files.test.php
+          php -l source/wp-content/mu-plugins/nckh-rubric.php
+          php -l source/tests/nckh-rubric.test.php
+          php source/tests/nckh-rubric.test.php
+          php -l source/wp-content/mu-plugins/nckh-invite-email.php
+          php -l source/tests/nckh-invite-email.test.php
+          php source/tests/nckh-invite-email.test.php
+          php -l source/wp-content/mu-plugins/nckh-research-api.php
+          php source/tests/nckh-research-api.test.php
+          php -l source/wp-content/mu-plugins/nckh-article-editor.php
+          php source/tests/nckh-article-editor.test.php
+      - name: Stage exactly one guarded WordPress MU plugin with FTP-TLS backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,hashlib,io,time,sys
+          from urllib.parse import urlparse
+          src='source/wp-content/mu-plugins/nckh-research-api.php'
+          target='public_html/wp-content/mu-plugins/nckh-research-api.php'
+          base='/domains/api-nghiencuukhoahoc.webnvn.com'
+          content=open(src,'rb').read()
+          assert b"private const HOST = 'api-nghiencuukhoahoc.webnvn.com'" in content
+          assert b'Plugin Name: EduResearch Hub' in content
+          assert b'get_current_user_id()' in content
+          for k in ('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD'):
+              if not os.environ.get(k): sys.exit('STOP: Missing staging deployment secret '+k)
+          endpoint=os.environ['FTP_SERVER']
+          u=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(u.hostname,u.port or 21,timeout=22)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(base)
+          if 'api-nghiencuukhoahoc.webnvn.com' not in ftp.pwd():
+              sys.exit('STOP: Incorrect FTP working directory')
+          stamp=str(int(time.time()))
+          backup='nckh-config-backups'
+          try: ftp.mkd(backup)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'): raise
+          staged=f'{backup}/nckh-research-api-stage-{stamp}.php.txt'
+          oldpath=f'{backup}/nckh-research-api-old-{stamp}.php.txt'
+          old=None
+          try:
+              buff=io.BytesIO()
+              ftp.retrbinary('RETR '+target,buff.write)
+              old=buff.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(content).digest()
+          if old is not None and hashlib.sha256(old).digest()==digest:
+              print('PASS: NCKH staging API already matches the requested source; no upload needed.')
+              ftp.quit()
+              sys.exit(0)
+          ftp.storbinary('STOR '+staged,io.BytesIO(content))
+          verify=io.BytesIO();ftp.retrbinary('RETR '+staged,verify.write)
+          if hashlib.sha256(verify.getvalue()).digest()!=digest:
+              raise RuntimeError('Staging upload hash mismatch')
+          renamed=False
+          try:
+              if old is not None:
+                  ftp.rename(target,oldpath)
+                  renamed=True
+              ftp.rename(staged,target)
+              current=io.BytesIO();ftp.retrbinary('RETR '+target,current.write)
+              if hashlib.sha256(current.getvalue()).digest()!=digest:
+                  raise RuntimeError('Published staging file checksum mismatch')
+              print('PASS: NCKH WordPress MU plugin deployed to approved staging API host only.')
+              if renamed:print('Original MU plugin retained outside web root for rollback.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if renamed: ftp.rename(oldpath,target)
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY
+      - name: Upload ONLY gated research Gutenberg integration to staging with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,hashlib,io,time,sys
+          from urllib.parse import urlparse
+          source='source/wp-content/mu-plugins/nckh-article-editor.php'
+          target='public_html/wp-content/mu-plugins/nckh-article-editor.php'
+          base='/domains/api-nghiencuukhoahoc.webnvn.com'
+          content=open(source,'rb').read()
+          if not all(x in content for x in (
+            b"private const HOST = 'api-nghiencuukhoahoc.webnvn.com'",
+            b"NCKH_Article_Editor::boot();",
+            b"nckh_article_ticket_"
+          )):raise SystemExit('STOP: unexpected staging article plugin source')
+          for key in ('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD'):
+              if not os.environ.get(key):raise SystemExit('STOP: staging FTPS secret missing')
+          endpoint=os.environ['FTP_SERVER']
+          url=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(url.hostname,url.port or 21,timeout=22)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(base)
+          if 'api-nghiencuukhoahoc.webnvn.com' not in ftp.pwd():
+              raise SystemExit('STOP: staging directory mismatch')
+          backups='nckh-config-backups'
+          try:ftp.mkd(backups)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          stamp=str(int(time.time()))
+          staged=f'{backups}/nckh-article-stage-{stamp}.php.txt'
+          previous=f'{backups}/nckh-article-previous-{stamp}.php.txt'
+          old=None
+          try:
+              buf=io.BytesIO();ftp.retrbinary('RETR '+target,buf.write);old=buf.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(content).digest()
+          if old is not None and hashlib.sha256(old).digest()==digest:
+              print('PASS: NCKH Gutenberg plugin already present with expected checksum.')
+              ftp.quit();sys.exit(0)
+          ftp.storbinary('STOR '+staged,io.BytesIO(content))
+          check=io.BytesIO();ftp.retrbinary('RETR '+staged,check.write)
+          if hashlib.sha256(check.getvalue()).digest()!=digest:
+              raise RuntimeError('Staged file checksum mismatch')
+          backed=False
+          try:
+              if old is not None:
+                  ftp.rename(target,previous)
+                  backed=True
+              ftp.rename(staged,target)
+              live=io.BytesIO();ftp.retrbinary('RETR '+target,live.write)
+              if hashlib.sha256(live.getvalue()).digest()!=digest:
+                  raise RuntimeError('Published file checksum mismatch')
+              print('PASS: private Gutenberg integration staged only on NCKH API subdomain.')
+              if backed:print('Previous plugin backed up outside public_html.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if backed:ftp.rename(previous,target)
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY
+      - name: Upload ONLY disabled-by-default invite email outbox to staging with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,hashlib,io,time,sys
+          from urllib.parse import urlparse
+          source='source/wp-content/mu-plugins/nckh-invite-email.php'
+          target='public_html/wp-content/mu-plugins/nckh-invite-email.php'
+          base='/domains/api-nghiencuukhoahoc.webnvn.com'
+          content=open(source,'rb').read()
+          if not all(x in content for x in (
+            b"private const HOST='api-nghiencuukhoahoc.webnvn.com'",
+            b"NCKH_Invite_Email::boot();",
+            b"NCKH_INVITE_EMAIL_ENABLED"
+          )):raise SystemExit('STOP: unexpected staging invite email plugin source')
+          for key in ('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD'):
+              if not os.environ.get(key):raise SystemExit('STOP: staging FTPS secret missing')
+          endpoint=os.environ['FTP_SERVER']
+          url=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(url.hostname,url.port or 21,timeout=22)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(base)
+          if 'api-nghiencuukhoahoc.webnvn.com' not in ftp.pwd():
+              raise SystemExit('STOP: staging directory mismatch')
+          backups='nckh-config-backups'
+          try:ftp.mkd(backups)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          stamp=str(int(time.time()))
+          staged=f'{backups}/nckh-invite-mail-stage-{stamp}.php.txt'
+          previous=f'{backups}/nckh-invite-mail-previous-{stamp}.php.txt'
+          old=None
+          try:
+              buf=io.BytesIO();ftp.retrbinary('RETR '+target,buf.write);old=buf.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(content).digest()
+          if old is not None and hashlib.sha256(old).digest()==digest:
+              print('PASS: NCKH invite mail plugin already present with expected checksum.')
+              ftp.quit();sys.exit(0)
+          ftp.storbinary('STOR '+staged,io.BytesIO(content))
+          check=io.BytesIO();ftp.retrbinary('RETR '+staged,check.write)
+          if hashlib.sha256(check.getvalue()).digest()!=digest:
+              raise RuntimeError('Staged file checksum mismatch')
+          backed=False
+          try:
+              if old is not None:
+                  ftp.rename(target,previous)
+                  backed=True
+              ftp.rename(staged,target)
+              live=io.BytesIO();ftp.retrbinary('RETR '+target,live.write)
+              if hashlib.sha256(live.getvalue()).digest()!=digest:
+                  raise RuntimeError('Published file checksum mismatch')
+              print('PASS: teacher invite mail integration (safe OFF default) staged only on NCKH API subdomain.')
+              if backed:print('Previous plugin backed up outside public_html.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if backed:ftp.rename(previous,target)
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY
+      - name: Upload ONLY disabled-official rubric drafts to staging with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,hashlib,io,time,sys
+          from urllib.parse import urlparse
+          source='source/wp-content/mu-plugins/nckh-rubric.php'
+          target='public_html/wp-content/mu-plugins/nckh-rubric.php'
+          base='/domains/api-nghiencuukhoahoc.webnvn.com'
+          content=open(source,'rb').read()
+          if not all(x in content for x in (
+            b"private const HOST='api-nghiencuukhoahoc.webnvn.com'",
+            b"NCKH_Rubric::boot();",
+            b"nckh_rubric_draft_version"
+          )):raise SystemExit('STOP: unexpected staging rubric plugin source')
+          for key in ('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD'):
+              if not os.environ.get(key):raise SystemExit('STOP: staging FTPS secret missing')
+          endpoint=os.environ['FTP_SERVER']
+          url=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(url.hostname,url.port or 21,timeout=22)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(base)
+          if 'api-nghiencuukhoahoc.webnvn.com' not in ftp.pwd():
+              raise SystemExit('STOP: staging directory mismatch')
+          backups='nckh-config-backups'
+          try:ftp.mkd(backups)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          stamp=str(int(time.time()))
+          staged=f'{backups}/nckh-rubric-stage-{stamp}.php.txt'
+          previous=f'{backups}/nckh-rubric-previous-{stamp}.php.txt'
+          old=None
+          try:
+              buf=io.BytesIO();ftp.retrbinary('RETR '+target,buf.write);old=buf.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(content).digest()
+          if old is not None and hashlib.sha256(old).digest()==digest:
+              print('PASS: NCKH rubric plugin already present with expected checksum.')
+              ftp.quit();sys.exit(0)
+          ftp.storbinary('STOR '+staged,io.BytesIO(content))
+          check=io.BytesIO();ftp.retrbinary('RETR '+staged,check.write)
+          if hashlib.sha256(check.getvalue()).digest()!=digest:
+              raise RuntimeError('Staged file checksum mismatch')
+          backed=False
+          try:
+              if old is not None:
+                  ftp.rename(target,previous)
+                  backed=True
+              ftp.rename(staged,target)
+              live=io.BytesIO();ftp.retrbinary('RETR '+target,live.write)
+              if hashlib.sha256(live.getvalue()).digest()!=digest:
+                  raise RuntimeError('Published file checksum mismatch')
+              print('PASS: draft-only rubric integration (never official without approval) staged only on NCKH API subdomain.')
+              if backed:print('Previous plugin backed up outside public_html.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if backed:ftp.rename(previous,target)
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY
+      - name: Upload ONLY safe-disabled private attachments to staging with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,hashlib,io,time,sys
+          from urllib.parse import urlparse
+          source='source/wp-content/mu-plugins/nckh-private-files.php'
+          target='public_html/wp-content/mu-plugins/nckh-private-files.php'
+          base='/domains/api-nghiencuukhoahoc.webnvn.com'
+          content=open(source,'rb').read()
+          if not all(x in content for x in (
+            b"private const HOST='api-nghiencuukhoahoc.webnvn.com'",
+            b"NCKH_Private_Files::boot();",
+            b"NCKH_PRIVATE_FILES_ENABLED"
+          )):raise SystemExit('STOP: unexpected staging private attachment plugin source')
+          for key in ('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD'):
+              if not os.environ.get(key):raise SystemExit('STOP: staging FTPS secret missing')
+          endpoint=os.environ['FTP_SERVER']
+          url=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(url.hostname,url.port or 21,timeout=22)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(base)
+          if 'api-nghiencuukhoahoc.webnvn.com' not in ftp.pwd():
+              raise SystemExit('STOP: staging directory mismatch')
+          backups='nckh-config-backups'
+          try:ftp.mkd(backups)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          stamp=str(int(time.time()))
+          staged=f'{backups}/nckh-private-files-stage-{stamp}.php.txt'
+          previous=f'{backups}/nckh-private-files-previous-{stamp}.php.txt'
+          old=None
+          try:
+              buf=io.BytesIO();ftp.retrbinary('RETR '+target,buf.write);old=buf.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(content).digest()
+          if old is not None and hashlib.sha256(old).digest()==digest:
+              print('PASS: NCKH private files plugin already present with expected checksum.')
+              ftp.quit();sys.exit(0)
+          ftp.storbinary('STOR '+staged,io.BytesIO(content))
+          check=io.BytesIO();ftp.retrbinary('RETR '+staged,check.write)
+          if hashlib.sha256(check.getvalue()).digest()!=digest:
+              raise RuntimeError('Staged file checksum mismatch')
+          backed=False
+          try:
+              if old is not None:
+                  ftp.rename(target,previous)
+                  backed=True
+              ftp.rename(staged,target)
+              live=io.BytesIO();ftp.retrbinary('RETR '+target,live.write)
+              if hashlib.sha256(live.getvalue()).digest()!=digest:
+                  raise RuntimeError('Published file checksum mismatch')
+              print('PASS: private files integration (disabled without owner-approved settings) staged only on NCKH API subdomain.')
+              if backed:print('Previous plugin backed up outside public_html.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if backed:ftp.rename(previous,target)
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY
+      - name: GET-only unauthenticated WordPress REST smoke check
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          url='https://api-nghiencuukhoahoc.webnvn.com/wp-json/nckh/v1/projects'
+          req=urllib.request.Request(url,headers={'Accept':'application/json','Cache-Control':'no-cache','User-Agent':'NCKH-Staging-SafeCheck'},method='GET')
+          try:
+              with urllib.request.urlopen(req,timeout=20) as response:
+                  status=response.status;body=response.read(512)
+          except urllib.error.HTTPError as e:
+              status=e.code;body=e.read(512)
+          try: data=json.loads(body)
+          except ValueError: data={}
+          print('Staging unauthenticated route HTTP:',status)
+          print('Returned JSON error code:',data.get('code','unknown') if isinstance(data,dict) else 'none')
+          if status not in (401,403) or not isinstance(data,dict) or not data.get('code'):
+              raise SystemExit('FAIL: Private REST endpoint not available/secure on staging')
+          print('PASS: WordPress REST route exists and denies unauthenticated access.')
+          # Guarded article GET must NEVER leak draft research to visitors.
+          req2=urllib.request.Request(
+              'https://api-nghiencuukhoahoc.webnvn.com/wp-json/nckh/v1/sections/1/article',
+              headers={'Accept':'application/json','Cache-Control':'no-cache'},method='GET')
+          try:
+              with urllib.request.urlopen(req2,timeout=20) as result:
+                  code=result.status
+          except urllib.error.HTTPError as exc:
+              code=exc.code
+          if code not in (401,403):raise SystemExit('FAIL: anonymous article exposed or route absent: '+str(code))
+          print('PASS: anonymous article GET denied on staging.')
+
+          PY

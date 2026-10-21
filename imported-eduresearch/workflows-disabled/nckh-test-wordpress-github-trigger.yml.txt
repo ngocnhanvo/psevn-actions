@@ -1,0 +1,77 @@
+name: NCKH WordPress GitHub Trigger integration test
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  send:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions' && github.event.issue.user.login == 'ngocnhanvo' && github.event.issue.title == '[nckh] Trigger homepage rebuild from WordPress'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Trigger a single WordPress-authorized build through GitHub Trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          report="${RUNNER_TEMP}/trigger-report.md"
+          printf '## NCKH WordPress GitHub Trigger end-to-end integration\n\n' > "$report"
+          finish() {
+            status=$?
+            printf '\nExit code: %s\n' "$status" >> "$report"
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.issue.number }}/comments" -F body=@"$report" >/dev/null || true
+          }
+          trap finish EXIT
+          python3 - "$report" <<'PY'
+          import os,sys,re,json,html,urllib.request,urllib.parse,http.cookiejar
+          out=sys.argv[1]
+          base='https://api-nghiencuukhoahoc.webnvn.com'
+          def note(text):
+            with open(out,'a',encoding='utf8') as f:f.write(text+'\n')
+          assert os.getenv('WP_USER') and os.getenv('WP_PASS'),'Missing NCKH WP Admin secrets'
+          jar=http.cookiejar.CookieJar()
+          web=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+          def req(path,body=None,headers=None):
+            r=urllib.request.Request(base+path,data=body,headers=headers or {})
+            with web.open(r,timeout=30) as response:return response.status,response.geturl(),response.read()
+          req('/wp-login.php')
+          status,final,_=req('/wp-login.php',urllib.parse.urlencode({
+            'log':os.environ['WP_USER'],'pwd':os.environ['WP_PASS'],
+            'wp-submit':'Log In','redirect_to':base+'/wp-admin/','testcookie':'1'
+          }).encode())
+          assert final.startswith(base+'/wp-admin'),'WP admin login failed'
+          _,_,rest_nonce=req('/wp-admin/admin-ajax.php?action=rest-nonce')
+          rest_nonce=rest_nonce.decode().strip()
+          assert re.fullmatch('[A-Za-z0-9]{10,16}',rest_nonce),'WP REST nonce not found'
+          st,_,data=req('/wp-json/wp/v2/settings',headers={'X-WP-Nonce':rest_nonce})
+          assert json.loads(data).get('url')==base,'Wrong WordPress website'
+          st,_,plugins=req('/wp-json/wp/v2/plugins?per_page=100',headers={'X-WP-Nonce':rest_nonce})
+          trigger=next((p for p in json.loads(plugins) if p.get('plugin')=='github-trigger/vcs-build-trigger'),{})
+          assert trigger.get('status')=='active','GitHub Trigger is not active'
+          st,_,dashboard=req('/wp-admin/admin.php?page=vcs-build-trigger')
+          markup=dashboard.decode('utf8','replace')
+          value=re.search(r'var\s+vcsBuild\s*=\s*(\{[^\n;]+\})\s*;',markup)
+          assert value,'GitHub Trigger localized nonce not found in WordPress admin'
+          config=json.loads(value.group(1))
+          nonce=str(config.get('nonce',''))
+          assert re.fullmatch(r'[A-Za-z0-9]{10,16}',nonce),'Build nonce invalid'
+          assert 'api-nghiencuukhoahoc.webnvn.com' in str(config.get('ajax_url','')),'Wrong AJAX destination'
+          note('- Verified NCKH WP URL, Administrator session, and active GitHub Trigger.')
+          payload=urllib.parse.urlencode({'action':'vcs_trigger_build','nonce':nonce,'force_build':'1'}).encode()
+          status,url,raw=req('/wp-admin/admin-ajax.php',payload)
+          assert status==200 and url.startswith(base),'Unexpected AJAX response'
+          result=json.loads(raw)
+          if not result.get('success'):
+            failure=result.get('data',{})
+            note('- WordPress refused build: `'+str(failure.get('code','unknown'))+'`.')
+            note('- Message: '+str(failure.get('message',''))[:260])
+            raise RuntimeError('WordPress GitHub Trigger refused to dispatch; no new build assumed')
+          note('- WordPress GitHub Trigger confirmed successful dispatch to NCKH Actions.')
+          note('- Build will run asynchronously as a repository_dispatch event; verify Actions status separately.')
+          PY

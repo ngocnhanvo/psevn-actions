@@ -1,0 +1,87 @@
+name: NCKH notebook targeted Astro checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-notebook-feature-check.yml'
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  notebook:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && (github.event_name != 'issues'
+          || (github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Verify notebook source only'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Astro development branch without deployment
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-astro
+          ref: github
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies (no scripts or builds)
+        working-directory: source
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm install --frozen-lockfile --ignore-scripts
+      - name: Parse new Astro page and TypeScript client
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import { createRequire } from 'node:module';
+          const rootRequire = createRequire(import.meta.url);
+          const compilerRequire = createRequire(rootRequire.resolve('astro'));
+          const { transform } = compilerRequire('@astrojs/compiler');
+          import ts from 'typescript';
+          const name = 'src/pages/so-tay/index.astro';
+          const source = fs.readFileSync(name, 'utf8');
+          const compiled = await transform(source, { filename: name });
+          if (!compiled.code || compiled.errors?.length) throw Error('Astro page parse failed');
+          console.log('PASS: New Sổ tay Astro page compiles');
+          for (const file of ['src/lib/nckh/notebookClient.ts','src/lib/nckh/notebookClient.test.ts','src/lib/nckh/aiStreamClient.ts','src/lib/nckh/aiStreamClient.test.ts','src/lib/nckh/aiConversation.ts','src/lib/nckh/aiConversation.test.ts','src/lib/nckh/astroTransportProbe.ts','src/lib/nckh/astroTransportProbe.test.ts','src/lib/nckh/googleOidc.ts','src/lib/nckh/googleOidc.test.ts','src/lib/nckh/serverWp.ts','src/lib/nckh/serverWp.test.ts','src/lib/nckh/serverSession.ts','src/lib/nckh/serverSession.test.ts','src/lib/nckh/privateRuntime.ts','src/lib/nckh/privateRuntime.test.ts','src/lib/nckh/researchProgress.ts','src/lib/nckh/researchProgress.test.ts','src/lib/nckh/notebookExport.ts','src/lib/nckh/notebookExport.test.ts','src/lib/nckh/skillTimeline.ts','src/lib/nckh/skillTimeline.test.ts','src/lib/nckh/articleEditor.ts','src/lib/nckh/articleEditor.test.ts','src/lib/nckh/classicEditor.ts','src/lib/nckh/classicEditor.test.ts','src/lib/nckh/googlePopupCompletion.ts','src/lib/nckh/googlePopupCompletion.test.ts','src/lib/nckh/autosavePolicy.ts','src/lib/nckh/autosavePolicy.test.ts','src/lib/nckh/pageLoading.ts','src/lib/nckh/pageLoading.test.ts','src/pages/api/auth/google/start.ts','src/pages/api/auth/google/callback.ts','src/pages/api/auth/me.ts','src/pages/api/auth/logout.ts','src/pages/api/nckh/v1/[...path].ts']) {
+            const result = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+              fileName: file, reportDiagnostics: true,
+              compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 }
+            });
+            const errors = result.diagnostics?.filter(d => d.category === ts.DiagnosticCategory.Error) || [];
+            if (errors.length) throw new Error('TS syntax errors in '+file+': '+errors.map(x=>x.messageText).join('; '));
+            console.log('PASS: TypeScript syntax', file);
+          }
+          JS
+      - name: Check strict NCKH TypeScript only (legacy source excluded)
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The inherited pnpm lockfile does not declare @types/node at root.
+          # Keep production package.json / pnpm-lock untouched; install test-only types
+          # in an isolated runner directory and point tsc there explicitly.
+          mkdir -p "$RUNNER_TEMP/nckh-types"
+          npm install --prefix "$RUNNER_TEMP/nckh-types" --no-audit --no-fund --no-save --ignore-scripts --package-lock=false @types/node@22
+          # Do not override typeRoots: Astro's astro/client types also require
+          # normal package resolution. Link ephemeral Node types without changing
+          # package.json, pnpm lockfile or production source files.
+          mkdir -p node_modules/@types
+          ln -sfn "$RUNNER_TEMP/nckh-types/node_modules/@types/node" node_modules/@types/node
+          pnpm exec tsc --project tsconfig.nckh.json --pretty false
+      - name: Run focused NCKH API client tests
+        working-directory: source
+        run: pnpm exec vitest run src/lib/nckh/notebookClient.test.ts src/lib/nckh/aiStreamClient.test.ts src/lib/nckh/aiConversation.test.ts src/lib/nckh/astroTransportProbe.test.ts src/lib/nckh/googleOidc.test.ts src/lib/nckh/serverWp.test.ts src/lib/nckh/serverSession.test.ts src/lib/nckh/researchProgress.test.ts src/lib/nckh/notebookExport.test.ts src/lib/nckh/skillTimeline.test.ts src/lib/nckh/autosavePolicy.test.ts src/lib/nckh/pageLoading.test.ts src/lib/nckh/privateRuntime.test.ts src/lib/nckh/notebookUiCss.test.ts src/lib/nckh/articleEditor.test.ts src/lib/nckh/classicEditor.test.ts src/lib/nckh/googlePopupCompletion.test.ts src/lib/nckh/homeNavigation.test.ts src/lib/nckh/publicBrand.test.ts src/lib/nckh/appDesignConsistency.test.ts
+      - name: Staging only assertion
+        run: echo "No FTP, no staging writes, no OAuth login, no Astro master merge."

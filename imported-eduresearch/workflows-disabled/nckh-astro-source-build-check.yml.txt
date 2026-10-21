@@ -1,0 +1,67 @@
+name: NCKH Astro source-only full build check (NO deploy)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nckh-source-build-readonly
+  cancel-in-progress: false
+
+jobs:
+  build-check:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Astro development branch, never deploy
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-astro
+          ref: github
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Set up Node with dependency cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Restore existing production Astro data cache (read-only)
+        uses: actions/cache/restore@v4
+        with:
+          path: source/.cache
+          key: nckh-prod-dot-cache-v2-${{ runner.os }}-readonly
+          restore-keys: |
+            nckh-prod-dot-cache-v2-${{ runner.os }}-
+      - name: Build source and test Contact_00 safely without FTP
+        shell: bash
+        working-directory: source
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WC_URL: https://api-nghiencuukhoahoc.webnvn.com
+          NCKH_PUBLISHED_SITEMAP_REVISION: missing
+        run: |
+          set -euo pipefail
+          set +x
+          test -n "${ENV_FILE:-}"
+          pnpm install --frozen-lockfile --prefer-offline
+          umask 077
+          printf '%s\n' "$ENV_FILE" > .env
+          trap 'rm -f .env' EXIT
+          pnpm exec vitest run src/astro/tablepress/Contact_00.missing-data.test.ts
+          pnpm run build-git
+          node --check dist/server/entry.mjs
+          echo 'PASS: Astro development source compiled with WordPress data, without production deployment.'
+      - name: No deployment confirmation
+        run: echo 'Source-only CI. No FTP, no WordPress writes, no artifact upload, no master merge.'

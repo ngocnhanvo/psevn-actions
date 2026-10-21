@@ -1,0 +1,115 @@
+name: NCKH Post-Restart Node Routing and Log Hints (read-only)
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Diagnose Node routing after restart'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: HTTP status-only diagnostic and FTPS metadata read (never print credentials)
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import ftplib,io,os,re,ssl,time,urllib.request,urllib.error
+          from urllib.parse import urlparse
+          base='https://nghiencuukhoahoc.webnvn.com'
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):return None
+          opener=urllib.request.build_opener(NoRedirect)
+          # One request for each distinct handler; never follow OAuth links or log Location/state/cookies.
+          for path in ('/api/auth/me','/api/auth/google/callback?error=access_denied','/api/auth/google/start'):
+              t=time.monotonic()
+              req=urllib.request.Request(base+path,method='GET',headers={'Accept':'text/html','Cache-Control':'no-cache','User-Agent':'NCKH-PostRestart-StatusOnly'})
+              try:
+                  with opener.open(req,timeout=9) as response:
+                      status=response.status
+                      ctype=response.headers.get('Content-Type','').split(';')[0]
+                      location=response.headers.get('Location','')
+              except urllib.error.HTTPError as e:
+                  status=e.code
+                  ctype=e.headers.get('Content-Type','').split(';')[0]
+                  location=e.headers.get('Location','')
+                  e.close()
+              except Exception as e:
+                  print('HTTP',path.split('?')[0],'ERROR',type(e).__name__,'elapsed_s',round(time.monotonic()-t,2))
+                  continue
+              target='none'
+              if 300<=status<400 and location:
+                  dest=urlparse(location)
+                  if dest.hostname in ('accounts.google.com','nghiencuukhoahoc.webnvn.com'):
+                      target='google' if dest.hostname=='accounts.google.com' else 'staging'
+                  else:target='unexpected'
+              print('HTTP',path.split('?')[0],'status',status,'type',ctype,'redirect_host_class',target,'elapsed_s',round(time.monotonic()-t,2))
+          # FTP_TLS read-only: no STOR/DELE/RNFR/RNTO/CHMOD; inspect only names, modes and coarse hints.
+          raw=os.environ.get('FTP_SERVER','')
+          addr=urlparse(raw if '://' in raw else 'ftps://'+raw)
+          conn=ftplib.FTP_TLS()
+          conn.connect(addr.hostname,addr.port or 21,timeout=20)
+          conn.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          conn.prot_p()
+          domain='/domains/nghiencuukhoahoc.webnvn.com'
+          allowed_dirs=(domain+'/logs',domain+'/public_html')
+          for directory in allowed_dirs:
+              try:
+                  conn.cwd(directory)
+                  out=[]
+                  conn.retrlines('LIST',out.append)
+              except ftplib.all_errors:
+                  print('FTP_LIST',directory.rsplit('/',1)[-1],'unavailable')
+                  continue
+              names=[]
+              for row in out:
+                  parts=row.split(None,8)
+                  if len(parts)!=9:continue
+                  kind=parts[0][0]
+                  filename=parts[-1]
+                  if kind=='-' and re.search(r'(?:error|stderr|stdout|node|passenger|pm2).*(?:\.log|\.txt)$',filename,re.I):
+                      names.append((filename,parts[0]))
+              print('FTP_LOG_CANDIDATES',directory.rsplit('/',1)[-1],len(names))
+              # Only read tiny regular log files; don't emit any log line or path containing secrets.
+              for filename,mode in names[:6]:
+                  if not re.fullmatch(r'[A-Za-z0-9._-]{1,120}',filename):continue
+                  try:
+                      size=conn.size(filename)
+                      if size is None or size<1 or size>262144:continue
+                      acc=io.BytesIO()
+                      conn.retrbinary('RETR '+filename,acc.write,blocksize=8192)
+                      body=acc.getvalue().decode('utf8','replace')
+                      print('FTP_LOG_SCAN','matched_error_type',bool(re.search(r'ENOENT|EACCES|ERR_|ECONNRESET|ETIMEDOUT|timeout|auth/google|OAuth|proxy',body,re.I)),
+                            'readable',True,'bytes_band','<256KB')
+                  except ftplib.all_errors:
+                      print('FTP_LOG_SCAN','readable',False)
+          try:
+              conn.cwd(domain+'/public_html')
+              lines=[]
+              conn.retrlines('LIST',lines.append)
+              env_line=next((x for x in lines if x.rstrip().endswith(' .env')),None)
+              print('FTP_LEGACY_ENV_EXISTS',bool(env_line))
+              if env_line:
+                  print('FTP_LEGACY_ENV_OWNER_ONLY_MODE',bool(re.match(r'^-rw-------(?=\s)',env_line)))
+                  # Inspect field names ONLY inside temporary runner; NEVER print values or names.
+                  s=conn.size('.env')
+                  if s is not None and 1<=s<=16384:
+                      buf=io.BytesIO()
+                      conn.retrbinary('RETR .env',buf.write,blocksize=4096)
+                      names=[line.split('=',1)[0].strip() for line in buf.getvalue().decode('utf8','replace').splitlines() if '=' in line]
+                      risk=any(re.search('KEY|PASSWORD|TOKEN|SECRET|CREDENTIAL|PRIVATE|AUTH',n,re.I) for n in names)
+                      print('FTP_LEGACY_ENV_HAS_SENSITIVE_KEY_NAMES',risk)
+          except ftplib.all_errors:
+              print('FTP_LEGACY_ENV_METADATA_UNAVAILABLE')
+          conn.quit()
+          print('Read-only staging status and metadata diagnostics complete; no private content logged.')
+          PY

@@ -1,0 +1,76 @@
+name: NCKH Playwright NCKH admin modules staging smoke
+on:
+  workflow_dispatch:
+    inputs:
+      run_d2_rehearsal:
+        description: "Run D2 synthetic backup rehearsal (manual only)"
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/nckh_playwright_email_admin_smoke.py'
+      - 'scripts/nckh_private_storage_readiness.py'
+      - 'scripts/nckh_private_storage_backup_rehearsal.py'
+permissions:
+  contents: read
+concurrency:
+  group: nckh-playwright-teacher-mail-staging
+  cancel-in-progress: false
+jobs:
+  playwright-admin:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Checkout EduResearch Actions only, no production repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated headless Chromium test dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check 'playwright>=1.50,<2'
+          python -m playwright install --with-deps chromium
+      - name: Chromium staging admin and real homepage navigation QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python scripts/nckh_playwright_email_admin_smoke.py
+          echo 'Playwright staging-only UI check completed; no screenshots or credentials uploaded.'
+
+
+      - name: Read-only FTPS audit of NCKH private attachment storage path
+        if: github.event_name == 'workflow_dispatch' && inputs.run_d2_rehearsal == true
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          set +x
+          python scripts/nckh_private_storage_readiness.py
+          echo 'Private storage preflight completed; no files read or written.'
+
+      - name: Synthetic D2 backup/restore rehearsal on private FTPS staging paths
+        if: github.event_name == 'workflow_dispatch' && inputs.run_d2_rehearsal == true
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          set +x
+          python scripts/nckh_private_storage_backup_rehearsal.py

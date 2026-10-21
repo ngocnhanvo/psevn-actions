@@ -1,0 +1,63 @@
+name: Check EduResearch Hub Google OAuth staging secret
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-google-oauth-staging-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secret_check:
+    if: github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+    name: Validate OAuth JSON without exposing credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Offline check of staging Google OAuth config (no deployment)
+        shell: bash
+        env:
+          GOOGLE_OAUTH_JSON: ${{ secrets.GOOGLE_OAUTH_STAGING_JSON }}
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          raw = os.environ.get("GOOGLE_OAUTH_JSON", "")
+          if not raw:
+              sys.exit("FAIL: GOOGLE_OAUTH_STAGING_JSON is not set or empty")
+
+          try:
+              obj = json.loads(raw)
+          except (TypeError, ValueError):
+              sys.exit("FAIL: OAuth credential secret is not valid JSON")
+
+          web = obj.get("web") if isinstance(obj, dict) else None
+          if not isinstance(web, dict):
+              sys.exit("FAIL: OAuth JSON does not contain a web client")
+
+          client_id = web.get("client_id")
+          secret = web.get("client_secret")
+          uris = web.get("redirect_uris")
+          expected_id = "47081238005-uoj2r9oa0khsoe7jhd69jlabk8hkf3cr.apps.googleusercontent.com"
+          expected_uri = "https://nghiencuukhoahoc.webnvn.com/api/auth/google/callback"
+
+          if client_id != expected_id:
+              sys.exit("FAIL: OAuth Client ID differs from the approved staging ID")
+          if not isinstance(secret, str) or len(secret) < 10 or secret.strip().lower() in ("đã ẩn", "hidden", "redacted"):
+              sys.exit("FAIL: OAuth client secret missing or appears to be a placeholder")
+          if not isinstance(uris, list) or expected_uri not in uris:
+              sys.exit("FAIL: Staging redirect URI missing or mismatched")
+          if web.get("auth_uri") != "https://accounts.google.com/o/oauth2/auth":
+              sys.exit("FAIL: Google OAuth authorization endpoint mismatched")
+          if web.get("token_uri") != "https://oauth2.googleapis.com/token":
+              sys.exit("FAIL: Google OAuth token endpoint mismatched")
+
+          print("PASS: Secret exists; Google OAuth Web JSON parses; client ID, non-placeholder secret, staging redirect URI and endpoints match.")
+          print("This does not verify Google sign-in or secret delivery to the staging server.")
+          PY

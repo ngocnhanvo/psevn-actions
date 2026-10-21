@@ -1,0 +1,110 @@
+name: NCKH consented AI plugin staging-only
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  stage_ai:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.ref == 'refs/heads/main'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'issues'
+              && github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Deploy consented AI API to staging'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: Checkout only NCKH PHP master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Check isolated AI and existing NCKH permission regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f source/wp-content/mu-plugins/nckh-ai-feedback.php
+          php -l source/wp-content/mu-plugins/nckh-ai-feedback.php
+          php -l source/tests/nckh-ai-feedback.test.php
+          php source/tests/nckh-ai-feedback.test.php
+          php source/tests/nckh-ai-feedback.test.php --esc
+          php -l source/wp-content/mu-plugins/nckh-research-api.php
+          php source/tests/nckh-research-api.test.php
+      - name: Deploy only AI MU plugin to guarded WordPress staging, hash verify and rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,ftplib,io,hashlib,time,sys,json,urllib.request,urllib.error
+          from urllib.parse import urlparse
+          host='api-nghiencuukhoahoc.webnvn.com'
+          folder='/domains/'+host
+          relative='public_html/wp-content/mu-plugins/nckh-ai-feedback.php'
+          filename='source/wp-content/mu-plugins/nckh-ai-feedback.php'
+          content=open(filename,'rb').read()
+          if b"private const HOST = 'api-nghiencuukhoahoc.webnvn.com'" not in content or b'agree_external_ai' not in content or b'own_section' not in content:
+              raise SystemExit('STOP: staging, consent and owner guards required')
+          keys=('FTP_SERVER','FTP_USERNAME','FTP_PASSWORD')
+          if any(not os.environ.get(k) for k in keys):raise SystemExit('STOP: missing FTPS staging secret')
+          u=urlparse(os.environ['FTP_SERVER'] if '://' in os.environ['FTP_SERVER'] else 'ftps://'+os.environ['FTP_SERVER'])
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(u.hostname,u.port or 21,timeout=25)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd(folder)
+          if folder not in ftp.pwd():raise RuntimeError('STOP: wrong FTP directory')
+          backup='nckh-config-backups'
+          try:ftp.mkd(backup)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          stamp=str(int(time.time()))
+          temp=f'{backup}/nckh-ai-stage-{stamp}.php.txt'
+          previous=f'{backup}/nckh-ai-rollback-{stamp}.php.txt'
+          old=None
+          try:
+              b=io.BytesIO();ftp.retrbinary('RETR '+relative,b.write);old=b.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(content).digest()
+          if old is not None and hashlib.sha256(old).digest()==digest:
+              print('PASS: exact staging AI plugin already present')
+              ftp.quit()
+              raise SystemExit(0)
+          ftp.storbinary('STOR '+temp,io.BytesIO(content))
+          b=io.BytesIO();ftp.retrbinary('RETR '+temp,b.write)
+          if hashlib.sha256(b.getvalue()).digest()!=digest:raise RuntimeError('Staging checksum mismatch')
+          backed=False
+          try:
+              if old is not None:
+                  ftp.rename(relative,previous);backed=True
+              ftp.rename(temp,relative)
+              b=io.BytesIO();ftp.retrbinary('RETR '+relative,b.write)
+              if hashlib.sha256(b.getvalue()).digest()!=digest:raise RuntimeError('Live hash mismatch')
+              req=urllib.request.Request('https://'+host+'/wp-json/nckh/v1/ai/status',headers={'Accept':'application/json','Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req,timeout=20) as r:status=r.status;data=r.read(600)
+              except urllib.error.HTTPError as e:status=e.code;data=e.read(600)
+              if status not in (401,403):raise RuntimeError('AI endpoint must deny anonymous visitor, observed HTTP '+str(status))
+              print('PASS: staging-only AI plugin installed; anonymous status protected (HTTP '+str(status)+'); no external provider called.')
+              print('Previous plugin private rollback file retained:',backed)
+          except Exception:
+              try:ftp.delete(relative)
+              except ftplib.all_errors:pass
+              if backed:ftp.rename(previous,relative)
+              print('SAFETY ROLLBACK: restored previous AI plugin')
+              raise
+          finally:
+              try:ftp.quit()
+              except ftplib.all_errors:pass
+          PY

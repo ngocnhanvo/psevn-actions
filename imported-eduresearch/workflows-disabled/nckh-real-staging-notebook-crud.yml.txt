@@ -1,0 +1,135 @@
+name: NCKH Staging Real Notebook CRUD Test
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  staging_crud:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Test real staging notebook CRUD'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Real WordPress staging database CREATE READ UPDATE CONFLICT DELETE
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.parse,urllib.error,http.cookiejar,secrets
+          base='https://api-nghiencuukhoahoc.webnvn.com'
+          user=os.environ.get('WP_USER')
+          password=os.environ.get('WP_PASS')
+          if not user or not password:raise RuntimeError('Staging WordPress credentials unavailable')
+          browser=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+          def get(path,data=None,method=None,headers=None):
+              req=urllib.request.Request(base+path,data=data,method=method,headers={
+                  'User-Agent':'NCKH-Staging-CRUD-Only/1.0',
+                  'Cache-Control':'no-store',
+                  **(headers or {})
+              })
+              try:
+                  with browser.open(req,timeout=35) as resp:return resp.status,resp.read(250000)
+              except urllib.error.HTTPError as e:return e.code,e.read(3000)
+          status,_=get('/wp-login.php')
+          if status!=200:raise RuntimeError('WP staging login page unavailable')
+          status,_=get('/wp-login.php',urllib.parse.urlencode({
+              'log':user,'pwd':password,'wp-submit':'Log In',
+              'redirect_to':base+'/wp-admin/','testcookie':'1'
+          }).encode('utf-8'))
+          if status!=200:raise RuntimeError('WP staging administrator login failed')
+          status,nonce=get('/wp-admin/admin-ajax.php?action=rest-nonce')
+          key=nonce.decode('utf-8','replace').strip()
+          if status!=200 or len(key)<8 or len(key)>20:raise RuntimeError('WP REST admin nonce invalid')
+          headers={'X-WP-Nonce':key,'Accept':'application/json','Content-Type':'application/json'}
+          def api(route,method='GET',data=None):
+              status,blob=get('/wp-json/nckh/v1/'+route,
+                json.dumps(data,ensure_ascii=False).encode('utf8') if data is not None else None,
+                method,headers)
+              try: body=json.loads(blob)
+              except: raise RuntimeError('API non-JSON status '+str(status)+' path '+route)
+              return status,body
+          suffix=secrets.token_hex(4)
+          project_id=None
+          section_id=None
+          second_id=None
+          try:
+              status,new=api('projects','POST',{'title':'[NCKH-STAGING-QA] '+suffix,'summary':'Dữ liệu test tự động, không phải học sinh thật'})
+              if status!=201:raise RuntimeError('Create project failed '+str(status)+' '+str(new.get('code','')))
+              project_id=int(new['id'])
+              print('PASS: Staging project created in real WordPress DB.')
+              status,project=api('projects/'+str(project_id))
+              if status!=200 or project['project']['title']!='[NCKH-STAGING-QA] '+suffix:
+                  raise RuntimeError('Read project failed')
+              print('PASS: Reopened project persisted title/owner.')
+              status,section=api('projects/'+str(project_id)+'/sections','POST',{'title':'Mục tiêu nghiên cứu QA'})
+              if status!=201:raise RuntimeError('Create notebook section failed')
+              section_id=int(section['id'])
+              print('PASS: Created persistent notebook section.')
+              status,version=api('sections/'+str(section_id),'PATCH',{
+                  'version':1,'content':'Mô tả phương pháp thí nghiệm giả lập cho kiểm thử dữ liệu.'})
+              if status!=200 or version.get('version')!=2:raise RuntimeError('Autosave version update failed')
+              status,data=api('projects/'+str(project_id)+'/sections')
+              rows=data.get('items',[])
+              if status!=200 or not any(int(row['id'])==section_id and row['version'] in (2,'2') and
+                                       'phương pháp' in row['content'] for row in rows):
+                  raise RuntimeError('Saved content did not survive reload')
+              print('PASS: Real section autosave persisted after fresh database read.')
+              status,conflict=api('sections/'+str(section_id),'PATCH',{
+                  'version':1,'content':'Stale value must not overwrite actual saved work'})
+              if status!=409 or conflict.get('code')!='nckh_conflict':
+                  raise RuntimeError('Stale write was not rejected')
+              print('PASS: Concurrent tab stale save rejected with HTTP 409.')
+              status,second=api('projects/'+str(project_id)+'/sections','POST',{'title':'Kiểm chứng atomic reorder'})
+              if status!=201:raise RuntimeError('Second section create failed')
+              second_id=int(second['id'])
+              status,ordered=api('projects/'+str(project_id)+'/reorder','POST',{
+                  'items':[{'id':second_id,'version':1},{'id':section_id,'version':2}]
+              })
+              if status!=200 or len(ordered.get('items',[]))!=2:
+                  raise RuntimeError('Atomic reorder rejected valid versioned request')
+              print('PASS: Atomic reorder returned both updated section versions.')
+              status,current=api('projects/'+str(project_id)+'/sections')
+              items=current.get('items',[])
+              if status!=200 or len(items)!=2 or int(items[0]['id'])!=second_id or int(items[1]['id'])!=section_id:
+                  raise RuntimeError('Ordered sections not persisted in real database')
+              print('PASS: Newly reordered sections survive fresh DB read.')
+              status,stale=api('projects/'+str(project_id)+'/reorder','POST',{
+                  'items':[{'id':section_id,'version':2},{'id':second_id,'version':1}]
+              })
+              if status!=409:raise RuntimeError('Stale reorder did not return HTTP 409')
+              status,still=api('projects/'+str(project_id)+'/sections')
+              if status!=200 or int(still['items'][0]['id'])!=second_id:
+                  raise RuntimeError('Failed reorder unexpectedly changed database order')
+              print('PASS: Stale reorder was fully rolled back.')
+              status,stale_delete=api('sections/'+str(section_id),'DELETE',{'version':2})
+              if status!=409:raise RuntimeError('Stale DELETE failed optimistic version guard')
+              print('PASS: Stale section deletion rejected with HTTP 409.')
+              status,del_result=api('sections/'+str(section_id),'DELETE',{'version':3})
+              if status!=200 or del_result.get('deleted') is not True:raise RuntimeError('Could not remove QA section')
+              section_id=None
+              status,removed=api('sections/'+str(second_id),'DELETE',{'version':2})
+              if status!=200 or removed.get('deleted') is not True:raise RuntimeError('Could not remove second QA section')
+              second_id=None
+              print('PASS: Both QA sections deleted after verification.')
+          finally:
+              if project_id is not None:
+                  # Cleanup ONLY our two synthetic QA sections, reading current versions first.
+                  status,snapshot=api('projects/'+str(project_id)+'/sections')
+                  if status==200:
+                      tracked={x for x in (section_id,second_id) if x is not None}
+                      for row in snapshot.get('items',[]):
+                          if int(row['id']) in tracked:
+                              api('sections/'+str(row['id']),'DELETE',{'version':int(row['version'])})
+                  status,result=api('projects/'+str(project_id),'PATCH',{'status':'archived'})
+                  if status!=200 or not result.get('updated'):
+                      raise RuntimeError('QA project could not be archived')
+                  print('PASS: QA-only project archived (no DELETE project endpoint).')
+          print('Real staging database test passed; no production domain, no Astro SSR.')
+          PY

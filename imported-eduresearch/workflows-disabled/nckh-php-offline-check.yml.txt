@@ -1,0 +1,68 @@
+name: NCKH PHP staging-safe offline tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/nckh-php-offline-check.yml'
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  php:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && (github.event_name != 'issues'
+          || (github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Verify backend offline only'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      SOURCE_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+    steps:
+      - name: Checkout isolated NCKH PHP source without deployment
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Check PHP syntax and offline permission/data regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -v | head -2
+          php -l source/wp-content/mu-plugins/nckh-article-editor.php
+          php -l source/tests/nckh-article-editor.test.php
+          php source/tests/nckh-article-editor.test.php
+          php -l source/wp-content/mu-plugins/nckh-private-files.php
+          php -l source/tests/nckh-private-files.test.php
+          php source/tests/nckh-private-files.test.php
+          php -l source/wp-content/mu-plugins/nckh-rubric.php
+          php -l source/tests/nckh-rubric.test.php
+          php source/tests/nckh-rubric.test.php
+          php -l source/wp-content/mu-plugins/nckh-invite-email.php
+          php -l source/tests/nckh-invite-email.test.php
+          php source/tests/nckh-invite-email.test.php
+          php -l source/wp-content/mu-plugins/nckh-research-api.php
+          php -l source/tests/nckh-research-api.test.php
+          php source/tests/nckh-research-api.test.php
+          php -l source/wp-content/mu-plugins/nckh-ai-feedback.php
+          php -l source/tests/nckh-ai-feedback.test.php
+          php source/tests/nckh-ai-feedback.test.php
+          php source/tests/nckh-ai-feedback.test.php --esc
+          php -l source/wp-content/mu-plugins/nckh-staging-rest-profile.php
+          php -l source/tests/nckh-staging-rest-profile.test.php
+          php source/tests/nckh-staging-rest-profile.test.php
+          php -l source/wp-content/mu-plugins/nckh-google-auth.php
+          php -l source/tests/nckh-google-auth.test.php
+          php source/tests/nckh-google-auth.test.php
+          php -l source/wp-content/mu-plugins/nckh-teacher-approval.php
+          php -l source/tests/nckh-teacher-approval.test.php
+          php source/tests/nckh-teacher-approval.test.php
+          php -l source/wp-content/mu-plugins/nckh-admin-guides.php
+          php -l source/tests/nckh-admin-guides.test.php
+          php source/tests/nckh-admin-guides.test.php
+          echo "Offline-only test pass. No FTP, WP, SSH, database or staging writes."

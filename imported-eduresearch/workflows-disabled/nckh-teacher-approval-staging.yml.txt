@@ -1,0 +1,132 @@
+name: NCKH Teacher Approval Staging Deploy
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  teacher:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && github.event.issue.user.login == 'ngocnhanvo'
+      && github.event.issue.title == '[nckh] Deploy staging teacher approval'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      WP_USER: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_PASS: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Checkout only EduResearch PHP backend
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: master
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Isolated syntax and role privilege tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source/wp-content/mu-plugins/nckh-teacher-approval.php
+          php -l source/tests/nckh-teacher-approval.test.php
+          php source/tests/nckh-teacher-approval.test.php
+      - name: Backup and FTPS-deploy precisely one staging teacher approval file
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import ftplib,hashlib,io,os,time
+          from urllib.parse import urlparse
+          src=open('source/wp-content/mu-plugins/nckh-teacher-approval.php','rb').read()
+          assert b"private const HOST = 'api-nghiencuukhoahoc.webnvn.com'" in src
+          assert b'current_user_can' in src and b'check_admin_referer' in src
+          endpoint=os.environ['FTP_SERVER']
+          server=urlparse(endpoint if '://' in endpoint else 'ftps://'+endpoint)
+          ftp=ftplib.FTP_TLS()
+          ftp.connect(server.hostname,server.port or 21,timeout=25)
+          ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd('/domains/api-nghiencuukhoahoc.webnvn.com')
+          assert 'api-nghiencuukhoahoc.webnvn.com' in ftp.pwd()
+          target='public_html/wp-content/mu-plugins/nckh-teacher-approval.php'
+          backup='nckh-config-backups'
+          try:ftp.mkd(backup)
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          original=None
+          try:
+              buf=io.BytesIO()
+              ftp.retrbinary('RETR '+target,buf.write)
+              original=buf.getvalue()
+          except ftplib.error_perm as e:
+              if not str(e).startswith('550'):raise
+          digest=hashlib.sha256(src).digest()
+          if original is not None and hashlib.sha256(original).digest()==digest:
+              print('PASS: Teacher approval PHP staging module already matches.')
+              ftp.quit();raise SystemExit(0)
+          tag=str(int(time.time()))
+          staged=backup+'/nckh-teacher-stage-'+tag+'.php.txt'
+          previous=backup+'/nckh-teacher-original-'+tag+'.php.txt'
+          ftp.storbinary('STOR '+staged,io.BytesIO(src))
+          temp=io.BytesIO();ftp.retrbinary('RETR '+staged,temp.write)
+          if hashlib.sha256(temp.getvalue()).digest()!=digest:raise RuntimeError('Failed checksum before install')
+          saved=False
+          try:
+              if original is not None:
+                  ftp.rename(target,previous);saved=True
+              ftp.rename(staged,target)
+              installed=io.BytesIO();ftp.retrbinary('RETR '+target,installed.write)
+              if hashlib.sha256(installed.getvalue()).digest()!=digest:raise RuntimeError('Failed installed checksum')
+              print('PASS: Teacher approval admin module installed ONLY on staging WP.')
+          except Exception:
+              try:ftp.delete(target)
+              except ftplib.all_errors:pass
+              if saved:ftp.rename(previous,target)
+              raise
+          finally:ftp.quit()
+          PY
+      - name: Verify staging WordPress admin-only approval UI (read only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          python3 - <<'PY'
+          import os,urllib.request,urllib.parse,urllib.error,http.cookiejar
+          base='https://api-nghiencuukhoahoc.webnvn.com'
+          if not os.environ.get('WP_USER') or not os.environ.get('WP_PASS'):
+              raise RuntimeError('WP staging credentials unavailable')
+          browser=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+          def get(path,data=None):
+              req=urllib.request.Request(base+path,data=data,headers={'User-Agent':'NCKH-Teacher-Approval-ReadOnly'})
+              with browser.open(req,timeout=45) as r:return r.geturl(),r.read(150000)
+          get('/wp-login.php')
+          final,_=get('/wp-login.php',urllib.parse.urlencode({
+              'log':os.environ['WP_USER'],'pwd':os.environ['WP_PASS'],
+              'wp-submit':'Log In','redirect_to':base+'/wp-admin/','testcookie':'1',
+          }).encode('utf-8'))
+          if not final.startswith(base+'/wp-admin'):raise RuntimeError('Staging admin login failed')
+          final,page=get('/wp-admin/users.php?page=nckh-teacher-approval')
+          page_text=page.decode('utf-8','replace')
+          valid_title='EduResearch Hub — Duyệt giáo viên' in page_text
+          has_form='nckh_teacher_approval' in page_text
+          empty_state='Chưa có tài khoản EduResearch' in page_text
+          if not final.startswith(base+'/wp-admin/users.php') or not valid_title or not (has_form or empty_state):
+              from urllib.parse import urlsplit
+              print('Admin check path:',urlsplit(final).path)
+              print('Approval UI title present:',valid_title,'form present:',has_form,'empty state:',empty_state)
+              raise RuntimeError('Teacher admin approval page did not render')
+          print('PASS: Admin can load staging teacher approval UI; no account roles modified.')
+          anon=urllib.request.Request(base+'/wp-admin/users.php?page=nckh-teacher-approval')
+          try:
+              with urllib.request.urlopen(anon,timeout=18) as res:
+                  data=res.read(15000)
+                  if b'nckh_teacher_approval' in data:raise RuntimeError('Admin approval UI accessible to anonymous user')
+          except urllib.error.HTTPError as e:
+              if e.code not in (401,403):raise
+          print('PASS: No public access to teacher approval form.')
+          PY

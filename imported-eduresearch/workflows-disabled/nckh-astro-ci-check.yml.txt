@@ -1,0 +1,73 @@
+name: NCKH Astro code validation only
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    if: >-
+      github.repository == 'ngocnhanvo/nghiencuukhoahoc-actions'
+      && (github.event_name == 'workflow_dispatch'
+          || (github.event_name == 'issues'
+              && github.event.issue.user.login == 'ngocnhanvo'
+              && github.event.issue.title == '[nckh] Check Astro github'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    env:
+      SOURCE_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout NCKH development branch and validate source without deployment
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +x
+          report="${RUNNER_TEMP}/report.md"
+          printf '## NCKH Astro development code check\n\n' > "$report"
+          done_check() {
+            rc=$?
+            printf '\nJob validation exit code: %s.\n' "$rc" >> "$report"
+            cat "$report" >> "$GITHUB_STEP_SUMMARY"
+            # Mirror the scrubbed report in the job log for remote CI diagnostics.
+            # Never print SOURCE_PAT, .env or full dependency installer output.
+            cat "$report"
+            if [ "${{ github.event_name }}" = "issues" ]; then
+              gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.issue.number }}/comments" -F body=@"$report" >/dev/null || true
+            fi
+          }
+          trap done_check EXIT
+          if [ -z "${SOURCE_PAT:-}" ]; then echo 'SOURCE_REPO_PAT not configured' >> "$report";exit 1;fi
+          git config --global url."https://x-access-token:${SOURCE_PAT}@github.com/".insteadOf "https://github.com/"
+          cd "${RUNNER_TEMP}"
+          git clone -q --depth 1 --single-branch --branch github https://github.com/ngocnhanvo/nghiencuukhoahoc-astro.git nckh-astro
+          cd nckh-astro
+          printf 'Commit checked: `%s`, branch `github`.\n\n' "$(git rev-parse HEAD)" >> "$report"
+          node --version >> "$report"
+          corepack enable >/dev/null 2>&1
+          corepack prepare pnpm@9 --activate >/dev/null 2>&1
+          if ! pnpm install --frozen-lockfile --ignore-scripts > "${RUNNER_TEMP}/install.log" 2>&1; then
+            printf 'Dependency installation failed.\n' >> "$report"
+            tail -n 12 "${RUNNER_TEMP}/install.log" | sed -E 's|https://[^ ]+|[url]|g' >> "$report"
+            exit 1
+          fi
+          printf 'Dependencies installed.\n\n' >> "$report"
+          if pnpm exec vitest run scripts/sync-seo-files.nckh.test.ts src/lib/wordpress/pages/ssrActionAudit.test.ts src/lib/wordpress/pages/getData.image-errors.test.ts > "${RUNNER_TEMP}/nckh-page-cache.log" 2>&1; then
+            printf 'NCKH WordPress SEO and Pages regression tests: **PASS**.\n' >> "$report"
+          else
+            printf 'NCKH WordPress SEO and Pages regression tests: **FAIL**.\n' >> "$report"
+            tail -n 48 "${RUNNER_TEMP}/nckh-page-cache.log" >> "$report"
+            exit 1
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            printf 'Focused WordPress SEO/Page QA only; existing Astro JS suite not repeated.\n' >> "$report"
+          elif pnpm exec astro check --js-only > "${RUNNER_TEMP}/check.log" 2>&1; then
+            printf 'Astro JS check: **PASS**.\n' >> "$report"
+          else
+            printf 'Astro JS check: **FAIL**.\n\n' >> "$report"
+            tail -n 42 "${RUNNER_TEMP}/check.log" >> "$report"
+            exit 1
+          fi
+          printf 'No FTP, WordPress writes, merge or deployment.\n' >> "$report"
