@@ -68,6 +68,8 @@ jobs:
             current="$(gh api "repos/$repo" --jq '.default_branch')"
             if [ "$current" = "$wanted" ]; then
               echo "$repo default already $wanted"
+            elif [ "$repo" = "ngocnhanvo/psevn-astro" ] && [ "$current" = "master" ] && [ "$wanted" = "github" ]; then
+              echo "Astro default master explicitly configured; preserving user's choice."
             elif [ "$current" = "main" ]; then
               if ! gh api --method PATCH "repos/$repo" -f "default_branch=$wanted" --jq '.default_branch'; then
                 echo "::warning::Cannot switch default on $repo (requires Administration: write); retaining main safely."
@@ -109,10 +111,11 @@ jobs:
             gh api --method DELETE "repos/$repo/git/refs/heads/$branch"
             echo "Removed obsolete $repo/$branch ($expected)"
           }
-          if [ "$(gh api repos/ngocnhanvo/psevn-astro --jq '.default_branch')" = "github" ]; then
+          astro_default="$(gh api repos/ngocnhanvo/psevn-astro --jq '.default_branch')"
+          if [ "$astro_default" = "github" ] || [ "$astro_default" = "master" ]; then
             delete_if_exact ngocnhanvo/psevn-astro main d20d0604b01c288c0fd6229d4007a10c7bd08e97
           else
-            echo "::warning::Retaining Astro main because it is the default branch"
+            echo "::warning::Retaining Astro main; default remains $astro_default"
           fi
           if [ "$(gh api repos/ngocnhanvo/psevn-php --jq '.default_branch')" = "master" ]; then
             delete_if_exact ngocnhanvo/psevn-php main e97ffce51f14e02effca0459198e286ee1a030d9
