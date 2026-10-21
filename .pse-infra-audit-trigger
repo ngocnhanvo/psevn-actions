@@ -1,1 +1,2 @@
 2026-10-21: read-only audit of PSE configured GitHub secrets and public endpoints; no FTP login, no WP login, no build/deploy.
+Second audit: log boolean status only, preserving no credential values or sensitive content.
