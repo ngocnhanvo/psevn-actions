@@ -1,1 +1,2 @@
 Approved 2026-10-22 by project owner: release only verified PSE WordPress GitHub Trigger, MU-plugin, JS, unzip endpoint and marker. No Astro build here; rollback enabled.
+Owner-approved continuation: upload ONLY the PSE SEO MU-plugin correction using atomic FTP readback and rollback. Existing unchanged PSE Trigger files may be checked but must not change. Then verify REST contract; do not build automatically from this PHP release.
