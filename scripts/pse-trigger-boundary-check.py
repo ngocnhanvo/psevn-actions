@@ -13,18 +13,15 @@ mu = (source / "wp-content/mu-plugins/esc-github-trigger-config.php").read_text(
 
 required_trigger = [
     "private const PSE_ACTIONS_REPO = 'psevn-actions';",
-    "private const PSE_SITE_URL = 'https://admin-pse.webnvn.com';",
-    "private const PSE_FRONTEND_DOMAIN = 'pse.webnvn.com';",
     "private const FORBIDDEN_SOURCE_DB = 'nghiencuukhoahoc_181026';",
     "VCS_GH_REPO === self::PSE_ACTIONS_REPO",
     "DB_NAME !== self::FORBIDDEN_SOURCE_DB",
-    "untrailingslashit(site_url()) === self::PSE_SITE_URL",
     "defined('PSE_ASTRO_DEPLOY_READY')",
     "PSE_ASTRO_DEPLOY_READY === true",
     "defined('PSE_GITHUB_ACTIONS_TOKEN')",
     "trim(PSE_GITHUB_ACTIONS_TOKEN) !== ''",
     "$repo = self::PSE_ACTIONS_REPO;",
-    "'site_domain'  => self::PSE_FRONTEND_DOMAIN",
+    "'site_domain'  => get_site_domain()",
     "'event_type' => 'wp_trigger_build'",
     "$url = \"https://api.github.com/repos/{$owner}/{$repo}/dispatches\";",
 ]
@@ -42,6 +39,9 @@ for label, body in (("trigger", trigger), ("MU config", mu)):
     assert "nghiencuukhoahoc-actions" not in body, f"{label}: wrong Actions repo"
     assert "xuongmunonbaohiem-actions" not in body, f"{label}: wrong Blue Sea Actions repo"
     assert "esc-github-trigger-token.php" not in body, f"{label}: inherited token file"
+assert "PSE_SITE_URL" not in trigger and "PSE_FRONTEND_DOMAIN" not in trigger, "Hardcoded project domain found"
+assert "untrailingslashit(site_url()) === self::" not in trigger, "Fixed WordPress domain gate remains"
+assert "'site_domain'  => get_site_domain()" in trigger, "Build payload must reflect WordPress managed domain"
 assert "VCS_GH_ACTIONS_TOKEN" not in trigger, "legacy Actions token still used"
 assert re.search(r'\$token\s*=\s*defined\([\'"]PSE_GITHUB_ACTIONS_TOKEN', trigger)
 assert trigger.count("$repo = self::PSE_ACTIONS_REPO;") >= 2, "trigger and poll must use PSE repo"
