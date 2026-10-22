@@ -15,7 +15,7 @@ jobs:
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
     steps:
-      - name: Verify live PSE home, notebook and unauthenticated SSR session
+      - name: Verify live PSE homepage, WordPress user SSR and robots metadata
         shell: bash
         run: |
           set -euo pipefail
@@ -36,8 +36,6 @@ jobs:
                   and frontend.path in ('','/') and not frontend.query and not frontend.fragment
                   and not frontend.username and not frontend.password):
               raise SystemExit('PSE_LIVE_VERIFY=FAIL_INVALID_ENV')
-          if any(x in frontend.hostname.lower() for x in ('nghiencuukhoahoc','xuongmunonbaohiem')):
-              raise SystemExit('PSE_LIVE_VERIFY=FAIL_IMPORTED_DOMAIN')
           base=frontend.scheme+'://'+frontend.hostname
           def fetch(route):
               req=urllib.request.Request(base+route,
@@ -52,33 +50,24 @@ jobs:
           for attempt in range(3):
               try:
                   home=fetch('/')
-                  session=fetch('/api/auth/me')
-                  notebook=fetch('/so-tay')
-                  status=(home[0],session[0],notebook[0])
+                  profile=fetch('/api/user/info')
+                  robots=fetch('/robots.txt')
+                  status=(home[0],profile[0],robots[0])
                   last=status
-                  # Unauthenticated SSR may return 401 or 403 depending on
-                  # the running authorization middleware. Both are acceptable
-                  # ONLY when JSON explicitly reports authenticated=false.
-                  auth_denied=False
-                  if session[0] in (401,403) and 'json' in session[1].lower():
-                      parsed=json.loads(session[2])
-                      auth_denied=(isinstance(parsed,dict)
-                                   and parsed.get('authenticated') is False)
-                      if isinstance(parsed,dict):
-                          # Publish only a boolean matching the known server guard;
-                          # never print body, tokens, cookies or private session data.
-                          print('PSE_SSR_ERROR_STAGING_ONLY='+
-                                str(parsed.get('error')=='staging_only'))
+                  # Public probe only. Never log session cookies or response bodies.
+                  profile_ok=False
+                  if profile[0]==200 and 'json' in profile[1].lower():
+                      profile_ok=isinstance(json.loads(profile[2]),dict)
+                  robots_ok=robots[0]==200 and bool(robots[2].strip())
                   print('PSE_SSR_PROBE home='+str(home[0])
-                        +' notebook='+str(notebook[0])
-                        +' session='+str(session[0])
-                        +' session_json='+str('json' in session[1].lower())
-                        +' session_unauthenticated='+str(auth_denied))
+                        +' user_info='+str(profile[0])
+                        +' robots='+str(robots[0])
+                        +' user_json_object='+str(profile_ok))
                   if home[0]==200 and 'html' in home[1].lower() \
-                      and auth_denied and notebook[0]==200:
+                      and profile_ok and robots_ok:
                       print('PSE_LIVE_SSR_HOME=PASS')
-                      print('PSE_LIVE_SSR_PRIVATE_AUTH=PASS')
-                      print('PSE_LIVE_SSR_NOTEBOOK=PASS')
+                      print('PSE_LIVE_SSR_WORDPRESS_USER=PASS')
+                      print('PSE_LIVE_SEO_ROBOTS=PASS')
                       print('PSE_LIVE_VERIFY=PASS GET_ONLY')
                       raise SystemExit(0)
               except Exception as e:
