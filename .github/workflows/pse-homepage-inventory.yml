@@ -1,0 +1,27 @@
+name: PSE homepage public WordPress inventory (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-homepage-inventory.py
+      - .github/workflows/pse-homepage-inventory.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wordpress-public-inventory:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inventory only public WordPress page/action/category/post metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-homepage-inventory.py
+          python3 scripts/pse-homepage-inventory.py
