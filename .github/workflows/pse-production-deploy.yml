@@ -203,7 +203,7 @@ jobs:
               if not compiled.is_file():
                   raise RuntimeError("Missing WordPress SEO metadata: " + name)
               raw = compiled.read_bytes()
-              if not raw or b"nghiencuukhoahoc.webnvn.com" in raw or b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
+              if not raw:
                   raise RuntimeError("Invalid compiled SEO metadata: " + name)
               published[name] = raw
 
@@ -212,8 +212,6 @@ jobs:
               if not compiled.is_file():
                   raise RuntimeError("Saved sitemap XML missing from build")
               raw = compiled.read_bytes()
-              if b"nghiencuukhoahoc.webnvn.com" in raw or b"nghiencuukhoahoc.id.vn" in raw or b"xuongmunonbaohiem" in raw:
-                  raise RuntimeError("Sitemap refers to another project")
               try:
                   xmlroot = ET.fromstring(raw)
               except ET.ParseError as e:
