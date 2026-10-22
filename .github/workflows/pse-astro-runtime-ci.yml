@@ -63,10 +63,15 @@ jobs:
           test ! -e source/src/pages/api/nckh
           test ! -e source/src/pages/api/auth
           test ! -e source/src/pages/so-tay
+          test -f source/src/pages/api/user/info.ts
+          test -f 'source/src/pages/ssr/posts/[slug]/detail.astro'
+          test -f 'source/src/pages/ssr/products/[slug]/detail.astro'
+          grep -Eq 'export const prerender = false' source/src/pages/api/user/info.ts
           if find source/src/pages -type f \( -name '*.test.ts' -o -name '*.spec.ts' \) | grep .; then
             echo "::error::Vitest file would be compiled as Astro route"
             exit 1
           fi
           echo "PSE_RETIRED_TENANT_ROUTES=PASS"
+          echo "PSE_WORDPRESS_SSR_ROUTES=PASS"
       - name: Confirm no Astro build or deploy
         run: echo 'PSE_ASTRO_UNIT=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS'
