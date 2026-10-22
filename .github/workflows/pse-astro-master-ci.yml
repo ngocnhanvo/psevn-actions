@@ -52,6 +52,7 @@ jobs:
         run: |
           node --check scripts/patch-entry.mjs
           node --check scripts/inject-handler.js
+          node --check scripts/generate-sitemap-robots.mjs
           echo 'PSE_MASTER_BUILDER_CSP_SYNTAX=PASS'
       - name: Run approved PSE OAuth, security, WordPress, SEO and site-brand tests
         working-directory: source
@@ -71,6 +72,8 @@ jobs:
             src/lib/wordpress/pages/getData.image-errors.test.ts \
             scripts/inject-handler.portability.test.ts \
             scripts/generate-sitemap-robots.test.ts \
+            src/lib/wordpress/builderAutoDiscovery.test.mjs \
+            src/lib/wordpress/builderPageImages.test.mjs \
             scripts/sync-seo-files.nckh.test.ts \
             scripts/sync-seo-files.test.ts
           echo "PSE_MASTER_TESTS=PASS"
