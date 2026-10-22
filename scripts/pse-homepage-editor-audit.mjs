@@ -62,7 +62,12 @@ try{
         tinyMCE:Boolean(document.querySelector('#content_ifr')),
         blockEditor:Boolean(document.querySelector('.edit-post-visual-editor, .interface-interface-skeleton')),
         insertCodeControl:Array.from(document.querySelectorAll('button')).some(b=>/insert code|chèn mã/i.test(b.innerText||b.title||'')),
-        labels
+        labels,
+        acfFields:Array.from(document.querySelectorAll('.acf-field[data-name]')).map(f=>({
+          name:f.getAttribute('data-name'),
+          type:f.getAttribute('data-type'),
+          hasInput:Boolean(f.querySelector('input:not([type=hidden]), textarea'))
+        })).slice(0,120)
       };
     });
     console.log('PSE_EDITOR_'+kind.toUpperCase()+'='+JSON.stringify(audit));
