@@ -56,10 +56,21 @@ jobs:
                   notebook=fetch('/so-tay')
                   status=(home[0],session[0],notebook[0])
                   last=status
-                  if home[0]==200 and 'html' in home[1].lower() and session[0]==401 \
-                      and 'json' in session[1].lower() \
-                      and json.loads(session[2]).get('authenticated') is False \
-                      and notebook[0]==200:
+                  # Unauthenticated SSR may return 401 or 403 depending on
+                  # the running authorization middleware. Both are acceptable
+                  # ONLY when JSON explicitly reports authenticated=false.
+                  auth_denied=False
+                  if session[0] in (401,403) and 'json' in session[1].lower():
+                      parsed=json.loads(session[2])
+                      auth_denied=(isinstance(parsed,dict)
+                                   and parsed.get('authenticated') is False)
+                  print('PSE_SSR_PROBE home='+str(home[0])
+                        +' notebook='+str(notebook[0])
+                        +' session='+str(session[0])
+                        +' session_json='+str('json' in session[1].lower())
+                        +' session_unauthenticated='+str(auth_denied))
+                  if home[0]==200 and 'html' in home[1].lower() \
+                      and auth_denied and notebook[0]==200:
                       print('PSE_LIVE_SSR_HOME=PASS')
                       print('PSE_LIVE_SSR_PRIVATE_AUTH=PASS')
                       print('PSE_LIVE_SSR_NOTEBOOK=PASS')
