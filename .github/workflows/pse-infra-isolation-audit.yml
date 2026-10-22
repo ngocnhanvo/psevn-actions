@@ -59,40 +59,119 @@ jobs:
           done
           echo "Anonymous endpoint checks cannot reveal database names or FTP account roots." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Probe FTPS directory permissions (read-only; no listing or writes)
+      - name: Verify FTPS TLS, authentication and configured site roots (READ ONLY)
         shell: bash
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
         run: |
           set -euo pipefail
-          if [ -z "$FTP_SERVER" ] || [ -z "$FTP_USERNAME" ] || [ -z "$FTP_PASSWORD" ]; then
-            echo "FTPS_PROBE credentials=absent"
-            exit 0
-          fi
-          sudo apt-get update -qq >/dev/null 2>&1
-          sudo apt-get install -y -qq --no-install-recommends lftp >/dev/null 2>&1
-          tmp="$(mktemp)"
-          trap 'rm -f "$tmp"' EXIT
-          probe() {
-            local label="$1" command="$2"
-            if timeout --signal=TERM --kill-after=3s 25s lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "ftp://$FTP_SERVER" -e "set cmd:fail-exit yes; set net:max-retries 1; set net:timeout 8; set ftp:passive-mode yes; set ftp:ssl-force yes; set ftp:ssl-protect-data yes; set ssl:verify-certificate yes; $command; bye" >"$tmp" 2>&1; then
-              echo "FTPS_PROBE $label=yes"
-            else
-              echo "FTPS_PROBE $label=no_or_unverified"
-            fi
-          }
-          probe connection "pwd"
-          probe candidate_pse_frontend "cd /domains/pse.webnvn.com/public_html/; pwd"
-          probe candidate_pse_wordpress "cd /domains/admin-pse.webnvn.com/public_html/; pwd"
-          probe old_eduresearch_root "cd /domains/nghiencuukhoahoc.webnvn.com/public_html/; pwd"
-          # Shared hosts may chroot individual FTPS accounts; relative CWD distinguishes mappings
-          # without listing filenames, reading application files or changing the server.
-          probe ftp_login_public_html "cd public_html; pwd"
-          probe pse_frontend_relative "cd domains/pse.webnvn.com/public_html; pwd"
-          probe pse_wp_relative "cd domains/admin-pse.webnvn.com/public_html; pwd"
-          probe pse_frontend_parent "cd ../domains/pse.webnvn.com/public_html; pwd"
-          probe pse_wp_parent "cd ../domains/admin-pse.webnvn.com/public_html; pwd"
-          probe old_eduresearch_relative "cd domains/nghiencuukhoahoc.webnvn.com/public_html; pwd"
-          echo "FTPS_PROBE note=read_only_candidate_paths_not_proof_of_database_separation"
+          python3 - <<'PY'
+          import ftplib, os, socket, ssl, sys
+          from urllib.parse import urlsplit
+
+          def status(key, value):
+              print('FTPS_DIAG '+key+'='+value, flush=True)
+
+          raw=os.environ.get('FTP_SERVER','').strip()
+          if '://' not in raw:
+              raw='ftp://'+raw
+          try:
+              addr=urlsplit(raw)
+              if not (addr.scheme in ('ftp','ftps') and addr.hostname
+                      and addr.port in (None,21) and not addr.username and not addr.password
+                      and addr.path in ('','/') and not addr.query and not addr.fragment):
+                  raise ValueError('Invalid endpoint')
+          except (ValueError, TypeError):
+              status('CONFIG','INVALID_FTP_SERVER')
+              sys.exit(2)
+
+          user=os.environ.get('FTP_USERNAME','')
+          password=os.environ.get('FTP_PASSWORD','')
+          if not user or not password:
+              status('CONFIG','MISSING_CREDENTIALS')
+              sys.exit(2)
+
+          origins={}
+          for line in os.environ.get('ENV_FILE','').splitlines():
+              line=line.strip().removeprefix('export ').strip()
+              for k,label in (('WC_URL=','WORDPRESS'),('WC_URL_CLIENT=','ASTRO')):
+                  if line.startswith(k):
+                      value=line[len(k):].strip().strip('"').strip("'")
+                      origin=urlsplit(value)
+                      if origin.scheme!='https' or not origin.hostname or origin.path not in ('','/'):
+                          status('CONFIG','INVALID_'+label+'_ORIGIN')
+                          sys.exit(2)
+                      origins[label]=origin.hostname
+          if len(origins)!=2:
+              status('CONFIG','MISSING_WORDPRESS_OR_ASTRO_ORIGIN')
+              sys.exit(2)
+
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=12)
+          phase='TCP_CONNECT'
+          try:
+              ftp.connect(addr.hostname,addr.port or 21)
+              status('TCP','PASS')
+              phase='TLS_HANDSHAKE'
+              ftp.auth()
+              status('TLS','PASS')
+              phase='AUTH'
+              ftp.login(user,password)
+              status('AUTH','PASS')
+              phase='PROTECTED_DATA'
+              ftp.prot_p()
+              status('PROT_P','PASS')
+              phase='ROOT_PWD'
+              initial=ftp.pwd()
+              status('PWD','PASS')
+              reachable={}
+              for label,hostname in origins.items():
+                  candidates=[
+                      '/domains/'+hostname+'/public_html',
+                      'domains/'+hostname+'/public_html',
+                      '../domains/'+hostname+'/public_html',
+                      '/public_html',
+                      'public_html',
+                  ]
+                  reachable[label]=False
+                  for index,directory in enumerate(candidates,1):
+                      try:
+                          ftp.cwd(initial)
+                          ftp.cwd(directory)
+                          status(label+'_CWD','PASS_CANDIDATE_'+str(index))
+                          reachable[label]=True
+                          break
+                      except (ftplib.all_errors, OSError) as exc:
+                          if isinstance(exc, (TimeoutError, socket.timeout)):
+                              status(label+'_CWD','CONTROL_CHANNEL_TIMEOUT')
+                              break
+                          if isinstance(exc, ftplib.error_perm):
+                              code=str(exc)[:3]
+                              status(label+'_CWD_ATTEMPT_'+str(index),'FTP_'+code if code.isdigit() else 'FTP_REJECTED')
+                          else:
+                              status(label+'_CWD_ATTEMPT_'+str(index),'UNAVAILABLE_'+type(exc).__name__)
+                  if not reachable[label]:
+                      status(label+'_CWD','FAIL')
+              if not all(reachable.values()):
+                  status('DEPLOY_READINESS','FAIL_SITE_ROOT_ACCESS')
+                  sys.exit(2)
+              status('DEPLOY_READINESS','PASS_READ_ONLY')
+          except ssl.SSLCertVerificationError:
+              status(phase,'TLS_CERTIFICATE_VERIFICATION_FAILED')
+              sys.exit(2)
+          except (TimeoutError,socket.timeout):
+              status(phase,'TIMEOUT')
+              sys.exit(2)
+          except ftplib.error_perm as exc:
+              code=str(exc)[:3]
+              status(phase,'FTP_'+code if code.isdigit() else 'FTP_REJECTED')
+              sys.exit(2)
+          except (OSError,ssl.SSLError,ftplib.all_errors) as exc:
+              status(phase,'FAILED_'+type(exc).__name__)
+              sys.exit(2)
+          finally:
+              try:ftp.quit()
+              except Exception:ftp.close()
+          PY
