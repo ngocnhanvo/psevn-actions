@@ -59,6 +59,29 @@ def main():
         print("WP_CATEGORY="+json.dumps({"id":item.get("id"),"name":label(item.get("name")),"slug":item.get("slug")},ensure_ascii=False))
     for item in collections["posts"][:20]:
         print("WP_POST="+json.dumps({"id":item.get("id"),"title":label((item.get("title") or {}).get("rendered")),"categories":item.get("categories"),"date":item.get("date")},ensure_ascii=False))
+    # Public branding/Menu Manager check; only print non-sensitive public fields.
+    try:
+        with urlopen(Request(base+"/wp-json/wp/v2/thong-tin-chung?status=publish&per_page=20&_fields=id,acf",headers={"Accept":"application/json"}),timeout=25) as res:
+            infos=json.loads(res.read(1_000_000))
+        print("WP_INFO_ITEMS="+str(len(infos)))
+        for entry in infos[:5]:
+            acf=entry.get("acf") or {}
+            print("WP_INFO="+json.dumps({"id":entry.get("id"),"company":label(acf.get("tencongty")),"logo":bool((acf.get("logo") or {}).get("url")),"hotline":bool(acf.get("hotline")),"email":bool(acf.get("emailhcm"))},ensure_ascii=False))
+    except Exception as error:
+        print("WP_INFO=BLOCKED type="+type(error).__name__)
+    try:
+        with urlopen(Request(base+"/wp-json/esc-api/v1/menus",headers={"Accept":"application/json"}),timeout=25) as res:
+            menus=json.loads(res.read(2_000_000))
+        collection=menus.get("menus") if isinstance(menus,dict) else {}
+        if not isinstance(collection,dict): collection={}
+        print("WP_MENU_CODES="+json.dumps(sorted(collection.keys())))
+        for code,languages in collection.items():
+            if not isinstance(languages,dict): continue
+            for lang,data in languages.items():
+                rows=data.get("items") or []
+                print("WP_MENU="+json.dumps({"code":code,"lang":lang,"count":len(rows),"top":[label(item.get("label")) for item in rows[:20]]},ensure_ascii=False))
+    except Exception as error:
+        print("WP_MENU=BLOCKED type="+type(error).__name__)
     if not pages: raise RuntimeError("No public WordPress page data; authenticated mapping required")
     print("G0=PARTIAL; mapping must be verified before write")
 
