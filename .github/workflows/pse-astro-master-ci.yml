@@ -63,6 +63,7 @@ jobs:
             src/lib/nckh/googlePopupCompletion.test.ts \
             src/lib/nckh/articleEditor.test.ts \
             src/lib/wordpress/pages/getData.image-errors.test.ts \
+            scripts/inject-handler.portability.test.ts \
             scripts/generate-sitemap-robots.test.ts \
             scripts/sync-seo-files.nckh.test.ts \
             scripts/sync-seo-files.test.ts
