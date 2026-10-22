@@ -37,6 +37,7 @@ if (wp.scheme!='https' or not wp.hostname or wp.port not in (None,443)
 tools={
     'cache': 'pse-template-temporary-maintenance.php',
     'content': 'pse-template-content-maintenance.php',
+    'residue': 'pse-template-residue-inspection.php',
 }
 tool=os.environ.get('PSE_TEMPLATE_MAINTENANCE_TOOL','cache')
 if tool not in tools:
