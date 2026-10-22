@@ -1,2 +1,3 @@
 One-time shared Playwright public smoke test. No WordPress login, secret passing, FTP, build or production deploy.
 Second smoke run to verify npm download-cache reuse, without browser installation or admin login.
+2026-10-22: Template portability smoke with site URLs resolved from ENV_FILE (read only, no build or FTP).
