@@ -4,3 +4,4 @@ Second audit: log boolean status only, preserving no credential values or sensit
 2026-10-21: one read-only FTPS path-isolation probe. Do not upload or list files.
 2026-10-21: safe chroot-relative FTPS CWD-only checks for PSE build destination (no upload/delete).
 2026-10-22: Owner updated FTP_SERVER after host migration; verify existing FTPS secrets using read-only TLS/login/CWD probes. No files, uploads, build, or deploy.
+2026-10-22: Targeted follow-up to inconclusive FTPS CWD audit #39719244809; explicitly verify TCP, TLS certificate, AUTH, PWD, and configured Astro/WP roots with zero writes.
