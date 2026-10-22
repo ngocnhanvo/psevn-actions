@@ -51,16 +51,41 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/pse-php-live-release.py
-      - name: Probe live WordPress PSE unzip ready marker (NO BUILD)
+      - name: Probe configured WordPress unzip ready marker (NO BUILD)
         shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
         run: |
           set -euo pipefail
-          for retry in 1 2 3; do
-            if [ "$(curl --proto '=https' --tlsv1.2 -fsSL --max-time 20 --max-redirs 0 https://admin-pse.webnvn.com/pse-unzip-v2.ready)" = 'PSE_ASTRO_UNZIP_PROTOCOL=2' ]; then
-              echo "PSE_WP_UNZIP_READY_MARKER=PASS"
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "PSE_WP_UNZIP_READY_MARKER=FAIL"
-          exit 1
+          python3 - <<'PY'
+          import os, ssl, time
+          from urllib.parse import urlsplit
+          from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):
+                  return None
+          values=[]
+          for line in os.environ['ENV_FILE'].splitlines():
+              if line.strip().startswith('WC_URL='):
+                  values.append(line.split('=',1)[1].strip().strip('"').strip("'"))
+          if len(values)!=1:
+              raise RuntimeError('Expected one WordPress WC_URL in ENV_FILE')
+          parsed=urlsplit(values[0])
+          if not (parsed.scheme=='https' and parsed.hostname
+              and not parsed.username and not parsed.password and parsed.port in (None,443)
+              and parsed.path in ('','/') and not parsed.query and not parsed.fragment):
+              raise RuntimeError('Invalid WordPress HTTPS origin in ENV_FILE')
+          client=build_opener(HTTPSHandler(context=ssl.create_default_context()),NoRedirect)
+          url=parsed.geturl().rstrip('/')+'/pse-unzip-v2.ready'
+          for attempt in range(3):
+              try:
+                  with client.open(Request(url,method='GET'),timeout=20) as response:
+                      if response.status==200 and response.read(100).strip()==b'PSE_ASTRO_UNZIP_PROTOCOL=2':
+                          print('PSE_WP_UNZIP_READY_MARKER=PASS')
+                          break
+              except Exception:
+                  pass
+              if attempt==2:
+                  raise RuntimeError('Configured WP unzip readiness endpoint unavailable')
+              time.sleep(3)
+          PY
