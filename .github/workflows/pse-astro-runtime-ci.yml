@@ -63,6 +63,9 @@ jobs:
           test ! -e source/src/pages/api/nckh
           test ! -e source/src/pages/api/auth
           test ! -e source/src/pages/so-tay
+          test ! -e source/src/pages/api/quote
+          test ! -e source/src/pages/xem-truoc
+          test ! -e source/supportAI
           test -f source/src/pages/api/user/info.ts
           test -f 'source/src/pages/ssr/posts/[slug]/detail.astro'
           test -f 'source/src/pages/ssr/products/[slug]/detail.astro'
