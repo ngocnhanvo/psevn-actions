@@ -1,0 +1,2 @@
+Operation: restore only the verified PSE protected recovery backup into a disposable local MariaDB on GitHub Actions. No production writes, no backup artifact, no frontend build.
+Expected archive SHA-256 prefix: 887a764a48b886d0
