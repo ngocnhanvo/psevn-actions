@@ -1,1 +1,1 @@
-Verify PSE PHP master 9e8e3ff6a0c564adc437208f67dbad4bd95b3b63: portable Build Website, Agent and WordPress theme. Source-only; no FTP/build.
+Verify updated PSE PHP master 9e3b9fc0fe3edf14a91637681affd2b0c9c372c7 after removal of three old diagnostic MU profilers and seven disabled Blue Sea workflows. PHP Trigger, Agent and theme source-only. No FTP, no Astro build.
