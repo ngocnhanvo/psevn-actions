@@ -8,6 +8,7 @@ on:
       - scripts/pse-template-database-readonly.mjs
       - .pse-template-db-backup-request
       - .pse-template-cleanup-users-request
+      - .pse-template-db-sql-audit-request
       - .github/workflows/pse-template-audit.yml
 permissions:
   contents: read
@@ -17,7 +18,9 @@ jobs:
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.event.head_commit.message != 'test(template): backup PSE WP database (local only)' &&
       github.event.head_commit.message != 'chore(template): remove five NCKH test accounts after Updraft backup' &&
-      github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)'
+      github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
+      github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
+      github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -75,6 +78,8 @@ jobs:
       github.event.head_commit.message != 'test(template): backup PSE WP database (local only)' &&
       github.event.head_commit.message != 'chore(template): remove five NCKH test accounts after Updraft backup' &&
       github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
+      github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
+      github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
       github.event.head_commit.message != 'test(template): audit DEV and PROD sources (READ ONLY)'
     runs-on: ubuntu-latest
     timeout-minutes: 9
@@ -151,3 +156,27 @@ jobs:
           node --check scripts/pse-template-cleanup-users.mjs
           node scripts/pse-template-cleanup-users.mjs
           echo 'PSE_NCKH_USER_CLEANUP=PASS; ADMIN_PRESERVED=PASS; NO_PHP_DEPLOY=PASS; NO_ASTRO_BUILD=PASS'
+
+  database-sql-inspection:
+    name: Scan current protected PSE Updraft SQL backup on ephemeral runner (READ ONLY)
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' &&
+      github.event.head_commit.message == 'test(template): inspect current PSE SQL backup residues (READ ONLY)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PSE read-only SQL backup audit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect protected database archive through verified FTPS, no SQL execution
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-template-db-sql-readonly.py
+          python3 scripts/pse-template-db-sql-readonly.py
+          echo 'PSE_SQL_ARCHIVE_INSPECTION=PASS_READ_ONLY; NO_SQL_EXECUTION=PASS; NO_BACKUP_ARTIFACT=PASS'
