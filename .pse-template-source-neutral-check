@@ -1,1 +1,1 @@
-Verify PSE Astro github commit 4285f061b251f85ef3dcdf7486c858c2eee158d2: source-only regression, no frontend build.
+Full Vitest recheck after generic Astro sync commit d91d7da5d0e1e71a2eefd461365f4b0699c156cf; no Astro build or deploy.
