@@ -1,23 +1,27 @@
 import { chromium } from 'playwright';
 
-const origin = 'https://admin-pse.webnvn.com';
-const oldHost = 'nghiencuukhoahoc.id.vn';
 const user = process.env.WP_ADMIN_USERNAME || '';
 const password = process.env.WP_ADMIN_PASSWORD || '';
 const config = process.env.ENV_FILE || '';
-function envHost() {
- const matches=config.split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,''))
-   .filter(s=>s.startsWith('WC_URL_CLIENT='));
- if(matches.length!==1)throw Error('Exactly one PSE frontend origin required');
+function envUrl(key) {
+ const matches=config.split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/, ''))
+   .filter(s=>s.startsWith(key+'='));
+ if(matches.length!==1)throw Error('Exactly one '+key+' origin required');
  const value=matches[0].split('=').slice(1).join('=').trim().replace(/^['"]|['"]$/g,'');
  const url=new URL(value);
  if(url.protocol!=='https:' || !url.hostname || url.username || url.password ||
-    !['','/'].includes(url.pathname) || url.search || url.hash ||
-    url.hostname.includes('nghiencuukhoahoc') || url.hostname.includes('xuongmunonbaohiem'))
-   throw Error('PSE frontend origin invalid');
- return url.hostname;
+    !['','/'].includes(url.pathname) || url.search || url.hash || url.port)
+   throw Error('Invalid HTTPS origin for '+key);
+ return url;
 }
-const target=envHost();
+const origin=envUrl('WC_URL').origin;
+const target=envUrl('WC_URL_CLIENT').hostname;
+// A migration is potentially destructive. Require its OLD hostname explicitly;
+// if unset, the script can verify the current domain but cannot edit it.
+const oldHost=(process.env.PSE_PREVIOUS_FRONTEND_HOST || '').trim().toLowerCase();
+if(oldHost && (!/^[a-z0-9.-]+$/.test(oldHost) || oldHost.startsWith('.') ||
+               oldHost.endsWith('.') || oldHost.includes('..') || oldHost===target))
+  throw Error('Invalid previous frontend host');
 if(!user||!password)throw Error('PSE WordPress credentials are missing');
 const browser=await chromium.launch();
 try {
@@ -41,7 +45,7 @@ try {
  console.log('PSE_WP_DOMAIN_CURRENT='+current+' PSE_WP_DOMAIN_EXPECTED='+target);
  if(current===target){console.log('PSE_WP_DOMAIN=ALREADY_CORRECT');process.exitCode=0;}
  else {
-   if(current!==oldHost)throw Error('Unexpected domain; refusing to update user-controlled setting');
+   if(!oldHost || current!==oldHost)throw Error('Previous frontend host not verified; refusing to modify WordPress settings');
    await page.goto(origin+'/wp-admin/edit.php?post_type=thong-tin-chung',{
      waitUntil:'domcontentloaded',timeout:45000
    });
