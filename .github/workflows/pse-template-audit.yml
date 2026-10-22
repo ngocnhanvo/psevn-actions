@@ -6,6 +6,7 @@ on:
     paths:
       - scripts/template-audit.py
       - scripts/pse-template-database-readonly.mjs
+      - scripts/pse-template-content-audit.mjs
       - .pse-template-db-backup-request
       - .pse-template-cleanup-users-request
       - .pse-template-db-sql-audit-request
@@ -101,6 +102,8 @@ jobs:
         run: |
           node --check scripts/pse-template-database-readonly.mjs
           node scripts/pse-template-database-readonly.mjs
+          node --check scripts/pse-template-content-audit.mjs
+          node scripts/pse-template-content-audit.mjs
           echo 'PSE_DB_INVENTORY_JOB=PASS_READ_ONLY; NO_DB_EXPORT=PASS; NO_DB_MUTATIONS=PASS'
 
   updraft-db-backup:
