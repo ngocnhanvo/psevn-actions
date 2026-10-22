@@ -53,13 +53,17 @@ async function inspectEditor(url) {
   return page.evaluate(() => {
     const el = document.querySelector('#content');
     const text = el && 'value' in el ? el.value : '';
-    const acf = [...document.querySelectorAll('.acf-fields input:not([type=password]), .acf-fields textarea')]
-      .map(node => node.value || '').join('\n');
+    const acfNodes = [...document.querySelectorAll('.acf-fields input:not([type=password]), .acf-fields textarea')];
+    const acf = acfNodes.map(node => node.value || '').join('\n');
+    const acfLegacyFields = [...new Set(acfNodes.filter(node =>
+      /nghiencuukhoahoc|xuongmunonbaohiem|eduresearch\s*hub|blue\s*sea/i.test(node.value || '')
+    ).map(node => node.closest('.acf-field[data-name]')?.getAttribute('data-name') || '')
+      .filter(name => /^[a-zA-Z0-9_-]{1,60}$/.test(name)))];
     let blocks = '';
     try {
       blocks = window.wp?.data?.select('core/editor')?.getEditedPostContent?.() || '';
     } catch { /* Gutenberg editor not initialized */ }
-    return {value: [text, acf, blocks].join('\n'), readable: Boolean(el || blocks || acf)};
+    return {value: [text, acf, blocks].join('\n'), readable: Boolean(el || blocks || acf), acfLegacyFields};
   });
 }
 
@@ -95,6 +99,12 @@ try {
         inspected += 1;
         if (oldBrand.test(state.value)) oldInBody += 1;
         if (privateContact.test(state.value)) privateInBody += 1;
+        const id=url.searchParams.get('post');
+        say('PAGE_'+id+'_OLD_BRAND',oldBrand.test(row.name+' '+state.value)?'YES':'NO');
+        say('PAGE_'+id+'_HAS_EMBEDDED_LAYOUT',/<script|\[(?:tablepress|esc_table|shortcode)|<!-- wp:shortcode/i.test(state.value)?'YES':'NO');
+        say('PAGE_'+id+'_PRIVATE_CONTACT',privateContact.test(state.value)?'YES':'NO');
+        say('PAGE_'+id+'_LEGACY_ACF_FIELD_COUNT',state.acfLegacyFields.length);
+        for (const name of state.acfLegacyFields) say('PAGE_'+id+'_LEGACY_ACF_FIELD_'+name,'YES');
       }
     } catch { unreadable += 1; }
   }
@@ -115,6 +125,8 @@ try {
         generalReadable += 1;
         if (oldBrand.test(state.value)) generalLegacy += 1;
         if (privateContact.test(state.value)) generalPrivate += 1;
+        say('GENERAL_INFO_LEGACY_ACF_FIELD_COUNT',state.acfLegacyFields.length);
+        for (const name of state.acfLegacyFields) say('GENERAL_INFO_LEGACY_ACF_FIELD_'+name,'YES');
       }
     } catch { /* mark unverified */ }
   }
