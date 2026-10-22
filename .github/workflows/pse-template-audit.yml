@@ -6,12 +6,13 @@ on:
     paths:
       - scripts/template-audit.py
       - scripts/pse-template-database-readonly.mjs
+      - .pse-template-db-backup-request
       - .github/workflows/pse-template-audit.yml
 permissions:
   contents: read
 jobs:
   audit:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message != 'test(template): backup PSE WP database (local only)'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -50,7 +51,7 @@ jobs:
 
   database-inventory:
     name: Inventory existing PSE WP records via admin (READ ONLY)
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message != 'test(template): backup PSE WP database (local only)'
     runs-on: ubuntu-latest
     timeout-minutes: 9
     container:
@@ -72,3 +73,28 @@ jobs:
           node --check scripts/pse-template-database-readonly.mjs
           node scripts/pse-template-database-readonly.mjs
           echo 'PSE_DB_INVENTORY_JOB=PASS_READ_ONLY; NO_DB_EXPORT=PASS; NO_DB_MUTATIONS=PASS'
+
+  updraft-db-backup:
+    name: Save a local protected PSE database backup using existing UpdraftPlus
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' && github.event.head_commit.message == 'test(template): backup PSE WP database (local only)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout PSE Actions script, no additional PHP code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install matching Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Backup database through authenticated existing UpdraftPlus UI
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: |
+          node --check scripts/pse-template-updraft-backup.mjs
+          node scripts/pse-template-updraft-backup.mjs
+          echo 'PSE_DATABASE_LOCAL_BACKUP=VERIFIED_IN_UPDRAFTPLUS'
