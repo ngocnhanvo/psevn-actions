@@ -129,19 +129,23 @@ try {
     return {
       state: String(json?.data?.status || 'unknown'),
       active: json?.data?.build_active === true,
+      pending: Number(json?.data?.pending_count ?? 0),
     };
   });
   console.log('PSE_WP_BUILD_STATUS_CHECK=' + state.state);
   if (state.active || ['loading', 'queued', 'in_progress'].includes(state.state)) {
     throw new Error('WordPress still reports an active build; do not dispatch another one');
   }
+  console.log('PSE_WP_PENDING_CHANGE_COUNT=' + state.pending);
+  if (!Number.isInteger(state.pending) || state.pending <= 0) {
+    console.log('PSE_WP_BUILD=NO_PENDING_CHANGES; force_build not permitted by project Knowledge policy');
+    process.exitCode = 2;
+  } else {
 
   const result = await page.evaluate(async () => {
     const body = new URLSearchParams({
       action: 'vcs_trigger_build',
       nonce: globalThis.vcsBuild.nonce,
-      // E2E chạy lại build kể cả khi không có pending logs.
-      force_build: '1',
     });
 
     const response = await fetch(globalThis.vcsBuild.ajax_url, {
@@ -168,6 +172,7 @@ try {
   }
 
   console.log(`WordPress Build Website accepted the GitHub dispatch: ${result.payload?.data?.message || 'success'}`);
+  }
 } finally {
   await browser.close();
 }
