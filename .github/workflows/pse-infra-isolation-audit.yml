@@ -85,6 +85,45 @@ jobs:
           except OSError as e:
               print('FTP_NETWORK TCP='+type(e).__name__,flush=True)
           PY
+      - name: Inspect FTP TLS certificate without sending credentials (READ ONLY)
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib, os, ssl, socket, subprocess
+          from urllib.parse import urlsplit
+
+          raw=os.environ.get('FTP_SERVER','').strip()
+          u=urlsplit(raw if '://' in raw else 'ftp://'+raw)
+          if not u.hostname or u.scheme not in ('ftp','ftps') or u.username or u.password or u.path not in ('','/'):
+              raise SystemExit('FTPS_CERT CONFIG=INVALID')
+          ftp=ftplib.FTP_TLS(context=ssl._create_unverified_context(),timeout=10)
+          try:
+              ftp.connect(u.hostname,u.port or 21)
+              ftp.auth()
+              cert=ftp.sock.getpeercert(binary_form=True)
+              if not cert:
+                  raise RuntimeError('No TLS certificate available')
+              pem=ssl.DER_cert_to_PEM_cert(cert)
+              result=subprocess.run(['openssl','x509','-noout','-subject','-issuer','-dates','-ext','subjectAltName'],
+                  input=pem,text=True,capture_output=True,timeout=8,check=True)
+              for line in result.stdout.splitlines():
+                  line=line.strip()
+                  if line:
+                      print('FTPS_CERT '+line,flush=True)
+              check=subprocess.run(['openssl','x509','-noout','-checkip',u.hostname],
+                  input=pem,text=True,capture_output=True,timeout=8)
+              print('FTPS_CERT IP_IDENTITY_MATCH='+('YES' if check.returncode==0 else 'NO'),flush=True)
+              print('FTPS_CERT READ_ONLY=PASS',flush=True)
+          except Exception as exc:
+              print('FTPS_CERT INSPECTION_FAILED='+type(exc).__name__,flush=True)
+              raise
+          finally:
+              try: ftp.close()
+              except Exception: pass
+          PY
       - name: Verify FTPS TLS, authentication and configured site roots (READ ONLY)
         shell: bash
         env:
