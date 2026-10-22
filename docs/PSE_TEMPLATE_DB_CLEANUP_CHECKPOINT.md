@@ -91,3 +91,17 @@ The scanner only checked selected editor fields and regular expressions. No asse
 - **Do not rerun** the successful 39743250037 isolated restore merely to repeat these counts. The existing backup and the previous 39739176065 sanitation workflow remain verified; no duplicate backup or cleanup is needed.
 
 **Updated gate:** RECOVERY_RESTORE_VERIFIED=YES; SANITIZED_CLONE_RESTORE_AND_APP_TEST=NO; TEMPLATE_DISTRIBUTABLE_DB=NOT_READY_LEGACY_RESIDUE.
+
+
+## Sanitized starter database artifact (2026-10-22)
+
+- [Run 39745096651](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39745096651) PASS. **New deliverable**, independently generated from the protected snapshot SHA-256 prefix 887a764a48b886d0, after the earlier recovery-restore verification. No previous cleanup or backup workflow was repeated.
+- GitHub Actions artifact: [pse-sanitized-db-starter](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39745096651/artifacts/12411590269), artifact ID 12411590269. Retention is **7 days** from the workflow, so download and store privately if needed. Includes a 15,714-byte gzip SQL file and README-IMPORT.txt.
+- Strict all-allowlist method: created new MariaDB database with **94 WordPress/plugin table schemas**; copied only **5 currently published page identities/portable slugs, 54 ACF field definitions, 5 ACF field groups, 5 menu item identities, 1 menu taxonomy, 108 structural metadata rows and 25 allowlisted WordPress options**. All page body content/legacy CSS and business ACF values are intentionally excluded. ACF schema definitions were checked for legacy labels, URLs and obvious contact values; no unsafe definitions were copied.
+- The sanitized export contains **zero users, revisions, historical chats/comments or Agent knowledge rows**, no WordPress logins/password hashes and no original customer page content. Its SQL passed a strict old-brand/domain/email/phone/privacy scan, and then successfully re-imported into a **second** empty local MariaDB with all 94 schemas intact.
+- All three ephemeral databases (original restored recovery snapshot, sanitized export staging DB, and fresh verification import) were deleted. No production SQL writes, WordPress maintenance tools, FTP uploads of PHP, production deploys or Astro builds occurred.
+- The output's table prefix is **wp_** and its home/siteurl are **https://example.invalid**. Credentials must be created on the new target; the target origin, plugins, media and integration secrets need post-import configuration. README-IMPORT.txt is bundled.
+- **Scope clarification:** This is a clean **starter skeleton** for new installations and an isolated DB import validation, **not** a pixel-identical clone and **not yet an end-to-end validated WordPress/Astro runtime**. Historical layout, imported business CSS, media files and tenant plugin settings were intentionally not carried forward. Preserving visual design requires separate sanitized styling/layout migration and browser tests.
+- Do not repeat run 39745096651 merely to generate the same snapshot again. Regenerate only if the template requirements or upstream source meaningfully change.
+
+**Updated gates:** RECOVERY_RESTORE_VERIFIED=YES; STARTER_SANITIZED_SQL_GENERATED=YES; STARTER_SQL_SECOND_REIMPORT=PASS; LIVE_PRODUCTION_UNCHANGED=YES; FULL_WORDPRESS_ASTRO_RUNTIME_CERTIFIED=NO.
