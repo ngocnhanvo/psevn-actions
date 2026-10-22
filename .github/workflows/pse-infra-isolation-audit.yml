@@ -143,7 +143,7 @@ jobs:
                           status(label+'_CWD','PASS_CANDIDATE_'+str(index))
                           reachable[label]=True
                           break
-                      except (ftplib.all_errors, OSError) as exc:
+                      except ftplib.all_errors as exc:
                           if isinstance(exc, (TimeoutError, socket.timeout)):
                               status(label+'_CWD','CONTROL_CHANNEL_TIMEOUT')
                               break
@@ -168,7 +168,7 @@ jobs:
               code=str(exc)[:3]
               status(phase,'FTP_'+code if code.isdigit() else 'FTP_REJECTED')
               sys.exit(2)
-          except (OSError,ssl.SSLError,ftplib.all_errors) as exc:
+          except ftplib.all_errors as exc:
               status(phase,'FAILED_'+type(exc).__name__)
               sys.exit(2)
           finally:
