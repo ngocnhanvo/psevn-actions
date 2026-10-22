@@ -1,200 +1,21 @@
-# PSE source import checkpoint — 2026-10-21
+# PSE template source readiness — 2026-10-22
 
-## Result
-**PASS — source import completed** via [GitHub Actions run #39596953375](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39596953375) (no deploy).
+## Exact repositories
+- Astro: `ngocnhanvo/psevn-astro`; `github` development, `master` production source.
+- WordPress/PHP: `ngocnhanvo/psevn-php` `master`.
+- Actions: `ngocnhanvo/psevn-actions` `main`.
+- Shared rules: `ngocnhanvo/knowledge` `main`.
 
-Previous blocked run #39596101423 failed before checkout because SOURCE_REPO_PAT was unavailable. After the user configured the secret, run #39596953375 completed successfully. The token was validated and all three source checkouts and target writes succeeded.
+## Verified (source-only, without build)
+- Astro development: [114/114 unit tests](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39725446919) PASS.
+- Astro production source: [89/89 tests](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39726080850) PASS.
+- WordPress domain persisted setting and SEO REST contract: [WordPress domain](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39725073788), [SEO](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39725069661), both PASS.
+- FTP certificate, authentication and target root: [read-only verification](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39722988791) PASS.
 
-## Pinned source snapshots
-- Astro: `ngocnhanvo/nghiencuukhoahoc-astro`, commit `f208bde5e4c137b32a2e30f9515e4fdae29a225d` (source `github`).
-- PHP: `ngocnhanvo/nghiencuukhoahoc-php`, commit `c1c6f6d3e4c4710f2b1cda18808b6d57c6f723c0` (source `master`).
-- Actions: `ngocnhanvo/nghiencuukhoahoc-actions`, commit `875e98cf3d7d2c25f7215e602aa953ee5dbf4283` (source `main`).
+## Reuse boundaries
+- Historic copied-project and one-off migration tools are retained in `imported-eduresearch/` but disabled and excluded from operational workflows.
+- Production Astro may only be built via the existing PHP/WordPress Build Website mechanism. A source commit does **not** mean a build or deploy happened.
+- A green source audit is a scanned report, **not** proof that source is perfectly portable or that the WordPress database is sanitized.
+- Production DB remains separate from a reusable template DB. Full database cleanup requires a private verified backup, a disposable copy, content/credentials/user/PII sanitization and restoration testing. Never scrub the live DB as a template.
 
-## Destinations and evidence
-- PSE Astro `ngocnhanvo/psevn-astro`: branch `github`; import commit `354bf15d8d0fa9e87133a032b640ee1e6f9c77a1`. Mandatory inherited policy was restored from the pinned source in follow-up commits `adbd59d9474db162fb74a9e50299fdd2d550b48f` and `13cb5a21f5ccecde149ffc9e3d53afdaa9f67795`, as the source .gitignore ignores docs by default.
-- PSE PHP `ngocnhanvo/psevn-php`: isolated import branch `import/eduresearch-baseline`, commit `93fbcc5f01b43bd80bb55bf541065b1b554bfaaf`.
-- PSE Actions `ngocnhanvo/psevn-actions`: import commit `cadbb8d525fd3323d0f2023d38d8f64577039223`, reference workflows under `imported-eduresearch/workflows-disabled/*.yml.txt` (30 original workflows). They are NOT active workflows.
-
-## Safety and unfinished adaptation
-- No FTP upload, no WordPress admin operations, no Astro build, no production deploy, and no edits to source repositories were performed.
-- PHP import excluded wp-config.php and backups, uploads, cache, emergency PHP unzip/debug scripts and secret-like files. Review the complete source and deployment configuration before using it.
-- PSE production environments, domain, WordPress API, OAuth redirect URLs, secrets, FTP destination, and Build Website integration have NOT been validated.
-- PSE Astro `master` production branch was NOT created. PSE PHP `master` production branch was NOT changed or created.
-- Code has been copied, but no build/test run on the imported application was performed. Do not claim application or deployment PASS.
-- The one-time import trigger is intentionally guarded against overwriting destination import branches on retries. Do not rerun it unnecessarily.
-
-## Next stage
-1. Review PSE-specific domain, identity, WordPress API and deployment configuration, without changing the inherited build/cache/incremental architecture.
-2. Review/redact old domain references before enabling PSE-only Actions workflows; retain only needed CI workflows.
-3. Test code offline and staging with correct PSE environment, then follow the PSE code-mode approval path for any production action.
-
-
-## Branch normalization (2026-10-21)
-Requested layout from PSE project context:
-- `psevn-astro`: `github` = development/test, `master` = production. Both now exist, both at `13cb5a21f5ccecde149ffc9e3d53afdaa9f67795` during initial import (source EduResearch Astro code was identical between `github` and `master` except implementation status documentation).
-- `psevn-php`: `master` now holds imported backend snapshot `93fbcc5f01b43bd80bb55bf541065b1b554bfaaf`.
-- `psevn-actions`: `main` kept; `knowledge`: `main` kept. Knowledge proposal branches are outside PSE cleanup scope.
-
-Actions run [#39599552679](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39599552679) completed and removed the PHP `import/eduresearch-baseline` temporary ref after verifying it exactly matched `master`.
-
-**PARTIALLY BLOCKED (GitHub administrative permission):**
-- Astro and PHP repositories still have `main` as their GitHub default branch; both `main` branches contain only original bootstrap README.
-- `SOURCE_REPO_PAT` has sufficient Contents rights for reading/writing/deleting non-default refs, but GitHub returned HTTP 403 (`Resource not accessible by personal access token`) when trying to PATCH each repository's `default_branch`.
-- No attempt was made to delete either current default branch. A guarded workflow `.github/workflows/pse-branch-finalize.yml` remains ready to re-run after the existing PAT is granted **Repository permissions → Administration: Read and write** for `psevn-astro` and `psevn-php`, or after the repository owner manually changes the two default branches (Astro → github; PHP → master).
-- Once defaults switch, this guarded workflow will delete only `psevn-astro/main` at `d20d0604b01c288c0fd6229d4007a10c7bd08e97` and `psevn-php/main` at `e97ffce51f14e02effca0459198e286ee1a030d9`, refusing deletion if changed.
-- No production deploy/build/FTP/WordPress action taken. Source EduResearch repositories were not changed.
-
-## Infrastructure isolation audit — 2026-10-21
-
-**Result: NOT VERIFIED AS ISOLATED; application code still references source EduResearch environment. Do not deploy imported PSE source yet.**
-
-- Completed read-only audit: https://github.com/ngocnhanvo/psevn-actions/actions/runs/39602614690
-- PSE Actions GitHub secrets confirmed PRESENT (names only): `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `WP_ADMIN_USERNAME`, `WP_ADMIN_PASSWORD`, `SOURCE_REPO_PAT`.
-- Public read-only GET probes: `https://admin-pse.webnvn.com/wp-json/` HTTP 200, `https://api-nghiencuukhoahoc.webnvn.com/wp-json/` HTTP 200; each frontend root HTTP 200. This does NOT establish database isolation.
-- There is no committed PSE runtime `wp-config.php` with the actual database name/host/credentials. `wp-config-sample.php` is a template only. Database identity of deployed WordPress PSE versus EduResearch cannot be determined from GitHub.
-- PSE Astro `src/lib/nckh/serverWp.ts` hardcodes EduResearch WordPress API; `src/lib/nckh/serverSession.ts` hardcodes EduResearch origin/host; `src/lib/nckh/privateRuntime.ts` locks private runtime to EduResearch domain.
-- PSE PHP `wp-content/plugins/github-trigger/vcs-build-trigger.php` still points to `nghiencuukhoahoc-actions` and enforces EduResearch-only `DB_NAME` and `site_url()` values in the build trigger guard. Those source guards must NOT simply be deleted or bypassed.
-- PSE Actions live workflows: source import, branch finalization, read-only infrastructure isolation audit. No PSE FTP deploy workflow configured. The 30 inherited EduResearch workflows are deliberately stored as nonexecutable `.txt` references. Their old FTP path `/domains/nghiencuukhoahoc.webnvn.com/public_html/` is not a PSE deployment target.
-- FTP secrets PRESENT does not prove target/account/path isolation. No FTP connection, upload, deletion, or directory traversal was attempted.
-- PSE Astro branches only `github` and `master`; PSE PHP only `master`; PSE Actions only `main`, after successful branch cleanup https://github.com/ngocnhanvo/psevn-actions/actions/runs/39601722164. Both PSE Astro and PHP GitHub defaults currently `master`.
-- Source repositories and running websites were not modified by the audit; no production build/deploy was performed.
-
-### Required before deploying PSE
-1. Verify on hosting that PSE and EduResearch WordPress use different database identifiers/users and preferably independent privileges. Do not reveal passwords. Record sanitized identity and isolation evidence.
-2. Verify FTP account scope, real remote deployment directories, and inability of the PSE deploy account to overwrite the EduResearch website. A shared physical FTP server is acceptable if rights and directories are isolated.
-3. Convert old hardcoded Astro WordPress API/origin/private-runtime paths and WordPress Build Website repo/site-domain guards to PSE-specific verified settings, retaining existing build architecture and protective checks.
-4. Build PSE-specific deployment workflow only after verifying destination and permissions; use the WordPress/PHP Build Website trigger for Astro, not an independent build path.
-
-### Follow-up FTPS credential/path probe — 2026-10-21
-- Run: https://github.com/ngocnhanvo/psevn-actions/actions/runs/39603222624 (PASS, read-only).
-- Connection using the `psevn-actions` FTP secrets: **FTPS login/PWD succeeded** using TLS with certificate verification enabled.
-- Tested candidate paths (CWD/PWD only; no LIST/GET/PUT/DELETE):
-  - `/domains/pse.webnvn.com/public_html/`: no_or_unverified
-  - `/domains/admin-pse.webnvn.com/public_html/`: no_or_unverified
-  - `/domains/nghiencuukhoahoc.webnvn.com/public_html/`: no_or_unverified
-- Important: all candidate paths failed or were not verified, which may reflect FTP chroot or differing remote-root mappings. It is **not proof** of separate FTP accounts or permission isolation; the true PSE FTP deployment path remains unverified.
-- No remote files were listed or changed, no build/deploy performed. Do not reuse the old EduResearch absolute FTP path in the PSE workflow.
-
-## Shared Playwright infrastructure — 2026-10-21
-
-**Implemented and tested:** `ngocnhanvo/knowledge-actions` (public) hosts a reusable `.github/workflows/playwright.yml` with Playwright `1.64.0`/Chromium Docker image. Each caller owns the target site and optional WordPress credentials. PSE calls it from `.github/workflows/pse-shared-playwright.yml`; the engine has no central project credentials.
-
-- Public PSE desktop/mobile smoke: [#39612921299](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39612921299) PASS.
-- Second public smoke: [#39613176502](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39613176502) PASS; npm cache restored (around 11MB); browser image contains Chromium.
-- WordPress PSE Site Health: [#39614955441](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39614955441) PASS, authenticated with PSE-specific WP secrets, detected actual DB name in Site Health without logging it.
-- This confirms WordPress Site Health browser access, **not** that PSE and EduResearch databases are different. The source project's runtime name has not been verified in the same way.
-- First attempts at the Site Health suite needed YAML syntax and Vietnamese label parser fixes; the final run above supersedes the failing diagnostic runs.
-- Common operating guidance submitted for review in [knowledge PR #9](https://github.com/ngocnhanvo/knowledge/pull/9), not merged automatically per Knowledge CONTRIBUTING policy.
-- No WordPress writes, DB writes, FTP uploads, Astro builds or production deployment occurred. Avoid sharing credentials or DB names in public Actions logs.
-
-
-## Database-name isolation verified via live WordPress Site Health — 2026-10-21
-
-**PASS (database names are different).** Independent authenticated read-only Playwright tests used per-project secrets and the common `ngocnhanvo/knowledge-actions` Chromium workflow.
-
-- EduResearch runtime: [run #39619046477](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39619046477), `WORDPRESS_SITE_HEALTH_DATABASE_NAME=FOUND`, `DATABASE_REFERENCE_MATCH=PASS`; runtime DB name matches the exact name in the guarded EduResearch PHP source.
-- PSE runtime: [run #39619058092](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39619058092), `WORDPRESS_SITE_HEALTH_DATABASE_NAME=FOUND`, `DATABASE_DIFFERENCE=PASS`; PSE runtime DB name is different from that independently verified EduResearch DB name.
-- Comparison used SHA-256 of the known source name; neither runtime name nor passwords or session material was printed in public workflow logs.
-- This establishes distinct database names at the current application configurations, **not** separate MySQL hosts/accounts/grants or FTP directory isolation.
-- **Still to fix before PSE deployment:** inherited PSE Astro serverWp/serverSession/privateRuntime old-domain references and WordPress Build Website trigger old project checks. Never assume separate DB names means API, credentials, or FTP isolation is complete.
-- No database writes, FTP writes, website builds, deployments, or user-data changes occurred.
-
-## GitHub Build Trigger isolation audit — 2026-10-21 (READ ONLY)
-
-**Overall verdict: FAIL — PSE build path is NOT isolated. EduResearch's own path is coherent.**
-
-Evidence from live authenticated WordPress browser audits, using per-project credentials through `ngocnhanvo/knowledge-actions`, without clicking Build or triggering any build dispatch:
-- PSE: [run #39620767162](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39620767162): `github_plugin_script=yes`, `cloudflare_plugin_script=no`, `passive_status_poll=seen`, **`status_repo=nghiencuukhoahoc-actions`**, `build_button_disabled=no`, `button_clicks=0 build_dispatches=0`; PASS for read-only browser execution.
-- EduResearch: [run #39621283041](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39621283041): `github_plugin_script=yes`, `cloudflare_plugin_script=no`, `passive_status_poll=seen`, **`status_repo=nghiencuukhoahoc-actions`**, `build_button_disabled=yes`, `button_clicks=0 build_dispatches=0`; PASS. A transient earlier login navigation timeout was retried with navigation hardening.
-- Passive status polling yields the GitHub Actions status/dashboard repository; it does **not** prove the result of actually pressing Build. No build was requested.
-
-Source code static cross-check:
-- PSE PHP `wp-content/plugins/github-trigger/vcs-build-trigger.php` still hardcodes `NCKH_ACTIONS_REPO='nghiencuukhoahoc-actions'`, EduResearch DB_NAME and API site_url as trigger authorization guards, and EduResearch's payload `site_domain`. Given independently verified distinct PSE runtime database name, the source guard would **reject PSE build** if deployed identically; do not rely on this accidental stop as correct routing.
-- PSE PHP `wp-content/mu-plugins/esc-github-trigger-config.php` still contains inherited Blue Sea default `VCS_GH_REPO`, while the GitHub Trigger plugin separately pins NCKH. Source copies also contain an obsolete Cloudflare Trigger plugin with embedded credentials; it is not loaded on either live Build page per browser checks, but should be audited/retired and the credential rotated without reproducing it.
-- No PSE-specific Astro production build/deploy workflow exists in `psevn-actions/.github/workflows`. Its import/test/cleanup workflows are NOT a production deployment pipeline; 30 inherited NCKH workflows remain disabled reference files.
-- EduResearch `nghiencuukhoahoc-actions/.github/workflows/nckh-deploy.yml` is bound to `nghiencuukhoahoc-astro/master`, EduResearch FTP target, API URL, and a repository_dispatch domain guard for EduResearch. It also supports workflow_dispatch and issue-based triggers that should be reviewed against the WordPress-only Build Website policy; no alternative build trigger was exercised.
-
-Required for correct PSE isolation:
-1. Configure PSE PHP GitHub Trigger with **PSE-specific exact** repository `ngocnhanvo/psevn-actions`, PSE `site_url`, independently verified PSE DB identity, and PSE dispatch payload, maintaining fail-closed guards and build lock/snapshot/force-build semantics.
-2. Replace/disable inherited MU-plugin repo defaults and remove or isolate dormant legacy Cloudflare trigger, with appropriate credential rotation.
-3. Configure `psevn-actions` PSE-only production workflow, sourcing `ngocnhanvo/psevn-astro/master`, validating PSE environment and real isolated FTP destination. Preserve inherited build/cache architecture; **initiate Astro builds only via the WordPress/PHP Build Website tool** under code-mode approval.
-4. Perform offline/static tests, authenticated read-only status tests, and staging-level isolated dispatch tests only after authorization and environment verification; do not trigger production as an isolation test.
-
-Audit changed only CI read-only browser suites/docs; **no WordPress PHP FTP upload, website deployment, database mutation, or GitHub repository_dispatch build**.
-
-## FTPS identity and deploy-directory audit — 2026-10-21
-
-**STATUS: PARTIALLY VERIFIED; DO NOT ENABLE PSE ASTRO DEPLOY.** This section supersedes earlier "lftp pwd succeeded" claims: lftp's local PWD command alone is NOT sufficient proof of authenticated FTP login.
-
-Evidence:
-- Strict Python FTP_TLS verification against the existing `FTP_SERVER` failed in BOTH repos with `hostname_mismatch`, not merely a missing login secret: [PSE #39628662089](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39628662089), [EduResearch #39628654792](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39628654792).
-- The server presents a CA-trusted certificate for public DNS name **`vt108159.server.idn.vn`**. DNS for this hostname resolved to the same endpoint as the existing configured server.
-- A **strict, authenticated** PSE FTPS session using this DNS name succeeded, including server `257 PWD`: [PSE #39629421226](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39629421226) (certificate inspection/authentication step PASS; overall workflow FAIL because its subsequent gate intentionally tested the original mismatched `FTP_SERVER`).
-- Across [PSE #39628096159](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39628096159) and [EduResearch #39628100492](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39628100492), both repos had the same HMAC fingerprint for `FTP_SERVER` endpoint and for the shared `SOURCE_REPO_PAT` key, but **different** account-name HMAC fingerprints. Their configured FTP login names therefore differ, without exposing them publicly.
-- FTP root `NLST` and all tested candidate directory `CWD` results were unavailable/negative; none proves directory permissions or proper frontend FTP mapping. Later attempts [PSE #39629957952](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39629957952) and [EduResearch #39629939362](https://github.com/ngocnhanvo/nghiencuukhoahoc-actions/actions/runs/39629939362) hit connection timeouts. Additional repeated probing was stopped.
-
-Required before a PSE build/deploy:
-1. Set each repository's `FTP_SERVER` to the certificate-matching hostname **`vt108159.server.idn.vn`** (only after confirming it is the intended server). The secret values cannot be changed via this audit.
-2. Verify **authenticated** PSE FTP directory mapping/permission to `pse.webnvn.com` and inability to access EduResearch frontend assets; account-name difference alone does not establish ACL isolation.
-3. Confirm the PSE Astro FTP deployment destination, signed remote unzip target, and PSE WordPress trigger readiness independently. No guessed `/domains/.../public_html` path is authorized.
-4. Retest strict TLS login and FTP directory mapping without writing site files. Keep `PSE_ASTRO_DEPLOY_READY` off until explicitly verified.
-
-Audit used public certificate metadata, read-only FTP commands (PWD/NLST/CWD) and local HMAC fingerprints; **no upload, deletion, DB access, WordPress changes or website build occurred**.
-
-## Updated PSE FTP_SERVER validation and directory CWD — 2026-10-21 (read-only)
-
-**PASS for connection + certificate + authentication + PSE frontend directory visibility; production deploy readiness is still NOT granted.**
-
-- [Configuration check #39631226550](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631226550): actual `FTP_SERVER` secret now matches verified FTPS certificate DNS hostname `vt108159.server.idn.vn` (only PASS/FAIL logged; zero connections).
-- [Strict FTPS login #39631468377](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631468377): control connection PASS, CA and hostname verification PASS, FTP USER/PASS PASS, server-side `PWD` PASS.
-- [CWD read-only test #39631752458](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39631752458): account can CWD to `public_html`, `/domains/pse.webnvn.com/public_html`, `/domains/admin-pse.webnvn.com/public_html`; CWD to `/domains/nghiencuukhoahoc.webnvn.com/public_html` and its relative equivalent returned denied/not-found. This establishes the frontend directory's existence and read-level accessibility for the configured PSE FTP account, not guaranteed write permission or exhaustive cross-project ACL separation.
-- A more expansive older FTP certificate/discovery audit [#39630990438](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39630990438) timed out; the targeted, independently validated tests above supersede its connectivity diagnostics.
-- **Still outstanding**: do not build/deploy yet; no FTP PUT has verified write privileges; ensure PSE-only unzip/activation route and Astro build workflow exist and are locked to `psevn-astro/master`. PHP source build trigger remains gated by `PSE_ASTRO_DEPLOY_READY` and was not uploaded to production by this check. No content was written, altered, or deleted.
-
-## PSE FTPS temporary write/read/delete permission test — 2026-10-21
-
-**PASS for PSE frontend FTP write permission and cleanup; this is NOT approval to deploy Astro.**
-
-- User explicitly authorized a temporary test write in PSE FTP.
-- [GitHub Actions run #39632993155](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39632993155) succeeded.
-- The strict-TLS probe in `knowledge-actions/scripts/ftp-pse-write-probe.py` authenticated using PSE repository FTP secrets, required exact FTP hostname `vt108159.server.idn.vn`, changed directory to **`/domains/pse.webnvn.com/public_html`** and verified remote `PWD` matched before any write.
-- Generated a single random-name hidden text probe of fewer than 100 bytes, required its name to be absent before writing, performed `STOR`, read it back with `RETR` and compared SHA-256, then deleted **only that probe file** with `DELE`.
-- Verified log: `FTP_PROBE tls_login=PASS`, `target_directory=PASS`, `write=PASS`, `read_back_sha256=PASS`, `cleanup_delete=PASS`, `FTP_PROBE=PASS write_read_delete_verified`.
-- No existing website files were overwritten, no Astro build/deploy, WordPress trigger, DB write, or other FTP modification occurred.
-- **Remaining:** PSE-only build workflow/activation route is not ready; the source PHP trigger still uses `PSE_ASTRO_DEPLOY_READY` as an explicit fail-closed switch. Cross-project isolation was only probed with directory CWD and not exhaustively validated for all possible alternate paths.
-
-## PSE master runtime and release audit checkpoint — 2026-10-21
-
-- Verified 11/11 modified PSE Astro files have identical Git blob SHA on `github` and `master` (history diverges; no additional content migration needed).
-- [Master branch CI #39642245691](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642245691): 12 Vitest groups PASS from production `psevn-astro/master` commit `ee151a065be1fddfdecceca288c3a1f5a747bda8`, runtime source origin guard PASS, no build, FTP or dispatch.
-- [Read-only config audit #39642844620](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39642844620): `ENV_FILE`, `SOURCE_REPO_PAT`, three FTP credentials present; both runtime origin URLs valid and distinct, no inherited EduResearch URL. `PSE_ASTRO_UNZIP_SIGNING_KEY` and variable `PSE_ASTRO_FTP_TARGET` missing; `PSE_BUILD_ENABLED` absent (locked). `PSE_RELEASE_PREREQUISITES=INCOMPLETE_DO_NOT_DEPLOY`.
-- GET-only probe of public `pse-unzip-v2.ready` returned `MISSING_OR_UNAVAILABLE` (not proof of precise cause). No unpack/FTP occurred.
-- All missing settings, safe activation order and audit links: [docs/PSE_RELEASE_READINESS.md](docs/PSE_RELEASE_READINESS.md).
-- **STOP:** Do not enable build or deploy. WordPress PSE PHP must be deployed/verified separately, PSE-signed unzip key configured on both sides, and PSE-only FTP target variable set. Build may then be invoked **only via WordPress PHP Build Website** after separate approval.
-
-## CORRECTION: restore inherited NCKH build architecture; no extra PSE secrets — 2026-10-21
-
-This supersedes earlier notes requiring `PSE_ASTRO_UNZIP_SIGNING_KEY`, `PSE_ASTRO_FTP_TARGET`, `PSE_BUILD_ENABLED`, `PSE_ASTRO_DEPLOY_READY`, `PSE_ASTRO_DEPLOY_TARGET` and `PSE_GITHUB_ACTIONS_TOKEN`: **none are required by current PSE GitHub source after this correction**. They were added unnecessarily during cloning.
-
-Architecture again uses the original five Actions secrets: `ENV_FILE`, `SOURCE_REPO_PAT`, `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`. Astro branch `master` and `build-git`/pnpm cache/`.cache` are preserved. The FTP target is automatically derived from validated `WC_URL_CLIENT`; no hardcoded fixed-domain PHP gate. WordPress admin dispatch destination is strictly `psevn-actions` and the forbidden EduResearch DB is still rejected.
-
-Signed unzip v2 is retained (not disabled): GitHub computes HMAC with existing `SOURCE_REPO_PAT`, and WordPress PSE verifies using existing `VCS_GH_ACTIONS_TOKEN` (must match; otherwise the preflight aborts). No extra key. WordPress's existing GitHub Trigger token-loading convention is restored. The signed unpack endpoint and v2 ready marker still need to be published to the PSE WordPress hosting.
-
-Proof (all READ-ONLY/static, no build/deploy):
-- [GitHub Trigger PHP CI #39644517466](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644517466) PASS, including PHP syntax, lock/status regression and PSE repo/DB/token checks.
-- [PSE release architecture CI #39644478427](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644478427) PASS for workflow, PHP unpack, Python signed client, FTPS script and SEO Save token.
-- [Existing-secrets-only audit #39644145362](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644145362): five existing secrets PRESENT; FTP target DERIVED; `PSE_RELEASE_PREREQUISITES=READY_FOR_FURTHER_VERIFICATION`; ready marker GET still `MISSING_OR_UNAVAILABLE`. This does NOT establish production WordPress PHP readiness.
-
-Next: when code-mode/deploy permission permits, deploy updated PSE PHP only to PSE WordPress; verify the v2 marker, runtime GitHub token and HMAC preflight; only then use **the WordPress Build Website button** for a real build. There has been no Astro build, FTP write, WordPress production modification or GitHub dispatch from this correction. Updated guidance: [docs/PSE_RELEASE_READINESS.md](docs/PSE_RELEASE_READINESS.md).
-
-## Live PSE SSR production deployment verified — 2026-10-22
-
-**SUCCESS: LIVE SSR VERIFIED ON THE ACTUAL PSE HOST.**
-
-- Owner authorized SSR fix PR merge and WordPress/PHP Build Website. SSR PR [#2](https://github.com/ngocnhanvo/psevn-astro/pull/2) merged, and subsequent compile/route-structure corrections [#3](https://github.com/ngocnhanvo/psevn-astro/pull/3) and [#4](https://github.com/ngocnhanvo/psevn-astro/pull/4) merged into `psevn-astro/master`.
-- [Astro offline CI #39706013654](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706013654): 14 Vitest suites PASS; verified no staging-only auth guard and no Vitest test file in `src/pages`. Security checks for encrypted sessions, OAuth/CSRF retained.
-- [WordPress Build Website trigger #39706334073](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706334073): normal authenticated PHP/AJAX build accepted with 2 pending changes; no `force_build`.
-- [PSE Astro production build/deploy #39706434580](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706434580): **SUCCESS**, source commit `6c341bcbdf78bfedc9fac1705e7115e3129e92e2`, compiled SSR, ZIP produced without private environment, FTPS upload, `SIGNED_UNZIP_SUCCESS`, then hosting SSR smoke PASS. Existing sitemap unchanged because no new WordPress Sitemap Save revision.
-- **Independent live-host GET probe**, [#39706680355](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706680355): `/ => HTTP 200 HTML`, `/so-tay => HTTP 200`, `/api/auth/me => HTTP 401 JSON {"authenticated":false}`, `PSE_SSR_ERROR_STAGING_ONLY=False`. Full `PSE_LIVE_VERIFY=PASS GET_ONLY`.
-- No browser credentials used for private user workflows in live smoke. This proves public SSR and unauthenticated auth API behavior, not completion of the complete Google login journey with a real account.
-- The failed intermediate builds #39704786901 and #39705706119 were superseded by successful production build #39706434580; don't restart them.
+Historical migration detail and source snapshots are preserved in `imported-eduresearch/IMPORT_STATUS.md.txt`.
