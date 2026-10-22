@@ -67,6 +67,15 @@ jobs:
             scripts/sync-seo-files.nckh.test.ts \
             scripts/sync-seo-files.test.ts
           echo "PSE_MASTER_TESTS=PASS"
+      - name: Assert no PSE/NCKH host assumptions in active runtime modules
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'pse[.]webnvn[.]com|nghiencuukhoahoc[.]webnvn[.]com|allowedStagingOrigin|runtimeDomain[(]' \
+            src/lib/nckh/privateRuntime.ts src/lib/nckh/serverSession.ts \
+            src/lib/nckh/googlePopupCompletion.ts src/lib/nckh/authNavigation.ts
+          echo "PSE_RUNTIME_DOMAIN_PORTABILITY=PASS"
       - name: Explicitly confirm no Astro build or live deploy
         run: |
           echo "NO_ASTRO_BUILD=PASS"
