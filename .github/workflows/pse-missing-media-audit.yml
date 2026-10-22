@@ -26,7 +26,10 @@ jobs:
           assert len(origins)==1
           base=origins[0].rstrip('/')
           parsed=urlsplit(base)
-          assert parsed.scheme=='https' and parsed.hostname=='admin-pse.webnvn.com'
+          assert (parsed.scheme=='https' and parsed.hostname
+                  and not parsed.username and not parsed.password
+                  and parsed.port in (None,443) and parsed.path in ('','/')
+                  and not parsed.query and not parsed.fragment)
           def get(link):
               req=urllib.request.Request(link,headers={'User-Agent':'PSE-ReadOnly-Media-Audit/1.0'})
               with urllib.request.urlopen(req,timeout=25) as r:
