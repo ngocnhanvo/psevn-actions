@@ -64,6 +64,11 @@ jobs:
                       parsed=json.loads(session[2])
                       auth_denied=(isinstance(parsed,dict)
                                    and parsed.get('authenticated') is False)
+                      if isinstance(parsed,dict):
+                          # Publish only a boolean matching the known server guard;
+                          # never print body, tokens, cookies or private session data.
+                          print('PSE_SSR_ERROR_STAGING_ONLY='+
+                                str(parsed.get('error')=='staging_only'))
                   print('PSE_SSR_PROBE home='+str(home[0])
                         +' notebook='+str(notebook[0])
                         +' session='+str(session[0])
