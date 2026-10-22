@@ -31,10 +31,17 @@ jobs:
           set -euo pipefail
           test "$(git branch --show-current)" = "master"
           echo "PSE_MASTER_SOURCE_COMMIT=$(git rev-parse HEAD)"
-          ! grep -Eqi "nghiencuukhoahoc|xuongmunonbaohiem" \
-              src/lib/nckh/serverWp.ts \
-              src/lib/nckh/serverSession.ts \
-              src/lib/nckh/privateRuntime.ts
+          test ! -e src/lib/nckh
+          test ! -e src/pages/api/nckh
+          test ! -e src/pages/api/auth
+          test ! -e src/pages/so-tay
+          test -f src/pages/api/user/info.ts
+          test -f 'src/pages/ssr/posts/[slug]/detail.astro'
+          test -f 'src/pages/ssr/products/[slug]/detail.astro'
+          ! grep -Eqi 'nghiencuukhoahoc|xuongmunonbaohiem' \
+              src/pages/api/user/info.ts \
+              'src/pages/ssr/posts/[slug]/detail.astro' \
+              'src/pages/ssr/products/[slug]/detail.astro'
           echo "PSE_MASTER_RUNTIME_ORIGIN_BOUNDARY=PASS"
       - name: Install pnpm wrapper
         uses: pnpm/action-setup@v4
@@ -54,38 +61,21 @@ jobs:
           node --check scripts/inject-handler.js
           node --check scripts/generate-sitemap-robots.mjs
           echo 'PSE_MASTER_BUILDER_CSP_SYNTAX=PASS'
-      - name: Run approved PSE OAuth, security, WordPress, SEO and site-brand tests
+      - name: Test complete PSE template SSR, WordPress, SEO and frontend contracts
         working-directory: source
         shell: bash
         run: |
           set -euo pipefail
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm exec vitest run \
-            src/lib/nckh/serverWp.test.ts \
-            src/lib/nckh/privateRuntime.test.ts \
-            src/lib/nckh/serverSession.test.ts \
-            src/lib/nckh/googleOidc.test.ts \
-            src/lib/nckh/publicBrand.test.ts \
-            src/lib/seo/listingTitles.test.ts \
-            src/lib/nckh/authNavigation.test.ts \
-            src/lib/nckh/googlePopupCompletion.test.ts \
-            src/lib/nckh/articleEditor.test.ts \
-            src/lib/wordpress/pages/getData.image-errors.test.ts \
-            scripts/inject-handler.portability.test.ts \
-            scripts/generate-sitemap-robots.test.ts \
-            src/lib/wordpress/builderAutoDiscovery.test.mjs \
-            src/lib/wordpress/builderPageImages.test.mjs \
-            scripts/sync-seo-files.nckh.test.ts \
-            scripts/sync-seo-files.test.ts
+          pnpm exec vitest run
           echo "PSE_MASTER_TESTS=PASS"
-      - name: Assert no PSE/NCKH host assumptions in active runtime modules
+      - name: Assert no fixed tenant domains in active SSR entry or WordPress user API
         working-directory: source
         shell: bash
         run: |
           set -euo pipefail
           ! grep -E 'pse[.]webnvn[.]com|nghiencuukhoahoc[.]webnvn[.]com|allowedStagingOrigin|runtimeDomain[(]' \
-            src/lib/nckh/privateRuntime.ts src/lib/nckh/serverSession.ts \
-            src/lib/nckh/googlePopupCompletion.ts src/lib/nckh/authNavigation.ts
+            scripts/inject-handler.js scripts/patch-entry.mjs src/pages/api/user/info.ts
           echo "PSE_RUNTIME_DOMAIN_PORTABILITY=PASS"
       - name: Explicitly confirm no Astro build or live deploy
         run: |
