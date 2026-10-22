@@ -30,7 +30,7 @@ function pse_template_maintenance_counts() {
     ));
     foreach (['esc_chat_histories','esc_chat_summaries','esc_agent_knowledge','esc_agent_logs','nckh_projects','nckh_notebook_entries'] as $suffix) {
         $table=pse_template_maintenance_table($suffix);
-        $summary['table_'.$suffix]=$table ? (int)$wpdb->get_var("SELECT COUNT(*) FROM \`{$table}\`") : -1;
+        $summary['table_'.$suffix]=$table ? (int)$wpdb->get_var("SELECT COUNT(*) FROM `{$table}`") : -1;
     }
     $types=$wpdb->get_results("SELECT post_type, COUNT(*) AS n FROM {$wpdb->posts} GROUP BY post_type",ARRAY_A);
     $counts=[];
@@ -60,7 +60,7 @@ function pse_template_maintenance_page() {
         foreach (['esc_chat_histories','esc_chat_summaries'] as $suffix) {
             $table=pse_template_maintenance_table($suffix);
             if ($table!==null) {
-                $n=$wpdb->query("DELETE FROM \`{$table}\`");
+                $n=$wpdb->query("DELETE FROM `{$table}`");
                 if ($n===false) wp_die('Chat cleanup failed');
                 $purged[$suffix.'_rows']=(int)$n;
             }
