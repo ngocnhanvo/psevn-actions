@@ -155,7 +155,15 @@ try {
     report('GENERAL_COMPANY_PREFLIGHT','PASS');
     report('NO_WRITES','PASS');
   } else {
-  await company.fill('Website mẫu');
+  // ACF can collapse/conditionally hide this field while keeping its value in
+  // the published WordPress form; fill() requires visibility and timed out.
+  // Update the existing form input, dispatch its standard events, and verify
+  // the persisted ACF value after the native WP Update action.
+  await company.evaluate((el,value) => {
+    el.value=value;
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+  }, 'Website mẫu');
   await saveAndReopen(generalPath);
   const persisted=(await page.locator('.acf-field[data-name="tencongty"] input[type="text"], .acf-field[data-name="tencongty"] textarea').first().inputValue()).trim();
   if(persisted!=='Website mẫu')throw Error('New general-info label did not persist');
