@@ -23,6 +23,7 @@ if (!username || !password) throw Error('Missing WP admin credentials');
 
 const oldBrand = /nghiencuukhoahoc|xuongmunonbaohiem|eduresearch\s*hub|blue\s*sea/i;
 const contact = /(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})|(?:\+?84|0)[35789]\d{8}\b/i;
+const dryRun = process.env.PSE_TEMPLATE_DRY_RUN === '1';
 const unsafeLayout = /<script\b|<style\b|<iframe\b|<form\b|\[(?:tablepress|esc_table|shortcode)\b|<!--\s*wp:shortcode/i;
 const report = (key,value) => console.log('PSE_TEMPLATE_SANITIZE ' + key + '=' + value);
 const browser = await chromium.launch({headless: true});
@@ -41,7 +42,7 @@ async function saveAndReopen(path) {
     throw Error('WordPress editor failed to reopen after save');
 }
 
-async function contentPage(id) {
+async function contentPage(id, checkOnly = false) {
   const path='/wp-admin/post.php?post='+id+'&action=edit';
   await go(path);
   if (!page.url().startsWith(wp+'/wp-admin/post.php?'))
@@ -58,16 +59,49 @@ async function contentPage(id) {
   if (unsafeLayout.test(original))
     throw Error('Preserving structural content for page '+id+'; unsafe layout detected');
   if (original.length > 65000) throw Error('Target content unexpectedly large; refuse replacement');
+  // One imported page also stores contact information in ACF `content`.
+  // Clear only this identified value; preserve all ACF field definitions.
+  let acfContent = null;
+  if (id === 47222) {
+    const field=page.locator('.acf-field[data-name="content"]').first();
+    if ((await field.count()) !== 1) throw Error('Expected one imported ACF content field');
+    acfContent=field.locator('textarea').first();
+    if ((await acfContent.count()) !== 1) throw Error('Expected editable ACF content textarea');
+    const current=await acfContent.inputValue();
+    if (!contact.test(current) || unsafeLayout.test(current) || current.length > 65000)
+      throw Error('Imported ACF contact value no longer matches safe cleanup boundary');
+  }
+  if (checkOnly) {
+    report('PAGE_'+id+'_PREFLIGHT','PASS');
+    return;
+  }
+  const neutral='<p>Nội dung sẽ được cập nhật khi cấu hình website mới.</p>';
+  if (acfContent) {
+    await acfContent.evaluate((el,value)=>{
+      const editor=window.tinymce?.get(el.id);
+      if (editor && !editor.isHidden()) editor.setContent(value);
+      el.value=value;
+      if (editor) editor.save();
+      el.dispatchEvent(new Event('input',{bubbles:true}));
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+    },neutral);
+  }
   const textTab=page.locator('#content-html');
   if (await textTab.count() && await textTab.isVisible()) await textTab.click();
   const input=page.locator('#content');
   if (!(await input.isVisible())) throw Error('WordPress Text editor unavailable; refuse blind post overwrite');
-  await input.fill('<p>Nội dung sẽ được cập nhật khi cấu hình website mới.</p>');
+  await input.fill(neutral);
   await saveAndReopen(path);
   const after=await page.locator('#content').inputValue();
   if (oldBrand.test(after) || contact.test(after) ||
       !after.includes('Nội dung sẽ được cập nhật'))
     throw Error('Sanitized page content did not persist');
+  if (acfContent) {
+    const acfAfter=await page.locator('.acf-field[data-name="content"] textarea').first().inputValue();
+    if (contact.test(acfAfter) || !acfAfter.includes('Nội dung sẽ được cập nhật'))
+      throw Error('Sanitized ACF contact field did not persist');
+    report('PAGE_'+id+'_ACF_CONTACT_CLEAN','PASS');
+  }
   report('PAGE_'+id+'_CONTENT_CLEAN','PASS');
 }
 
@@ -116,14 +150,21 @@ try {
   const expected = new URL(origin('WC_URL_CLIENT')).hostname;
   const actual=(await domain.inputValue()).trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
   if(actual!==expected)throw Error('WP-owned frontend domain differs from trusted Actions configuration');
+  for (const id of [53390,47222]) await contentPage(id, true);
+  if (dryRun) {
+    report('GENERAL_COMPANY_PREFLIGHT','PASS');
+    report('NO_WRITES','PASS');
+  } else {
   await company.fill('Website mẫu');
   await saveAndReopen(generalPath);
   const persisted=(await page.locator('.acf-field[data-name="tencongty"] input[type="text"], .acf-field[data-name="tencongty"] textarea').first().inputValue()).trim();
   if(persisted!=='Website mẫu')throw Error('New general-info label did not persist');
   report('GENERAL_COMPANY_LABEL','PASS');
 
-  for (const id of [53390,47222]) await contentPage(id);
+  for (const id of [53390,47222]) await contentPage(id, false);
   report('PRESERVED_PAGE_IDENTITIES_AND_ACF','PASS');
+  }
+  report('PREFLIGHT_ALL_TARGETS','PASS');
   report('NO_ASTRO_BUILD','PASS');
 } finally {
   await browser.close();
