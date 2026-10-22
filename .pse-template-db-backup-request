@@ -1,0 +1,1 @@
+2026-10-22: Owner authorized cleaning the PSE-only WordPress baseline. First create a local UpdraftPlus database-only backup with remote cloud transfer disabled; do not delete records or build Astro.
