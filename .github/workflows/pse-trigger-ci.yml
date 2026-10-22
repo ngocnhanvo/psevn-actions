@@ -41,6 +41,8 @@ jobs:
           php -l source-php/wp-content/mu-plugins/esc-github-trigger-config.php
           php -l source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
           php -l source-php/wp-content/themes/vibe-code-theme/functions.php
+          find source-php/wp-content/mu-plugins/esc-agent/src -name '*.php' -type f -print0 | xargs -0 -n1 php -l >/dev/null
+          echo 'PSE_PHP_AGENT_SOURCE_LINT=PASS'
           echo 'PSE_PHP_GENERIC_RUNTIME_LINT=PASS'
       - name: Check sanitized PHP Agent test fixtures (source-only)
         shell: bash
