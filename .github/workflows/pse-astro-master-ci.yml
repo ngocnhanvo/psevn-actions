@@ -66,6 +66,7 @@ jobs:
             src/lib/nckh/serverSession.test.ts \
             src/lib/nckh/googleOidc.test.ts \
             src/lib/nckh/publicBrand.test.ts \
+            src/lib/seo/listingTitles.test.ts \
             src/lib/nckh/authNavigation.test.ts \
             src/lib/nckh/googlePopupCompletion.test.ts \
             src/lib/nckh/articleEditor.test.ts \
