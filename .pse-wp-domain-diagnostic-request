@@ -1,2 +1,3 @@
 Inspect PSE WordPress 'Thong tin chung' domain and compare with Actions ENV_FILE (read-only, no build), to resolve 403 signed deployment target preflight.
 Second read-only check after ACF update: compare persisted editor value with WordPress Build page.
+2026-10-22: Read-only template readiness check: verify WordPress stored frontend origin matches ENV_FILE; do not change database or build.
