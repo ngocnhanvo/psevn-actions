@@ -1,1 +1,2 @@
 Read-only audit of cloned page media with 404 in PSE WordPress, before fixing missing image data; do not mutate WP content or build.
+2026-10-23: read-only source asset / WHOIS references in published pages; NO BUILD, NO DELETE.
