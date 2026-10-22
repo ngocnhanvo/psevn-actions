@@ -63,7 +63,12 @@ async function inspectEditor(url) {
     try {
       blocks = window.wp?.data?.select('core/editor')?.getEditedPostContent?.() || '';
     } catch { /* Gutenberg editor not initialized */ }
-    return {value: [text, acf, blocks].join('\n'), readable: Boolean(el || blocks || acf), acfLegacyFields};
+    return {
+      value: [text, acf, blocks].join('\n'),
+      readable: Boolean(el || blocks || acf), acfLegacyFields,
+      bodyText: text || blocks, acfText: acf,
+      titleText: (document.querySelector('#title')?.value || '')
+    };
   });
 }
 
@@ -101,6 +106,12 @@ try {
         if (privateContact.test(state.value)) privateInBody += 1;
         const id=url.searchParams.get('post');
         say('PAGE_'+id+'_OLD_BRAND',oldBrand.test(row.name+' '+state.value)?'YES':'NO');
+        say('PAGE_'+id+'_OLD_BRAND_TITLE_ONLY',oldBrand.test(row.name+' '+state.titleText)?'YES':'NO');
+        say('PAGE_'+id+'_OLD_BRAND_POST_BODY',oldBrand.test(state.bodyText)?'YES':'NO');
+        say('PAGE_'+id+'_OLD_BRAND_ACF',oldBrand.test(state.acfText)?'YES':'NO');
+        say('PAGE_'+id+'_PRIVATE_CONTACT_POST_BODY',privateContact.test(state.bodyText)?'YES':'NO');
+        say('PAGE_'+id+'_PRIVATE_CONTACT_ACF',privateContact.test(state.acfText)?'YES':'NO');
+        say('PAGE_'+id+'_HAS_EDITOR_CODE_OR_SHORTCODE',/<script|<style|<iframe|\[(?:tablepress|esc_table|shortcode)|<!-- wp:shortcode/i.test(state.bodyText)?'YES':'NO');
         say('PAGE_'+id+'_HAS_EMBEDDED_LAYOUT',/<script|\[(?:tablepress|esc_table|shortcode)|<!-- wp:shortcode/i.test(state.value)?'YES':'NO');
         say('PAGE_'+id+'_PRIVATE_CONTACT',privateContact.test(state.value)?'YES':'NO');
         say('PAGE_'+id+'_LEGACY_ACF_FIELD_COUNT',state.acfLegacyFields.length);
@@ -126,6 +137,8 @@ try {
         if (oldBrand.test(state.value)) generalLegacy += 1;
         if (privateContact.test(state.value)) generalPrivate += 1;
         say('GENERAL_INFO_LEGACY_ACF_FIELD_COUNT',state.acfLegacyFields.length);
+        say('GENERAL_INFO_BRAND_BODY',oldBrand.test(state.bodyText)?'YES':'NO');
+        say('GENERAL_INFO_BRAND_ACF',oldBrand.test(state.acfText)?'YES':'NO');
         for (const name of state.acfLegacyFields) say('GENERAL_INFO_LEGACY_ACF_FIELD_'+name,'YES');
       }
     } catch { /* mark unverified */ }
