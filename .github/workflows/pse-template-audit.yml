@@ -10,6 +10,7 @@ on:
       - .pse-template-db-backup-request
       - .pse-template-cleanup-users-request
       - .pse-template-db-sql-audit-request
+      - .pse-template-maintenance-request
       - .github/workflows/pse-template-audit.yml
 permissions:
   contents: read
@@ -21,7 +22,8 @@ jobs:
       github.event.head_commit.message != 'chore(template): remove five NCKH test accounts after Updraft backup' &&
       github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
       github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
-      github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)'
+      github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
+      github.event.head_commit.message != 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -81,6 +83,7 @@ jobs:
       github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
       github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
       github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
+      github.event.head_commit.message != 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)' &&
       github.event.head_commit.message != 'test(template): audit DEV and PROD sources (READ ONLY)'
     runs-on: ubuntu-latest
     timeout-minutes: 9
@@ -183,3 +186,69 @@ jobs:
           python3 -m py_compile scripts/pse-template-db-sql-readonly.py
           python3 scripts/pse-template-db-sql-readonly.py
           echo 'PSE_SQL_ARCHIVE_INSPECTION=PASS_READ_ONLY; NO_SQL_EXECUTION=PASS; NO_BACKUP_ARTIFACT=PASS'
+
+  template-cache-chat-cleanup:
+    name: One-time protected PSE cache/chat cleanup through WP admin (NO ASTRO BUILD)
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' &&
+      github.event.head_commit.message == 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout only PSE Actions cleanup tools
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate one-time PHP and FTPS transport source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v php >/dev/null 2>&1; then
+            apt-get update -qq >/dev/null
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends php-cli >/dev/null
+          fi
+          php -l scripts/pse-template-temporary-maintenance.php
+          python3 -m py_compile scripts/pse-template-temporary-ftps.py
+          node --check scripts/pse-template-temporary-admin-clean.mjs
+          echo 'PSE_TEMP_MAINTENANCE_SOURCE_VALIDATION=PASS'
+      - name: Install Playwright wrapper matching preinstalled Chromium
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Install temporary admin-only WordPress maintenance plugin through FTPS
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: python3 scripts/pse-template-temporary-ftps.py install
+      - name: Confirm recoverability and execute only native WP admin nonce-protected cleanup
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: node scripts/pse-template-temporary-admin-clean.mjs
+      - name: ALWAYS remove temporary PHP maintenance plugin from hosting
+        if: always()
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: python3 scripts/pse-template-temporary-ftps.py remove
+      - name: Record post-cleanup database backup using existing UpdraftPlus
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Recheck protected SQL backup after cleanup, no exports or SQL execution
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          python3 scripts/pse-template-db-sql-readonly.py
+          echo 'PSE_TEMPLATE_CACHE_CHAT_CLEANUP_AUDIT=PASS; NO_ASTRO_BUILD=PASS'
