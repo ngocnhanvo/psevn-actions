@@ -59,13 +59,17 @@ async function inspectEditor(url) {
       /nghiencuukhoahoc|xuongmunonbaohiem|eduresearch\s*hub|blue\s*sea/i.test(node.value || '')
     ).map(node => node.closest('.acf-field[data-name]')?.getAttribute('data-name') || '')
       .filter(name => /^[a-zA-Z0-9_-]{1,60}$/.test(name)))];
+    const acfContactFields = [...new Set(acfNodes.filter(node =>
+      /(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})|(?:\+?84|0)[35789]\d{8}\b/i.test(node.value || '')
+    ).map(node => node.closest('.acf-field[data-name]')?.getAttribute('data-name') || '')
+      .filter(name => /^[a-zA-Z0-9_-]{1,60}$/.test(name)))];
     let blocks = '';
     try {
       blocks = window.wp?.data?.select('core/editor')?.getEditedPostContent?.() || '';
     } catch { /* Gutenberg editor not initialized */ }
     return {
       value: [text, acf, blocks].join('\n'),
-      readable: Boolean(el || blocks || acf), acfLegacyFields,
+      readable: Boolean(el || blocks || acf), acfLegacyFields, acfContactFields,
       bodyText: text || blocks, acfText: acf,
       titleText: (document.querySelector('#title')?.value || '')
     };
@@ -115,6 +119,9 @@ try {
         say('PAGE_'+id+'_HAS_EMBEDDED_LAYOUT',/<script|\[(?:tablepress|esc_table|shortcode)|<!-- wp:shortcode/i.test(state.value)?'YES':'NO');
         say('PAGE_'+id+'_PRIVATE_CONTACT',privateContact.test(state.value)?'YES':'NO');
         say('PAGE_'+id+'_LEGACY_ACF_FIELD_COUNT',state.acfLegacyFields.length);
+        say('PAGE_'+id+'_PRIVATE_CONTACT_ACF_FIELD_COUNT',state.acfContactFields.length);
+        for (const name of state.acfContactFields) say('PAGE_'+id+'_PRIVATE_CONTACT_ACF_FIELD_'+name,'YES');
+        say('PAGE_'+id+'_BODY_LENGTH_CLASS',state.bodyText.length<1000?'SMALL':state.bodyText.length<10000?'MEDIUM':'LARGE');
         for (const name of state.acfLegacyFields) say('PAGE_'+id+'_LEGACY_ACF_FIELD_'+name,'YES');
       }
     } catch { unreadable += 1; }
