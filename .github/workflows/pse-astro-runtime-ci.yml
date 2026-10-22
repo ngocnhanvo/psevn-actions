@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pse-astro-runtime-ci.yml
+      - .pse-template-source-neutral-check
 permissions:
   contents: read
 jobs:
@@ -50,7 +51,7 @@ jobs:
         working-directory: source
         run: |
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm exec vitest run src/lib/nckh/serverWp.test.ts src/lib/nckh/privateRuntime.test.ts src/lib/nckh/serverSession.test.ts src/lib/nckh/ssrAuthRoutes.test.ts src/lib/nckh/ssrProxyRoutes.test.ts src/lib/nckh/googleOidc.test.ts src/lib/nckh/publicBrand.test.ts src/lib/googleServices.test.ts src/lib/googleLeadConversions.test.ts src/lib/googleTrackingRuntime.test.ts src/lib/marketingPixels.test.ts src/lib/seo/listingTitles.test.ts src/lib/nckh/authNavigation.test.ts src/lib/nckh/googlePopupCompletion.test.ts src/lib/nckh/articleEditor.test.ts src/lib/wordpress/pages/getData.image-errors.test.ts scripts/inject-handler.portability.test.ts scripts/generate-sitemap-robots.test.ts src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderPageImages.test.mjs scripts/sync-seo-files.nckh.test.ts scripts/sync-seo-files.test.ts
+          pnpm exec vitest run src/astro/components/Layout/Header.template-neutral.test.ts src/astro/components/Layout/Header.research-layout.test.ts src/astro/components/Layout/Header.mobile-sticky.test.ts src/lib/nckh/serverWp.test.ts src/lib/nckh/privateRuntime.test.ts src/lib/nckh/serverSession.test.ts src/lib/nckh/ssrAuthRoutes.test.ts src/lib/nckh/ssrProxyRoutes.test.ts src/lib/nckh/googleOidc.test.ts src/lib/nckh/publicBrand.test.ts src/lib/googleServices.test.ts src/lib/googleLeadConversions.test.ts src/lib/googleTrackingRuntime.test.ts src/lib/marketingPixels.test.ts src/lib/seo/listingTitles.test.ts src/lib/nckh/authNavigation.test.ts src/lib/nckh/googlePopupCompletion.test.ts src/lib/nckh/articleEditor.test.ts src/lib/wordpress/pages/getData.image-errors.test.ts scripts/inject-handler.portability.test.ts scripts/generate-sitemap-robots.test.ts src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderPageImages.test.mjs scripts/sync-seo-files.nckh.test.ts scripts/sync-seo-files.test.ts
       - name: Reject dangling obsolete staging-only SSR import (NO BUILD)
         shell: bash
         run: |
