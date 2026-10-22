@@ -1,1 +1,2 @@
 2026-10-22: Owner authorized cleaning the PSE-only WordPress baseline. First create a local UpdraftPlus database-only backup with remote cloud transfer disabled; do not delete records or build Astro.
+2026-10-22: Trigger approved WP UpdraftPlus local-only DB backup after workflow YAML condition repair; do not upload source or trigger Astro build.
