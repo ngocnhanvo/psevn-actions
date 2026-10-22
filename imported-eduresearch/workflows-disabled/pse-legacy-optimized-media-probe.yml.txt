@@ -1,0 +1,46 @@
+# Archived completed site-specific diagnostic/restart operation; DO NOT RUN.
+name: Find legacy optimized media (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-legacy-optimized-media-probe]
+permissions:
+  contents: read
+jobs:
+  scan:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check static optimized WebP assets on original frontends
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from urllib.request import Request,urlopen
+          from urllib.error import HTTPError
+          import concurrent.futures
+          names=['255A5533','255A5708','255A5787','255A6030','Banner-Page-PC',
+                 'gioithieu','h3_01','h6_01','h7_01','tieu-chuan-QR','tieu-chuan-iso-2015']
+          hosts=['xuongmunonbaohiem.io.vn','nghiencuukhoahoc.webnvn.com','pse.webnvn.com']
+          sizes=[1024,768,2560]
+          def find(name):
+              for host in hosts:
+                  for width in sizes:
+                      url=f'https://{host}/images/pages/{name}-{width}w.webp'
+                      try:
+                          req=Request(url,headers={'User-Agent':'PSE-Static-Media-Recovery/1.0','Range':'bytes=0-31'})
+                          with urlopen(req,timeout=7) as r:
+                              sample=r.read(32)
+                              status=r.status
+                          if status in (200,206) and sample.startswith(b'RIFF') and sample[8:12]==b'WEBP':
+                              return (name,host,width,'FOUND')
+                      except Exception:pass
+              return (name,'none',0,'NOT_FOUND')
+          with concurrent.futures.ThreadPoolExecutor(max_workers=11) as pool:
+              results=list(pool.map(find,names))
+          for name,host,width,status in results:
+              print('PSE_MEDIA_RECOVERY '+name+'='+status+' host='+host+' width='+str(width))
+          print('PSE_MEDIA_RECOVERY_FOUND='+str(sum(t[-1]=='FOUND' for t in results)))
+          print('PSE_MEDIA_RECOVERY_CHANGES=NONE')
+          PY
