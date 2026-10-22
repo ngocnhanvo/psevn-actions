@@ -43,22 +43,48 @@ jobs:
             echo ""
             echo "Secret presence does not establish database/FTP isolation. No credential value was printed or used to log in."
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Probe public WordPress endpoint availability (anonymous GET only)
+      - name: Diagnose FTP_SERVER value and port 21 from GitHub runner (NO CREDENTIALS)
         shell: bash
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
         run: |
           set -euo pipefail
-          {
-            echo "## Public endpoint probes"
-            echo "| Endpoint | HTTP status |"
-            echo "|---|---|"
-          } >> "$GITHUB_STEP_SUMMARY"
-          for url in 'https://admin-pse.webnvn.com/wp-json/' 'https://api-nghiencuukhoahoc.webnvn.com/wp-json/' 'https://pse.webnvn.com/' 'https://nghiencuukhoahoc.webnvn.com/'; do
-            status="$(curl --silent --location --output /dev/null --write-out '%{http_code}' --max-time 12 --connect-timeout 6 --max-redirs 3 "$url" || true)"
-            echo "| $url | ${status:-failed} |" >> "$GITHUB_STEP_SUMMARY"
-            echo "PUBLIC_HTTP_STATUS $url=${status:-failed}"
-          done
-          echo "Anonymous endpoint checks cannot reveal database names or FTP account roots." >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          import hashlib, ipaddress, os, socket
+          from urllib.parse import urlsplit
 
+          raw=os.environ.get('FTP_SERVER','').strip()
+          if not raw:
+              raise SystemExit('FTP_NETWORK CONFIG=NO_FTP_SERVER')
+          url=urlsplit(raw if '://' in raw else 'ftp://'+raw)
+          if (url.scheme not in ('ftp','ftps') or not url.hostname or url.username
+                  or url.password or url.path not in ('','/') or url.query or url.fragment):
+              raise SystemExit('FTP_NETWORK CONFIG=INVALID_HOST')
+          host=url.hostname
+          port=url.port or 21
+          print('FTP_NETWORK HOST_SHA16='+hashlib.sha256(host.encode()).hexdigest()[:16],flush=True)
+          try:
+              ip=ipaddress.ip_address(host)
+              print('FTP_NETWORK HOST_TYPE=IPv'+str(ip.version),flush=True)
+          except ValueError:
+              print('FTP_NETWORK HOST_TYPE=DNS',flush=True)
+          print('FTP_NETWORK PORT='+str(port),flush=True)
+          print('FTP_NETWORK SCHEME='+url.scheme,flush=True)
+          try:
+              peer=socket.create_connection((host,port),timeout=8)
+              print('FTP_NETWORK TCP=PASS',flush=True)
+              peer.settimeout(5)
+              try:
+                  greeting=peer.recv(80)
+                  print('FTP_NETWORK GREETING='+('FTP_220' if greeting.startswith(b'220') else 'UNEXPECTED_RESPONSE'),flush=True)
+              except socket.timeout:
+                  print('FTP_NETWORK GREETING=TIMEOUT',flush=True)
+              peer.close()
+          except socket.timeout:
+              print('FTP_NETWORK TCP=TIMEOUT',flush=True)
+          except OSError as e:
+              print('FTP_NETWORK TCP='+type(e).__name__,flush=True)
+          PY
       - name: Verify FTPS TLS, authentication and configured site roots (READ ONLY)
         shell: bash
         env:
