@@ -23,7 +23,7 @@ checks = {
   "copied_source_db_guard": re.compile(r"nghiencuukhoahoc_181026"),
   "unrelated_template_slug": re.compile(r'"slug"\s*:\s*"picasso"', re.I),
 }
-checks["literal_site_url"] = re.compile(r"(?:https?://)?[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.(?:webnvn\\.com|id\\.vn|io\\.vn)", re.I)
+checks["literal_site_url"] = re.compile(r"(?:https?://)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:webnvn\.com|id\.vn|io\.vn)", re.I)
 
 allowed_ext = {".ts",".tsx",".js",".mjs",".astro",".php",".json",".yml",".yaml",".md",".sh",".py",".html",".txt"}
 hard_exclude = {"node_modules",".git","vendor",".cache","dist","build","upload","uploads","cache","tests/fixtures"}
