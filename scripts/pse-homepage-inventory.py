@@ -29,7 +29,7 @@ def fetch(base,resource):
         return data,res.headers.get("X-WP-Total","unknown")
 
 def label(v):
-    return re.sub(r"\\s+"," ",unescape(re.sub(r"<[^>]+>"," ",str(v or "")))).strip()[:150]
+    return re.sub(r"\s+"," ",unescape(re.sub(r"<[^>]+>"," ",str(v or "")))).strip()[:150]
 
 def main():
     base=origin("WC_URL")
@@ -52,7 +52,7 @@ def main():
         ishome=row["key"]=="home" or row["slug"] in ("home","trang-chu")
         if ishome:
             html=(item.get("content") or {}).get("rendered","")
-            row["shortcodes"]=list(dict.fromkeys(re.findall(r"\\[table\\s+id=([\\w-]+)",html,re.I)))
+            row["shortcodes"]=list(dict.fromkeys(re.findall(r"\[table\s+id=([\w-]+)",html,re.I)))
             row["title"]=label((item.get("title") or {}).get("rendered"))
         print(("WP_HOME=" if ishome else "WP_PAGE=")+json.dumps(row,ensure_ascii=False))
     for item in collections["categories"]:
