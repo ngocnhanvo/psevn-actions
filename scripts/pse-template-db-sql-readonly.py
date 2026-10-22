@@ -34,97 +34,6 @@ def read_env(name):
         raise RuntimeError("Invalid trusted WordPress origin")
     return value.hostname
 
-
-def sql_values(statement):
-    """Yield complete SQL VALUES tuples, observing SQL single quotes and escapes."""
-    match=re.search(rb"\bVALUES\s*",statement,re.I)
-    if not match:
-        return
-    data=statement
-    n=len(data)
-    i=match.end()
-    while i<n:
-        while i<n and data[i] not in (40,59): # ( or ;
-            i+=1
-        if i>=n or data[i]==59:
-            return
-        i+=1
-        start=i
-        depth=1
-        quoted=False
-        while i<n:
-            b=data[i]
-            if quoted:
-                if b==92: # MySQL string backslash escape
-                    i+=2
-                    continue
-                if b==39:
-                    if i+1<n and data[i+1]==39: # doubled quote
-                        i+=2
-                        continue
-                    quoted=False
-            elif b==39:
-                quoted=True
-            elif b==40:
-                depth+=1
-            elif b==41:
-                depth-=1
-                if depth==0:
-                    yield data[start:i]
-                    i+=1
-                    break
-            i+=1
-        else:
-            return
-
-def sql_columns(row):
-    """Tokenize one tuple without interpreting escaped SQL values."""
-    parts=[]
-    start=0
-    quote=False
-    i=0
-    while i<len(row):
-        b=row[i]
-        if quote:
-            if b==92:
-                i+=2
-                continue
-            if b==39:
-                if i+1<len(row) and row[i+1]==39:
-                    i+=2
-                    continue
-                quote=False
-        elif b==39:
-            quote=True
-        elif b==44:
-            parts.append(row[start:i])
-            start=i+1
-        i+=1
-    parts.append(row[start:])
-    return parts
-
-def option_group(name):
-    name=name.lower().strip().strip(b"'")
-    if b"transient" in name or b"cache" in name:
-        return "TRANSIENT_OR_CACHE"
-    if b"tablepress" in name:
-        return "TABLEPRESS"
-    if b"nckh" in name or b"research" in name:
-        return "NCKH_RESEARCH"
-    if b"woocommerce" in name or name.startswith(b"wc_"):
-        return "WOOCOMMERCE"
-    if b"esc_" in name or b"builder" in name:
-        return "ESC_BUILDER"
-    if b"acf" in name:
-        return "ACF"
-    if b"updraft" in name:
-        return "UPDRAFT"
-    if b"widget" in name or b"theme_mods" in name or b"sidebars" in name:
-        return "THEME_WIDGET"
-    if b"seo" in name or b"rank_math" in name or b"yoast" in name:
-        return "SEO"
-    return "OTHER_OPTIONS"
-
 wp_host=read_env("WC_URL")
 raw=os.environ.get("FTP_SERVER", "").strip()
 ftp_url=urlsplit(raw if "://" in raw else "ftp://"+raw)
@@ -190,8 +99,6 @@ try:
         total_uncompressed=0
         grouped={}
         touched={}
-        option_groups={}
-        posts_groups={}
         by_table={}
         option_buckets={}
         current_table_category="SQL_HEADER_OR_UNSCOPED"
@@ -221,34 +128,6 @@ try:
                     touched[current_table_category]=touched.get(current_table_category,0)+1
                 elif re.match(rb"\s*(?:CREATE TABLE|DROP TABLE|ALTER TABLE|LOCK TABLES|UNLOCK TABLES)\b",line,re.I):
                     current_table_category="SQL_SCHEMA"
-                if table_match and len(line)<125_000_000:
-                    table_lower=table_match.group(1).lower()
-                    if table_lower.endswith(b"_options"):
-                        for row in sql_values(line):
-                            columns=sql_columns(row)
-                            if len(columns)<3:
-                                continue
-                            group=option_group(columns[1])
-                            stat=option_groups.setdefault(group,[0,0,0])
-                            stat[0]+=1
-                            low_row=row.lower()
-                            stat[1]+=low_row.count(b"xuongmunonbaohiem")
-                            stat[2]+=low_row.count(b"nghiencuukhoahoc")
-                    elif table_lower.endswith(b"_posts"):
-                        for row in sql_values(line):
-                            columns=sql_columns(row)
-                            if len(columns)<21:
-                                continue
-                            post_type=columns[20].lower().strip().strip(b"'")
-                            if post_type in (b"page",b"post",b"revision",b"attachment",b"acf-field",b"acf-field-group"):
-                                group=post_type.decode("ascii")
-                            else:
-                                group="OTHER_POST_TYPES"
-                            stat=posts_groups.setdefault(group,[0,0,0])
-                            stat[0]+=1
-                            low_row=row.lower()
-                            stat[1]+=low_row.count(b"xuongmunonbaohiem")
-                            stat[2]+=low_row.count(b"nghiencuukhoahoc")
                 for key,pattern in patterns.items():
                     n=low.count(pattern)
                     counts[key]+=n
@@ -294,16 +173,6 @@ try:
                 status("AFFECTED_CUSTOM_TABLE_"+marker+"_"+suffix,n)
         for bucket,n in sorted(option_buckets.items()):
             status("OPTION_LEAK_BUCKETS_"+bucket,n)
-        status("TABLE_DATA_GROUPS_BEGIN","PASS")
-        for group,stat in sorted(option_groups.items()):
-            status("OPTION_GROUP_"+group+"_ROWS",stat[0])
-            status("OPTION_GROUP_"+group+"_BLUESEA_REFS",stat[1])
-            status("OPTION_GROUP_"+group+"_NCKH_REFS",stat[2])
-        for group,stat in sorted(posts_groups.items()):
-            status("POST_GROUP_"+group+"_ROWS",stat[0])
-            status("POST_GROUP_"+group+"_BLUESEA_REFS",stat[1])
-            status("POST_GROUP_"+group+"_NCKH_REFS",stat[2])
-        status("TABLE_DATA_GROUPS_END","PASS")
         status("NO_SQL_EXECUTED","PASS")
         status("NO_EXPORT_ARTIFACT","PASS")
 finally:
