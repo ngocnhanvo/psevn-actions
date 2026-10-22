@@ -1,1 +1,1 @@
-Verify PSE PHP generic runtime after retiring research-only MU plugins. No live PHP FTP, no build or deploy.
+Verify PSE PHP master commit 850d4b875e61a2b3a88b22b309495a82db8b031b: syntax and portable Agent regression, no PHP FTP or Astro build.
