@@ -84,15 +84,23 @@ jobs:
               out.write('FTP_ASTRO_DIR='+target+'\n')
           print('PASS: PSE master and deployment target derived from WC_URL_CLIENT')
           PY
-      - name: Refuse inherited EduResearch server endpoints in PSE Astro source
+      - name: Reject inherited tenant runtime while requiring active WordPress SSR routes
         shell: bash
         run: |
           set -euo pipefail
-          if grep -Eq 'nghiencuukhoahoc|api-nghiencuukhoahoc' \
-              source/src/lib/nckh/serverWp.ts \
-              source/src/lib/nckh/serverSession.ts \
-              source/src/lib/nckh/privateRuntime.ts; then
-            echo "::error::PSE Astro still contains EduResearch backend or private runtime references"
+          test ! -e source/src/lib/nckh
+          test ! -e source/src/pages/api/nckh
+          test ! -e source/src/pages/api/auth
+          test ! -e source/src/pages/so-tay
+          test -f source/src/pages/api/user/info.ts
+          test -f 'source/src/pages/ssr/posts/[slug]/detail.astro'
+          test -f 'source/src/pages/ssr/products/[slug]/detail.astro'
+          grep -Eq 'export const prerender = false' source/src/pages/api/user/info.ts
+          if grep -Eq 'nghiencuukhoahoc|api-nghiencuukhoahoc|xuongmunonbaohiem' \
+              source/src/pages/api/user/info.ts \
+              'source/src/pages/ssr/posts/[slug]/detail.astro' \
+              'source/src/pages/ssr/products/[slug]/detail.astro'; then
+            echo "::error::PSE Astro runtime includes a source-tenant backend reference"
             exit 1
           fi
       - name: Check signed unzip staging destination before any build or FTP
@@ -146,9 +154,12 @@ jobs:
           test -s dist/client/index.html
           test -s dist/server/entry.mjs
           ! grep -q 'xuongmunonbaohiem' dist/client/index.html
-          # Verify that the new application has SSR route records, not just a static homepage.
-          find dist/server -type f | grep -Eq 'pse|auth|so-tay' ||
-            grep -Rq 'api/auth/google/start' dist/server
+          # Verify that compiled server routing still includes the active WordPress
+          # user endpoint and dynamic SSR routes, not retired NCKH endpoints.
+          if ! grep -RqlE 'api/user/info|ssr/(posts|products)' dist/server; then
+            echo "::error::Compiled server does not contain expected WordPress SSR routes"
+            exit 1
+          fi
           echo "Build source SHA: $(git rev-parse HEAD) (master)" >> "$GITHUB_STEP_SUMMARY"
       - name: Package only compiled staging output (strictly no .env)
         shell: bash
@@ -308,7 +319,7 @@ jobs:
       - name: Verify provenance and activate staging bundle using signed PHP rollback
         shell: bash
         run: python3 actions-hub/scripts/pse-remote-unzip.py unpack
-      - name: Check staging page and new private SSR route (GET only)
+      - name: Check homepage, WordPress-backed user SSR endpoint and SEO metadata (GET only)
         shell: bash
         run: |
           set -euo pipefail
@@ -331,15 +342,17 @@ jobs:
           for attempt in range(5):
               try:
                   home=fetch('/')
-                  session=fetch('/api/auth/me')
-                  notebook=fetch('/so-tay')
+                  profile=fetch('/api/user/info')
+                  robots=fetch('/robots.txt')
+                  # Without a WordPress login cookie the active SSR user endpoint
+                  # must return a JSON object, not HTML or an internal error.
+                  profile_data=json.loads(profile[2]) if profile[0]==200 and 'json' in profile[1].lower() else None
                   if home[0]==200 and 'html' in home[1].lower() and \
-                      session[0]==401 and 'json' in session[1].lower() and \
-                      json.loads(session[2]).get('authenticated') is False and \
-                      notebook[0]==200:
-                      print('PASS: staging DEV homepage, /so-tay and private Astro auth endpoint served over SSR.')
+                      profile[0]==200 and isinstance(profile_data,dict) and \
+                      robots[0]==200 and len(robots[2].strip())>0:
+                      print('PASS: PSE homepage, WordPress-backed SSR user API and robots metadata served.')
                       raise SystemExit(0)
-                  last=(home[0],session[0],notebook[0])
+                  last=(home[0],profile[0],robots[0])
               except Exception as exc:
                   last=('request-error',type(exc).__name__)
               time.sleep(4)
