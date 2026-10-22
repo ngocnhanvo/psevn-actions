@@ -1,3 +1,0 @@
-2026-10-21: align PSE branch defaults and remove only pinned bootstrap/import refs. Not a deployment.
-Retry guarded cleanup: no default change when lacking administration; remove only PHP import temporary branch.
-2026-10-21: defaults verified PSE Astro=master, PSE PHP=master. Remove only obsolete bootstrap main refs (checked expected SHA).

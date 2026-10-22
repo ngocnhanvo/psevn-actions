@@ -57,3 +57,11 @@ No additional cleanup of users, WordPress ACF content, DB backups, template SQL,
 - `public/home-first/`, `public/logo-first/`, `public/tool/`: no direct references in the 14 checked Astro Home TablePress component sources, but WordPress-managed dynamic Page/TablePress data may reference them. Retained pending a verified site-wide WordPress asset-reference inventory. Do not bulk-delete images by path/name alone.
 - `src/pages/api/files/[...path].ts` is still targeted by `scripts/inject-handler.js` for WordPress document rewrites; retain. Other WordPress API, cart, commerce, SSR routes, plugins, core files, active diagnostic CI, FTPS/rollback, DB safety tooling and archived historical recovery records retained.
 - No WordPress-managed Astro build, Astro FTP deploy, PHP upload or live database update occurred in this continuation. Current production website artifact may differ from the newly merged Astro source, and the postdeploy verification remains NOT TESTED on that artifact. `code: auto` prohibits auto-triggering Build Website.
+
+## Retired obsolete branch finalization workflow — 2026-10-23
+
+- Source-only housekeeping, after the verified PR #6 merge: removed `.github/workflows/pse-branch-finalize.yml` and the orphaned `.pse-branch-finalize-trigger` from `psevn-actions/main`.
+- The one-time workflow pinned Astro `github`/`master` to `13cb5a21...` and PHP `master` to `93fbcc5f...`, which differ from the current verified Astro `ebbd65c7...` and PHP `eea71feb...`. Its preconditions cannot pass now; the referenced bootstrap/import branches have already been removed.
+- Checked live GitHub branch lists before retirement: PHP only `master`; Astro `github`, `master` and three historical `fix/` refs. Astro `github` and `master` remain identical. The historical fix refs were not deleted.
+- No application source, WordPress data, FTP files, Astro build/deploy pipeline, tests, or active release/diagnostic workflow was changed. Git history retains this one-time workflow if needed for audit or rollback.
+- The previously unverified WHOIS scripts and WordPress-driven asset references remain protected, pending direct reference or hosting evidence. This checkpoint change is not a live runtime validation.
