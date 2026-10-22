@@ -1,0 +1,1 @@
+Create a starter SQL database from the strictly verified protected recovery backup, strip tenant data, verify re-import locally, allow upload only after privacy gate passes. No production database change; no Astro build.
