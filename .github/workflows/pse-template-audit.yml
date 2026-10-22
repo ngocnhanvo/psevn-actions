@@ -7,6 +7,7 @@ on:
       - scripts/template-audit.py
       - scripts/pse-template-database-readonly.mjs
       - .pse-template-db-backup-request
+      - .pse-template-cleanup-users-request
       - .github/workflows/pse-template-audit.yml
 permissions:
   contents: read
@@ -14,7 +15,9 @@ jobs:
   audit:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
-      github.event.head_commit.message != 'test(template): backup PSE WP database (local only)'
+      github.event.head_commit.message != 'test(template): backup PSE WP database (local only)' &&
+      github.event.head_commit.message != 'chore(template): remove five NCKH test accounts after Updraft backup' &&
+      github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -70,6 +73,8 @@ jobs:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.event.head_commit.message != 'test(template): backup PSE WP database (local only)' &&
+      github.event.head_commit.message != 'chore(template): remove five NCKH test accounts after Updraft backup' &&
+      github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
       github.event.head_commit.message != 'test(template): audit DEV and PROD sources (READ ONLY)'
     runs-on: ubuntu-latest
     timeout-minutes: 9
@@ -119,3 +124,30 @@ jobs:
           node --check scripts/pse-template-updraft-backup.mjs
           node scripts/pse-template-updraft-backup.mjs
           echo 'PSE_DATABASE_LOCAL_BACKUP=VERIFIED_IN_UPDRAFTPLUS'
+
+  nckh-user-cleanup:
+    name: Remove only five backed-up NCKH test accounts (preserve admin)
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' &&
+      github.event.head_commit.message == 'chore(template): remove five NCKH test accounts after Updraft backup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout PSE-only cleanup script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install matching Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate recent DB backup and clean only five NCKH users via WordPress admin
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: |
+          node --check scripts/pse-template-cleanup-users.mjs
+          node scripts/pse-template-cleanup-users.mjs
+          echo 'PSE_NCKH_USER_CLEANUP=PASS; ADMIN_PRESERVED=PASS; NO_PHP_DEPLOY=PASS; NO_ASTRO_BUILD=PASS'
