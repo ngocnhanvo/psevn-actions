@@ -1,1 +1,1 @@
-Verify PSE Astro github at 4fcbec7cc6a6e148ac07eee820f76154c11fbbd1; offline Vitest only, no build or FTP.
+Verify PSE Astro github commit 4285f061b251f85ef3dcdf7486c858c2eee158d2: source-only regression, no frontend build.
