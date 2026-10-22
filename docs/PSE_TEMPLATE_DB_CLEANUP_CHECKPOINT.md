@@ -31,6 +31,18 @@ Scope: only `ngocnhanvo/psevn-astro`, `ngocnhanvo/psevn-php`, `ngocnhanvo/psevn-
 
 Sources of truth: workflows, SHA-linked GitHub Actions logs, and WordPress WP-admin; not prior chat guesses.
 
+## Verified page and company sanitation — after read-only review
+
+- [Run 39737497847](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39737497847): safe no-write Playwright preflight for the inherited company label, pages 53390/47222 and one ACF contact field, PASS.
+- Early native-editor write attempts were blocked before completing edits; direct visual editing of the hidden ACF field was **not** reliable. Do not retry those old runs.
+- [Run 39739176065](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39739176065): owner-approved native WP/ACF API sanitation succeeded: set inherited general-info \`tencongty\` to generic \`Website mẫu\`, replaced copied text bodies of two exact page IDs 53390 and 47222 with neutral template placeholders, and cleared imported contact content in the \`content\` ACF field of page 47222. Original page IDs, slugs, actions, ACF definitions, CSS and media were deliberately preserved.
+- The narrowly scoped temporary MU-plugin was installed over certificate-verified FTPS, then **removed successfully**; no permanent administrative endpoint was left behind.
+- UpdraftPlus created **one new DB-only local recovery snapshot** *after* the changes; SQL gzip CRC and authenticated FTPS download passed.
+- WordPress post-save browser audit: old business brand/contact flags = **NO** for both edited pages, old ACF/company-brand flags = **NO** for the general-info record. The main inherited page 248 still has old branding in its title, large body and \`cssmore\` ACF; it is unmodified to protect selectors/layout.
+- SQL after cleanup: Blue Sea domain **99** occurrences (from 112), Blue Sea text **443** (from 487), research-domain **30** (unchanged). These are **occurrences, not affected rows**, and include stored plugin knowledge/indexes/options and content outside the edited targets.
+- **Do not rerun** the successful page or company clean-up or its backups. The source code is template-audit clean but the database is **not certified as a distributable sanitized clone**. A separate restore-tested private clone and review of page 248/CSS, Agent knowledge, plugin indexes/options, historical revisions and credentials remain required. Never commit or publicly upload the Updraft SQL files.
+- The GitHub source-only changes did not initiate the WordPress-controlled Astro build, FTP frontend deployment or customer-site operation.
+
 ## Page-level content review (read-only)
 
 [Run 39734883912](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39734883912) confirmed the specific residual scopes. IDs are WordPress post IDs for a future *bounded* cleanup, **not authorization to delete pages**.
