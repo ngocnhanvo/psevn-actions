@@ -16,8 +16,6 @@ import secrets
 import ssl
 from urllib.parse import urlsplit
 
-HOST = "vt108159.server.idn.vn"
-WP_HOST = "admin-pse.webnvn.com"
 SOURCE = Path("source-php")
 FILES = (
     "pse-unzip.php",
@@ -31,7 +29,7 @@ raw = os.environ.get("FTP_SERVER", "").strip()
 if "://" not in raw:
     raw = "ftp://" + raw
 u = urlsplit(raw)
-assert u.hostname == HOST and u.scheme in ("ftp", "ftps")
+assert u.hostname and u.scheme in ("ftp", "ftps") and u.port in (None,21)
 assert not u.username and not u.password and not u.path.strip("/")
 assert os.environ.get("FTP_USERNAME") and os.environ.get("FTP_PASSWORD")
 env = os.environ.get("ENV_FILE", "")
@@ -43,9 +41,9 @@ for line in env.splitlines():
     if line.startswith("WC_URL="):
         vals["WC_URL"]=line.split("=",1)[1].strip().strip("'\"")
 base=urlsplit(vals.get("WC_URL",""))
-assert base.scheme=="https" and base.hostname==WP_HOST and base.path in ("","/")
+assert base.scheme=="https" and base.hostname and base.port in (None,443) and base.path in ("","/")
 assert not base.query and not base.fragment and not base.username and not base.password
-root=f"/domains/{WP_HOST}/public_html"
+root=f"/domains/{base.hostname}/public_html"
 for name in FILES:
     assert (SOURCE/name).is_file() and (SOURCE/name).stat().st_size>0, name
 assert (SOURCE/"pse-unzip-v2.ready").read_text().strip()=="PSE_ASTRO_UNZIP_PROTOCOL=2"
