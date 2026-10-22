@@ -108,7 +108,7 @@ try {
   const roleTotals = await page.locator('.subsubsub li a[href*="role="]').evaluateAll(
     (links) => links.map((link) => {
       const role = new URL(link.href).searchParams.get('role') || '';
-      const match = (link.textContent || '').match(/\\((\\d[\\d,]*)\\)/);
+      const match = (link.textContent || '').match(/\((\d[\d,]*)\)/);
       return { role, count: match ? Number(match[1].replace(/,/g, '')) : null };
     }).filter((item) => /^[a-z0-9_-]{1,36}$/.test(item.role) && Number.isSafeInteger(item.count))
   );
