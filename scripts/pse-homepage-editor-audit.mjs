@@ -72,5 +72,25 @@ try{
     });
     console.log('PSE_EDITOR_'+kind.toUpperCase()+'='+JSON.stringify(audit));
   }
+  // ESC Table editor and Visual Builder are separate screens from the Page editor.
+  // Inspect them without submitting forms, changing fields, or logging preview tickets.
+  await page.goto(origin+'/wp-admin/admin.php?page=tablepress',{waitUntil:'domcontentloaded',timeout:60000});
+  const tableAudit=await page.evaluate(()=>({
+    screenTitle:(document.querySelector('#wpbody-content h1, .wrap h1')?.textContent||'').trim().slice(0,100),
+    editorAvailable:Boolean(document.querySelector('#tablepress-page, #tablepress, .tablepress, [id*="tablepress"]')),
+    linkLabels:Array.from(document.querySelectorAll('#wpbody-content a')).map(n=>(n.textContent||'').trim()).filter(x=>x.length&&x.length<65).slice(0,25),
+    adminError:Boolean(document.querySelector('.wp-die-message, #error-page')),
+  }));
+  console.log('PSE_ESC_TABLE_ADMIN='+JSON.stringify(tableAudit));
+  await page.goto(origin+'/wp-admin/edit.php?post_type=page&page=esc-visual-builder&esc_vb_page='+wpData.home.id,{waitUntil:'domcontentloaded',timeout:60000});
+  const builderAudit=await page.evaluate(()=>({
+    workspace:Boolean(document.querySelector('#esc-vb-app')),
+    frame:Boolean(document.querySelector('#esc-vb-frame')),
+    sectionControls:Boolean(document.querySelector('#esc-vb-refresh-section')),
+    editorControls:Boolean(document.querySelector('#esc-vb-text-editor')),
+    wpError:Boolean(document.querySelector('.wp-die-message, #error-page')),
+  }));
+  console.log('PSE_VISUAL_BUILDER_ADMIN='+JSON.stringify(builderAudit));
+
   console.log('PSE_EDITOR_AUDIT=PASS read_only=true no_content_saved=true');
 }finally{await browser.close()}
