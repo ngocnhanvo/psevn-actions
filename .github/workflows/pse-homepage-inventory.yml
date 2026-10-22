@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - scripts/pse-homepage-inventory.py
+      - scripts/pse-legacy-public-inventory.py
       - .github/workflows/pse-homepage-inventory.yml
   workflow_dispatch:
 permissions:
@@ -12,7 +13,7 @@ jobs:
   wordpress-public-inventory:
     if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
     steps:
@@ -25,3 +26,17 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/pse-homepage-inventory.py
           python3 scripts/pse-homepage-inventory.py
+      - name: Inventory legacy PSE public content and attachments (NO WRITES)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-legacy-public-inventory.py
+          python3 scripts/pse-legacy-public-inventory.py
+      - name: Save provisional legacy migration manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-g0-legacy-public-manifest
+          path: artifacts/pse-legacy-public-manifest.json
+          if-no-files-found: warn
+          retention-days: 7
