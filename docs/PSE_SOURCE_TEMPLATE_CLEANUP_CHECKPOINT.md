@@ -28,3 +28,13 @@ Path-and-blob comparison at this checkpoint (NOT an authorization to bulk-delete
 
 ## Non-repeat boundary
 No additional cleanup of users, WordPress ACF content, DB backups, template SQL, migrations or historic jobs was done here. The successful DB-template work is recorded separately in `docs/PSE_TEMPLATE_DB_CLEANUP_CHECKPOINT.md`.
+
+
+## Post-merge closeout — 2026-10-23 (supersedes source-only branch status above)
+
+- Astro PR [#5](https://github.com/ngocnhanvo/psevn-astro/pull/5) was **merged** from `github` into `master`, preserving both histories: final merge commit [`df6689c58ea3b36c9e3e41b545d8e62506bab5b0`](https://github.com/ngocnhanvo/psevn-astro/commit/df6689c58ea3b36c9e3e41b545d8e62506bab5b0); reconciled DEV commit `c918cefb0e1f179c8c4f2527cd06917ac36ccab7` is its parent. Both branch heads match exactly; GitHub compare reported `identical`, 0 ahead / 0 behind / 0 files different.
+- DEV post-reconciliation [CI run 39827368052](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39827368052): **PASS 68/68 test files, 317/317 tests**. Includes the newly added generic WordPress SSR route regressions and verifies obsolete tenant routes were removed. No build/FTP.
+- Production-branch [source-only CI run 39827235548 (attempt 2)](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39827235548): **PASS 68/68 test files, 317/317 tests** after the merge. Do not rerun its earlier failed attempt, which checked pre-merge source.
+- [Release architecture run 39827307034](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39827307034): **PASS**. Actions CI and WordPress-controlled deployment workflow are aligned with active SSR routes `/api/user/info`, `/ssr/posts`, and `/ssr/products`; legacy `/api/auth/me`, `/so-tay`, and `src/lib/nckh` are no longer required by build validation. Preserve existing WordPress build trigger, FTP-TLS, signed unzip, sitemap Save revision, incremental cache and rollback.
+- The Astro repositories were **source-only merged**: NO WordPress Build Website trigger, NO Astro production build, NO Astro FTPS publish and NO PHP FTP deploy as part of this merge. Live runtime parity remains unverified pending a separately authorized website build. Under `code: auto`, do not trigger that build.
+- Old branch/test status in the 2026-10-22 checkpoint documents the previous state and is intentionally retained as history. Remaining cleanup queue (PSE-only assets, WHOIS/migrations, one-time Actions) is **not automatically resolved by this merge**; assess references and safety before further deletion.
