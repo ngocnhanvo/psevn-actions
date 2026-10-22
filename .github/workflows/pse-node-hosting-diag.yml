@@ -16,6 +16,7 @@ jobs:
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      ENV_FILE: ${{ secrets.ENV_FILE }}
     steps:
       - name: Read only Node startup markers, Passenger/PM2 routing hints
         shell: bash
@@ -27,11 +28,27 @@ jobs:
           raw=os.environ.get('FTP_SERVER','').strip()
           if '://' not in raw:raw='ftp://'+raw
           u=urlsplit(raw)
-          if not(u.hostname=='vt108159.server.idn.vn'
-                 and u.scheme in ('ftp','ftps') and not u.username and not u.password):
+          if not(u.hostname and u.scheme in ('ftp','ftps') and u.port in (None,21)
+                 and not u.username and not u.password and u.path in ('','/')
+                 and not u.query and not u.fragment):
               raise SystemExit('PSE_NODE_FTP=HOST_INVALID')
+          vals={}
+          for line in os.environ.get('ENV_FILE','').splitlines():
+              line=line.strip()
+              if line.startswith('WC_URL_CLIENT='):
+                  vals['front']=line.split('=',1)[1].strip().strip('"').strip("'")
+              elif line.startswith('WC_URL='):
+                  vals['wp']=line.split('=',1)[1].strip().strip('"').strip("'")
+          front=urlsplit(vals.get('front',''))
+          wp=urlsplit(vals.get('wp',''))
+          def valid_origin(v):
+              return (v.scheme=='https' and bool(v.hostname) and not v.username and not v.password
+                      and v.port in (None,443) and v.path in ('','/')
+                      and not v.query and not v.fragment)
+          if not valid_origin(front) or not valid_origin(wp) or wp.hostname==front.hostname:
+              raise SystemExit('PSE_NODE_FTP=FRONTEND_ORIGIN_INVALID')
           ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
-          root='/domains/pse.webnvn.com/public_html'
+          root='/domains/'+front.hostname+'/public_html'
           try:
               ftp.connect(u.hostname,u.port or 21,timeout=18)
               ftp.auth()
