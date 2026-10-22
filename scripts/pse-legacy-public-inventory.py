@@ -9,12 +9,12 @@ import json
 import os
 import re
 import time
-from collections import deque
+import heapq
 from datetime import datetime, timezone
 from html import unescape
 from html.parser import HTMLParser
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 
 SOURCE = "https://www.pse.vn/"
@@ -24,9 +24,10 @@ SEEDS = [
     "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong.html",
     "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html",
 ]
-MAX_PAGES = 60
+MAX_PAGES = 75
+MAX_PAGE_SECONDS = 195
 MAX_SECONDS = 290
-MAX_FILES_TO_VERIFY = 14
+MAX_FILES_TO_VERIFY = 8
 DOCUMENT_EXTENSIONS = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip")
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg")
 IGNORED_EXTENSIONS = (".js", ".css", ".woff", ".woff2", ".ttf", ".ico", ".map")
@@ -45,7 +46,7 @@ def normalize(href, parent=SOURCE):
     parsed = urlsplit(urljoin(parent, raw))
     if parsed.scheme not in ("http", "https") or parsed.hostname not in TARGET_HOSTS:
         return None
-    path = re.sub(r"/{2,}", "/", parsed.path or "/")
+    path = quote(unquote(re.sub(r"/{2,}", "/", parsed.path or "/")), safe="/-._~")
     # Keep Joomla pagination, but discard feed, user/preview and query-driven search.
     query = parsed.query if re.fullmatch(r"start=\d{1,4}", parsed.query) else ""
     return urlunsplit(("https", "www.pse.vn", path, query, ""))
@@ -66,9 +67,9 @@ def page_priority(url, depth):
     path = urlsplit(url).path
     if url == SOURCE or depth == 0:
         return 0
-    if category(url) != "other":
-        return 1
     if re.search(r"/\d{3,5}-", path):
+        return 1
+    if category(url) != "other":
         return 2
     return 3
 
@@ -170,12 +171,16 @@ def verify_file(url):
 
 def main():
     started = time.monotonic()
-    seen, pending = set(), deque((url, 0) for url in SEEDS)
+    seen, queued, pending = set(), set(SEEDS), []
+    seq = 0
+    for seed in SEEDS:
+        heapq.heappush(pending, (0, seq, seed, 0))
+        seq += 1
     discovered_docs, discovered_images = {}, {}
     pages = []
     errors = []
-    while pending and len(pages) < MAX_PAGES and time.monotonic() - started < MAX_SECONDS:
-        url, depth = pending.popleft()
+    while pending and len(pages) < MAX_PAGES and time.monotonic() - started < MAX_PAGE_SECONDS:
+        _, _, url, depth = heapq.heappop(pending)
         if url in seen:
             continue
         seen.add(url)
@@ -196,8 +201,10 @@ def main():
                     discovered_docs.setdefault(link, {"url": link, "label": label, "found_on": resolved})
                     records.append(link)
                 elif depth < 2 and not urlsplit(link).path.lower().endswith(IMAGE_EXTENSIONS + IGNORED_EXTENSIONS):
-                    if link not in seen and link not in (u for u, _ in pending):
-                        pending.append((link, depth + 1))
+                    if link not in seen and link not in queued:
+                        queued.add(link)
+                        heapq.heappush(pending, (page_priority(link, depth + 1), seq, link, depth + 1))
+                        seq += 1
             images = []
             for image in parser.images:
                 link = normalize(image["src"], resolved)
@@ -233,7 +240,7 @@ def main():
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "source": SOURCE,
         "scope": "public read-only, bounded crawl; not a complete migration inventory",
-        "limits": {"max_pages": MAX_PAGES, "max_seconds": MAX_SECONDS, "max_file_checks": MAX_FILES_TO_VERIFY},
+        "limits": {"max_pages": MAX_PAGES, "page_time_budget_seconds": MAX_PAGE_SECONDS, "total_seconds": MAX_SECONDS, "max_file_checks": MAX_FILES_TO_VERIFY},
         "pages": pages,
         "documents": documents,
         "images": list(discovered_images.values()),
