@@ -22,6 +22,19 @@ const user = process.env.WP_ADMIN_USERNAME || '';
 const password = process.env.WP_ADMIN_PASSWORD || '';
 if (!user || !password) throw Error('WordPress credentials unavailable');
 const say = (key, val) => console.log('PSE_TEMPLATE_CONTENT ' + key + '=' + val);
+const assetPrefixes = ['home-first', 'logo-first', 'tool'];
+const whoisNames = ['whois_memberall.php', 'whois_qte_price.php'];
+const sourceEvidence = { pages: 0, common: 0, tables: 0, categories: Object.fromEntries(assetPrefixes.map(x => [x, 0])), whois: Object.fromEntries(whoisNames.map(x => [x, 0])) };
+function countSourceReferences(value, area) {
+  if (typeof value !== 'string' || !value) return;
+  sourceEvidence[area] += 1;
+  for (const prefix of assetPrefixes) {
+    if (new RegExp('/' + prefix + '/', 'i').test(value)) sourceEvidence.categories[prefix] += 1;
+  }
+  for (const name of whoisNames) {
+    if (value.toLowerCase().includes(name)) sourceEvidence.whois[name] += 1;
+  }
+}
 const oldBrand = /nghiencuukhoahoc|xuongmunonbaohiem|eduresearch\s*hub|blue\s*sea/i;
 const privateContact = /(?:[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})|(?:\+?84|0)[35789]\d{8}\b/i;
 
@@ -106,6 +119,7 @@ try {
       if (!state.readable) unreadable += 1;
       else {
         inspected += 1;
+        countSourceReferences(state.value, 'pages');
         if (oldBrand.test(state.value)) oldInBody += 1;
         if (privateContact.test(state.value)) privateInBody += 1;
         const id=url.searchParams.get('post');
@@ -141,6 +155,7 @@ try {
       const state = await inspectEditor(url.href);
       if (state.readable) {
         generalReadable += 1;
+        countSourceReferences(state.value, 'common');
         if (oldBrand.test(state.value)) generalLegacy += 1;
         if (privateContact.test(state.value)) generalPrivate += 1;
         say('GENERAL_INFO_LEGACY_ACF_FIELD_COUNT',state.acfLegacyFields.length);
@@ -153,6 +168,46 @@ try {
   say('GENERAL_INFO_EDITORS_READABLE', generalReadable);
   say('GENERAL_INFO_OLD_BRAND_CONTENT', generalLegacy);
   say('GENERAL_INFO_PRIVATE_CONTACT_CONTENT', generalPrivate);
+
+  // Read-only inspection of the installed TablePress editor, when accessible.
+  // No table data or credentials are printed or changed.
+  let tablePressStatus = 'UNVERIFIED';
+  try {
+    await go('/wp-admin/admin.php?page=tablepress');
+    if (!page.url().startsWith(wp + '/wp-admin/')) throw Error('WP TablePress admin unavailable');
+    const hrefs = await page.locator('a[href*="page=tablepress"][href*="action=edit"]').evaluateAll(
+      nodes => nodes.map(n => n.getAttribute('href') || '')
+    );
+    const urls = [...new Set(hrefs.map(href => {
+      try {
+        const url = new URL(href, wp);
+        return url.origin === wp && url.pathname.startsWith('/wp-admin/') &&
+          url.searchParams.get('page') === 'tablepress' &&
+          url.searchParams.get('action') === 'edit' &&
+          /^[a-zA-Z0-9_-]{1,64}$/.test(url.searchParams.get('table_id') || '')
+          ? url.href : null;
+      } catch { return null; }
+    }).filter(Boolean))];
+    tablePressStatus = urls.length ? 'PARTIAL' : 'UNVERIFIED_NO_EDITOR_LINKS';
+    for (const url of urls.slice(0, 60)) {
+      await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 45000});
+      if (!page.url().startsWith(wp + '/wp-admin/')) continue;
+      const value = await page.evaluate(() => {
+        const inputs = [...document.querySelectorAll('textarea, input[type="text"], [contenteditable="true"]')]
+          .map(el => 'value' in el ? el.value : (el.textContent || ''));
+        return document.documentElement.outerHTML + '\n' + inputs.join('\n');
+      });
+      countSourceReferences(value, 'tables');
+    }
+    if (urls.length && sourceEvidence.tables === urls.length) tablePressStatus = urls.length <= 60 ? 'ALL_VISIBLE_EDITOR_LINKS' : 'FIRST_60_EDITOR_LINKS';
+  } catch { tablePressStatus = 'UNVERIFIED_ADMIN_ACCESS'; }
+  say('SOURCE_REF_TABLEPRESS_SCOPE', tablePressStatus);
+  say('SOURCE_REF_PAGES_INSPECTED', sourceEvidence.pages);
+  say('SOURCE_REF_GENERAL_INFO_INSPECTED', sourceEvidence.common);
+  say('SOURCE_REF_TABLE_EDITORS_INSPECTED', sourceEvidence.tables);
+  for (const prefix of assetPrefixes) say('SOURCE_REF_'+prefix.replaceAll('-', '_').toUpperCase()+'_DOCUMENTS', sourceEvidence.categories[prefix]);
+  for (const name of whoisNames) say('SOURCE_REF_'+name.replaceAll('.', '_').toUpperCase()+'_DOCUMENTS', sourceEvidence.whois[name]);
+  say('SOURCE_REF_SAFE_TO_DELETE', 'NOT_DETERMINED');
 
   await go('/wp-admin/upload.php?mode=list');
   const media = await page.locator('#the-list tr[id^="post-"]').evaluateAll(nodes =>
