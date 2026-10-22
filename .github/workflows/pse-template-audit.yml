@@ -25,6 +25,7 @@ jobs:
       github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
       github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
       github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
+      github.event.head_commit.message != 'chore(template): sanitize residual PSE content via WordPress APIs (ONE TIME)' &&
       github.event.head_commit.message != 'test(template): preflight PSE content sanitation (NO WRITES)' &&
       github.event.head_commit.message != 'chore(template): sanitize inherited PSE page text and company name (ONE TIME)' &&
       github.event.head_commit.message != 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)'
@@ -87,6 +88,7 @@ jobs:
       github.event.head_commit.message != 'chore(template): prepare bounded NCKH user cleanup (NO EXECUTION)' &&
       github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
       github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
+      github.event.head_commit.message != 'chore(template): sanitize residual PSE content via WordPress APIs (ONE TIME)' &&
       github.event.head_commit.message != 'test(template): preflight PSE content sanitation (NO WRITES)' &&
       github.event.head_commit.message != 'chore(template): sanitize inherited PSE page text and company name (ONE TIME)' &&
       github.event.head_commit.message != 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)' &&
@@ -327,3 +329,81 @@ jobs:
         run: |
           node scripts/pse-template-content-audit.mjs
           echo 'PSE_POST_SANITIZE_CONTENT_RECHECK=PASS_READ_ONLY'
+
+  content-sanitization-wordpress-api:
+    name: One-time exact PSE WordPress/ACF sanitation (PRESERVE STRUCTURE; NO ASTRO BUILD)
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' &&
+      github.event.head_commit.message == 'chore(template): sanitize residual PSE content via WordPress APIs (ONE TIME)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout only PSE tools
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate temporary WP PHP tool and FTPS transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v php >/dev/null 2>&1; then
+            apt-get update -qq >/dev/null
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends php-cli >/dev/null
+          fi
+          php -l scripts/pse-template-content-maintenance.php
+          python3 -m py_compile scripts/pse-template-temporary-ftps.py
+          node --check scripts/pse-template-content-admin-exec.mjs
+          echo 'PSE_CONTENT_MAINTENANCE_SYNTAX=PASS'
+      - name: Install Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Install exactly one temporary PSE WordPress admin tool
+        env:
+          PSE_TEMPLATE_MAINTENANCE_TOOL: content
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: python3 scripts/pse-template-temporary-ftps.py install
+      - name: Save only exact imported PSE texts with WordPress and ACF APIs
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: |
+          node scripts/pse-template-content-admin-exec.mjs
+          echo 'PSE_WORDPRESS_API_CONTENT_UPDATE=PASS; NO_ASTRO_BUILD=PASS'
+      - name: ALWAYS remove one-time content maintenance PHP from WordPress
+        if: always()
+        env:
+          PSE_TEMPLATE_MAINTENANCE_TOOL: content
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: python3 scripts/pse-template-temporary-ftps.py remove
+      - name: Create post-edit local protected UpdraftPlus DB backup
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Recheck WordPress pages, ACF, user and media residue (READ ONLY)
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: |
+          node scripts/pse-template-content-audit.mjs
+          echo 'PSE_TEMPLATE_PAGES_POST_CLEAN_AUDITED=PASS'
+      - name: Recheck protected SQL backup (READ ONLY; NO DOWNLOAD ARTIFACT)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          python3 scripts/pse-template-db-sql-readonly.py
+          echo 'PSE_TEMPLATE_SQL_POST_CLEAN_AUDIT=PASS; NO_ASTRO_BUILD=PASS'
