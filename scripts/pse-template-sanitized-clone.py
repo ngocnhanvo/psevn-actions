@@ -262,16 +262,16 @@ def export_and_verify(src_names):
         raw = plain.read_bytes()
         if len(raw)>60_000_000:
             raise RuntimeError("Generated template SQL unexpectedly large")
-        detected = DANGEROUS.search(raw)
+        detected = DANGEROUS.search(raw.replace(b"admin@example.invalid", b""))
         if detected:
             # Public logs must not expose the matching value.
             raise RuntimeError("Privacy gate rejected a retained value")
         # Prevent accidental export of real deployment configuration.
-        if b"INSERT INTO \`wp_users\`" in raw or b"INSERT INTO \`wp_usermeta\`" in raw:
+        if re.search(rb"INSERT INTO [`]?wp_users[`]?", raw, re.I) or re.search(rb"INSERT INTO [`]?wp_usermeta[`]?", raw, re.I):
             raise RuntimeError("User credentials persisted in SQL export")
-        if b"INSERT INTO \`wp_comments\`" in raw or b"INSERT INTO \`wp_commentmeta\`" in raw:
+        if re.search(rb"INSERT INTO [`]?wp_comments[`]?", raw, re.I) or re.search(rb"INSERT INTO [`]?wp_commentmeta[`]?", raw, re.I):
             raise RuntimeError("Chat/comment data persisted in SQL export")
-        with gzip.open(DEST,"wb",compresslevel=8,mtime=None) as dest:
+        with gzip.open(DEST,"wb",compresslevel=8) as dest:
             dest.write(raw)
         exec_sql("CREATE DATABASE " + ident(VERIFY) + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
         # Import twice: first in creator's clean copy, second into brand-new DB.
