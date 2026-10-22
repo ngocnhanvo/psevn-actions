@@ -40,6 +40,11 @@ jobs:
           php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
           php -l source-php/wp-content/mu-plugins/esc-github-trigger-config.php
           php -l source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
+          php -l source-php/wp-content/mu-plugins/nckh-project-runtime.php
+          php -l source-php/wp-content/mu-plugins/nckh-tablepress-page-preview.php
+          php -l source-php/wp-content/mu-plugins/nckh-article-editor.php
+          php -l source-php/wp-content/mu-plugins/nckh-staging-db-backup.php
+          php -l source-php/wp-content/mu-plugins/nckh-admin-guides.php
       - name: Run inherited Build Website lock/status regression
         shell: bash
         run: |
