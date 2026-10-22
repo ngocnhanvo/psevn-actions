@@ -1,4 +1,4 @@
-name: PSE reusable template source audit (READ ONLY)
+name: PSE template source audit and controlled WordPress maintenance
 on:
   workflow_dispatch:
   push:
@@ -7,7 +7,6 @@ on:
       - scripts/template-audit.py
       - scripts/pse-template-database-readonly.mjs
       - scripts/pse-template-content-audit.mjs
-      - scripts/pse-template-sanitize-wp-content.mjs
       - .pse-template-content-cleanup-request
       - .pse-template-db-backup-request
       - .pse-template-cleanup-users-request
@@ -26,8 +25,6 @@ jobs:
       github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
       github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
       github.event.head_commit.message != 'chore(template): sanitize residual PSE content via WordPress APIs (ONE TIME)' &&
-      github.event.head_commit.message != 'test(template): preflight PSE content sanitation (NO WRITES)' &&
-      github.event.head_commit.message != 'chore(template): sanitize inherited PSE page text and company name (ONE TIME)' &&
       github.event.head_commit.message != 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)'
     runs-on: ubuntu-latest
     timeout-minutes: 12
@@ -89,8 +86,6 @@ jobs:
       github.event.head_commit.message != 'test(template): inspect current PSE SQL backup residues (READ ONLY)' &&
       github.event.head_commit.message != 'test(template): prepare SQL backup audit (NO EXECUTION)' &&
       github.event.head_commit.message != 'chore(template): sanitize residual PSE content via WordPress APIs (ONE TIME)' &&
-      github.event.head_commit.message != 'test(template): preflight PSE content sanitation (NO WRITES)' &&
-      github.event.head_commit.message != 'chore(template): sanitize inherited PSE page text and company name (ONE TIME)' &&
       github.event.head_commit.message != 'chore(template): clear disposable PSE cache and historical chats (ONE TIME)' &&
       github.event.head_commit.message != 'test(template): audit DEV and PROD sources (READ ONLY)'
     runs-on: ubuntu-latest
@@ -260,75 +255,6 @@ jobs:
         run: |
           python3 scripts/pse-template-db-sql-readonly.py
           echo 'PSE_TEMPLATE_CACHE_CHAT_CLEANUP_AUDIT=PASS; NO_ASTRO_BUILD=PASS'
-
-  content-sanitization-preflight:
-    name: Check exact PSE WP content targets without modifying DB
-    if: >-
-      github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' &&
-      github.event.head_commit.message == 'test(template): preflight PSE content sanitation (NO WRITES)'
-    runs-on: ubuntu-latest
-    timeout-minutes: 7
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
-      options: --ipc=host
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Syntax-check and install Playwright
-        run: |
-          node --check scripts/pse-template-sanitize-wp-content.mjs
-          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Validate all WP content and ACF targets only, with protected backups present
-        env:
-          PSE_TEMPLATE_DRY_RUN: '1'
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
-          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-        run: |
-          node scripts/pse-template-sanitize-wp-content.mjs
-          echo 'PSE_CONTENT_PREFLIGHT=PASS; NO_DB_WRITE=PASS; NO_ASTRO_BUILD=PASS'
-
-  content-sanitization:
-    name: Sanitize bounded inherited PSE page text and company label
-    if: >-
-      github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' &&
-      github.event.head_commit.message == 'chore(template): sanitize inherited PSE page text and company name (ONE TIME)'
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
-      options: --ipc=host
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Install browser wrapper and validate source
-        run: |
-          node --check scripts/pse-template-sanitize-wp-content.mjs
-          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Apply only verified WordPress editor content changes
-        env:
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
-          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-        run: |
-          node scripts/pse-template-sanitize-wp-content.mjs
-          echo 'PSE_WP_CONTENT_CLEANUP=PASS; NO_ASTRO_BUILD=PASS'
-      - name: Protect edited database using existing UpdraftPlus
-        env:
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
-          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-        run: node scripts/pse-template-updraft-backup.mjs
-      - name: Audit cleaned WordPress editor contents without exposing text
-        env:
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
-          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-        run: |
-          node scripts/pse-template-content-audit.mjs
-          echo 'PSE_POST_SANITIZE_CONTENT_RECHECK=PASS_READ_ONLY'
 
   content-sanitization-wordpress-api:
     name: One-time exact PSE WordPress/ACF sanitation (PRESERVE STRUCTURE; NO ASTRO BUILD)
