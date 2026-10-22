@@ -99,7 +99,10 @@ try:
         total_uncompressed=0
         grouped={}
         touched={}
+        by_table={}
+        option_buckets={}
         current_table_category="SQL_HEADER_OR_UNSCOPED"
+        current_table_name=""
         def table_category(table_name):
             t=table_name.decode("utf-8","ignore").lower()
             for suffix in ("postmeta","posts","options","termmeta","terms","term_taxonomy","term_relationships","users","usermeta","comments","commentmeta"):
@@ -121,6 +124,7 @@ try:
                 table_match=re.match(rb"\s*(?:INSERT INTO|REPLACE INTO)\s+`?([a-zA-Z0-9_]+)`?",line,re.I)
                 if table_match:
                     current_table_category=table_category(table_match.group(1))
+                    current_table_name=table_match.group(1).decode("utf-8","ignore").lower()
                     touched[current_table_category]=touched.get(current_table_category,0)+1
                 elif re.match(rb"\s*(?:CREATE TABLE|DROP TABLE|ALTER TABLE|LOCK TABLES|UNLOCK TABLES)\b",line,re.I):
                     current_table_category="SQL_SCHEMA"
@@ -130,6 +134,24 @@ try:
                     if n:
                         k=(key,current_table_category)
                         grouped[k]=grouped.get(k,0)+n
+                        per=(key,current_table_name)
+                        by_table[per]=by_table.get(per,0)+n
+                if current_table_category=="WORDPRESS_OPTIONS":
+                    # Option keys, never values; buckets deliberately omit secrets.
+                    for match in re.finditer(rb"\(\s*\d+\s*,\s*'([a-zA-Z0-9_-]{1,160})'\s*,",line):
+                        name=match.group(1).decode("ascii","ignore").lower()
+                        end=line.find(b"\n",match.end())
+                        segment=line[match.end():end if end!=-1 else len(line)]
+                        hits=segment.lower().count(b"xuongmunonbaohiem")
+                        if hits:
+                            bucket=(
+                                "TRANSIENT" if name.startswith(("_transient_","_site_transient_")) else
+                                "CACHE" if "cache" in name or "cached" in name else
+                                "SEARCH_INDEX" if "index" in name else
+                                "SEO" if "seo" in name or "yoast" in name else
+                                "OPTION_OTHER"
+                            )
+                            option_buckets[bucket]=option_buckets.get(bucket,0)+hits
                 if re.search(rb"\bCREATE TABLE\b",line,re.I):
                     create_table+=1
                     if b"nckh" in low:
@@ -143,6 +165,14 @@ try:
             status("TABLE_CATEGORY_BREAKDOWN_"+key+"_"+category,n)
         for category,n in sorted(touched.items()):
             status("INSERT_STATEMENTS_"+category,n)
+        # Print normalized table names (strip randomized WordPress prefix)
+        # only for non-core tables with copied brand/domain values.
+        for (marker,table),n in sorted(by_table.items(),key=lambda x:-x[1])[:16]:
+            if table_category(table.encode()) in ("OTHER_PLUGIN_TABLE","NCKH_CUSTOM","WOOCOMMERCE_CUSTOM"):
+                suffix=re.sub(r"^[A-Za-z0-9]+_(?=(?:esc_|nckh_|yoast_|wc_|woocommerce_|tablepress_|wp_))","",table)
+                status("AFFECTED_CUSTOM_TABLE_"+marker+"_"+suffix,n)
+        for bucket,n in sorted(option_buckets.items()):
+            status("OPTION_LEAK_BUCKETS_"+bucket,n)
         status("NO_SQL_EXECUTED","PASS")
         status("NO_EXPORT_ARTIFACT","PASS")
 finally:
