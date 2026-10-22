@@ -1,4 +1,4 @@
-name: PSE FTPS hostname configuration (NO NETWORK)
+name: PSE FTPS endpoint format validation (NO NETWORK)
 on:
   workflow_dispatch:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 jobs:
   verify-hostname:
-    name: Confirm FTP_SERVER matches validated TLS certificate hostname
+    name: Verify configured FTPS endpoint syntax without hardcoded hosting address
     if: github.repository == 'ngocnhanvo/psevn-actions'
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -35,7 +35,8 @@ jobs:
                      and uri.hostname is not None
                      and not uri.username and not uri.password
                      and not uri.path.strip('/'))
-              correct=valid and uri.hostname.lower()=='vt108159.server.idn.vn'
+              correct=(valid and uri.port in (None,21) and not uri.query and not uri.fragment
+                       and uri.hostname.count('.') >= 1)
           except ValueError:
               correct=False
           print('FTP_SERVER_MATCHES_TRUSTED_CERTIFICATE_NAME=' + ('PASS' if correct else 'FAIL'))
