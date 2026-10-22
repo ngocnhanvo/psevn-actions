@@ -1,1 +1,1 @@
-Verify PSE PHP master commit 850d4b875e61a2b3a88b22b309495a82db8b031b: syntax and portable Agent regression, no PHP FTP or Astro build.
+Verify PSE PHP master 9e8e3ff6a0c564adc437208f67dbad4bd95b3b63: portable Build Website, Agent and WordPress theme. Source-only; no FTP/build.
