@@ -173,6 +173,18 @@ try:
                 status("AFFECTED_CUSTOM_TABLE_"+marker+"_"+suffix,n)
         for bucket,n in sorted(option_buckets.items()):
             status("OPTION_LEAK_BUCKETS_"+bucket,n)
+        # A green source audit or a valid recovery backup must never be
+        # interpreted as a clean reusable database. Classify the current
+        # protected snapshot without modifying or exporting any records.
+        inherited = (counts["OLD_BLUESEA_DOMAIN"] +
+                     counts["OLD_BLUESEA_BRAND"] +
+                     counts["OLD_NCKH_DOMAIN"])
+        status("LEGACY_SOURCE_OCCURRENCES", inherited)
+        status("TEMPLATE_DISTRIBUTABLE_DB",
+               "NOT_READY_LEGACY_RESIDUE" if inherited else
+               "UNVERIFIED_RESTORE_AND_SECRET_REVIEW")
+        status("SEPARATE_ISOLATED_DB_RESTORE_TESTED", "NO")
+        status("CURRENT_ARCHIVE_PURPOSE", "RECOVERY_BACKUP_NOT_TEMPLATE")
         status("NO_SQL_EXECUTED","PASS")
         status("NO_EXPORT_ARTIFACT","PASS")
 finally:
