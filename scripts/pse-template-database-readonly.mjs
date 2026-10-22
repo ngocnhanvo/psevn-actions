@@ -89,6 +89,30 @@ try {
       report(label + '_TOTAL', 'UNVERIFIED_' + (err instanceof Error ? err.name : 'UNKNOWN'));
     }
   }
+  // Read installation status of common existing backup tools; never log
+  // arbitrary plugin details, paths or tenant labels.
+  await go('/wp-admin/plugins.php');
+  const pluginSlugs = await page.locator('#the-list tr[data-slug]').evaluateAll(
+    (nodes) => nodes.map((node) => node.getAttribute('data-slug') || '')
+  );
+  const backupTools = [
+    'updraftplus', 'wpvivid-backuprestore', 'backwpup', 'duplicator',
+    'all-in-one-wp-migration', 'backup-migration', 'wp-db-backup',
+    'wp-migrate-db', 'wp-reset', 'wp-time-capsule',
+  ];
+  const available = backupTools.filter((name) => pluginSlugs.includes(name));
+  report('BACKUP_TOOLS_DETECTED', available.length);
+  report('BACKUP_TOOL_IDS', available.length ? available.join(',') : 'NONE_OF_KNOWN_PLUGINS');
+
+  await go('/wp-admin/users.php');
+  const roleTotals = await page.locator('.subsubsub li a[href*="role="]').evaluateAll(
+    (links) => links.map((link) => {
+      const role = new URL(link.href).searchParams.get('role') || '';
+      const match = (link.textContent || '').match(/\\((\\d[\\d,]*)\\)/);
+      return { role, count: match ? Number(match[1].replace(/,/g, '')) : null };
+    }).filter((item) => /^[a-z0-9_-]{1,36}$/.test(item.role) && Number.isSafeInteger(item.count))
+  );
+  for (const item of roleTotals) report('ROLE_' + item.role.toUpperCase(), item.count);
   report('CUSTOM_TYPES_SCANNED', Math.min(types.length, 35));
   report('DB_TABLES_INSPECTED', 'NO');
   report('DB_FULL_BACKUP_VERIFIED', 'NO');
