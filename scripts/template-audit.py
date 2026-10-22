@@ -23,6 +23,8 @@ checks = {
   "copied_source_db_guard": re.compile(r"nghiencuukhoahoc_181026"),
   "unrelated_template_slug": re.compile(r'"slug"\s*:\s*"picasso"', re.I),
 }
+checks["literal_site_url"] = re.compile(r"(?:https?://)?(?:[a-z0-9-]+\\.)+(?:webnvn\\.com|id\\.vn|io\\.vn)", re.I)
+
 allowed_ext = {".ts",".tsx",".js",".mjs",".astro",".php",".json",".yml",".yaml",".md",".sh",".py",".html",".txt"}
 hard_exclude = {"node_modules",".git","vendor",".cache","dist","build","upload","uploads","cache","tests/fixtures"}
 inventory = {}
@@ -51,7 +53,7 @@ for name, root in (("astro",a.astro),("php",a.php),("actions",a.actions)):
                 tag = "active" if active else "archive"
                 if len(samples[key]) < 30:
                     samples[key].append(tag+":"+rel)
-                if active and key in ("wrong_source_domain","wrong_source_repository","unrelated_template_slug") and not rel.endswith(".test.ts"):
+                if active and key in ("wrong_source_domain","wrong_source_repository","unrelated_template_slug","literal_site_url") and not (rel.endswith((".test.ts",".spec.ts")) or rel.startswith(("docs/","README","tests/"))):
                     high_priority.append((name, key, rel))
     inventory[name]={"scanned_files":total,"counts":dict(counts),"examples":dict(samples)}
 print("TEMPLATE_AUDIT_BEGIN")
