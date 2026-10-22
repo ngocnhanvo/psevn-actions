@@ -45,4 +45,4 @@ jobs:
           python3 -m py_compile actions/scripts/template-audit.py
           python3 actions/scripts/template-audit.py --astro astro --php php --actions actions
           echo 'SOURCE_AUDIT=PASS; NO_BUILD=PASS; NO_FTP=PASS; NO_DISPATCH=PASS'
-          echo 'SOURCE_REUSE_RESCAN=2026-10-22; active paths only; historical archives excluded from priority'
+          echo 'SOURCE_REUSE_RESCAN=2026-10-22 current source review; preserve production, no DB writes'
