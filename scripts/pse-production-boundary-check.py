@@ -35,8 +35,8 @@ for forbidden in ("PSE_ASTRO_UNZIP_SIGNING_KEY", "PSE_ASTRO_FTP_TARGET", "PSE_BU
     assert forbidden not in workflow and forbidden not in php and forbidden not in client, (
         "Unnecessary newly introduced build key still present: " + forbidden)
 assert "out.write('ASTRO_FTP_TARGET='+target" in workflow, "FTP target must derive from validated WC_URL_CLIENT"
-assert "nghiencuukhoahoc.webnvn.com" in workflow, "Missing cloned-domain leakage checks"
-assert "nghiencuukhoahoc.webnvn.com" not in workflow.split("      - name: Package only")[0], "Source domain in critical build preflight"
+# No website hostname belongs in reusable deployment source.
+assert "webnvn.com" not in workflow, "Hardcoded hosting domain found in deploy workflow"
 
 for token in ("VCS_GH_ACTIONS_TOKEN", "VCS_GH_REPO",
               "pse-staging-build.json","pse-astro.zip","X_ESC_DEPLOY_TIMESTAMP",
@@ -44,7 +44,7 @@ for token in ("VCS_GH_ACTIONS_TOKEN", "VCS_GH_REPO",
               "PSE site identity"):
     assert token.lower() in php.lower(), "Missing PSE signed deploy guard: "+token
 assert "DB_NAME === 'nghiencuukhoahoc_181026'" in php, "Wrong source DB must be rejected"
-assert "https://api-nghiencuukhoahoc.webnvn.com" not in php, "Source API leaked"
+assert "webnvn.com" not in php, "A fixed website hostname remains in signed PHP deploy"
 assert ready=="PSE_ASTRO_UNZIP_PROTOCOL=2"
 for token in ("PSE_ASTRO_UNZIP_PROTOCOL=2","/pse-unzip.php","pse-staging-build.json",
               "SOURCE_REPO_PAT","sha256","SIGNED_UNZIP_SUCCESS"):
@@ -58,7 +58,7 @@ assert "FTP_TLS(context=ssl.create_default_context()" in revision, "Sitemap revi
 assert "PSE_PUBLISHED_SITEMAP_REVISION" in seo, "Astro Save-token is not connected"
 assert ".pse-sitemap-deploy-state.json" in seo
 assert "process.env.WC_URL_CLIENT" in seo, "SEO frontend must be from site config"
-assert "hostname === \"api-nghiencuukhoahoc.webnvn.com\"" not in seo, "Hardcoded source backend"
+assert "webnvn.com" not in seo, "Hardcoded website hostname remains in Astro SEO"
 print("PSE_PRODUCTION_PIPELINE_STATIC=PASS")
 print("PSE_RELEASE_GUARD=WORDPRESS_TRIGGER_PLUS_TENANT_PREFLIGHT")
 print("NO_BUILD_NO_FTP_NO_DISPATCH=PASS")
