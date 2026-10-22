@@ -2,3 +2,4 @@
 2026-10-22: SQL breakdown by WordPress data table category for copied domain and brand references, using newest PSE Updraft backup after user cleanup; aggregate counts only, read-only.
 2026-10-22: Drill down SQL marker distribution to option/cache buckets and normalized plugin table names without printing DB values, user details or secrets.
 2026-10-22: Classify inherited PSE DB option-name groups and WordPress post types inside already verified Updraft SQL backup; aggregated counters only. No SQL execution or sensitive values.
+2026-10-22: Run the new option/post row-group classifier against current verified Updraft SQL; exact existing SQL-audit job only, no unrelated inventory.
