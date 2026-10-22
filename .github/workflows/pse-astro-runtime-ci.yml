@@ -1,4 +1,4 @@
-name: PSE Astro API and OAuth isolation tests (NO BUILD)
+name: PSE Astro reusable template regression tests (NO BUILD)
 on:
   workflow_dispatch:
   push:
@@ -53,21 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm exec vitest run \
-            src/astro/components/Layout/Header.template-neutral.test.ts \
-            src/astro/components/Layout/Header.research-layout.test.ts \
-            src/astro/components/Layout/Header.mobile-sticky.test.ts \
-            src/lib/googleServices.test.ts \
-            src/lib/googleLeadConversions.test.ts \
-            src/lib/googleTrackingRuntime.test.ts \
-            src/lib/marketingPixels.test.ts \
-            src/lib/seo/listingTitles.test.ts \
-            src/lib/wordpress/pages/getData.image-errors.test.ts \
-            scripts/inject-handler.portability.test.ts \
-            scripts/generate-sitemap-robots.test.ts \
-            scripts/sync-seo-files.test.ts \
-            src/lib/wordpress/builderAutoDiscovery.test.mjs \
-            src/lib/wordpress/builderPageImages.test.mjs
+          pnpm exec vitest run
           echo 'PSE_PORTABLE_UI_TESTS=PASS'
       - name: Verify retired tenant API and avoid route tests as pages (NO BUILD)
         shell: bash
