@@ -115,7 +115,22 @@ jobs:
                       print('FTPS_CERT '+line,flush=True)
               check=subprocess.run(['openssl','x509','-noout','-checkip',u.hostname],
                   input=pem,text=True,capture_output=True,timeout=8)
-              print('FTPS_CERT IP_IDENTITY_MATCH='+('YES' if check.returncode==0 else 'NO'),flush=True)
+              # OpenSSL -checkip may return 0 even for a name mismatch; check text.
+              ipcheck=(check.stdout+' '+check.stderr).lower()
+              print('FTPS_CERT IP_IDENTITY_MATCH='+(
+                  'NO' if 'does not match' in ipcheck else
+                  'YES' if 'does match' in ipcheck else 'UNVERIFIED'),flush=True)
+              import re
+              dns_names=re.findall(r'DNS:([a-zA-Z0-9.-]+)',result.stdout)
+              for name in dns_names:
+                  try:
+                      addresses={item[4][0] for item in socket.getaddrinfo(name,21,type=socket.SOCK_STREAM)}
+                      matches=u.hostname in addresses
+                      print('FTPS_CERT DNS_NAME='+name,flush=True)
+                      print('FTPS_CERT DNS_POINTS_TO_FTP_SERVER='+('YES' if matches else 'NO'),flush=True)
+                  except socket.gaierror:
+                      print('FTPS_CERT DNS_NAME='+name,flush=True)
+                      print('FTPS_CERT DNS_POINTS_TO_FTP_SERVER=UNRESOLVED',flush=True)
               print('FTPS_CERT READ_ONLY=PASS',flush=True)
           except Exception as exc:
               print('FTPS_CERT INSPECTION_FAILED='+type(exc).__name__,flush=True)
