@@ -1,6 +1,5 @@
 import { chromium } from 'playwright';
 
-const origin = 'https://admin-pse.webnvn.com';
 const u = process.env.WP_ADMIN_USERNAME || '';
 const p = process.env.WP_ADMIN_PASSWORD || '';
 if (!u || !p) throw Error('PSE WordPress login secrets not available');
@@ -11,6 +10,13 @@ function parseEnv(key) {
  if(xs.length!==1) throw Error('Expected one '+key+' value');
  return xs[0].split('=').slice(1).join('=').trim().replace(/^['"]|['"]$/g,'');
 }
+const wpAddress = new URL(parseEnv('WC_URL'));
+if (wpAddress.protocol !== 'https:' || !wpAddress.hostname ||
+    wpAddress.username || wpAddress.password || !['', '/'].includes(wpAddress.pathname) ||
+    wpAddress.search || wpAddress.hash || wpAddress.port) {
+  throw Error('Invalid HTTPS WordPress origin in ENV_FILE');
+}
+const origin = wpAddress.origin;
 const expected=new URL(parseEnv('WC_URL_CLIENT')).hostname;
 const browser=await chromium.launch();
 try{
