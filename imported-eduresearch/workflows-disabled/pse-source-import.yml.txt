@@ -1,0 +1,158 @@
+# Archived completed one-time PSE source import. DO NOT RUN; historical reference only.
+name: PSE one-time source import (NO DEPLOY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .pse-source-import-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-source-import
+  cancel-in-progress: false
+jobs:
+  import-source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Verify shared source token exists
+        env:
+          PAT: ${{ secrets.SOURCE_REPO_PAT }}
+        run: |
+          if [ -z "$PAT" ]; then
+            echo "::error::SOURCE_REPO_PAT secret is not configured in psevn-actions"
+            exit 1
+          fi
+      - name: Checkout source Astro development
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-astro
+          ref: f208bde5e4c137b32a2e30f9515e4fdae29a225d
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+          path: input/astro
+      - name: Checkout source PHP
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-php
+          ref: c1c6f6d3e4c4710f2b1cda18808b6d57c6f723c0
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+          path: input/php
+      - name: Checkout source Actions
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/nghiencuukhoahoc-actions
+          ref: 875e98cf3d7d2c25f7215e602aa953ee5dbf4283
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+          path: input/actions
+      - name: Checkout destination Astro
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: output/astro
+      - name: Checkout destination PHP
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: output/php
+      - name: Checkout destination Actions
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-actions
+          ref: main
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: output/actions
+      - name: Copy source into isolated development branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name "pse-source-import[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git -C output/astro ls-remote --exit-code --heads origin github >/dev/null 2>&1; then
+            echo "::error::Target Astro github branch already exists; refuse overwrite"
+            exit 1
+          fi
+          if git -C output/php ls-remote --exit-code --heads origin import/eduresearch-baseline >/dev/null 2>&1; then
+            echo "::error::Target PHP import branch already exists; refuse overwrite"
+            exit 1
+          fi
+
+          git -C output/astro switch -c github
+          rsync -a --exclude='.git' --exclude='.env' --exclude='.env.*' --exclude='*.pem' --exclude='*.key' --exclude='.github/workflows' input/astro/ output/astro/
+          cat > output/astro/AGENTS.md <<'PSE_AGENT'
+          # AGENTS.md — PSE Astro
+          Scope: ngocnhanvo/psevn-astro, ngocnhanvo/psevn-php, ngocnhanvo/psevn-actions.
+          General mandatory policies: https://github.com/ngocnhanvo/knowledge (branch main).
+          Astro github = development/test; master = production. Never deploy or build Astro outside the existing WordPress/PHP Build Website trigger. Default code mode: normal unless the PSE project explicitly sets another mode.
+          Mandatory inherited build policy: docs/BUILD_ARCHITECTURE_INHERITANCE_POLICY.md.
+          This repository began as a source-code migration from EduResearch Hub. Old domains/API endpoints remain unverified: no production build/deploy before reconfiguration and tests.
+          PSE_AGENT
+          cat > output/astro/README.md <<'PSE_ASTRO'
+          # psevn-astro
+          Astro frontend for PSE, imported from EduResearch Hub. Branch github is the initial development import. Production branch master is intentionally not created by the import.
+          Mandatory architecture inheritance policy: [docs/BUILD_ARCHITECTURE_INHERITANCE_POLICY.md](docs/BUILD_ARCHITECTURE_INHERITANCE_POLICY.md).
+          Verify API domain, auth/OAuth, routes, image cache, build logs, sitemap and deployments against PSE before launch.
+          PSE_ASTRO
+          cat > output/astro/MIGRATION_STATUS.md <<'PSE_AS'
+          # PSE Astro import status
+          - Source: ngocnhanvo/nghiencuukhoahoc-astro branch github at f208bde5e4c137b32a2e30f9515e4fdae29a225d.
+          - Target: ngocnhanvo/psevn-astro branch github.
+          - Status: copied source, NOT built or deployed.
+          - TODO: audit remaining EduResearch domain/API/OAuth references and configure PSE.
+          - Protect existing WordPress/PHP-controlled build and persistent cache/incremental updates.
+          PSE_AS
+          git -C output/astro add -A
+          git -C output/astro commit -m "chore: import EduResearch Astro baseline for PSE development"
+          git -C output/astro push origin HEAD:refs/heads/github
+
+          git -C output/php switch -c import/eduresearch-baseline
+          rsync -a --exclude='.git' --exclude='.env' --exclude='.env.*' --exclude='*.pem' --exclude='*.key' --exclude='*.log' --exclude='*.sql' --exclude='*.sqlite' --exclude='*.sav' --exclude='*.bak' --exclude='*.backup' --exclude='/wp-config.php' --exclude='/wp-config.php.sav*' --exclude='/wp-content/uploads' --exclude='/wp-content/cache' --exclude='/wp-content/upgrade' --exclude='/wp-content/ai1wm-backups' --exclude='/debug_tablepress.txt' --exclude='/unzip.php' --exclude='/nckh-unzip.php' --exclude='/local-xdebuginfo.php' --exclude='*.ready' --exclude='.github/workflows' input/php/ output/php/
+          cat > output/php/README.md <<'PSE_PHP'
+          # psevn-php
+          Initial isolated WordPress/PHP source import from EduResearch Hub. This branch is NOT deployed.
+          Do not copy wp-config.php or credentials. Before merge/deploy: review database connection, WP site URL, OAuth redirect, GitHub build trigger, domain-specific files and FTP destination.
+          PSE_PHP
+          cat > output/php/MIGRATION_STATUS.md <<'PSE_PS'
+          # PSE PHP import status
+          - Source: ngocnhanvo/nghiencuukhoahoc-php branch master at c1c6f6d3e4c4710f2b1cda18808b6d57c6f723c0.
+          - Target: import/eduresearch-baseline; no change to production PHP branch.
+          - Excluded secrets, config backups, uploads/caches, emergency unzip/debug scripts.
+          - Status: source copied, NOT deployed. PSE server/domain/secrets not verified.
+          PSE_PS
+          git -C output/php add -A
+          git -C output/php commit -m "chore: import isolated WordPress PHP baseline for PSE"
+          git -C output/php push origin HEAD:refs/heads/import/eduresearch-baseline
+
+          mkdir -p output/actions/imported-eduresearch/workflows-disabled
+          mkdir -p output/actions/imported-eduresearch/scripts output/actions/imported-eduresearch/tests
+          if [ -d input/actions/scripts ]; then rsync -a input/actions/scripts/ output/actions/imported-eduresearch/scripts/; fi
+          if [ -d input/actions/tests ]; then rsync -a input/actions/tests/ output/actions/imported-eduresearch/tests/; fi
+          if [ -d input/actions/.github/workflows ]; then
+            for f in input/actions/.github/workflows/*.yml; do
+              [ -f "$f" ] || continue
+              cp "$f" "output/actions/imported-eduresearch/workflows-disabled/$(basename "$f").txt"
+            done
+          fi
+          cat > output/actions/imported-eduresearch/README.md <<'PSE_ACTIONS'
+          # Disabled source automation
+          Imported from ngocnhanvo/nghiencuukhoahoc-actions at 875e98cf3d7d2c25f7215e602aa953ee5dbf4283.
+          Workflows here are NOT executable: intentionally stored outside .github/workflows and with .txt suffix.
+          Review every old URL, repository, credential reference, and side effect before creating PSE-only workflows.
+          Reports, requests and potentially private runtime artifacts were not copied.
+          PSE_ACTIONS
+          git -C output/actions add imported-eduresearch
+          git -C output/actions commit -m "chore: preserve EduResearch automation as disabled PSE references"
+          git -C output/actions push origin HEAD:refs/heads/main
+      - name: Report
+        if: success()
+        run: |
+          echo "PSE import committed to Astro github, PHP import/eduresearch-baseline, Actions main."
+          echo "No Astro build, FTP deployment, or WordPress change executed."
