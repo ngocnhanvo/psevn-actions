@@ -1,0 +1,45 @@
+name: PSE isolated database restore verification (NO LIVE WRITES)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-template-private-restore-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-protected-restore-isolated
+  cancel-in-progress: false
+jobs:
+  isolated-restore:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'test(template): isolated restore of PSE SQL backup (READ ONLY)'
+    name: Validate protected recovery snapshot in disposable local database
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exactly PSE Actions main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install MariaDB inside ephemeral runner only (UNIX socket)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq >/dev/null
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends mariadb-server >/dev/null
+          sudo systemctl start mariadb
+          sudo -n mariadb --protocol=socket --batch --skip-column-names -e 'SELECT 1' >/dev/null
+          echo 'EPHEMERAL_SQL_LOCAL_SOCKET=PASS'
+      - name: Restore same verified protected PSE SQL backup locally, inspect aggregated legacy rows and erase temporary DB
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          # Verified recovery archive fingerprint; changed archives fail closed.
+          PSE_EXPECTED_BACKUP_SHA16: 887a764a48b886d0
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-template-private-restore.py
+          python3 scripts/pse-template-private-restore.py
+          echo 'PSE_ISOLATED_RESTORE=PASS; LIVE_DB_UNCHANGED=PASS; NO_EXPORT=PASS; NO_ASTRO_BUILD=PASS'
