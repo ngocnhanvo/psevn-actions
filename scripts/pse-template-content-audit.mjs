@@ -188,7 +188,24 @@ try {
           ? url.href : null;
       } catch { return null; }
     }).filter(Boolean))];
-    tablePressStatus = urls.length ? 'PARTIAL' : 'UNVERIFIED_NO_EDITOR_LINKS';
+    // Distinguish a missing/inaccessible ESC Table admin from an actually empty
+    // list or a selector mismatch. All probes are read-only; never log table data.
+    const tablepressView = await page.evaluate(() => ({
+      menu: Boolean(document.querySelector('#adminmenu a[href*="page=tablepress"]')),
+      list: Boolean(document.querySelector('.wp-list-table, #tablepress-all-tables')),
+      rows: document.querySelectorAll('.wp-list-table tbody tr:not(.no-items), #the-list tr:not(.no-items)').length,
+      editorAnchors: document.querySelectorAll('a.row-title[href*="action=edit"], a[href*="table_id="]').length,
+      denied: /you are not allowed to access this page|sorry, you are not allowed|không được phép truy cập/i.test(document.querySelector('#wpbody-content')?.textContent || '')
+    }));
+    say('TABLEPRESS_MENU_VISIBLE', tablepressView.menu ? 'YES' : 'NO');
+    say('TABLEPRESS_LIST_VISIBLE', tablepressView.list ? 'YES' : 'NO');
+    say('TABLEPRESS_LIST_ROW_MATCHES', tablepressView.rows);
+    say('TABLEPRESS_EDIT_ANCHOR_MATCHES', tablepressView.editorAnchors);
+    tablePressStatus = urls.length ? 'PARTIAL' :
+      tablepressView.denied ? 'UNVERIFIED_ACCESS_DENIED' :
+      !tablepressView.menu && !tablepressView.list ? 'UNVERIFIED_PLUGIN_MENU_ABSENT' :
+      tablepressView.rows === 0 ? 'NO_VISIBLE_TABLE_ROWS' :
+      'UNVERIFIED_NO_EDITOR_LINKS';
     for (const url of urls.slice(0, 60)) {
       await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 45000});
       if (!page.url().startsWith(wp + '/wp-admin/')) continue;
