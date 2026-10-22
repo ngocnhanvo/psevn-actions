@@ -97,14 +97,39 @@ try:
         create_table=0
         nckh_tables=0
         total_uncompressed=0
+        grouped={}
+        touched={}
+        current_table_category="SQL_HEADER_OR_UNSCOPED"
+        def table_category(table_name):
+            t=table_name.decode("utf-8","ignore").lower()
+            for suffix in ("postmeta","posts","options","termmeta","terms","term_taxonomy","term_relationships","users","usermeta","comments","commentmeta"):
+                if t.endswith("_"+suffix):
+                    return "WORDPRESS_"+suffix.upper()
+            if "nckh" in t:
+                return "NCKH_CUSTOM"
+            if "woocommerce" in t or "wc_" in t:
+                return "WOOCOMMERCE_CUSTOM"
+            if "tablepress" in t:
+                return "TABLEPRESS_CUSTOM"
+            return "OTHER_PLUGIN_TABLE"
         with gzip.GzipFile(fileobj=temp,mode="rb") as sql:
             for line in sql:
                 total_uncompressed+=len(line)
                 if total_uncompressed>1_000_000_000:
                     raise RuntimeError("Uncompressed DB backup exceeds safety limit")
                 low=line.lower()
+                table_match=re.match(rb"\s*(?:INSERT INTO|REPLACE INTO)\s+`?([a-zA-Z0-9_]+)`?",line,re.I)
+                if table_match:
+                    current_table_category=table_category(table_match.group(1))
+                    touched[current_table_category]=touched.get(current_table_category,0)+1
+                elif re.match(rb"\s*(?:CREATE TABLE|DROP TABLE|ALTER TABLE|LOCK TABLES|UNLOCK TABLES)\b",line,re.I):
+                    current_table_category="SQL_SCHEMA"
                 for key,pattern in patterns.items():
-                    counts[key]+=low.count(pattern)
+                    n=low.count(pattern)
+                    counts[key]+=n
+                    if n:
+                        k=(key,current_table_category)
+                        grouped[k]=grouped.get(k,0)+n
                 if re.search(rb"\bCREATE TABLE\b",line,re.I):
                     create_table+=1
                     if b"nckh" in low:
@@ -114,6 +139,10 @@ try:
         status("NCKH_NAMED_TABLE_COUNT",nckh_tables)
         for key,count in counts.items():
             status(key+"_REFERENCES",count)
+        for (key,category),n in sorted(grouped.items(),key=lambda x:-x[1])[:25]:
+            status("TABLE_CATEGORY_BREAKDOWN_"+key+"_"+category,n)
+        for category,n in sorted(touched.items()):
+            status("INSERT_STATEMENTS_"+category,n)
         status("NO_SQL_EXECUTED","PASS")
         status("NO_EXPORT_ARTIFACT","PASS")
 finally:
