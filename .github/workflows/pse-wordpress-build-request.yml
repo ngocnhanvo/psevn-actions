@@ -23,7 +23,7 @@ jobs:
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-      WC_URL: https://admin-pse.webnvn.com
+      # Origin is resolved from ENV_FILE at runtime; never pin the WP hostname.
     steps:
       - name: Checkout PSE's existing WordPress trigger E2E helper
         uses: actions/checkout@v4
@@ -45,9 +45,15 @@ jobs:
                   values['wp']=line.split('=',1)[1].strip().strip('"').strip("'")
           front=urlsplit(values['client'])
           wp=urlsplit(values['wp'])
-          assert wp.scheme=='https' and wp.hostname=='admin-pse.webnvn.com'
-          assert front.scheme=='https' and front.hostname and front.hostname!='nghiencuukhoahoc.webnvn.com'
+          def valid_https_origin(parsed):
+              return (parsed.scheme=='https' and bool(parsed.hostname)
+                  and parsed.username is None and parsed.password is None
+                  and parsed.port in (None,443) and parsed.path in ('','/')
+                  and not parsed.query and not parsed.fragment)
+          assert valid_https_origin(wp) and valid_https_origin(front)
           assert front.hostname != wp.hostname
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as out:
+              out.write('WC_URL='+wp.geturl().rstrip('/')+'\n')
           print('/domains/'+front.hostname+'/public_html/')
           PY
           )"
