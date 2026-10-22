@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Read-only inspection of the newest protected UpdraftPlus SQL database backup.
+
+Reads via verified FTPS into an ephemeral GitHub runner scratch file. Prints
+aggregate booleans/counts only, never any records, credentials, SQL or filenames.
+No database SQL statements are executed. Never uploads data or artifacts.
+"""
+import ftplib
+import gzip
+import hashlib
+import os
+import pathlib
+import posixpath
+import re
+import ssl
+import tempfile
+from urllib.parse import urlsplit
+
+def status(key, value):
+    print("PSE_SQL_AUDIT " + key + "=" + str(value), flush=True)
+
+def read_env(name):
+    vals=[]
+    for line in os.environ.get("ENV_FILE", "").splitlines():
+        line=line.strip().removeprefix("export ").strip()
+        if line.startswith(name+"="):
+            vals.append(line.split("=",1)[1].strip().strip("'\""))
+    if len(vals)!=1:
+        raise RuntimeError("Expected exactly one "+name)
+    value=urlsplit(vals[0])
+    if (value.scheme!="https" or not value.hostname or value.port not in (None,443)
+            or value.path not in ("","/") or value.query or value.fragment
+            or value.username or value.password):
+        raise RuntimeError("Invalid trusted WordPress origin")
+    return value.hostname
+
+wp_host=read_env("WC_URL")
+raw=os.environ.get("FTP_SERVER", "").strip()
+ftp_url=urlsplit(raw if "://" in raw else "ftp://"+raw)
+if (ftp_url.scheme not in ("ftp","ftps") or not ftp_url.hostname
+        or ftp_url.port not in (None,21) or ftp_url.path not in ("","/")
+        or ftp_url.username or ftp_url.password or ftp_url.query or ftp_url.fragment):
+    raise RuntimeError("Invalid FTPS target")
+if not os.environ.get("FTP_USERNAME") or not os.environ.get("FTP_PASSWORD"):
+    raise RuntimeError("Missing FTPS credentials")
+root="/domains/"+wp_host+"/public_html/wp-content/updraft"
+ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+try:
+    ftp.connect(ftp_url.hostname,ftp_url.port or 21)
+    ftp.auth()
+    ftp.login(os.environ["FTP_USERNAME"],os.environ["FTP_PASSWORD"])
+    ftp.prot_p()
+    ftp.cwd(root)
+    if ftp.pwd().rstrip("/")!=root:
+        raise RuntimeError("Backup directory identity mismatch")
+    status("FTPS_BACKUP_PATH","PASS")
+    try:
+        ftp.size(".htaccess")
+        status("UPDRAFT_HTACCESS_PRESENT","YES")
+    except ftplib.error_perm:
+        status("UPDRAFT_HTACCESS_PRESENT","UNVERIFIED")
+    names=ftp.nlst()
+    allowed=re.compile(r"^backup_[0-9-]{15,25}_[A-Za-z0-9_.-]+-db[.]gz$")
+    files=[posixpath.basename(v) for v in names if allowed.fullmatch(posixpath.basename(v))]
+    if not files:
+        status("DB_ARCHIVES_FOUND",0)
+        raise RuntimeError("No Updraft database .gz backups found for PSE")
+    status("DB_ARCHIVES_FOUND",len(files))
+    latest=max(files)
+    with tempfile.TemporaryFile() as temp:
+        size=0
+        h=hashlib.sha256()
+        def write_chunk(chunk):
+            global size
+            size+=len(chunk)
+            if size>300_000_000:
+                raise RuntimeError("Compressed DB backup exceeds safety limit")
+            temp.write(chunk)
+            h.update(chunk)
+        ftp.retrbinary("RETR "+latest,write_chunk,blocksize=65536)
+        temp.seek(0)
+        if temp.read(2)!=b"\x1f\x8b":
+            raise RuntimeError("Backup file not GZip")
+        temp.seek(0)
+        status("DB_BACKUP_DOWNLOAD_TLS","PASS")
+        status("DB_BACKUP_SIZE_CLASS","SMALL" if size<25_000_000 else "LARGE")
+        status("DB_BACKUP_SHA16",h.hexdigest()[:16])
+        patterns={
+            "OLD_NCKH_DOMAIN":b"nghiencuukhoahoc",
+            "OLD_BLUESEA_DOMAIN":b"xuongmunonbaohiem",
+            "OLD_BLUESEA_BRAND":b"blue sea",
+            "ESC_SOURCE_HOST":b"admin.esc.vn",
+            "WP_USER_STUDENT_ROLE":b"nckh_student",
+            "WP_USER_TEACHER_ROLE":b"nckh_teacher",
+        }
+        counts={name:0 for name in patterns}
+        create_table=0
+        nckh_tables=0
+        total_uncompressed=0
+        with gzip.GzipFile(fileobj=temp,mode="rb") as sql:
+            for line in sql:
+                total_uncompressed+=len(line)
+                if total_uncompressed>1_000_000_000:
+                    raise RuntimeError("Uncompressed DB backup exceeds safety limit")
+                low=line.lower()
+                for key,pattern in patterns.items():
+                    counts[key]+=low.count(pattern)
+                if re.search(rb"\bCREATE TABLE\b",line,re.I):
+                    create_table+=1
+                    if b"nckh" in low:
+                        nckh_tables+=1
+        status("DB_GZIP_FULL_CRC","PASS")
+        status("CREATE_TABLE_COUNT",create_table)
+        status("NCKH_NAMED_TABLE_COUNT",nckh_tables)
+        for key,count in counts.items():
+            status(key+"_REFERENCES",count)
+        status("NO_SQL_EXECUTED","PASS")
+        status("NO_EXPORT_ARTIFACT","PASS")
+finally:
+    try:ftp.quit()
+    except Exception:ftp.close()
