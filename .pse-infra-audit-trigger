@@ -9,3 +9,4 @@ Second audit: log boolean status only, preserving no credential values or sensit
 2026-10-22: Owner confirmed FTP_SERVER corrected to FileZilla host 103.45.229.10; retry secure FTPS TCP/TLS/auth/CWD diagnostics with current secrets, READ ONLY, no build or deploy.
 2026-10-22: Read-only inspection of public FTPS certificate after correct FTP_SERVER and TLS verification failure #39721351509; do not send credentials if certificate invalid, do not build, upload or deploy.
 2026-10-22: Corrected OpenSSL name matching and public DNS SAN-to-FTP-host verification after read-only cert audit; no authentication or deployment if TLS unverified.
+2026-10-22: Owner requested FTPS retest after certificate/hosting changes; rerun current read-only TCP, TLS certificate, AUTH and CWD diagnostics, no build or file writes.
