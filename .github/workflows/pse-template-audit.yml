@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - scripts/template-audit.py
+      - scripts/pse-template-database-readonly.mjs
       - .github/workflows/pse-template-audit.yml
 permissions:
   contents: read
@@ -46,3 +47,28 @@ jobs:
           python3 actions/scripts/template-audit.py --astro astro --php php --actions actions
           echo 'SOURCE_AUDIT=PASS; NO_BUILD=PASS; NO_FTP=PASS; NO_DISPATCH=PASS'
           echo 'SOURCE_REUSE_RESCAN=2026-10-22 current source review; preserve production, no DB writes'
+
+  database-inventory:
+    name: Inventory existing PSE WP records via admin (READ ONLY)
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout only PSE Actions script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install matching Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read public-safe counts of PSE WordPress content and users
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+          WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+        run: |
+          node --check scripts/pse-template-database-readonly.mjs
+          node scripts/pse-template-database-readonly.mjs
+          echo 'PSE_DB_INVENTORY_JOB=PASS_READ_ONLY; NO_DB_EXPORT=PASS; NO_DB_MUTATIONS=PASS'
