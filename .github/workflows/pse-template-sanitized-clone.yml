@@ -1,0 +1,84 @@
+name: PSE sanitized template database (isolated / opt-in)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-template-sanitized-clone-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-template-sanitization-private
+  cancel-in-progress: false
+jobs:
+  sanitized-template:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'build(template): create sanitized standalone PSE starter SQL'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - name: Checkout only PSE Actions main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Start temporary local MariaDB (no remote database access)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq >/dev/null
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends mariadb-server >/dev/null
+          sudo systemctl start mariadb
+          sudo -n mariadb --protocol=socket --batch --skip-column-names -e 'SELECT 1' >/dev/null
+          echo 'LOCAL_ISOLATED_MARIADB=PASS'
+      - name: Create and verify a privacy-gated database starter export
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          PSE_EXPECTED_BACKUP_SHA16: 887a764a48b886d0
+          PSE_TEMPLATE_OUTPUT: ${{ runner.temp }}/pse-template.sql.gz
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-template-private-restore.py scripts/pse-template-sanitized-clone.py
+          python3 scripts/pse-template-sanitized-clone.py
+          test -s "${{ runner.temp }}/pse-template.sql.gz"
+      - name: Document exact scope and safe install assumptions
+        shell: bash
+        run: |
+          cat > "${{ runner.temp }}/README-IMPORT.txt" <<'DOC'
+          PSE SAFE STARTER DATABASE - STRUCTURE PRESERVATION, NO TENANT DATA
+          =============================================================
+          This SQL archive contains WordPress and plugin table schemas from the
+          confirmed PSE backup plus published page identity/slug, safe action
+          references, menu topology, allowlisted core options and ACF definitions
+          only when their field definitions passed privacy checks.
+          Historic tenant page bodies, personal details, admin users, auth
+          credentials, chat history, Agent knowledge, site-specific plugin
+          settings, caches, media references, draft/revision history and
+          imported CSS/business ACF values are intentionally NOT included.
+
+          1. Import ONLY to a NEW, empty isolated WordPress database (never
+             onto the live PSE database). The SQL uses wp_ as its table prefix.
+             Configure $table_prefix = 'wp_' in that separate wp-config.php.
+          2. Set home/siteurl to the NEW target origin via WP-CLI or appropriate
+             new-install configuration. They use https://example.invalid here.
+             Do not keep example.invalid in a live WordPress deployment.
+          3. Create NEW administrator credentials using WP-CLI on the isolated
+             target (do not copy credentials, hash, or user rows from PSE).
+          4. Reactivate only verified installed plugins, configure theme, ACF,
+             uploads, integrations, menus and per-site secrets on the target.
+          5. Test pages, ACF, WordPress API, Astro compatibility, CSS/layout,
+             plugin startup and media before considering the target usable.
+          6. No tenant content/layout was copied; this is a clean starter
+             skeleton, not a pixel-identical copy of the PSE production site.
+          No production Astro build was invoked and no live DB was altered.
+          DOC
+      - name: Publish only sanitized SQL and scope notes after privacy gate passes
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-sanitized-db-starter
+          path: |
+            ${{ runner.temp }}/pse-template.sql.gz
+            ${{ runner.temp }}/README-IMPORT.txt
+          retention-days: 7
+          if-no-files-found: error
