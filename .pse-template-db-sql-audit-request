@@ -1,1 +1,2 @@
 2026-10-22: Audit newest Updraft PSE DB-only backup created after NCKH test users were removed; read through FTPS into ephemeral runner, report aggregate inherited domain and custom table signals only; no exports or SQL writes.
+2026-10-22: SQL breakdown by WordPress data table category for copied domain and brand references, using newest PSE Updraft backup after user cleanup; aggregate counts only, read-only.
