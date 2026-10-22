@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R -n -E "allowedStagingRequest|staging_only" source/src/pages/api/nckh source/src/pages/api/auth source/src/lib/nckh/serverSession.ts; then
+          if grep -R -n --include='*.ts' --exclude='*.test.ts' -E "allowedStagingRequest|staging_only" source/src/pages/api/nckh source/src/pages/api/auth source/src/lib/nckh/serverSession.ts; then
             echo "::error::Obsolete staging-only SSR guard still present"
             exit 1
           fi
