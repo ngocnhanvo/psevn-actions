@@ -10,6 +10,7 @@ import os
 import re
 import time
 import heapq
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html import unescape
 from html.parser import HTMLParser
@@ -24,10 +25,10 @@ SEEDS = [
     "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong.html",
     "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html",
 ]
-MAX_PAGES = 75
-MAX_PAGE_SECONDS = 195
-MAX_SECONDS = 290
-MAX_FILES_TO_VERIFY = 8
+MAX_PAGES = 110
+MAX_PAGE_SECONDS = 232
+MAX_SECONDS = 310
+MAX_FILES_TO_VERIFY = 10
 DOCUMENT_EXTENSIONS = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip")
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg")
 IGNORED_EXTENSIONS = (".js", ".css", ".woff", ".woff2", ".ttf", ".ico", ".map")
@@ -179,15 +180,20 @@ def main():
     discovered_docs, discovered_images = {}, {}
     pages = []
     errors = []
-    while pending and len(pages) < MAX_PAGES and time.monotonic() - started < MAX_PAGE_SECONDS:
-        _, _, url, depth = heapq.heappop(pending)
-        if url in seen:
-            continue
-        seen.add(url)
-        if urlsplit(url).path.lower().endswith(IGNORED_EXTENSIONS + DOCUMENT_EXTENSIONS + IMAGE_EXTENSIONS):
-            continue
-        try:
-            html, status, resolved = read_html(url)
+    with ThreadPoolExecutor(max_workers=3, thread_name_prefix="pse-public-readonly") as pool:
+      while pending and len(pages) < MAX_PAGES and time.monotonic() - started < MAX_PAGE_SECONDS:
+        batch = []
+        while pending and len(batch) < min(3, MAX_PAGES - len(pages)):
+            _, _, url, depth = heapq.heappop(pending)
+            if url in seen:
+                continue
+            seen.add(url)
+            if urlsplit(url).path.lower().endswith(IGNORED_EXTENSIONS + DOCUMENT_EXTENSIONS + IMAGE_EXTENSIONS):
+                continue
+            batch.append((url, depth, pool.submit(read_html, url)))
+        for url, depth, future in batch:
+          try:
+            html, status, resolved = future.result()
             parser = Markup()
             parser.feed(html)
             title = plain(parser.meta.get("og:title") or " ".join(parser.title))
@@ -200,7 +206,7 @@ def main():
                 if urlsplit(link).path.lower().endswith(DOCUMENT_EXTENSIONS):
                     discovered_docs.setdefault(link, {"url": link, "label": label, "found_on": resolved})
                     records.append(link)
-                elif depth < 2 and not urlsplit(link).path.lower().endswith(IMAGE_EXTENSIONS + IGNORED_EXTENSIONS):
+                elif depth < 3 and not urlsplit(link).path.lower().endswith(IMAGE_EXTENSIONS + IGNORED_EXTENSIONS):
                     if link not in seen and link not in queued:
                         queued.add(link)
                         heapq.heappush(pending, (page_priority(link, depth + 1), seq, link, depth + 1))
@@ -228,7 +234,7 @@ def main():
                 "linked_files": list(dict.fromkeys(records)),
                 "images": list(dict.fromkeys(images))[:25]
             })
-        except (HTTPError, URLError, TimeoutError, ValueError, OSError) as error:
+          except (HTTPError, URLError, TimeoutError, ValueError, OSError) as error:
             errors.append({"url": url, "reason": type(error).__name__,
                            "status": error.code if isinstance(error, HTTPError) else None})
     documents = []
