@@ -30,3 +30,16 @@ Scope: only `ngocnhanvo/psevn-astro`, `ngocnhanvo/psevn-php`, `ngocnhanvo/psevn-
 - No GitHub or Actions CI PASS proves that the distributable template DB is clean. Treat it as **NOT YET CERTIFIED** until restored to an isolated environment with expected content/roles/plugins and zero private/legacy residue.
 
 Sources of truth: workflows, SHA-linked GitHub Actions logs, and WordPress WP-admin; not prior chat guesses.
+
+## Page-level content review (read-only)
+
+[Run 39734883912](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39734883912) confirmed the specific residual scopes. IDs are WordPress post IDs for a future *bounded* cleanup, **not authorization to delete pages**.
+
+- Pages `51979`, `51950`: no inherited brand or private-contact flag.
+- Page `248`: inherited brand in ACF `cssmore` (CSS that may control UI); no detected embedded layout in editor. **Do not blindly clear or regex-replace its CSS**.
+- Pages `53390`, `47222`: inherited brand text **and** contact-like content; no embedded script/TablePress/layout marker detected by the read-only classifier. Review and neutralize only after confirming page purpose and preserving required page/action/shortcode identity.
+- The single `thong-tin-chung` record: inherited company branding specifically in ACF field `tencongty`. Its front-end `domain` setting had been verified to match the PSE environment earlier.
+- Two media items had no inherited-source/contact flags. Keep them until attachment use is verified.
+- Exactly 1 administrator, 0 old research roles and 3 recent DB backup records were verified at this review.
+
+The scanner only checked selected editor fields and regular expressions. No assertion is made that these are the only possible stored secrets, archived revisions, plugin options or old URLs. A reusable DB still needs an isolated clone/restore and exhaustive privacy/identity check.
