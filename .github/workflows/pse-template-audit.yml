@@ -1,0 +1,42 @@
+name: PSE reusable template source audit (READ ONLY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/template-audit.py
+      - .github/workflows/pse-template-audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout Actions main
+        uses: actions/checkout@v4
+        with:
+          path: actions
+          persist-credentials: false
+      - name: Checkout exact Astro github development
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: github
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: astro
+          persist-credentials: false
+      - name: Checkout exact PHP master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: php
+          persist-credentials: false
+      - name: Audit only, never rewrite sources
+        run: |
+          python3 -m py_compile actions/scripts/template-audit.py
+          python3 actions/scripts/template-audit.py --astro astro --php php --actions actions
+          echo 'SOURCE_AUDIT=PASS; NO_BUILD=PASS; NO_FTP=PASS; NO_DISPATCH=PASS'
