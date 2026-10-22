@@ -85,7 +85,7 @@ def sql_int(query):
 def safe_identifier(value):
     if not re.fullmatch(r"[A-Za-z0-9_]{1,100}", value):
         raise RuntimeError("Unsafe SQL identifier in restore")
-    return "\`" + value + "\`"
+    return chr(96) + value + chr(96)
 
 
 def download_snapshot(destination):
@@ -169,7 +169,7 @@ def inspect():
         if len(matches) != 1:
             raise RuntimeError("Missing or ambiguous core WordPress table " + suffix)
         tables[suffix] = safe_identifier(matches[0])
-    if len({t.rsplit("_", 1)[0] for t in [x.strip("\`") for x in tables.values()]}) != 1:
+    if len({t.rsplit("_", 1)[0] for t in [x.strip(chr(96)) for x in tables.values()]}) != 1:
         raise RuntimeError("WordPress database table prefix mismatch")
 
     posts = tables["posts"]
