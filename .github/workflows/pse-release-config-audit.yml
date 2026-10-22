@@ -100,8 +100,7 @@ jobs:
           valid=(parsed.scheme=='https' and bool(parsed.hostname)
                  and not parsed.username and not parsed.password
                  and parsed.path in ('','/') and not parsed.query and not parsed.fragment
-                 and parsed.port in (None,443)
-)
+                 and parsed.port in (None,443))
           if not valid:
               print('PSE_SIGNED_UNZIP_MARKER=UNVERIFIED_INVALID_PSE_WP_ORIGIN')
           else:
