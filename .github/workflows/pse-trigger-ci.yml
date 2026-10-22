@@ -45,6 +45,15 @@ jobs:
           php -l source-php/wp-content/mu-plugins/nckh-article-editor.php
           php -l source-php/wp-content/mu-plugins/nckh-staging-db-backup.php
           php -l source-php/wp-content/mu-plugins/nckh-admin-guides.php
+      - name: Check sanitized PHP Agent test fixtures (source-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source-php/wp-content/mu-plugins/esc-agent/tests/payment-deterministic-output.php
+          php -l source-php/wp-content/mu-plugins/esc-agent/tests/contact-conversation.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/payment-deterministic-output.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/contact-conversation.php
+          echo "PSE_PHP_TEMPLATE_FIXTURE_TESTS=PASS; NO_FTP=PASS"
       - name: Run inherited Build Website lock/status regression
         shell: bash
         run: |
