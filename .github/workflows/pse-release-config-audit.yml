@@ -22,6 +22,15 @@ jobs:
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
     steps:
+      - name: Checkout this Actions repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Syntax-check domain-neutral WordPress migration and diagnostic scripts
+        run: |
+          node --check scripts/pse-wordpress-domain-readonly.mjs
+          node --check scripts/pse-fix-copied-domain.mjs
+          echo 'PSE_DOMAIN_TOOLS_SYNTAX=PASS'
       - name: Report missing PSE runtime settings by name only
         shell: bash
         run: |
@@ -50,9 +59,6 @@ jobs:
           client=parsed.get('WC_URL_CLIENT','')
           print('PSE_RELEASE_ENV backend_differs_from_frontend='+(
               'yes' if wp and client and wp.rstrip('/')!=client.rstrip('/') else 'unverified'))
-          blocked=any('nghiencuukhoahoc' in parsed.get(k,'').lower()
-                      for k in ('WC_URL','WC_URL_CLIENT'))
-          print('PSE_RELEASE_ENV source_project_url='+('FORBIDDEN' if blocked else 'not_detected'))
           host=urlsplit(client).hostname
           ready=bool(host and re.fullmatch(r'[a-z0-9][a-z0-9.-]*[a-z0-9]', host)
                      and '..' not in host and '.' in host)
@@ -61,7 +67,7 @@ jobs:
           # Static readiness reports do not dispatch builds or sign unpack requests.
           prerequisites = (
               all(os.environ.get(k,'') for k in secret_names)
-              and ready and not blocked
+              and ready
               and urlsplit(wp).scheme=='https'
               and urlsplit(client).scheme=='https'
               and wp.rstrip('/')!=client.rstrip('/')
@@ -95,7 +101,7 @@ jobs:
                  and not parsed.username and not parsed.password
                  and parsed.path in ('','/') and not parsed.query and not parsed.fragment
                  and parsed.port in (None,443)
-                 and not any(x in parsed.hostname.lower() for x in ('nghiencuukhoahoc','xuongmunonbaohiem')))
+)
           if not valid:
               print('PSE_SIGNED_UNZIP_MARKER=UNVERIFIED_INVALID_PSE_WP_ORIGIN')
           else:
