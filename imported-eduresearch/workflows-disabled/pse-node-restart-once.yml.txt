@@ -1,0 +1,64 @@
+# Archived completed site-specific diagnostic/restart operation; DO NOT RUN.
+name: PSE one-time Node Passenger restart marker (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-node-restart-once-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-node-restart-only
+  cancel-in-progress: false
+jobs:
+  marker:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: Signal Passenger restart.txt for deployed PSE SSR only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ftplib,ssl,os,io,time
+          from urllib.parse import urlsplit
+          root='/domains/pse.webnvn.com/public_html'
+          raw=os.environ.get('FTP_SERVER','').strip()
+          if '://' not in raw:raw='ftp://'+raw
+          url=urlsplit(raw)
+          if url.hostname!='vt108159.server.idn.vn' or url.scheme not in ('ftp','ftps'):
+              raise SystemExit('PSE_NODE_RESTART=FAIL_UNEXPECTED_FTP')
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=18)
+          try:
+              ftp.connect(url.hostname,url.port or 21,timeout=18)
+              ftp.auth()
+              ftp.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              ftp.cwd(root)
+              assert ftp.pwd().rstrip('/')==root
+              assert ftp.size('server/entry.mjs') and ftp.size('client/index.html')
+              try:
+                  ftp.cwd('tmp')
+              except ftplib.error_perm:
+                  ftp.mkd('tmp')
+                  ftp.cwd('tmp')
+              assert ftp.pwd().rstrip('/')==root+'/tmp'
+              data=('PSE_PASSENGER_RESTART_REQUEST '+str(int(time.time()))+'\n').encode()
+              ftp.storbinary('STOR restart.txt',io.BytesIO(data))
+              buf=io.BytesIO()
+              ftp.retrbinary('RETR restart.txt',buf.write)
+              assert buf.getvalue()==data
+              print('PSE_NODE_RESTART_MARKER=WRITTEN_AND_VERIFIED')
+              print('PSE_NODE_CHANGED_ONLY=tmp/restart.txt')
+          except Exception as e:
+              print('PSE_NODE_RESTART_MARKER=FAILED_'+type(e).__name__)
+              raise SystemExit(1)
+          finally:
+              try:ftp.close()
+              except Exception:pass
+          PY
