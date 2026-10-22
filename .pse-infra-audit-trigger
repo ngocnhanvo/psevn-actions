@@ -6,3 +6,4 @@ Second audit: log boolean status only, preserving no credential values or sensit
 2026-10-22: Owner updated FTP_SERVER after host migration; verify existing FTPS secrets using read-only TLS/login/CWD probes. No files, uploads, build, or deploy.
 2026-10-22: Targeted follow-up to inconclusive FTPS CWD audit #39719244809; explicitly verify TCP, TLS certificate, AUTH, PWD, and configured Astro/WP roots with zero writes.
 2026-10-22: One-time masked host fingerprint plus runner TCP/FTP greeting diagnosis after FileZilla succeeded; investigate earlier TCP timeout, do not build, upload or change secrets.
+2026-10-22: Owner confirmed FTP_SERVER corrected to FileZilla host 103.45.229.10; retry secure FTPS TCP/TLS/auth/CWD diagnostics with current secrets, READ ONLY, no build or deploy.
