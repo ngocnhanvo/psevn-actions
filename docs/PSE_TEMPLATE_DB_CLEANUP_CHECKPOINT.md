@@ -74,3 +74,20 @@ The scanner only checked selected editor fields and regular expressions. No asse
 5. Re-run the source and SQL audits against the restored copy. Confirm zero historical tenant identity/private-contact residue in intended template records and no missing structural configuration. Only then label the DB template `READY`.
 
 **Current decision: source test/audit clean; protected live database backup safe for recovery but NOT yet a clean reusable template.**
+
+
+## Verified isolated snapshot restoration (2026-10-22)
+
+- [Run 39743250037](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39743250037) completed **SUCCESS** on psevn-actions/main after the earlier SQL read-only audit. This was a NEW ephemeral restore check, not a repeat of the completed WordPress content sanitization or database backup.
+- The runner downloaded **exactly** the same protected recovery database snapshot (SHA-256 prefix 887a764a48b886d0) through authenticated TLS, validated the GZip CRC, checked SQL for privileged/cross-database statements, then restored all **94 tables** into a **temporary, UNIX-socket-only MariaDB** database.
+- Private data remained inside the ephemeral runner; no SQL, credentials, filenames or raw row content was printed, uploaded, committed or attached as a workflow artifact. The temporary database was dropped after inspection (EPHEMERAL_DB_REMOVED=PASS).
+- Aggregate findings from the restored copy (number of **rows**, unlike earlier occurrence counts):
+  - WordPress posts table: **23 pages**, **534 revisions**, **1 post**, **2 attachments**, **5 navigation menu items**. The 23 pages include non-published statuses/history; the WP admin's earlier count of 5 visible pages is not contradictory.
+  - Content containing a recognized old source identifier: **8 page rows**, **10 revision rows**, **0 post rows**, **0 attachment rows**, **0 menu-item rows**, **8 other post-type rows**.
+  - **51 postmeta rows** and **7 option rows** still match the old-source identifier scan.
+  - **1 WordPress user** remains. The restored SQL is still a **recovery backup**, not a sanitized/distributable template.
+- This proves technical restore integrity in isolation but **not** full WordPress application startup, clean plugin state, credential scrubbing, PII-removal completeness or Astro API compatibility. No live WordPress DB write, PHP deployment, customer-site operation, Astro build or independent front-end deployment occurred.
+- Follow-on work must distinguish imported old revision/draft/trash records and Agent/SEO/index/cache records from the live page/ACF/menu/CSS configuration; scrub only the **isolated clone** and validate it end-to-end before releasing a template SQL file.
+- **Do not rerun** the successful 39743250037 isolated restore merely to repeat these counts. The existing backup and the previous 39739176065 sanitation workflow remain verified; no duplicate backup or cleanup is needed.
+
+**Updated gate:** RECOVERY_RESTORE_VERIFIED=YES; SANITIZED_CLONE_RESTORE_AND_APP_TEST=NO; TEMPLATE_DISTRIBUTABLE_DB=NOT_READY_LEGACY_RESIDUE.
