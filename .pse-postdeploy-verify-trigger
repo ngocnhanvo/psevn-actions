@@ -3,3 +3,4 @@ Repeat HTTP-only PSE SSR verification after one successful Passenger tmp/restart
 User reports SSR fixed on 2026-10-22; run one fresh GET-only SSR verification without rebuild, redeploy or restart.
 Verify explicit unauthenticated JSON semantics for 403 and HTTP 200 on home/notebook. GET only, no build/deploy.
 Final narrow diagnostic: check whether /api/auth/me JSON 403 is server's staging_only guard. Read-only GET, no deploy.
+2026-10-22: independent GET-only production SSR verification after successful WordPress-triggered PSE deploy #39706434580 of commit 6c341bcbdf78bfedc9fac1705e7115e3129e92e2. Check HTML 200 /, 200 /so-tay, and no-cookie /api/auth/me 401 JSON authenticated:false. No build or FTP.
