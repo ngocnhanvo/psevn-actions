@@ -155,10 +155,14 @@ try {
     report('GENERAL_COMPANY_PREFLIGHT','PASS');
     report('NO_WRITES','PASS');
   } else {
-  // ACF can collapse/conditionally hide this field while keeping its value in
-  // the published WordPress form; fill() requires visibility and timed out.
-  // Update the existing form input, dispatch its standard events, and verify
-  // the persisted ACF value after the native WP Update action.
+  // The read-only checks above visit two other post editors. Return to the
+  // original General Info editor before resolving and updating its ACF field.
+  await go(generalPath);
+  const currentCompany=(await company.inputValue()).trim();
+  const currentDomain=(await domain.inputValue()).trim()
+    .replace(/^https?:\/\//,'').replace(/\/$/,'');
+  if (!oldBrand.test(currentCompany) || currentDomain!==expected)
+    throw Error('General-info ACF preconditions changed during page checks');
   await company.evaluate((el,value) => {
     el.value=value;
     el.dispatchEvent(new Event('input',{bubbles:true}));
