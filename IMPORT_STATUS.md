@@ -186,3 +186,15 @@ Proof (all READ-ONLY/static, no build/deploy):
 - [Existing-secrets-only audit #39644145362](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39644145362): five existing secrets PRESENT; FTP target DERIVED; `PSE_RELEASE_PREREQUISITES=READY_FOR_FURTHER_VERIFICATION`; ready marker GET still `MISSING_OR_UNAVAILABLE`. This does NOT establish production WordPress PHP readiness.
 
 Next: when code-mode/deploy permission permits, deploy updated PSE PHP only to PSE WordPress; verify the v2 marker, runtime GitHub token and HMAC preflight; only then use **the WordPress Build Website button** for a real build. There has been no Astro build, FTP write, WordPress production modification or GitHub dispatch from this correction. Updated guidance: [docs/PSE_RELEASE_READINESS.md](docs/PSE_RELEASE_READINESS.md).
+
+## Live PSE SSR production deployment verified — 2026-10-22
+
+**SUCCESS: LIVE SSR VERIFIED ON THE ACTUAL PSE HOST.**
+
+- Owner authorized SSR fix PR merge and WordPress/PHP Build Website. SSR PR [#2](https://github.com/ngocnhanvo/psevn-astro/pull/2) merged, and subsequent compile/route-structure corrections [#3](https://github.com/ngocnhanvo/psevn-astro/pull/3) and [#4](https://github.com/ngocnhanvo/psevn-astro/pull/4) merged into `psevn-astro/master`.
+- [Astro offline CI #39706013654](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706013654): 14 Vitest suites PASS; verified no staging-only auth guard and no Vitest test file in `src/pages`. Security checks for encrypted sessions, OAuth/CSRF retained.
+- [WordPress Build Website trigger #39706334073](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706334073): normal authenticated PHP/AJAX build accepted with 2 pending changes; no `force_build`.
+- [PSE Astro production build/deploy #39706434580](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706434580): **SUCCESS**, source commit `6c341bcbdf78bfedc9fac1705e7115e3129e92e2`, compiled SSR, ZIP produced without private environment, FTPS upload, `SIGNED_UNZIP_SUCCESS`, then hosting SSR smoke PASS. Existing sitemap unchanged because no new WordPress Sitemap Save revision.
+- **Independent live-host GET probe**, [#39706680355](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39706680355): `/ => HTTP 200 HTML`, `/so-tay => HTTP 200`, `/api/auth/me => HTTP 401 JSON {"authenticated":false}`, `PSE_SSR_ERROR_STAGING_ONLY=False`. Full `PSE_LIVE_VERIFY=PASS GET_ONLY`.
+- No browser credentials used for private user workflows in live smoke. This proves public SSR and unauthenticated auth API behavior, not completion of the complete Google login journey with a real account.
+- The failed intermediate builds #39704786901 and #39705706119 were superseded by successful production build #39706434580; don't restart them.
