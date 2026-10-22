@@ -43,6 +43,15 @@ jobs:
         working-directory: source
         run: |
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm exec vitest run src/lib/nckh/serverWp.test.ts src/lib/nckh/privateRuntime.test.ts src/lib/nckh/serverSession.test.ts src/pages/api/auth/ssr-request-regression.test.ts src/lib/nckh/googleOidc.test.ts src/lib/nckh/publicBrand.test.ts src/lib/nckh/authNavigation.test.ts src/lib/nckh/googlePopupCompletion.test.ts src/lib/nckh/articleEditor.test.ts src/lib/wordpress/pages/getData.image-errors.test.ts scripts/generate-sitemap-robots.test.ts scripts/sync-seo-files.nckh.test.ts scripts/sync-seo-files.test.ts
+          pnpm exec vitest run src/lib/nckh/serverWp.test.ts src/lib/nckh/privateRuntime.test.ts src/lib/nckh/serverSession.test.ts src/pages/api/auth/ssr-request-regression.test.ts src/pages/api/nckh/ssr-proxy-regression.test.ts src/lib/nckh/googleOidc.test.ts src/lib/nckh/publicBrand.test.ts src/lib/nckh/authNavigation.test.ts src/lib/nckh/googlePopupCompletion.test.ts src/lib/nckh/articleEditor.test.ts src/lib/wordpress/pages/getData.image-errors.test.ts scripts/generate-sitemap-robots.test.ts scripts/sync-seo-files.nckh.test.ts scripts/sync-seo-files.test.ts
+      - name: Reject dangling obsolete staging-only SSR import (NO BUILD)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E "allowedStagingRequest|staging_only" source/src/pages/api/nckh source/src/pages/api/auth source/src/lib/nckh/serverSession.ts; then
+            echo "::error::Obsolete staging-only SSR guard still present"
+            exit 1
+          fi
+          echo "PSE_SSR_NO_STAGING_GUARD=PASS"
       - name: Confirm no Astro build or deploy
         run: echo 'PSE_ASTRO_UNIT=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS'
