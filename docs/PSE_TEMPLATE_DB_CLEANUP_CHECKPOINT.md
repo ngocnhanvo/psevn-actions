@@ -56,3 +56,21 @@ Sources of truth: workflows, SHA-linked GitHub Actions logs, and WordPress WP-ad
 - Exactly 1 administrator, 0 old research roles and 3 recent DB backup records were verified at this review.
 
 The scanner only checked selected editor fields and regular expressions. No assertion is made that these are the only possible stored secrets, archived revisions, plugin options or old URLs. A reusable DB still needs an isolated clone/restore and exhaustive privacy/identity check.
+
+## Latest reusable-template readiness gate (2026-10-22)
+
+- [Run 39741639025](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39741639025) inspected the **same newest protected DB-only UpdraftPlus backup** after the successful WordPress/ACF sanitation. Verified SHA-256 prefix `887a764a48b886d0`; GZip CRC PASS. This was an additional readiness check, **not** another backup, data export, database mutation, user cleanup or Astro build.
+- The DB contains **572 old-source occurrences** (Blue Sea domain 99, Blue Sea brand 443, research-domain 30). Additionally, `admin.esc.vn` occurs 203 times; distinguish legitimate ESC integration references from inherited customer content before deciding what to change. These are occurrence counts, **not** affected rows and **not** a count of confirmed leaks.
+- Audit now prints `TEMPLATE_DISTRIBUTABLE_DB=NOT_READY_LEGACY_RESIDUE`, `SEPARATE_ISOLATED_DB_RESTORE_TESTED=NO` and `CURRENT_ARCHIVE_PURPOSE=RECOVERY_BACKUP_NOT_TEMPLATE`. A recovery backup must never be distributed as the template database, even if syntax/CRC/FTPS checks PASS.
+- Residue in `esc_agent_knowledge`, Media Cleaner, Yoast indexes, imported WordPress revisions/options and page ID 248 remains unmodified pending field-by-field/structural classification. Do **not** blank ACF `cssmore` or mass-replace strings inside CSS/serialized WordPress values; that could change selectors or break the existing rendering system.
+- A proposed additional temporary WordPress residue-inspector was **not deployed**; its unused files and FTPS allowlist entry were removed from Actions `main`. No new temporary PHP is present due to that proposal, and there was no FTP write or database change from this audit.
+
+### Acceptance criteria before declaring a reusable sanitized DB
+
+1. Use a **separate, access-restricted clone**, not the live UpdraftPlus recovery snapshots; keep the verified recovery snapshots unchanged.
+2. Remove inherited tenant identities, personal contact data, old revision/history and old Agent knowledge from the clone while preserving ACF definitions, WordPress option serialization, TablePress assets, plugin schema and menu/action identities.
+3. Rotate/invalidate clone-specific login sessions, API tokens, SMTP/OAuth keys and admin credentials; never include those credentials in a distributable dump.
+4. Restore the cleaned dump into an isolated WordPress environment and verify administrator access, page/ACF editing, plugin startup, media, redirects and Astro API compatibility. **Do not trigger production Astro build as part of DB cleanup.**
+5. Re-run the source and SQL audits against the restored copy. Confirm zero historical tenant identity/private-contact residue in intended template records and no missing structural configuration. Only then label the DB template `READY`.
+
+**Current decision: source test/audit clean; protected live database backup safe for recovery but NOT yet a clean reusable template.**
