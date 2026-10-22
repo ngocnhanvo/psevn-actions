@@ -1,1 +1,1 @@
-Validate new PSE Astro development source: 275b74d17285506228ead524148421198013bdff; offline unit only; never build or deploy.
+Verify PSE Astro github at 4fcbec7cc6a6e148ac07eee820f76154c11fbbd1; offline Vitest only, no build or FTP.
