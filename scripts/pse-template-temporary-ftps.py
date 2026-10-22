@@ -34,10 +34,17 @@ if (wp.scheme!='https' or not wp.hostname or wp.port not in (None,443)
         or wp.username or wp.password or wp.path not in ('','/')
         or wp.query or wp.fragment):
     raise RuntimeError('Invalid WP origin')
-file=Path('scripts/pse-template-temporary-maintenance.php')
+tools={
+    'cache': 'pse-template-temporary-maintenance.php',
+    'content': 'pse-template-content-maintenance.php',
+}
+tool=os.environ.get('PSE_TEMPLATE_MAINTENANCE_TOOL','cache')
+if tool not in tools:
+    raise RuntimeError('Unapproved temporary WordPress tool')
+name=tools[tool]
+file=Path('scripts')/name
 data=file.read_bytes()
 digest=hashlib.sha256(data).hexdigest()
-name='pse-template-temporary-maintenance.php'
 root=f'/domains/{wp.hostname}/public_html'
 ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
 def navigate(path):
