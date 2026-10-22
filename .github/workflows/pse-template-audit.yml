@@ -31,6 +31,14 @@ jobs:
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: astro
           persist-credentials: false
+      - name: Checkout exact Astro master production
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: astro-master
+          persist-credentials: false
       - name: Checkout exact PHP master
         uses: actions/checkout@v4
         with:
@@ -42,12 +50,18 @@ jobs:
       - name: Identify exactly audited source commits
         run: |
           echo "ASTRO_GITHUB_SHA=$(git -C astro rev-parse HEAD)"
+          echo "ASTRO_MASTER_SHA=$(git -C astro-master rev-parse HEAD)"
           echo "PHP_MASTER_SHA=$(git -C php rev-parse HEAD)"
           echo "ACTIONS_MAIN_SHA=$(git -C actions rev-parse HEAD)"
       - name: Audit only, never rewrite sources
         run: |
           python3 -m py_compile actions/scripts/template-audit.py
           python3 actions/scripts/template-audit.py --astro astro --php php --actions actions
+          echo 'TEMPLATE_AUDIT_FRONTEND_DEV=completed'
+          python3 actions/scripts/template-audit.py --astro astro-master --php php --actions actions
+          echo 'TEMPLATE_AUDIT_FRONTEND_PRODUCTION=completed'
+          ! grep -Eiq 'Blue Sea|AUDITED_CATEGORY_TITLES' astro-master/src/lib/seo/listingTitles.ts
+          echo 'TEMPLATE_PRODUCTION_SEO_BRAND_NEUTRAL=PASS'
           echo 'SOURCE_AUDIT=PASS; NO_BUILD=PASS; NO_FTP=PASS; NO_DISPATCH=PASS'
           echo 'SOURCE_REUSE_RESCAN=2026-10-22 current source review; preserve production, no DB writes'
 
@@ -55,7 +69,8 @@ jobs:
     name: Inventory existing PSE WP records via admin (READ ONLY)
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
-      github.event.head_commit.message != 'test(template): backup PSE WP database (local only)'
+      github.event.head_commit.message != 'test(template): backup PSE WP database (local only)' &&
+      github.event.head_commit.message != 'test(template): audit DEV and PROD sources (READ ONLY)'
     runs-on: ubuntu-latest
     timeout-minutes: 9
     container:
