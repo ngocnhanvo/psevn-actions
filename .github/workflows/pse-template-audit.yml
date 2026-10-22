@@ -35,6 +35,11 @@ jobs:
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: php
           persist-credentials: false
+      - name: Identify exactly audited source commits
+        run: |
+          echo "ASTRO_GITHUB_SHA=$(git -C astro rev-parse HEAD)"
+          echo "PHP_MASTER_SHA=$(git -C php rev-parse HEAD)"
+          echo "ACTIONS_MAIN_SHA=$(git -C actions rev-parse HEAD)"
       - name: Audit only, never rewrite sources
         run: |
           python3 -m py_compile actions/scripts/template-audit.py
