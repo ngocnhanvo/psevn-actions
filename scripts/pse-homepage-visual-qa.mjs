@@ -20,6 +20,7 @@ const origin=(()=>{
 const sourceRoot=path.resolve('source');
 const tempQaSrcDir=path.join(sourceRoot,'pse-qa-src');
 const routePath=path.join(tempQaSrcDir,'pages/pse-qa.astro');
+const archiveRoutePath=path.join(tempQaSrcDir,'pages/tin-tuc-su-kien.astro');
 const astroConfigPath=path.join(sourceRoot,'astro.config.mjs');
 let originalConfig;
 
@@ -130,11 +131,29 @@ try{
   }));
   const home=pages.find(p=>p.key==='home'&&p.action==='HomePage');
   if(!home)throw Error('Canonical public HomePage missing');
+  // The archive exists only as a private WordPress draft. Include its verified
+  // metadata exclusively in this ephemeral browser preview: no publication.
+  phase('cms-read-private-search-archive');
+  const archive=await read('/wp-json/wp/v2/pages/77030?context=edit&_fields=id,status,slug,title,acf,content');
+  if(archive.id!==77030||archive.status!=='draft'||archive.slug!=='tin-tuc-su-kien'||
+     archive.acf?.action!=='PostsPage'||archive.acf?.key!=='posts')
+    throw Error('Existing private PSE search archive changed; no fake route');
+  const archivePage={
+    id:String(archive.id),key:'posts',action:'PostsPage',lang:'vi',
+    slug:archive.slug,title:String(archive.title?.raw||archive.title?.rendered||'Tin tức - Sự kiện'),
+    label:String(archive.acf?.label||'Tin tức - Sự kiện'),content:String(archive.content?.raw||'')
+  };
+  const categoryData=await read('/wp-json/wp/v2/categories?include=1742,1743,1744&per_page=10&_fields=id,slug,name');
+  if(!Array.isArray(categoryData)||categoryData.length!==3||
+     [1742,1743,1744].some(id=>!categoryData.some(c=>c.id===id)))
+    throw Error('Three real PSE WordPress categories missing');
+  pages.push(archivePage);
+  console.log('PSE_PRIVATE_ARCHIVE_PREVIEW=PASS; wp_id=77030; status=draft; not_published=true');
   const a=corporate.acf;
   const company=String(a.tencongty||'');
   const payload={
     currentPage:{...home,content,contents:ids.map((id,i)=>({type:'shortcode',shortcode:id,data:tables[i]}))},
-    tables,pages,menuItems,
+    tables,pages,menuItems,archivePage,categoryData,
     companyInfo:{
       id:62,tencongty:{vi:company},hotline:{vi:String(a.hotline||'')},
       sodienthoaiHCM:{vi:String(a.sodienthoaihcm||'')},
@@ -165,6 +184,27 @@ try{
     '</Layout>'
   ].join('\n');
   await writeFile(routePath,route);
+  // Render the actual shared PostsPage with the verified private draft record,
+  // empty public post result set, and real category filters. The route is
+  // transient in the Actions checkout and cannot publish WordPress content.
+  const archiveRoute=[
+    '---',
+    'import "@/styles/global.css";',
+    'import Layout from "@/astro/components/Layout/Layout.astro";',
+    'import PostsPage from "@/astro/pages/PostsPage.astro";',
+    'const payload='+JSON.stringify(payload)+';',
+    'const page=payload.archivePage;',
+    'const pages=payload.pages;',
+    'const data_info=payload.companyInfo;',
+    'const searchQuery=Astro.url.searchParams.get("q")||"";',
+    'const categoryQuery=Astro.url.searchParams.get("cat")||"";',
+    'const headProps={title:page.title,description:"PSE private archive QA",lang:"vi",href:Astro.url.href,currentPage:page,data_info,WC_URL:process.env.WC_URL,WC_URL_CLIENT:Astro.url.origin,basename:"/"};',
+    '---',
+    '<Layout data_info={data_info} pages={pages} menus={payload.menuItems} currentPage={page} headProps={headProps}>',
+    '  <PostsPage page={page} pages={pages} data_info={data_info} basename="/" searchQuery={searchQuery} categoryQuery={categoryQuery} cates={payload.categoryData} props={{items:[],perPage:12,page:1,total:0}} />',
+    '</Layout>'
+  ].join('\n');
+  await writeFile(archiveRoutePath,archiveRoute);
   // Vite 8 dev SSR cannot evaluate some CommonJS dependencies when the
   // inherited production noExternal=[/.*/] rule is applied unchanged.
   // This override lives only in the disposable CI checkout; production source
@@ -361,6 +401,35 @@ try{
     console.log('PSE_REAL_CMS_VISUAL_QA=PASS; viewport='+width+'; '+JSON.stringify(observed));
     await view.close();
   }
+  // End-to-end preview of the WordPress-owned PostsPage draft, not a
+  // synthetic search results page. No articles are fabricated or published.
+  qaPhase='archive-private-preview';
+  phase('archive-private-preview');
+  const searchBrowser=await context.newPage();
+  await searchBrowser.setViewportSize({width:390,height:900});
+  const archiveUrl='http://127.0.0.1:4321/tin-tuc-su-kien';
+  const archiveResponse=await searchBrowser.goto(archiveUrl,{waitUntil:'domcontentloaded',timeout:30000});
+  if(archiveResponse?.status()!==200)throw Error('PSE private archive QA returned HTTP '+archiveResponse?.status());
+  const archiveForm=searchBrowser.locator('form#search-form');
+  await archiveForm.waitFor({timeout:10000});
+  if(await searchBrowser.locator('h1').count()!==1 ||
+     await searchBrowser.locator('#category-dropdown-container .dropdown-option').count()!==4 ||
+     await searchBrowser.locator('#posts-grid').count()!==1)
+    throw Error('PSE PostsPage private archive UI missing search/filter/results');
+  await searchBrowser.locator('#search-input').fill('phân bón');
+  await searchBrowser.locator('#search-input').press('Enter');
+  await searchBrowser.waitForURL(/\/tin-tuc-su-kien\?q=/,{timeout:20000});
+  const afterSearch=new URL(searchBrowser.url());
+  if(afterSearch.searchParams.getAll('q').length!==1 ||
+     afterSearch.searchParams.get('q')!=='phân bón' ||
+     await searchBrowser.locator('#search-input').inputValue()!=='phân bón')
+    throw Error('WordPress PostsPage search GET query did not round-trip');
+  const archiveOverflow=await searchBrowser.evaluate(()=>
+    document.documentElement.scrollWidth>document.documentElement.clientWidth+3);
+  if(archiveOverflow)throw Error('PSE PostsPage search preview has horizontal overflow at 390px');
+  await searchBrowser.screenshot({path:path.join(shots,'pse-private-archive-390.png'),fullPage:true,animations:'disabled',timeout:12000});
+  console.log('PSE_PRIVATE_POSTSPAGE_SEARCH_QA=PASS; draft_id=77030; action=PostsPage; q_roundtrip=true; categories=3; published_post_count=0; no_overflow=true; no_publication=true');
+  await searchBrowser.close();
   clearTimeout(hardDeadline);
   console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; HomePage_ExtractHTML_component_contract_tested=true; real_public_route_not_tested=true; no_build=true');
   // GitHub Actions destroys this disposable container after artifact upload.
@@ -378,6 +447,7 @@ try{
     try{server.kill('SIGKILL')}catch{}
   }
   await rm(routePath,{force:true}).catch(()=>{});
+  await rm(archiveRoutePath,{force:true}).catch(()=>{});
   if(originalConfig!==undefined)await writeFile(astroConfigPath,originalConfig).catch(()=>{});
   await rm(tempQaSrcDir,{recursive:true,force:true}).catch(()=>{});
   const closed=await Promise.race([
