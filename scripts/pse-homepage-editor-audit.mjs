@@ -138,6 +138,40 @@ try{
     };
   });
   console.log('PSE_HOME_ESC_INSERT_CODE_CAPABILITY='+JSON.stringify(homeControls));
+
+  // Actual TinyMCE/ACF interface is lazily initialized. Read configured
+  // toolbar and latest WordPress revision before any publishing action.
+  const homeAuthoring=await page.evaluate(async()=>{
+    const field=document.querySelector('.acf-field[data-name="content"]');
+    const ta=field?.querySelector('textarea');
+    const editor=ta&&window.tinymce?.get(ta.id);
+    const buttons=Array.from(field?.querySelectorAll('[role="toolbar"] button,.mce-toolbar button,.mce-menu-item,.mce-btn')||[])
+      .map(x=>({label:(x.getAttribute('aria-label')||x.title||x.textContent||'').replace(/\\s+/g,' ').trim().slice(0,60),
+                cls:String(x.className||'').slice(0,80)})).filter(x=>x.label).slice(0,60);
+    const data=String(editor?.getContent({format:'raw'})||ta?.value||'');
+    const matches=[...data.matchAll(/\\[table\\s+id=([A-Za-z0-9_-]+)\\s*\\/\\]/gi)].map(m=>m[1]);
+    const csrf=window.wpApiSettings?.nonce||window.wp?.apiFetch?.nonceMiddleware?.nonce||'';
+    const resp=await fetch('/wp-json/wp/v2/pages/248/revisions?per_page=1&context=edit',
+      {credentials:'same-origin',headers:{Accept:'application/json',...(csrf?{'X-WP-Nonce':csrf}:{})}});
+    let revCount=null,lastRevisionId=null;
+    if(resp.ok){const list=await resp.json();revCount=Number(resp.headers.get('X-WP-Total'));lastRevisionId=list?.[0]?.id||null}
+    return {
+      editorInitialized:!!editor,
+      editorId:ta?.id||null,
+      plugins:typeof editor?.settings?.plugins==='string'?editor.settings.plugins.split(/[,\\s]+/).filter(Boolean).slice(0,35):[],
+      buttons,
+      shortcodeIds:matches,
+      fieldEmpty:!data.trim(),
+      sourceLength:data.length,
+      revisionsHTTP:resp.status,
+      revisionCount:revCount,
+      hasPriorRevision:!!lastRevisionId,
+      wpPageForm:!!document.querySelector('#post'),
+      saveControl:!!document.querySelector('#publish'),
+    };
+  });
+  console.log('PSE_HOME_INSERT_CODE_AND_REVISIONS='+JSON.stringify(homeAuthoring));
+
   await page.goto(origin+'/wp-admin/edit.php?post_type=page&page=esc-visual-builder&esc_vb_page='+wpData.home.id,
     {waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForTimeout(1900);
