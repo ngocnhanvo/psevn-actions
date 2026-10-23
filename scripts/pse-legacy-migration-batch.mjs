@@ -18,7 +18,7 @@ function origin(name){
  return url.origin;
 }
 const wp=origin("WC_URL"),source=new URL(state.source);
-const CATEGORY={"company":1742,"agriculture-market":1743,"shareholder":1744};
+const GROUPS=["company","agriculture-market","shareholder"];
 const candidates=Object.keys(state.articles).filter(id=>
  (["pending","media"].includes(state.articles[id].status) ||
    (state.articles[id].status==="quarantined" &&
@@ -71,11 +71,21 @@ try{
   return {status:r.status,data:await r.json().catch(()=>null)};
  },{path,method,data,nonce});
  // Resolve categories already configured in PSE; never create invented taxonomy.
+ const table=await api("/wp-json/tablepress/v1/table/pse_01_vi");
+ if(table.status!==200||table.data?.items?.length!==GROUPS.length)
+  throw Error("PSE WordPress news category table unavailable");
  const cats={};
- for(const [group,id] of Object.entries(CATEGORY)){
-  const r=await api("/wp-json/wp/v2/categories/"+id+"?_fields=id,slug");
-  if(r.status!==200||r.data.id!==id)throw Error("Configured WP category missing "+group);
-  cats[group]=id;
+ for(const [i,group] of GROUPS.entries()){
+  const row=table.data.items[i];
+  const slug=String(row?.categorySlug||"").trim();
+  const expectedId=Number(row?.categoryId);
+  if(!slug||!Number.isSafeInteger(expectedId)||expectedId<=0)
+   throw Error("PSE WordPress category not configured: "+group);
+  const r=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(slug)+"&_fields=id,slug");
+  if(r.status!==200||r.data?.length!==1||r.data[0].id!==expectedId||
+     r.data[0].slug!==slug)
+   throw Error("PSE news category slug lookup mismatch: "+group);
+  cats[group]=expectedId;
  }
  for(const id of ids){
   const item=state.articles[id];
@@ -240,7 +250,7 @@ try{
   }catch(e){
    const reason=e instanceof Error?e.message:String(e);
    item.reason=reason.slice(0,190);
-   if(item.attempts>=3){item.status="quarantined";failed++}
+   if(item.wp_id || item.attempts>=3){item.status="quarantined";failed++}
    else {item.status="pending";partial++}
    console.error("PSE_LEGACY_RECORD_ERROR; source_id="+id+"; reason="+item.reason);
    await persist();
