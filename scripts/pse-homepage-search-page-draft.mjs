@@ -60,17 +60,33 @@ try {
   const all=await api('/wp-json/wp/v2/pages?status=any&context=edit&per_page=100&_fields=id,slug,status,title,acf');
   if(all.status!==200||!Array.isArray(all.payload))
     throw Error('Cannot safely inspect existing PSE WordPress Pages; HTTP '+all.status);
-  const targetAction='PostsPage',targetKey='posts',targetSlug='tin-tuc-su-kien';
+  // The Astro SSR listing router handles key="ssr-posts" through the
+  // existing /ssr/posts/[slug]/[page] route. Plain "posts" would be
+  // prerendered as a static page and lose ?q/?cat search behavior.
+  const targetAction='PostsPage',targetKey='ssr-posts',targetSlug='tin-tuc-su-kien';
   const candidates=all.payload.filter(p=>
     p.acf?.action===targetAction||p.acf?.key===targetKey||
-    p.slug===targetSlug);
+    p.acf?.key==='posts'||p.slug===targetSlug);
   if(candidates.length>1)throw Error('Ambiguous existing PSE PostsPage/key/slug; refusing duplicate');
   let pageRecord=candidates[0]||null;
   if(pageRecord){
-    if(pageRecord.acf?.action!==targetAction||
-       pageRecord.acf?.key!==targetKey||pageRecord.slug!==targetSlug)
-      throw Error('Existing PSE page conflicts with reserved search archive slug/key');
-    console.log('PSE_SEARCH_ARCHIVE_DRAFT=ALREADY_EXISTS; id='+pageRecord.id+'; status='+pageRecord.status);
+    if(pageRecord.acf?.action!==targetAction||pageRecord.slug!==targetSlug||
+       !['posts',targetKey].includes(pageRecord.acf?.key)||pageRecord.status!=='draft')
+      throw Error('Existing PSE Page conflicts with expected private PostsPage draft');
+    if(pageRecord.acf?.key==='posts'){
+      // Resume exactly the verified original draft. Do not touch another
+      // similarly named page, published URL, editor content or articles.
+      if(pageRecord.id!==77030)throw Error('Unexpected PSE search draft ID; no migration');
+      const updated=await api('/wp-json/wp/v2/pages/'+pageRecord.id,'POST',{
+        acf:{key:targetKey}
+      });
+      if(updated.status!==200||updated.payload?.id!==pageRecord.id)
+        throw Error('Cannot update private PSE search archive SSR key HTTP '+updated.status);
+      pageRecord=updated.payload;
+      console.log('PSE_SEARCH_ARCHIVE_SSR_KEY=MIGRATED; id='+pageRecord.id+'; from=posts; to=ssr-posts');
+    }else{
+      console.log('PSE_SEARCH_ARCHIVE_DRAFT=ALREADY_EXISTS; id='+pageRecord.id+'; status='+pageRecord.status);
+    }
   }else{
     const created=await api('/wp-json/wp/v2/pages','POST',{
       title:'Tin tức - Sự kiện',slug:targetSlug,
