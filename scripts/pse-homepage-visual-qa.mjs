@@ -69,9 +69,28 @@ try{
   const logo=await read('/wp-json/wp/v2/media/76980?context=edit');
   if(logo.id!==76980||logo.media_details?.file?.split('/').at(-1)!=='pse-original-logo-2025.jpg')
     throw Error('Incorrect official logo Media');
-  const logoSrc=String(logo.source_url||logo.guid?.rendered||'');
-  if(!logoSrc.startsWith('https://')||!new URL(logoSrc).pathname.includes('/wp-content/uploads/'))
+  const logoCandidates=[logo.source_url,logo.guid?.rendered].filter(x=>typeof x==='string'&&x.trim());
+  let logoSrc='';
+  for(const candidate of logoCandidates){
+    try{
+      const u=new URL(candidate);
+      if(u.protocol!=='https:'||u.hostname!==new URL(origin).hostname||
+         !u.pathname.endsWith('/pse-original-logo-2025.jpg')||
+         !u.pathname.includes('/wp-content/uploads/'))continue;
+      const head=await context.request.head(u.href,{timeout:25000});
+      if(head.ok()&&(head.headers()['content-type']||'').startsWith('image/jpeg')){
+        logoSrc=u.href;
+        break;
+      }
+    }catch{}
+  }
+  if(!logoSrc){
+    console.log('PSE_QA_LOGO_PAYLOAD_SHAPE='+JSON.stringify({
+      sourceUrlType:typeof logo.source_url,guidType:typeof logo.guid?.rendered,
+      candidates:logoCandidates.map(v=>{try{const u=new URL(v);return {protocol:u.protocol,host:u.hostname,path:u.pathname.slice(0,120)}}catch{return {invalid:true}}})
+    }));
     throw Error('PSE official logo URL invalid');
+  }
   const pagesRaw=await read('/wp-json/wp/v2/pages?status=publish&per_page=100&_fields=id,slug,acf,title');
   const pages=pagesRaw.map(p=>({
     id:String(p.id),key:String(p.acf?.key||''),action:String(p.acf?.action||''),
