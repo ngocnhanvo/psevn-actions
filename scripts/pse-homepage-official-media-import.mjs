@@ -92,7 +92,11 @@ try {
         key:asset.key,id:media.id,slug:media.slug,mime:media.mime_type,
         sourceHost:(()=>{try{return new URL(media.source_url).hostname}catch{return null}})(),
         sourcePath:(()=>{try{return new URL(media.source_url).pathname.slice(0,140)}catch{return null}})(),
-        validMediaUrl:wpMediaUrlValid(media.source_url)
+        validMediaUrl:wpMediaUrlValid(media.source_url),
+        responseFields:Object.keys(media).slice(0,35),
+        guidHost:(()=>{try{return new URL(media.guid?.rendered).hostname}catch{return null}})(),
+        guidPath:(()=>{try{return new URL(media.guid?.rendered).pathname.slice(0,140)}catch{return null}})(),
+        mediaFile:media.media_details?.file||null
       }));
       if(media.mime_type!==asset.mime||!wpMediaUrlValid(media.source_url))
         throw Error('Existing PSE WordPress media has unexpected type/origin');
