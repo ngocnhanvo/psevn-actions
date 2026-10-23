@@ -134,7 +134,8 @@ try{
   if(!ready)throw Error('Astro dev route not ready (no build): '+output.slice(-1800));
   const dimensions=[375,390,768,1440,1920];
   for(const width of dimensions){
-    const view=await context.newPage({viewport:{width,height:900}});
+    const view=await context.newPage();
+    await view.setViewportSize({width,height:900});
     const browserErrors=[];
     view.on('pageerror',e=>browserErrors.push(String(e.message).slice(0,180)));
     const response=await view.goto(testUrl,{waitUntil:'domcontentloaded',timeout:60000});
