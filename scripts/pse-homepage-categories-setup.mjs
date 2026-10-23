@@ -39,15 +39,27 @@ try {
     await Promise.all([page.waitForLoadState('domcontentloaded'),page.locator('#wp-submit').click()]);
   }
   if(page.url().includes('wp-login'))throw Error('WordPress admin login failed');
+  const restNonce=await page.evaluate(async()=>{
+    const cached=window.wpApiSettings?.nonce;
+    if(cached)return cached;
+    // Core WordPress AJAX handler: returns wp_create_nonce('wp_rest') for
+    // authenticated admin sessions. Never write this value to logs.
+    const r=await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',
+      {credentials:'same-origin',headers:{Accept:'text/plain'}});
+    if(!r.ok)throw Error('Cannot obtain WordPress REST nonce (HTTP '+r.status+')');
+    const token=(await r.text()).trim();
+    if(!/^[a-zA-Z0-9]{8,24}$/.test(token)||token==='0')throw Error('Invalid WordPress REST nonce response');
+    return token;
+  });
   const api=async(path,method='GET',body)=>{
-    const out=await page.evaluate(async({path,method,body})=>{
-      const nonce=window.wpApiSettings?.nonce||document.querySelector('meta[name="wp-api-nonce"]')?.content||'';
+    const out=await page.evaluate(async({path,method,body,restNonce})=>{
+      const nonce=restNonce;
       const res=await fetch(path,{method,credentials:'same-origin',
         headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{}),...(nonce?{'X-WP-Nonce':nonce}:{})},
         ...(body?{body:JSON.stringify(body)}:{})});
       const payload=await res.json().catch(()=>({}));
       return {status:res.status,payload};
-    },{path,method,body});
+    },{path,method,body,restNonce});
     return out;
   };
   const pre=await api('/wp-json/wp/v2/categories?per_page=100&context=edit&_fields=id,slug,name,count,parent');
