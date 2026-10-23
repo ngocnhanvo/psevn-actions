@@ -442,6 +442,11 @@ try{
       overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
       pseHeader:document.querySelector('#main-header')?.classList.contains('pse-header')||false,
       pseFooter:footer?.classList.contains('pse-footer')||false,
+      topbarColor:(()=>{
+        const bar=document.querySelector('#main-header .pse-topbar');
+        return bar?getComputedStyle(bar).backgroundColor:null;
+      })(),
+      footerColor:footer?getComputedStyle(footer).backgroundColor:null,
       hasPseArchiveClass:document.querySelector('#main-content')?.classList.contains('pse-posts')||false,
       aiWidget:!!document.querySelector('#ai-agent-btn,#contact-widget'),
       stickySales:!!document.querySelector('#bottom-contact-bar'),
@@ -451,7 +456,10 @@ try{
   });
   console.log('PSE_PRIVATE_ARCHIVE_BRANDING_DIAG='+JSON.stringify(archiveIntegrity));
   if(archiveIntegrity.overflow||!archiveIntegrity.pseHeader||
-     !archiveIntegrity.pseFooter||!archiveIntegrity.hasPseArchiveClass||
+     !archiveIntegrity.pseFooter||
+     archiveIntegrity.topbarColor!=='rgb(19, 76, 55)'||
+     archiveIntegrity.footerColor!=='rgb(16, 62, 48)'||
+     !archiveIntegrity.hasPseArchiveClass||
      archiveIntegrity.aiWidget||archiveIntegrity.stickySales||
      archiveIntegrity.fakeHanoiOrZalo||archiveIntegrity.inheritedGenericCta)
     throw Error('PSE private SSR archive still inherits non-PSE branding or incorrect contacts');
