@@ -113,6 +113,11 @@ jobs:
           github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): bind official PSE logo to WordPress header branding'
         run: node scripts/pse-homepage-brand-logo.mjs
 
+      - name: Author verified PSE news-search archive Page as private WordPress draft
+        if: >-
+          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): prepare verified news/search PostsPage as unpublished WordPress draft'
+        run: node scripts/pse-homepage-search-page-draft.mjs
+
   visual-qa:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
@@ -160,7 +165,3 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Author verified PSE news-search archive Page as private WordPress draft
-        if: >-
-          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): prepare verified news/search PostsPage as unpublished WordPress draft'
-        run: node scripts/pse-homepage-search-page-draft.mjs
