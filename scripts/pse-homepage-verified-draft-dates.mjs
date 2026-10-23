@@ -56,14 +56,34 @@ try{
    return {http:response.status,data:await response.json().catch(()=>({}))};
  },{path,method,data,nonce});
  const settings=await api('/wp-json/wp/v2/settings');
- if(settings.http!==200)throw Error('WordPress timezone metadata cannot be verified');
- const tz=String(settings.data.timezone||'').trim();
- const offset=Number(settings.data.gmt_offset);
- // The original PSE publisher explicitly used +0700; never mix date domains.
- if(!(tz==='Asia/Ho_Chi_Minh'||tz==='Asia/Saigon'||tz==='Etc/GMT-7'||
-    (tz===''&&offset===7)))
-   throw Error('PSE CMS timezone differs from source +07; no write. timezone='+tz+' offset='+offset);
- console.log('PSE_DRAFT_DATE_CMS_TIMEZONE=VERIFIED; timezone='+tz+'; gmt_offset='+offset);
+ if(settings.http!==200)throw Error('WordPress settings REST request could not be authenticated');
+ let tz=String(settings.data.timezone_string||settings.data.timezone||'').trim();
+ let offset=settings.data.gmt_offset===undefined?NaN:Number(settings.data.gmt_offset);
+ console.log('PSE_DRAFT_DATE_WP_REST_TIMEZONE_FIELDS='+JSON.stringify({
+   available:Object.keys(settings.data||{}).filter(k=>/time|zone|gmt|date/i.test(k)),
+   timezone:tz||null,
+   gmt_offset:Number.isFinite(offset)?offset:null
+ }));
+ // Some PSE WP installations omit the timezone options from the REST settings
+ // schema. Use the authenticated core WordPress Settings UI, never infer zone.
+ if(!tz&&!Number.isFinite(offset)){
+   const response=await admin.goto(origin+'/wp-admin/options-general.php',
+     {waitUntil:'domcontentloaded',timeout:50000});
+   if(response?.status()!==200||admin.url().includes('wp-login'))
+     throw Error('Cannot authenticate WordPress timezone settings UI');
+   const field=admin.locator('select#timezone_string,select[name="timezone_string"]').first();
+   if(!await field.count())throw Error('WordPress timezone setting absent; no date write');
+   tz=(await field.inputValue()).trim();
+   console.log('PSE_DRAFT_DATE_WP_ADMIN_TIMEZONE='+JSON.stringify({timezone:tz}));
+ }
+ // Source feed explicitly carries +0700; require an independently configured
+ // equivalent zone before assigning date/date_gmt in an unpublished post.
+ if(!['Asia/Ho_Chi_Minh','Asia/Saigon','Asia/Bangkok','Etc/GMT-7','UTC+7'].includes(tz)
+    && !(Number.isFinite(offset)&&offset===7))
+   throw Error('PSE CMS timezone cannot be verified as UTC+07; no write. zone='+tz+
+     '; offset='+(Number.isFinite(offset)?offset:'unknown'));
+ console.log('PSE_DRAFT_DATE_CMS_TIMEZONE=VERIFIED; timezone='+tz+
+   '; gmt_offset='+(Number.isFinite(offset)?offset:'unavailable'));
  // Preflight BOTH draft records before any write: fail closed on identity or status changes.
  const observed=[];
  for(const rec of records){
