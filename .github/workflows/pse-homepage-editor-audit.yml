@@ -96,9 +96,9 @@ jobs:
           github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): import three verified PSE featured articles as private drafts'
         run: node scripts/pse-homepage-featured-draft-import.mjs
 
-      - name: Set original PSE RSS dates only on two verified private post drafts
+      - name: Validate original PSE RSS dates on all three private post drafts
         if: >-
-          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): preserve original RSS dates on two private posts only'
+          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): preserve original RSS dates on three private posts'
         run: node scripts/pse-homepage-verified-draft-dates.mjs
 
       - name: Restore verified PSE corporate name contact and address to WordPress site information
