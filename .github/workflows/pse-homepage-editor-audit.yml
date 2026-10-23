@@ -15,6 +15,7 @@ on:
       - scripts/pse-legacy-2013-date-audit.mjs
       - scripts/pse-homepage-verified-draft-dates.mjs
       - scripts/pse-homepage-draft-assets-audit.mjs
+      - scripts/pse-homepage-draft-media-migrate.mjs
       - scripts/pse-homepage-featured-draft-import.mjs
       - scripts/pse-homepage-corporate-info.mjs
       - scripts/pse-homepage-media-source-audit.mjs
@@ -106,6 +107,11 @@ jobs:
         if: >-
           github.event_name == 'push' && github.event.head_commit.message == 'test(pse): audit draft article image and document links (READ ONLY)'
         run: node scripts/pse-homepage-draft-assets-audit.mjs
+
+      - name: Import audited external PSE images PDFs to WP and update only private draft links
+        if: >-
+          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): migrate verified private article images and PDFs into WordPress media'
+        run: node scripts/pse-homepage-draft-media-migrate.mjs
 
       - name: Restore verified PSE corporate name contact and address to WordPress site information
         if: >-
