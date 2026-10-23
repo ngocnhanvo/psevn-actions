@@ -1,3 +1,4 @@
-PSE development source regression request
-Astro github commit: 772dd2fd58591df7638267073a32a9bce289fbf7
-Check: PSE branded Footer conditionally hides empty policy column and retains contact info, other shared template pages unchanged; latest 330+ unit tests and Astro parser. NO ASTRO BUILD, NO FTP.
+PSE merged-development regression for production Rolldown resolver.
+Astro github commit: 3dd1bc3cacc0ddccbe500d25aaa12b4cb512f92b
+Required: src/lib/cartStorageKey.ts resolves ProductDetailsPage, CartPage, Header/Cart; shared neutral key; all Vitest and Astro parser; NO BUILD, NO FTP.
+Original WordPress-triggered build #39928764588 failed before FTP because this exact source module was missing; do not bypass PHP trigger on retry.
