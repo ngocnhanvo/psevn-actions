@@ -4,3 +4,5 @@ Required: src/lib/cartStorageKey.ts resolves ProductDetailsPage, CartPage, Heade
 Original WordPress-triggered build #39928764588 failed before FTP because this exact source module was missing; do not bypass PHP trigger on retry.
 
 2026-10-23 PSE hover-overlay desktop, carousel autoplay when CMS has 2+ real slides, sticky blur, dropdown flip at viewport edge; source github 8dcf2fe3192fc1253279f3ff284a04e3d29c90fa; run NO BUILD regression and Astro parse only.
+
+2026-10-23 PSE native ESC Table image HTML SEO alt object conversion test in psevn-astro/github ca7b985a5f8383c55c2ddbe7fdafbda24f3bc798; run all Vitest + Astro parser NO BUILD after 11 CMS Insert Image cells saved PASS #39952955952.
