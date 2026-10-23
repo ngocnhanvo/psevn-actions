@@ -1,10 +1,11 @@
-name: PSE homepage WordPress editor audit (READ ONLY)
+name: PSE homepage WordPress CMS authoring checks
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/pse-homepage-editor-audit.yml
       - scripts/pse-homepage-editor-audit.mjs
+      - scripts/pse-homepage-news-table-setup.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,3 +29,6 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Inspect PSE WordPress homepage and company editor without saving data
         run: node scripts/pse-homepage-editor-audit.mjs
+      - name: Create one verified PSE news ESC Table (idempotent, no publication)
+        if: github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): author one verified news ESC Table'
+        run: node scripts/pse-homepage-news-table-setup.mjs
