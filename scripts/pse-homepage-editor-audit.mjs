@@ -156,6 +156,29 @@ try{
     };
   });
   console.log('PSE_BUILDER_AUTHORING_CONTROLS='+JSON.stringify(builderControls));
+
+  // Verify the normalized REST payload that Astro actually consumes.
+  // This is strictly GET and never logs user credentials or private draft bodies.
+  const runtimeShape=await page.evaluate(async ()=>{
+    const res=await fetch('/wp-json/tablepress/v1/tables/prefix/all?per_page=100&page=1',
+      {credentials:'same-origin',headers:{Accept:'application/json'}});
+    if(!res.ok)return {http:res.status,tableFound:false};
+    const data=await res.json();
+    const rows=Array.isArray(data)?data:[];
+    const table=rows.find(x=>String(x?.id).toLowerCase()==='pse_01_vi');
+    return {
+      http:res.status,
+      tableFound:!!table,
+      normalizedKeys:table?Object.keys(table).sort().slice(0,25):[],
+      hasItems:Array.isArray(table?.items),
+      itemCount:Array.isArray(table?.items)?table.items.length:null,
+      itemFieldNames:Array.isArray(table?.items)?Array.from(new Set(table.items.flatMap(x=>Object.keys(x||{})))).slice(0,24):[],
+      hasMeta:!!table?.meta,
+      totalVisible:rows.length
+    };
+  });
+  console.log('PSE_NEWS_TABLE_ASTRO_REST_SHAPE='+JSON.stringify(runtimeShape));
+
   console.log('PSE_CMS_AUTHORING_PREFLIGHT=PASS read_only=true no_content_saved=true');
 
   console.log('PSE_EDITOR_AUDIT=PASS read_only=true no_content_saved=true');
