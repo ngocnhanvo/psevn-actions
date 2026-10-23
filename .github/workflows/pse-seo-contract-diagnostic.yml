@@ -47,6 +47,8 @@ jobs:
                   print('SEO_'+label+'_mode='+str(x.get('mode','none')))
                   print('SEO_'+label+'_revision_valid='+str(x.get('revision')=='legacy' or (isinstance(x.get('revision'),str) and len(x['revision'])==36)))
                   print('SEO_'+label+'_arrays_ok='+str(isinstance(x.get('extra'),list) and isinstance(x.get('exclude'),list)))
+                  print('SEO_'+label+'_extra_count='+str(len(x.get('extra',[]))))
+                  print('SEO_'+label+'_exclude_count='+str(len(x.get('exclude',[]))))
                   print('SEO_'+label+'_xml_empty='+str(x.get('xml')==''))
                   print('SEO_'+label+'_robots_user_agent='+str('User-agent:' in robots))
                   print('SEO_'+label+'_llms_has_frontend_home='+str((']('+client.scheme+'://'+client.hostname+'/') in llms))
