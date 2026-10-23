@@ -1,0 +1,25 @@
+name: PSE WordPress build routing audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-wordpress-build-route-audit.yml
+      - scripts/pse-wordpress-build-route-audit.py
+permissions:
+  contents: read
+jobs:
+  config-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check only effective PSE wp-config and runtime plugin routing flags
+        run: python3 scripts/pse-wordpress-build-route-audit.py
