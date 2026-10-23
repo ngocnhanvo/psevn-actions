@@ -36,3 +36,18 @@ Thư mục FTP được suy ra tự động từ `WC_URL_CLIENT` dưới dạng 
 **Bảo toàn tối ưu nguồn:** pnpm store + `.cache`, `build-git`, sitemap XML chỉ truyền khi có lượt Lưu mới. Preflight vẫn từ chối source khác, token không đúng, path không khớp và ZIP không có metadata/SSR.
 
 **Giới hạn:** Những thay đổi trong GitHub không đồng nghĩa đã triển khai WordPress hosting. Chưa chạy build/deploy production trong lần điều chỉnh này.
+
+
+## Checkpoint triển khai PSE — 23/10/2026 (sau WordPress SEO Save)
+
+Đây là kết quả mới nhất, thay thế phần "Bước còn cần thực hiện" mang tính lịch sử phía trên; **không chạy lại các job đã PASS**.
+
+- **WordPress sitemap:** [#39934880780](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39934880780) PASS. Lưu qua form admin có nonce, giữ sitemap public hiện có (1 URL homepage), chuyển manual, tăng Save revision và REST read-after-write PASS. Không kích hoạt build tại bước Save.
+- **Nguyên nhân lỗi PHP preflight:** các lượt yêu cầu build #39935116201 và #39935286196 trả HTTP 403 `PSE site identity failed`, trước khi Astro build; không phải lỗi FTP/công cụ sitemap. Sửa đúng nguồn `ngocnhanvo/psevn-php/master` commit `372f58dc414644b5cc75f686df7206a86930fe34`: bỏ điều kiện gán cứng DB/repo, yêu cầu danh tính owner/repo/database cấu hình hợp lệ trong WordPress, giữ HMAC + domain/target/rollback checks. CI kiến trúc [#39935787081](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39935787081) PASS.
+- **PHP FTPS:** [#39935861920](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39935861920) PASS, `pse-unzip.php` mới checksum PASS, 5 file còn lại unchanged, không build Astro.
+- **wp-config build destination:** [#39935929040](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39935929040) PASS: FTP checksum/readback, token và DB không đổi; `SIGNED_UNZIP_PREFLIGHT_OK` và PSE identity PASS.
+- **Kích hoạt build đúng cửa ngõ:** [#39936052168](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39936052168) PASS: WordPress/PHP Build Website qua authenticated session; không gọi trực tiếp workflow Astro/force.
+- **Astro production:** [#39936199056](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39936199056) **SUCCESS** lấy `ngocnhanvo/psevn-astro/master` SHA `86ab8a5feb9e10baed81374f02ac881866830471`: pnpm/Astro build PASS, Save revision mới được nhận và sitemap XML được đóng gói, FTPS upload PASS, ký/giải nén kích hoạt PASS, HTTP GET homepage/API user SSR/robots PASS.
+- **Playwright trên website public sau deploy:** [#39936557554](https://github.com/ngocnhanvo/psevn-actions/actions/runs/39936557554) PASS (`DESKTOP_SMOKE=PASS`, `MOBILE_SMOKE=PASS`) bằng `knowledge-actions`.
+- **Phân loại:** `ASTRO_BUILD=PASS`, `SIGNED_FTPS_DEPLOY=PASS`, `LIVE_SSR_SMOKE=PASS`, `CHROMIUM_SMOKE=PASS`, `SITEMAP_SAVE_AND_PACKAGE=PASS`. **Chưa xác nhận:** trực tiếp GET và parse sitemap XML sau deploy bằng test độc lập; tỷ lệ khớp thiết kế/screenshot chi tiết; parity toàn bộ legacy news/PDF, bởi browser smoke không xác nhận nội dung. Tránh phát biểu homepage đã đạt nghiệm thu thiết kế chỉ từ các test khói.
+- **Tiếp theo:** chỉ triển khai tiếp các vấn đề giao diện/nội dung thật còn chưa đạt khi có bằng chứng; không chạy lại deployment thành công nếu không có thay đổi mới. Với sitemap, nếu cần thêm bảo đảm có thể kiểm tra GET `/sitemap.xml` read-only và so với revision Save, không sửa lại nội dung/force build.
