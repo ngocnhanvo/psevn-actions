@@ -149,6 +149,15 @@ try{
      const root=document.querySelector('[itemprop="articleBody"]');
      if(!root)throw Error("Verified Joomla articleBody missing");
      const copy=root.cloneNode(true);
+     // Remove the Joomla related-articles tail before collecting text or linked media.
+     const related=[...copy.querySelectorAll("h1,h2,h3,h4,h5,p")].find(el=>
+       String(el.textContent||"").replace(/[\u00a0\s]+/g," ").trim().toLocaleLowerCase("vi")==="các bài viết khác");
+     if(related){
+       const cut=document.createRange();
+       cut.setStartBefore(related);
+       cut.setEnd(copy,copy.childNodes.length);
+       cut.deleteContents();
+     }
      copy.querySelectorAll("script,style,iframe,form,button,nav,svg,video,audio,input").forEach(el=>el.remove());
      const allowed=new Set(["P","DIV","SPAN","BR","B","STRONG","I","EM","UL","OL","LI","H2","H3","H4","TABLE","THEAD","TBODY","TR","TD","TH","A","IMG","BLOCKQUOTE","HR"]);
      for(const el of [...copy.querySelectorAll("*")].reverse()){
@@ -174,7 +183,7 @@ try{
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
-     return {title,html:copy.innerHTML.trim(),chars:rawText.length,dates:rawDates,assets};
+     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:rawDates,assets};
     });
    }finally{await original.close()}
    if(!article.title||article.chars<100||article.chars>150000||article.html.length>550000)
@@ -247,15 +256,25 @@ try{
    const footer='<p class="pse-legacy-attribution">Nguồn: <a href="'+canonical+'">PSE.VN</a></p>';
    // Always stage as a draft first: public publication happens only after
    // WordPress REST readback verifies links, title, category and original date.
-   const data={title:article.title,slug,categories:[cat],content:html+"\n"+footer,status:"draft"};
+   const normalized=String(article.bodyText||"").replace(/\s+/g," ").trim();
+   const units=Array.from(normalized);
+   const candidate=units.slice(0,158).join("");
+   const space=candidate.lastIndexOf(" ");
+   const seoDescription=(units.length>158 && space>115?candidate.slice(0,space):candidate).trim();
+   if(seoDescription.length<65||seoDescription.length>200)
+     throw Error("Cannot derive a grounded SEO description from original article body");
+   const data={title:article.title,slug,categories:[cat],content:html+"\n"+footer,
+     excerpt:seoDescription,pse_seo_description:seoDescription,status:"draft"};
    if(originalDate)data.date=originalDate;
    const created=await api("/wp-json/wp/v2/posts","POST",data);
    if(created.status!==201||!Number.isSafeInteger(created.data?.id))throw Error("WordPress draft create HTTP "+created.status);
    const postId=created.data.id;
    item.status="draft_verify";item.wp_id=postId;
    await persist();
-   const check=await api("/wp-json/wp/v2/posts/"+postId+"?context=edit&_fields=id,slug,status,categories,content,date,title");
+   const check=await api("/wp-json/wp/v2/posts/"+postId+"?context=edit&_fields=id,slug,status,categories,content,date,title,excerpt,pse_seo_description");
    const raw=String(check.data?.content?.raw||"");
+   if(check.data?.pse_seo_description!==seoDescription||String(check.data?.excerpt?.raw||"").trim()!==seoDescription)
+     throw Error("WordPress Yoast SEO description/excerpt readback did not match");
    if(check.status!==200||check.data.slug!==slug||!check.data.categories?.includes(cat)||
       check.data.status!=="draft"||!raw.includes("PSE.VN")||
       !String(check.data.title?.raw||"").trim() ||
@@ -271,6 +290,7 @@ try{
      finalStatus="publish";
    }
    item.status=originalDate?"imported":"draft_needs_date";
+   item.seo_cleaned=true;
    item.verified_date=originalDate||null;
    if(!originalDate)item.reason="Original source lacks independently verifiable publish timestamp";
    imported++;
