@@ -135,8 +135,18 @@ try{
       console.log('PSE_DRAFT_MAIN_EDITOR_MISSING='+JSON.stringify(evidence));
       throw err;
     }
-    const initial=await page.evaluate(id=>window.tinymce.get(id).getContent({format:'raw'}),editorId);
-    if(initial.trim())throw Error('New draft editor unexpectedly prepopulated; no overwrite');
+    const initial=await page.evaluate(id=>{
+      const ed=window.tinymce.get(id);
+      const html=String(ed.getContent({format:'raw'})||'');
+      const text=String(ed.getBody()?.textContent||'').replace(/[\\s\\u00a0\\u200b]/g,'').trim();
+      const media=/<(?:img|iframe|video|audio|table|script)\\b/i.test(html);
+      const shortcode=/\\[table\\s+id=/i.test(html);
+      return {htmlLength:html.length,hasText:!!text,hasMedia:media,hasShortcode:shortcode};
+    },editorId);
+    console.log('PSE_HOME_DRAFT_INITIAL_MAIN_EDITOR='+JSON.stringify(initial));
+    // TinyMCE serializes an empty paragraph as markup; that is not user data.
+    if(initial.hasText||initial.hasMedia||initial.hasShortcode)
+      throw Error('PSE draft main editor has real content; no overwrite');
 
     for(const id of ids){
       await page.evaluate(id=>{
