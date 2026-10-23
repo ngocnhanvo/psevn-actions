@@ -99,10 +99,10 @@ try{
   if(verified.status!==200||verified.data?.media_details?.file?.split("/").at(-1)!==filename)throw Error("WP media readback mismatch "+filename);
   let target="";
   for(const candidate of [verified.data.source_url,verified.data.guid?.rendered].filter(Boolean)){
-   const candidateUrl=new URL(candidate);
+   const candidateUrl=new URL(candidate,origin);
    if(candidateUrl.origin!==origin||!candidateUrl.pathname.includes("/wp-content/uploads/")||!candidateUrl.pathname.endsWith("/"+filename))continue;
-   const head=await context.request.head(candidate,{timeout:45000});
-   if(head.ok()&&(head.headers()["content-type"]||"").startsWith("image/webp")){target=candidate;break}
+   const head=await context.request.head(candidateUrl.href,{timeout:45000});
+   if(head.ok()&&(head.headers()["content-type"]||"").startsWith("image/webp")){target=candidateUrl.href;break}
   }
   if(!target)throw Error("Uploaded PSE media URL unverifiable "+filename);
   urls.push(target);
