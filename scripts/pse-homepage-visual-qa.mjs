@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { mkdir,writeFile,readFile,rm } from 'node:fs/promises';
 import path from 'node:path';
 const ids=['pse_00_vi','pse_01_vi','pse_02_vi','pse_03_vi'];
-console.log('PSE_QA_IMAGE_WAIT_VERSION=bounded-12s');
+console.log('PSE_QA_IMAGE_WAIT_VERSION=bounded-polling-global-watchdog-v3');
 const origin=(()=>{
   const values=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith('WC_URL='));
   if(values.length!==1)throw Error('Missing or ambiguous CMS origin');
