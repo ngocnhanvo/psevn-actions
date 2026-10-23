@@ -56,6 +56,13 @@ try {
      },...(data?{body:JSON.stringify(data)}:{})});
    return {status:r.status,data:await r.json().catch(()=>null)};
  },{path,method,data,nonce});
+ const table=await api("/wp-json/tablepress/v1/table/pse_01_vi");
+ const groups=["company","agriculture-market","shareholder"];
+ if(table.status!==200||table.data?.items?.length!==groups.length)
+   throw Error("Verified PSE taxonomy table unavailable for content repair");
+ const categoryIds=Object.fromEntries(groups.map((group,i)=>[group,Number(table.data.items[i].categoryId)]));
+ if(Object.values(categoryIds).some(id=>!Number.isSafeInteger(id)||id<=0))
+   throw Error("Invalid PSE taxonomy mapping");
  for(const [sourceId,row] of jobs){
   try{
    const id=row.wp_id;
@@ -71,7 +78,8 @@ try {
      throw Error("Post has no exact migration provenance marker");
    const expectedSlug=source.pathname.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
    if(!expectedSlug||post.slug!==expectedSlug)throw Error("Post slug differs from original migration");
-   if(!Array.isArray(post.categories)||post.categories.length===0)throw Error("No verified taxonomy");
+   if(!Array.isArray(post.categories)||!post.categories.includes(categoryIds[row.group_hint]))
+     throw Error("Post is not in the mapped original category");
    const transformed=await page.evaluate(html=>{
      const doc=new DOMParser().parseFromString(html,"text/html");
      const root=doc.body;
