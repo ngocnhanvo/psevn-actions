@@ -176,7 +176,7 @@ try{
      const download=await context.request.get(assetUrl,{timeout:45000});
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
-     if(buf.length<80||buf.length>12_000_000)throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
+     if(buf.length<80||buf.length>24_000_000)throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      const types={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",
        gif:"image/gif",pdf:"application/pdf",doc:"application/msword",
