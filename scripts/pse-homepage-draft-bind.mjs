@@ -70,7 +70,7 @@ try{
     if(candidate.id===248||candidate.status!=='draft'||candidate.title?.raw!==draftTitle)
       throw Error('Existing draft is not the owned PSE draft target');
     const content=String(candidate.acf?.content||'');
-    const actual=[...content.matchAll(/\\[table\\s+id=([A-Za-z0-9_-]+)\\s*\\/\\]/g)].map(x=>x[1]);
+    const actual=[...content.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(x=>x[1]);
     if(candidate.acf?.action==='HomePage'&&candidate.acf?.key===draftKey&&
        JSON.stringify(actual)===JSON.stringify(ids)){
       console.log('PSE_HOME_DRAFT_BINDING=ALREADY_CORRECT; draft_id='+candidate.id+
