@@ -3,7 +3,7 @@
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdir,writeFile,rm } from 'node:fs/promises';
+import { mkdir,writeFile,readFile,rm } from 'node:fs/promises';
 import path from 'node:path';
 const ids=['pse_00_vi','pse_01_vi','pse_02_vi','pse_03_vi'];
 const origin=(()=>{
@@ -15,6 +15,8 @@ const origin=(()=>{
 })();
 const sourceRoot=path.resolve('source');
 const routePath=path.join(sourceRoot,'src/pages/__pse_qa.astro');
+const astroConfigPath=path.join(sourceRoot,'astro.config.mjs');
+let originalConfig;
 const shots=path.resolve('artifacts/pse-homepage-visual-qa');
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:900}});
@@ -132,6 +134,14 @@ try{
     '</Layout>'
   ].join('\n');
   await writeFile(routePath,route);
+  // Vite 8 dev SSR cannot evaluate some CommonJS dependencies when the
+  // inherited production noExternal=[/.*/] rule is applied unchanged.
+  // This override lives only in the disposable CI checkout; production source
+  // and the PHP-controlled build policy are never modified.
+  originalConfig=await readFile(astroConfigPath,'utf8');
+  if(!originalConfig.includes('noExternal: [/.*/]'))throw Error('Expected inherited Astro SSR config not found');
+  await writeFile(astroConfigPath,originalConfig.replace('noExternal: [/.*/]','noExternal: []'));
+  console.log('PSE_QA_DEV_ONLY_COMMONJS_EXTERNALIZATION=ON; production_source_unmodified=true');
   server=spawn('pnpm',['dev','--host','127.0.0.1','--port','4321'],{
     cwd:sourceRoot,env:{...process.env,WC_URL:origin,WC_URL_CLIENT:'http://127.0.0.1:4321',PUBLIC_ENABLE_MARKETING:'false'},
     stdio:['ignore','pipe','pipe']
@@ -189,5 +199,6 @@ try{
 }finally{
   if(server&&!server.killed){server.kill('SIGTERM')}
   await rm(routePath,{force:true}).catch(()=>{});
+  if(originalConfig!==undefined)await writeFile(astroConfigPath,originalConfig).catch(()=>{});
   await browser.close();
 }
