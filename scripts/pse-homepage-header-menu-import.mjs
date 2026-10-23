@@ -73,7 +73,9 @@ try {
   const oldClean=current.length===5 && current.every((x,i)=>
     x.label===oldLabels[i] && x.slug===oldSlugs[i] && (!x.children||x.children.length===0));
   const expectedRoots=['TRANG CHỦ','PVFCCo-PSE','TIN TỨC - SỰ KIỆN','HOẠT ĐỘNG KINH DOANH','QUAN HỆ NHÀ ĐẦU TƯ','LIÊN HỆ'];
-  if(current.length===6&&current.map(x=>x.label).every((x,i)=>x===expectedRoots[i])){
+  const flattenExisting=items=>items.flatMap(item=>[item,...flattenExisting(Array.isArray(item.children)?item.children:[])]);
+  if(current.length===6&&flattenExisting(current).length===47&&
+     current.map(x=>x.label).every((x,i)=>x===expectedRoots[i])){
     console.log('PSE_HEADER_MENU=ALREADY_REPLACED; original_legacy_parity=true; no CMS mutation');
     console.log('PSE_HEADER_MENU_IMPORT=PASS');
   }else{
@@ -148,7 +150,8 @@ try {
       '; pageMatches='+stats.pageMatches+'; customLinks='+stats.customLinks+
       '; linkless='+stats.linkless+'; unmatchedInternal='+stats.unmatchedInternal);
     if(await replace.isHidden())throw Error('WordPress native Replace control not unlocked by Preview');
-    page.on('dialog',dialog=>{if(dialog.type()==='confirm')dialog.accept();else dialog.dismiss()});
+    // Original shared WordPress Admin handler already accepts confirmations.
+    // Registering another listener double-handles Playwright dialogs.
     const replaceResponse=page.waitForResponse(r=>
       r.url().includes('admin-ajax.php')&&
       (r.request().postData()||'').includes('esc_pse_menu_json_replace'),{timeout:120000});
