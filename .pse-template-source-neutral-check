@@ -1,3 +1,3 @@
-PSE development source regression request
-Astro github commit: 36f7f66617ee2fdbbd7272b34b503f0c2b53104c
-Check: footer no fabricated Hanoi/Zalo contacts for PSE homepage; PSE layout and category tests, Astro compiler parse (NO BUILD)
+PSE UI source-only regression
+Astro github commit: 647cd88850fba3c525f190eda8314079ac980a0a
+Check: updated PSE hero legibility, CMS-rendered sections, preserve unrelated page widgets; Astro parser and Vitest, NO BUILD / NO FTP
