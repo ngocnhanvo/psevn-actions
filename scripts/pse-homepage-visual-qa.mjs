@@ -97,6 +97,13 @@ try{
     }));
     throw Error('PSE official logo URL invalid');
   }
+  const headerMenuResponse=await read('/wp-json/esc-api/v1/menus');
+  const headerMenu=headerMenuResponse?.menus?.Header?.vi;
+  const menuItems=headerMenu?.items||[];
+  if(!headerMenuResponse?.success||menuItems.length!==6||
+     menuItems.map(x=>x.label).join('|')!=='TRANG CHỦ|PVFCCo-PSE|TIN TỨC - SỰ KIỆN|HOẠT ĐỘNG KINH DOANH|QUAN HỆ NHÀ ĐẦU TƯ|LIÊN HỆ')
+    throw Error('PSE actual WordPress Header menu is not the verified legacy tree');
+  console.log('PSE_QA_WORDPRESS_MENU=PASS; roots=6; no_EduResearch_menu=true');
   const pagesRaw=await read('/wp-json/wp/v2/pages?status=publish&per_page=100&_fields=id,slug,acf,title');
   const pages=pagesRaw.map(p=>({
     id:String(p.id),key:String(p.acf?.key||''),action:String(p.acf?.action||''),
@@ -109,7 +116,7 @@ try{
   const company=String(a.tencongty||'');
   const payload={
     currentPage:{...home,content,contents:ids.map((id,i)=>({type:'shortcode',shortcode:id,data:tables[i]}))},
-    tables,pages,
+    tables,pages,menuItems,
     companyInfo:{
       id:62,tencongty:{vi:company},hotline:{vi:String(a.hotline||'')},
       sodienthoaiHCM:{vi:String(a.sodienthoaihcm||'')},
@@ -139,7 +146,7 @@ try{
     'const headProps={title:page.title,description:"PSE internal design QA",lang:"vi",href:Astro.url.href,currentPage:page,data_info,WC_URL:process.env.WC_URL,WC_URL_CLIENT:Astro.url.origin,basename:"/"};',
     'if (!headProps.href || !headProps.currentPage) throw new Error("Missing required headProps in QA fixture");',
     '---',
-    '<Layout data_info={data_info} pages={pages} menus={[]} currentPage={page} headProps={headProps}>',
+    '<Layout data_info={data_info} pages={pages} menus={payload.menuItems} currentPage={page} headProps={headProps}>',
     '  <main id="main-content">',
     '    <Hero data={payload.tables[0]} page={page} />',
     '    <News data={payload.tables[1]} page={page} props={{data_info,basename:"/"}} />',
@@ -269,13 +276,35 @@ try{
         scroll:document.documentElement.scrollWidth,
         newsEmpty:document.querySelectorAll('.pse-news__empty').length,
         h1:document.querySelectorAll('h1').length,
-        headerLogo:!!document.querySelector('#header-brandbar img')
+        headerLogo:!!document.querySelector('#header-brandbar img'),
+        headerMenuRoots:document.querySelectorAll('#desktop-menu > ul > li').length
       };
     });
     if(JSON.stringify(observed.sections)!==JSON.stringify(['hero','news','promise','utilities']))
       throw Error('Real PSE section layout missing viewport '+width+': '+JSON.stringify(observed.sections));
     if(observed.images.length!==2||observed.images.some(i=>!i.loaded)||observed.scroll>observed.viewport+3)
       throw Error('Visual layout media/overflow failure width '+width+': '+JSON.stringify(observed));
+    if(observed.headerMenuRoots!==6)
+      throw Error('WordPress Header menu not rendered on PSE homepage, viewport '+width);
+    if(width>=900){
+      const trigger=view.locator('#desktop-menu button[data-menu-trigger]').first();
+      await trigger.click({timeout:5000});
+      if(await trigger.getAttribute('aria-expanded')!=='true')
+        throw Error('PSE desktop dropdown click did not open');
+      await view.keyboard.press('Escape');
+      if(await trigger.getAttribute('aria-expanded')!=='false')
+        throw Error('PSE desktop dropdown Escape did not close');
+      console.log('PSE_HEADER_DESKTOP_CLICK_ESCAPE=PASS; viewport='+width);
+    }else if(width<=390){
+      const mobileToggle=view.locator('#hamburger-btn');
+      await mobileToggle.click({timeout:5000});
+      if(await mobileToggle.getAttribute('aria-expanded')!=='true')
+        throw Error('PSE mobile menu did not open');
+      await mobileToggle.click({timeout:5000});
+      if(await mobileToggle.getAttribute('aria-expanded')!=='false')
+        throw Error('PSE mobile menu did not close');
+      console.log('PSE_HEADER_MOBILE_CLICK_TOGGLE=PASS; viewport='+width);
+    }
     if(browserErrors.length)throw Error('Browser script failure width '+width+': '+browserErrors.join(';'));
     const screenshot=path.join(shots,'pse-home-'+width+'.png');
     qaPhase='viewport_'+width+'_screenshot';
