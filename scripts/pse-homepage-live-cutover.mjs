@@ -74,8 +74,17 @@ try{
   console.log('PSE_PUBLIC_HOME_CUTOVER=PASS; existing_public_home=true; no_Astro_build=true');
   process.exit(0);
  }
- if(codes.length<4||codes.length>12||codes.some(id=>!/^home_[0-9]{2}$/i.test(id)))
-  throw Error('Existing public homepage contains unexpected nonlegacy blocks; safe cutover refused: '+JSON.stringify(codes));
+ // The original canonical PSE Page 248 was authored as legacy HTML,
+ // not necessarily as home_XX ESC tables. Preserve that content in the
+ // revision+artifact before its intentional redesign. Only an incomplete
+ // prior PSE migration is unsafe to overwrite automatically.
+ if(codes.some(id=>/^pse_0[0-3]_vi$/i.test(id))||
+    codes.length>30||old.length>800000)
+  throw Error('Canonical PSE homepage has partial migration or oversized content; inspect before cutover');
+ console.log('PSE_PUBLIC_HOME_OLD_CONTENT_PREFLIGHT='+JSON.stringify({
+   previousHtmlBytes:old.length,previousTableShortcodes:codes.length,
+   migrationTarget:'published_page_248',canonicalHomeVerified:true
+ }));
  const revisions=await get('/wp-json/wp/v2/pages/248/revisions?per_page=1&context=edit&_fields=id,date');
  if(!Array.isArray(revisions.data)||revisions.data.length<1||!Number.isSafeInteger(revisions.data[0].id))
   throw Error('WordPress homepage revisions unavailable; refuse irreversible edit');
