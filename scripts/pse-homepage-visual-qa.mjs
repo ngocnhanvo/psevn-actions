@@ -293,6 +293,35 @@ try{
         legacyStickySales:!!document.querySelector('#bottom-contact-bar')
       };
     });
+    // Explicit pixel/visibility diagnostics: a DOM PASS must never conceal
+    // empty scroll-reveal regions or TinyMCE ESC Table preview placeholders.
+    const visualDiag=await view.evaluate(()=>{
+      const sections=[...document.querySelectorAll('[data-pse-section]')].map(el=>{
+        const rect=el.getBoundingClientRect(), css=getComputedStyle(el);
+        return {section:el.getAttribute('data-pse-section'),y:Math.round(rect.top+scrollY),
+          h:Math.round(rect.height),opacity:css.opacity,visibility:css.visibility,
+          display:css.display,contentVisibility:css.contentVisibility,offsetText:(el.innerText||'').trim().slice(0,90)};
+      });
+      const previewImages=[...document.querySelectorAll('img')].filter(img=>
+        /Hình ảnh cho table|Image for table|pse_0[0-3]_vi/i.test(img.alt||'')).map(img=>{
+        const r=img.getBoundingClientRect();
+        return {alt:img.alt.slice(0,90),srcPresent:!!img.getAttribute('src'),
+          y:Math.round(r.top+scrollY),height:Math.round(r.height),
+          parentTag:img.parentElement?.tagName||'',parentHtml:img.parentElement?.outerHTML.slice(0,250)||''};
+      });
+      const htmlGaps=[...document.querySelectorAll('main#main-content > span,main#main-content > div')]
+        .filter(el=>!el.hasAttribute('data-tablepress-preview')).slice(0,12).map(el=>({
+          tag:el.tagName,text:(el.innerText||'').trim().slice(0,50),
+          html:el.outerHTML.slice(0,220),
+          height:Math.round(el.getBoundingClientRect().height)
+        }));
+      return {sections,previewImages,htmlGaps,pageHeight:document.documentElement.scrollHeight};
+    });
+    console.log('PSE_REAL_CMS_VISUAL_LAYOUT_DIAGNOSTIC='+JSON.stringify({width,...visualDiag}));
+    if(visualDiag.previewImages.length)
+      throw Error('Native WP ESC Table editor preview images leaked into public render: '+JSON.stringify(visualDiag.previewImages));
+    if(visualDiag.sections.some(x=>x.h<48||x.visibility!=='visible'||x.opacity==='0'))
+      throw Error('PSE section exists in DOM but not visually rendered: '+JSON.stringify(visualDiag.sections));
     if(JSON.stringify(observed.sections)!==JSON.stringify(['hero','news','promise','utilities']))
       throw Error('Real PSE section layout missing viewport '+width+': '+JSON.stringify(observed.sections));
     if(observed.shortcodeWrappers!==4)
