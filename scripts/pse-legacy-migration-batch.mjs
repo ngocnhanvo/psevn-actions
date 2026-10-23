@@ -19,12 +19,17 @@ function origin(name){
 }
 const wp=origin("WC_URL"),source=new URL(state.source);
 const CATEGORY={"company":1742,"agriculture-market":1743,"shareholder":1744};
-const ids=Object.keys(state.articles).filter(id=>
+const candidates=Object.keys(state.articles).filter(id=>
  (["pending","media"].includes(state.articles[id].status) ||
    (state.articles[id].status==="quarantined" &&
     state.articles[id].reason==="WP slug occupied by unrelated content")) &&
    (state.articles[id].attempts||0)<3
-).sort((a,b)=>Number(b)-Number(a)).slice(0,2);
+).sort((a,b)=>Number(b)-Number(a));
+const continuing=candidates.filter(id=>state.articles[id].status==="media");
+const fresh=candidates.filter(id=>state.articles[id].status!=="media");
+const ids=continuing.length?
+ [continuing[0], fresh[0]||continuing[1]].filter(Boolean) :
+ [fresh[0],fresh.at(-1)].filter((id,index,list)=>id&&list.indexOf(id)===index);
 if(!ids.length){
  console.log("PSE_MIGRATION_BATCH=NO_PENDING; discovered="+Object.keys(state.articles).length);
  process.exit(0);
@@ -134,7 +139,7 @@ try{
      }
      const title=(document.title||"").replace(/\s+-\s+PSE\.VN\s*$/i,"").trim();
      const rawDates=[
-       ...document.querySelectorAll('meta[property="article:published_time"],meta[itemprop="datePublished"],meta[name="date"],time[datetime],[itemprop="datePublished"]')
+       ...document.querySelectorAll('meta[property="article:published_time"],meta[itemprop="datePublished"],meta[name="date"],meta[name="DC.date.issued"],time[datetime],[itemprop="datePublished"],.article-info dd.published,.article-info dd.created')
      ].map(e=>e.getAttribute("content")||e.getAttribute("datetime")||e.textContent||"");
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
@@ -161,7 +166,7 @@ try{
      const download=await context.request.get(assetUrl,{timeout:45000});
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
-     if(buf.length<80||buf.length>12_000_000)throw Error("Original media size unsafe");
+     if(buf.length<80||buf.length>12_000_000)throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      const types={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",
        gif:"image/gif",pdf:"application/pdf",doc:"application/msword",
