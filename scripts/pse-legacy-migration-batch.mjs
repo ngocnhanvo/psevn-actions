@@ -206,19 +206,36 @@ try{
    if(article.assets.some(x=>html.includes(x)))throw Error("Mandatory media still linked to source");
    const canonical=item.source_url;
    const footer='<p class="pse-legacy-attribution">Nguồn: <a href="'+canonical+'">PSE.VN</a></p>';
-   const data={title:article.title,slug,categories:[cat],content:html+"\n"+footer,status:originalDate?"publish":"draft"};
+   // Always stage as a draft first: public publication happens only after
+   // WordPress REST readback verifies links, title, category and original date.
+   const data={title:article.title,slug,categories:[cat],content:html+"\n"+footer,status:"draft"};
    if(originalDate)data.date=originalDate;
    const created=await api("/wp-json/wp/v2/posts","POST",data);
-   if(created.status!==201||!Number.isSafeInteger(created.data?.id))throw Error("WordPress post create HTTP "+created.status);
-   const check=await api("/wp-json/wp/v2/posts/"+created.data.id+"?context=edit&_fields=id,slug,status,categories,content,date");
+   if(created.status!==201||!Number.isSafeInteger(created.data?.id))throw Error("WordPress draft create HTTP "+created.status);
+   const postId=created.data.id;
+   item.status="draft_verify";item.wp_id=postId;
+   await persist();
+   const check=await api("/wp-json/wp/v2/posts/"+postId+"?context=edit&_fields=id,slug,status,categories,content,date,title");
+   const raw=String(check.data?.content?.raw||"");
    if(check.status!==200||check.data.slug!==slug||!check.data.categories?.includes(cat)||
-      check.data.status!==data.status||!String(check.data.content?.raw||"").includes("PSE.VN"))
-    throw Error("Created post REST read-after-write failed");
+      check.data.status!=="draft"||!raw.includes("PSE.VN")||
+      !String(check.data.title?.raw||"").trim() ||
+      article.assets.some(x=>!raw.includes(state.media[x].url)))
+    throw Error("WordPress staged draft did not preserve all source/media links");
+   let finalStatus="draft";
+   if(originalDate){
+     const published=await api("/wp-json/wp/v2/posts/"+postId,"POST",{status:"publish",date:originalDate});
+     if(published.status!==200||published.data?.status!=="publish")throw Error("WordPress publication rejected");
+     const verify=await api("/wp-json/wp/v2/posts/"+postId+"?context=edit&_fields=id,status,date");
+     if(verify.status!==200||verify.data.status!=="publish"||verify.data.date!==originalDate)
+       throw Error("Published post REST verification failed");
+     finalStatus="publish";
+   }
    item.status=originalDate?"imported":"draft_needs_date";
-   item.wp_id=created.data.id;item.verified_date=originalDate||null;
+   item.verified_date=originalDate||null;
    if(!originalDate)item.reason="Original source lacks independently verifiable publish timestamp";
    imported++;
-   console.log("PSE_LEGACY_POST=PASS; source_id="+id+"; wp_id="+created.data.id+"; status="+data.status+"; media="+article.assets.length);
+   console.log("PSE_LEGACY_POST=PASS; source_id="+id+"; wp_id="+postId+"; status="+finalStatus+"; media="+article.assets.length);
    await persist();
   }catch(e){
    const reason=e instanceof Error?e.message:String(e);
