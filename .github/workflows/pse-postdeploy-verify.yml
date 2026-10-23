@@ -21,6 +21,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json,os,time,urllib.request,urllib.error
+          import xml.etree.ElementTree as ET
           from urllib.parse import urlsplit
           values={}
           for line in os.environ.get('ENV_FILE','').splitlines():
@@ -43,15 +44,16 @@ jobs:
                            'Cache-Control':'no-cache','User-Agent':'PSE-Live-PostDeploy/1.0'})
               try:
                   with urllib.request.urlopen(req,timeout=16) as r:
-                      return r.status,r.headers.get('Content-Type',''),r.read(3500)
+                      return r.status,r.headers.get('Content-Type',''),r.read(2097152 if route=='/sitemap.xml' else 3500)
               except urllib.error.HTTPError as e:
-                  return e.code,e.headers.get('Content-Type',''),e.read(3500)
+                  return e.code,e.headers.get('Content-Type',''),e.read(2097152 if route=='/sitemap.xml' else 3500)
           last=None
           for attempt in range(3):
               try:
                   home=fetch('/')
                   profile=fetch('/api/user/info')
                   robots=fetch('/robots.txt')
+                  sitemap=fetch('/sitemap.xml')
                   status=(home[0],profile[0],robots[0])
                   last=status
                   # Public probe only. Never log session cookies or response bodies.
@@ -59,15 +61,28 @@ jobs:
                   if profile[0]==200 and 'json' in profile[1].lower():
                       profile_ok=isinstance(json.loads(profile[2]),dict)
                   robots_ok=robots[0]==200 and bool(robots[2].strip())
+                  sitemap_ok=False
+                  if sitemap[0]==200 and 'xml' in sitemap[1].lower():
+                      try:
+                          root=ET.fromstring(sitemap[2])
+                          ns='{http://www.sitemaps.org/schemas/sitemap/0.9}'
+                          locs=[e.text.strip() for e in root.findall(ns+'url/'+ns+'loc') if e.text]
+                          sitemap_ok=(root.tag==ns+'urlset' and base+'/' in locs
+                                      and len(locs)==len(set(locs))
+                                      and all(url.startswith(base+'/') for url in locs))
+                      except ET.ParseError:
+                          sitemap_ok=False
                   print('PSE_SSR_PROBE home='+str(home[0])
                         +' user_info='+str(profile[0])
                         +' robots='+str(robots[0])
-                        +' user_json_object='+str(profile_ok))
+                        +' user_json_object='+str(profile_ok)
+                        +' sitemap='+str(sitemap[0])+' sitemap_valid='+str(sitemap_ok))
                   if home[0]==200 and 'html' in home[1].lower() \
-                      and profile_ok and robots_ok:
+                      and profile_ok and robots_ok and sitemap_ok:
                       print('PSE_LIVE_SSR_HOME=PASS')
                       print('PSE_LIVE_SSR_WORDPRESS_USER=PASS')
                       print('PSE_LIVE_SEO_ROBOTS=PASS')
+                      print('PSE_LIVE_SEO_SITEMAP=PASS')
                       print('PSE_LIVE_VERIFY=PASS GET_ONLY')
                       raise SystemExit(0)
               except Exception as e:
