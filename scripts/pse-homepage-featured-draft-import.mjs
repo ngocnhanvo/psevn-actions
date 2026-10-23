@@ -5,7 +5,7 @@
 import { chromium } from 'playwright';
 const sources=[
  {url:'https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1736-pvfcco-pse-to-chuc-thanh-cong-giai-pickleball-pse-open-2026.html',slug:'pvfcco-pse-to-chuc-thanh-cong-giai-pickleball-pse-open-2026',title:'PVFCCo-PSE tổ chức thành công Giải Pickleball PSE Open 2026',categoryId:1742,signal:'PSE Open 2026'},
- {url:'https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/369-diem-tin-nganh-nong-nghiep-tren-cac-bao-ra-ngay-1462013.html',slug:'diem-tin-nganh-nong-nghiep-tren-cac-bao-ra-ngay-1462013',title:'Điểm tin ngành Nông nghiệp trên các báo ra ngày 14/6/2013',categoryId:1743,signal:'14/6/2013'},
+ {url:'https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/369-diem-tin-nganh-nong-nghiep-tren-cac-bao-ra-ngay-1462013.html',slug:'diem-tin-nganh-nong-nghiep-tren-cac-bao-ra-ngay-1462013',title:'Điểm tin ngành Nông nghiệp trên các báo ra ngày 14/6/2013',categoryId:1743,signal:'NHỮNG VẤN ĐỀ NỔI BẬT'},
  {url:'https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1737-20261019-cbtt-bao-cao-tai-chinh-q3-2026.html',slug:'20261019-cbtt-bao-cao-tai-chinh-q3-2026',title:'2026.10.19: CBTT – Báo cáo tài chính Q3/2026',categoryId:1744,signal:'Báo cáo tài chính quý 3 năm 2026'}
 ];
 const readCmsOrigin=()=>{
@@ -116,7 +116,9 @@ try{
       !check.data.categories?.includes(entry.categoryId)||
       !String(check.data.content?.raw||'').includes(entry.signal))
      throw Error('Draft read-after-write failed id='+created.data.id);
-   const lang=check.data.acf?.product_lang||'UNVERIFIED';
+   const langField=check.data.acf?.product_lang;
+   const lang=typeof langField==='object' && langField!==null
+     ? String(langField.value||'UNVERIFIED') : String(langField||'UNVERIFIED');
    console.log('PSE_FEATURED_DRAFT_IMPORT=PASS; wp_id='+created.data.id+
      '; category_id='+entry.categoryId+'; slug='+entry.slug+
      '; source_body_chars='+parsed.chars+'; source_pdf_links='+parsed.originalLinks+
