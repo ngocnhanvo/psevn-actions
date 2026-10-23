@@ -96,7 +96,28 @@ try{
     await textarea.waitFor({state:'attached',timeout:30000});
     const editorId=await textarea.getAttribute('id');
     if(!editorId)throw Error('Missing TinyMCE editor ID');
-    await page.waitForFunction(id=>!!window.tinymce?.get(id),editorId,{timeout:30000});
+    const visualTab=page.locator('#'+editorId+'-tmce');
+    const fieldVisible=await contentField.isVisible();
+    console.log('PSE_HOME_DRAFT_EDITOR_VISIBILITY='+JSON.stringify({
+      acfContentVisible:fieldVisible,visualTabAvailable:await visualTab.count(),
+      visualTabVisible:await visualTab.isVisible().catch(()=>false)
+    }));
+    if(!fieldVisible)throw Error('Homepage ACF content field remains hidden after action=HomePage');
+    if(await visualTab.isVisible())await visualTab.click();
+    try{
+      await page.waitForFunction(id=>Boolean(window.tinymce?.get(id)?.initialized),editorId,{timeout:18000});
+    }catch(err){
+      const detail=await page.evaluate(id=>({
+        id,textareaExists:!!document.getElementById(id),
+        editorPresent:!!window.tinymce?.get(id),
+        initialized:!!window.tinymce?.get(id)?.initialized,
+        editorIds:(window.tinymce?.editors||[]).map(x=>x.id).slice(0,12),
+        tabs:Array.from(document.querySelectorAll('.acf-field[data-name="content"] .wp-switch-editor'))
+          .map(x=>({id:x.id,visible:x.getClientRects().length>0}))
+      }),editorId);
+      console.log('PSE_HOME_DRAFT_EDITOR_NOT_READY='+JSON.stringify(detail));
+      throw err;
+    }
     const initial=await page.evaluate(id=>window.tinymce.get(id).getContent({format:'raw'}),editorId);
     if(initial.trim())throw Error('New draft editor unexpectedly prepopulated; no overwrite');
 
