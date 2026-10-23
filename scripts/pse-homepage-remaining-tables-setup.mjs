@@ -117,7 +117,33 @@ try{
     await page.goto(list,{waitUntil:'domcontentloaded',timeout:60000});
     await page.waitForTimeout(1100);
     const txt=await page.locator('#wpbody-content').innerText();
-    if(txt.includes(spec.name))throw new Error('Named table exists under different ID: '+spec.id);
+    if(txt.includes(spec.name)){
+      // The previous attempt may have created a numeric-ID draft, but stopped
+      // before setting its stable PSE ID. Recover that same table, never clone it.
+      const named=page.getByRole('link',{name:spec.name,exact:true});
+      if(await named.count()!==1)throw new Error('Cannot uniquely identify numeric draft: '+spec.id);
+      const editHref=await named.getAttribute('href');
+      const numericId=editHref?.match(/[?&]table_id=(\d+)(?:&|$)/)?.[1];
+      if(!numericId)throw new Error('Named table has no numeric draft edit URL: '+spec.id);
+      const draft=await getTable(numericId);
+      if(draft?.title!==spec.name||draft.description!==spec.description||
+         draft.fields?.length!==spec.rows[0].length||
+         draft.items?.length!==spec.rows.length-2||
+         draft.fields.some(field=>String(field.key??'').trim())||
+         draft.items.some(item=>Object.values(item).some(value=>String(value??'').trim())))
+        throw new Error('Numeric draft contains unexpected data; will not rename: '+spec.id);
+      await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=edit&table_id='+numericId,
+        {waitUntil:'domcontentloaded',timeout:60000});
+      await page.locator('#table-id').waitFor({state:'visible',timeout:45000});
+      await page.locator('#table-id').fill(spec.id);
+      await page.locator('#table-name').focus();
+      await page.waitForTimeout(450);
+      await page.getByRole('button',{name:'Save Changes',exact:true}).first().click();
+      await page.waitForTimeout(2600);
+      existing=await getTable(spec.id);
+      if(!existing)throw new Error('Numeric draft rename not confirmed: '+spec.id);
+      console.log('PSE_SECTION_TABLE=RECOVERED_NUMERIC_DRAFT; id='+spec.id);
+    }else{
     await page.goto(origin+'/wp-admin/admin.php?page=tablepress_add',
       {waitUntil:'domcontentloaded',timeout:60000});
     await page.locator('input[name="table[name]"]').fill(spec.name);
@@ -137,6 +163,7 @@ try{
     await page.waitForTimeout(2600);
     existing=await getTable(spec.id);
     if(!existing)throw new Error('Table ID rename not visible in REST, stop to avoid duplicates: '+spec.id);
+    }
     }
     await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=edit&table_id='+spec.id,
       {waitUntil:'domcontentloaded',timeout:60000});
