@@ -40,13 +40,17 @@ try{
   await Promise.all([page.waitForLoadState('domcontentloaded'),page.locator('#wp-submit').click()]);
  }
  if(page.url().includes('wp-login'))throw Error('WP PSE admin authentication failed');
- const nonce=await page.evaluate(async()=>{
-  if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
-  const r=await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'same-origin'});
-  const token=(await r.text()).trim();
-  if(!r.ok||!/^[A-Za-z0-9]{8,24}$/.test(token)||token==='0')throw Error('WP REST token unavailable');
-  return token;
- });
+ // WP REST nonces are not guaranteed on the Dashboard. Retrieve the standard
+ // wpApiSettings token from the native page editor, not from an undeclared
+ // custom admin-ajax action; never bypass WordPress cookie/nonce protection.
+ let nonce=await page.evaluate(()=>window.wpApiSettings?.nonce||'');
+ if(!/^[A-Za-z0-9]{8,24}$/.test(nonce)){
+  await page.goto(origin+'/wp-admin/post.php?post=248&action=edit',
+   {waitUntil:'domcontentloaded',timeout:60000});
+  if(page.url().includes('wp-login'))throw Error('WP admin session expired');
+  nonce=await page.evaluate(()=>window.wpApiSettings?.nonce||'');
+ }
+ if(!/^[A-Za-z0-9]{8,24}$/.test(nonce))throw Error('Standard WordPress editor REST nonce unavailable');
  const get=async route=>{
   const out=await page.evaluate(async({route,nonce})=>{
    const r=await fetch(route,{credentials:'same-origin',headers:{'X-WP-Nonce':nonce,Accept:'application/json'}});
@@ -99,40 +103,61 @@ try{
  await page.goto(origin+'/wp-admin/post.php?post=248&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
  if(page.url().includes('wp-login')||!await page.locator('#wp-content-wrap').count())
   throw Error('Cannot access canonical WP native homepage editor');
- if(await page.locator('#content-tmce').isVisible())await page.locator('#content-tmce').click();
- await page.waitForFunction(()=>!!window.tinymce?.get('content')?.getBody(),null,{timeout:25000});
- const editorState=await page.evaluate(()=>{
-  const ed=window.tinymce.get('content');
-  return {currentCodes:[...ed.getContent({format:'raw'}).matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(m=>m[1])};
- });
- if(JSON.stringify(editorState.currentCodes)!==JSON.stringify(codes))
-  throw Error('WordPress visual editor disagrees with latest saved public homepage');
- // Wipe ONLY current editor document; all new sections inserted through native
- // TablePress ESC Insert Code UI, never string-injected into editor content.
- await page.evaluate(()=>{
-  const editor=window.tinymce.get('content');
-  editor.setContent('');
-  editor.focus();
-  editor.nodeChanged();
- });
- const input=page.locator('#wp-content-wrap .mce-btn[title="Insert a ESC Table"],#wp-content-wrap button[title="Insert a ESC Table"]').first();
- if(!await input.isVisible().catch(()=>false))throw Error('Native ESC Table TinyMCE Insert Code unavailable');
- for(const id of expected){
+ const visualTab=page.locator('#content-tmce');
+ if(await visualTab.isVisible().catch(()=>false))await visualTab.click();
+ // Use the official ESC Table Insert Code control: TinyMCE when available,
+ // otherwise the native Quicktags Insert Code control (as on the draft).
+ let insertionMode='tinymce';
+ const hasTiny=await page.evaluate(()=>Boolean(window.tinymce?.get('content')?.getBody()));
+ if(!hasTiny){
+  const textTab=page.locator('#content-html');
+  if(!await textTab.isVisible().catch(()=>false))throw Error('Neither WP editor mode is available');
+  await click(textTab);insertionMode='quicktags';
+ }
+ const readEditor=()=>page.evaluate(mode=>mode==='tinymce'
+  ? window.tinymce.get('content').getContent({format:'raw'})
+  : document.getElementById('content')?.value||'',insertionMode);
+ const currentCodes=parseCodes(await readEditor());
+ if(JSON.stringify(currentCodes)!==JSON.stringify(codes))
+  throw Error('WordPress main editor disagrees with latest saved public homepage');
+ if(insertionMode==='tinymce'){
   await page.evaluate(()=>{
-   const editor=window.tinymce.get('content');
-   editor.focus();editor.selection.select(editor.getBody(),true);editor.selection.collapse(false);
+   const ed=window.tinymce.get('content');
+   ed.setContent('');ed.focus();ed.nodeChanged();
   });
+ }else{
+  await page.locator('textarea#content').fill('');
+ }
+ const tinymceButton=page.locator('#wp-content-wrap .mce-btn[title="Insert a ESC Table"],#wp-content-wrap button[title="Insert a ESC Table"]').first();
+ const quickButton=page.locator('#qt_content_tablepress_quicktags_button');
+ const input=insertionMode==='tinymce'?tinymceButton:quickButton;
+ if(!await input.isVisible().catch(()=>false))
+  throw Error('Native WordPress ESC Table Insert Code button unavailable in '+insertionMode+' mode');
+ console.log('PSE_PUBLIC_HOME_NATIVE_INSERT_MODE='+insertionMode);
+ for(const id of expected){
+  if(insertionMode==='tinymce'){
+   await page.evaluate(()=>{
+    const ed=window.tinymce.get('content');
+    ed.focus();ed.selection.select(ed.getBody(),true);ed.selection.collapse(false);
+   });
+  }else{
+   await page.evaluate(()=>{
+    const ta=document.querySelector('textarea#content');
+    if(!ta)throw Error('WP content textarea missing');
+    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+   });
+  }
   await click(input);
   const popup=page.locator('#TB_iframeContent');
   await popup.waitFor({state:'visible',timeout:30000});
   const pick=page.frameLocator('#TB_iframeContent').locator('input.insert-shortcode[title="[table id='+id+' /]"]');
   await click(pick);
   await popup.waitFor({state:'hidden',timeout:30000});
-  const current=await page.evaluate(()=>window.tinymce.get('content').getContent({format:'raw'}));
+  const current=await readEditor();
   if(!parseCodes(current).includes(id))throw Error('Native ESC Table Insert failed '+id);
   console.log('PSE_PUBLIC_HOME_NATIVE_INSERT=PASS; table='+id);
  }
- const before=await page.evaluate(()=>window.tinymce.get('content').getContent({format:'raw'}));
+ const before=await readEditor();
  if(JSON.stringify(parseCodes(before))!==JSON.stringify(expected))
   throw Error('Wrong public PSE four-section layout before native WordPress save');
  await click(page.locator('#publish'));
