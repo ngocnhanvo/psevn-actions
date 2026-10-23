@@ -1,3 +1,4 @@
+// Live acceptance rerun after WordPress Build Website #39963151690 and signed FTPS #39963321072, Astro master 5ccac413.
 /** Browser-only acceptance test of the WordPress-owned original PSE 11-image slider. */
 import { chromium } from "playwright";
 import { mkdir } from "node:fs/promises";
