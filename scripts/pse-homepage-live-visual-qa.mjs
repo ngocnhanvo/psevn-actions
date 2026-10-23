@@ -51,8 +51,27 @@ try{
     throw Error('PSE live homepage structure missing: '+JSON.stringify(v));
    if(v.scrollWidth>v.viewport+3||v.rects.some(r=>r.width<100)||v.imageErrors>0)
     throw Error('PSE live viewport/media problem: '+JSON.stringify(v));
-   if(await page.locator(".pse-news__featured").count()!==3)
-     throw Error("Three verified WordPress news lanes must contain published articles");
+   const tabs=page.locator("[data-pse-news-tab]");
+   const panels=page.locator("[data-pse-news-panel]");
+   if(await tabs.count()!==3||await panels.count()!==3)
+     throw Error("Three WordPress latest-news tabs not rendered");
+   for(let i=0;i<3;i++){
+     await tabs.nth(i).click();
+     if(await tabs.nth(i).getAttribute("aria-selected")!=="true" ||
+        await panels.nth(i).isHidden() ||
+        await panels.filter({visible:true}).count()!==1)
+       throw Error("WordPress news tab selection failed at "+i);
+     const featured=await panels.nth(i).locator(".pse-news__featured").count();
+     const extra=await panels.nth(i).locator(".pse-news__more li").count();
+     if(featured!==1||featured+extra>5)
+       throw Error("Latest news tab must show 1–5 published articles, got "+(featured+extra));
+     console.log("PSE_NEWS_LATEST_FIVE_TAB=PASS; width="+width+"; category_tab="+i+"; displayed="+(featured+extra));
+   }
+   await tabs.first().focus();
+   await page.keyboard.press("ArrowRight");
+   if(await tabs.nth(1).getAttribute("aria-selected")!=="true")
+     throw Error("Latest news tabs keyboard interaction failed");
+   await tabs.first().click();
    const output=path.join(dir,'pse-live-'+width+'.png');
    await page.screenshot({path:output,fullPage:true,animations:'disabled',timeout:20000});
    console.log('PSE_LIVE_VISUAL_VIEWPORT=PASS; width='+width+
