@@ -194,7 +194,7 @@ jobs:
 
           root = Path("deploy")
           origin = os.environ['PSE_CLIENT_ORIGIN']
-          state_file = root / "client" / ".pse-sitemap-deploy-state.json"
+          state_file = root / "client" / ".template-sitemap-deploy-state.json"
           if not state_file.is_file():
               raise RuntimeError("Missing signed-build sitemap Save revision decision")
           state = json.loads(state_file.read_text())
