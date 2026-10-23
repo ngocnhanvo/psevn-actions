@@ -140,10 +140,10 @@ try{
   phase('cms-read-private-search-archive');
   const archive=await read('/wp-json/wp/v2/pages/77030?context=edit&_fields=id,status,slug,title,acf,content');
   if(archive.id!==77030||archive.status!=='draft'||archive.slug!=='tin-tuc-su-kien'||
-     archive.acf?.action!=='PostsPage'||archive.acf?.key!=='posts')
+     archive.acf?.action!=='PostsPage'||archive.acf?.key!=='ssr-posts')
     throw Error('Existing private PSE search archive changed; no fake route');
   const archivePage={
-    id:String(archive.id),key:'posts',action:'PostsPage',lang:'vi',
+    id:String(archive.id),key:'ssr-posts',action:'PostsPage',lang:'vi',
     slug:archive.slug,title:String(archive.title?.raw||archive.title?.rendered||'Tin tức - Sự kiện'),
     label:String(archive.acf?.label||'Tin tức - Sự kiện'),content:String(archive.content?.raw||'')
   };
@@ -193,6 +193,7 @@ try{
   // transient in the Actions checkout and cannot publish WordPress content.
   const archiveRoute=[
     '---',
+    'export const prerender=false;',
     'import "@/styles/global.css";',
     'import Layout from "@/astro/components/Layout/Layout.astro";',
     'import PostsPage from "@/astro/pages/PostsPage.astro";',
