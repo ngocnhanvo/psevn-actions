@@ -6,6 +6,7 @@
 import {chromium} from "playwright";
 const audit=process.env.PSE_NEWS_AUDIT_ONLY==="1";
 const resync=process.env.PSE_NEWS_RESYNC_ONLY==="1";
+const pendingAudit=process.env.PSE_NEWS_PENDING_AUDIT_ONLY==="1";
 const cfg=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,"")).filter(s=>s.startsWith("WC_URL="));
 if(cfg.length!==1)throw Error("Missing WordPress WC_URL");
 const u=new URL(cfg[0].slice(7).trim().replace(/^['"]|['"]$/g,""));
@@ -80,6 +81,14 @@ try{
     "; already_published="+checked.filter(x=>x.status==="publish").length+"; no_writes=true");
   process.exit(0);
  }
+ if(pendingAudit){
+   await page.goto(origin+"/wp-admin/admin.php?page=vcs-build-trigger",{waitUntil:"domcontentloaded",timeout:60000});
+   const p=page.locator("#vcs-pending-count");
+   await p.waitFor({state:"visible",timeout:16000});
+   const count=Number((await p.innerText()).trim());
+   console.log("PSE_WP_REAL_PENDING_AUDIT="+JSON.stringify({count,valid:Number.isSafeInteger(count),readOnly:true}));
+   process.exit(0);
+ }
  if(resync){
   if(checked.some(x=>x.status!=="publish"))throw Error("Do not sync publication events for unpublished post");
   await page.goto(origin+"/wp-admin/admin.php?page=vcs-build-trigger",{waitUntil:"domcontentloaded",timeout:60000});
@@ -110,6 +119,7 @@ try{
   }
   await page.reload({waitUntil:"domcontentloaded",timeout:60000});
   const after=await pending();
+  console.log("PSE_WP_POST_SYNC_PENDING_AFTER="+after);
   if(after<3)throw Error("WordPress post-change queue failed to include three source posts");
   console.log("PSE_POST_CHANGE_EVENTS=PASS; pending_before="+before+"; pending_after="+after+
     "; posts_verified=3; queued_normal_build=true; no_force=true");
