@@ -1,3 +1,4 @@
 Approved 2026-10-22 by project owner: release only verified PSE WordPress GitHub Trigger, MU-plugin, JS, unzip endpoint and marker. No Astro build here; rollback enabled.
 Owner-approved continuation: upload ONLY the PSE SEO MU-plugin correction using atomic FTP readback and rollback. Existing unchanged PSE Trigger files may be checked but must not change. Then verify REST contract; do not build automatically from this PHP release.
 Retry only corrected SEO PHP upload after fixing deployment preflight path index (no FTP operations on the failed run).
+2026-10-23: Continue owner-authorized PSE auto-build homepage repair. Deploy exact PSE PHP master a4207fad60fe6d2ce24fc8dfac200dcc196747ce. SEO MU-plugin now safely permits signed initial manual sitemap Save to replace ONLY a validated, genuinely empty published XML urlset. No other PHP logic altered. Use atomic FTPS checksum/rollback and verify REST. DO NOT trigger Astro build from PHP release workflow.
