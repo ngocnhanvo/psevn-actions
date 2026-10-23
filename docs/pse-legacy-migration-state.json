@@ -183,10 +183,11 @@
       "status": "quarantined"
     },
     "222": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/222-tam-ung-co-tuc-dot-i-nam-2011-cua-pvfcco-se.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "224": {
       "attempts": 0,
@@ -797,11 +798,11 @@
       "status": "pending"
     },
     "1233": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1233-bao-cao-tai-chinh-giua-nien-do-da-duoc-soat-xet-11-08-2016.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1236": {
       "attempts": 2,
@@ -1557,17 +1558,18 @@
       "status": "pending"
     },
     "1426": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "unmapped",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/1426-kali-phu-my.html",
-      "status": "pending"
+      "status": "quarantined",
+      "reason": "Original Joomla section cannot be mapped to verified WP taxonomy"
     },
     "1427": {
       "attempts": 1,
       "group_hint": "unmapped",
+      "reason": "Original Joomla section cannot be mapped to verified WP taxonomy",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/1427-kali-phu-my-mieng-mop-mo-ta-va-hdsd.html",
-      "status": "quarantined",
-      "reason": "Original Joomla section cannot be mapped to verified WP taxonomy"
+      "status": "quarantined"
     },
     "1433": {
       "attempts": 1,
@@ -2359,24 +2361,28 @@
       "status": "pending"
     },
     "1609": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/1609-20250122-cbtt-bc-tinh-hinh-quan-tri-cong-ty-nam-2024-va-danh-sach-co-dong-nha-nuoc-co-dong-lon.html",
-      "status": "pending"
+      "status": "draft_needs_date",
+      "wp_id": 77415,
+      "seo_cleaned": true,
+      "verified_date": null,
+      "reason": "Original source lacks independently verifiable publish timestamp"
     },
     "1610": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1610-20250124-cbtt-thay-doi-giay-phep-dang-ky-kinh-doanh.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1611": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1611-20250124-cbtt-chi-tieu-ke-hoach-kinh-doanh-nam-2025-cua-pse.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1612": {
       "attempts": 1,
@@ -2399,18 +2405,18 @@
       "wp_id": 77407
     },
     "1614": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1614-20250225-cbtt-thay-doi-giay-phep-dang-ky-kinh-doanh.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1615": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1615-20250228-cbtt-thay-doi-nhan-su.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1616": {
       "attempts": 1,
@@ -4119,6 +4125,11 @@
       "id": 77078,
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
+    },
+    "https://www.pse.vn/images/08_-_CB_tinh_hinh_Qtri_Cty_2024_-CBTT-.pdf": {
+      "id": 77414,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-9b2853791579f4c0.pdf",
+      "sha256": "3674bca4fedab80090106d1e8a5859a8e3257490558df6c8231de56642271250"
     }
   },
   "phase": "discover-and-import",
@@ -4161,7 +4172,7 @@
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=96",
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=102"
   ],
-  "runs": 38,
+  "runs": 39,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
