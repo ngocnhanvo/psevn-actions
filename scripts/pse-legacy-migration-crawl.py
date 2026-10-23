@@ -59,6 +59,12 @@ state=json.load(open(STATE,encoding="utf-8"))
 if state.get("schema")!="pse-legacy-article-migration-v1":raise SystemExit("Unknown migration schema")
 state.setdefault("seen",[]);state.setdefault("queue",[]);state.setdefault("errors",[]);state.setdefault("articles",{})
 seen=set(state["seen"]);pending=set(state["queue"]);started=time.monotonic();visited=0;found=0;failed=0
+# Source discovery has already found hundreds of articles. Drain the backlog
+# first; a full 12-page crawl before EVERY import batch adds minutes and does
+# not improve the number of posts saved. Resume discovery when queue is small.
+backlog=sum(1 for item in state["articles"].values() if item["status"] in ("pending","media"))
+CRAWL_PAUSED=backlog>=40
+if CRAWL_PAUSED:print("PSE_LEGACY_CRAWL=DEFERRED; pending_articles="+str(backlog)+"; source_pages_preserved="+str(len(state["queue"])))
 # Retry bounded transient source timeouts, including those recorded by older runs.
 # 404s remain quarantined because repeated requests cannot repair missing pages.
 state.setdefault("crawl_retries",{})
@@ -73,7 +79,7 @@ for old in list(state["errors"]):
   state["seen"].remove(url)
  state["queue"].append(url);pending.add(url)
  state["crawl_retries"][url]=state["crawl_retries"].get(url,0)+1
-while state["queue"] and visited<MAX_PAGES and time.monotonic()-started<MAX_SECONDS:
+while not CRAWL_PAUSED and state["queue"] and visited<MAX_PAGES and time.monotonic()-started<MAX_SECONDS:
  url=state["queue"].pop(0);pending.discard(url)
  url=clean(url)
  if not url or url in seen:continue

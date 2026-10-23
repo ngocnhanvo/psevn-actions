@@ -35,11 +35,15 @@ const fresh=candidates.filter(id=>state.articles[id].status!=="media");
 // Limit work per run, spread across recent and historical source pages, and
 // prioritize finishing a previously-started media-heavy record. No parallel
 // WordPress writers: serialized by the dedicated Actions concurrency group.
-const MAX_ARTICLES_PER_RUN=4;
+const MAX_ARTICLES_PER_RUN=8;
+const MAX_WORK_MS=14*60*1000;
+const workerStarted=Date.now();
 const freshChoices=fresh.length>=4?
  [fresh[0], fresh[Math.floor(fresh.length/3)],
   fresh[Math.floor(2*fresh.length/3)], fresh.at(-1)] : fresh;
-const picked=[...continuing.slice(0,1),...freshChoices,...continuing.slice(1)];
+// Balance unfinished media uploads with fresh articles; do not let a large
+// legacy PDF gallery starve simpler text posts.
+const picked=[...continuing.slice(0,2),...freshChoices,...fresh.slice(1),...continuing.slice(2)];
 const ids=picked.filter((id,i)=>id&&picked.indexOf(id)===i).slice(0,MAX_ARTICLES_PER_RUN);
 if(!ids.length){
  console.log("PSE_MIGRATION_BATCH=NO_PENDING; discovered="+Object.keys(state.articles).length);
@@ -99,6 +103,10 @@ try{
   cats[group]=expectedId;
  }
  for(const id of ids){
+  if(Date.now()-workerStarted>MAX_WORK_MS){
+    console.log("PSE_LEGACY_BATCH_TIME_BUDGET=STOP; unprocessed_records_remain_queued=true");
+    break;
+  }
   const item=state.articles[id];
   if(item.status==="quarantined" && /^Original media size unsafe; bytes=\d+; ext=pdf$/.test(item.reason||""))item.attempts=0;
   item.attempts=(item.attempts||0)+1;
@@ -183,7 +191,7 @@ try{
    if(missing.length){item.status="quarantined";item.reason="Article contains non-local mandatory media";failed++;continue}
    const outstanding=article.assets.filter(x=>!state.media[x]);
    if(outstanding.length){
-    const subset=outstanding.slice(0,4);
+    const subset=outstanding.slice(0,6);
     for(const assetUrl of subset){
      const download=await context.request.get(assetUrl,{timeout:45000});
      if(!download.ok())throw Error("Original media HTTP "+download.status());
@@ -215,11 +223,20 @@ try{
      console.log("PSE_LEGACY_MEDIA=PASS; article="+id+"; media_id="+obj.id);
      await persist();
     }
-    item.status="media";
-    item.attempts=0; // Progress through large galleries is not a failed retry.
-    partial++;
-    console.log("PSE_LEGACY_BATCH_MEDIA_PARTIAL; source_id="+id+"; remaining="+Math.max(0,outstanding.length-subset.length));
-    await persist();continue;
+    const stillMissing=article.assets.filter(asset=>!state.media[asset]);
+    if(stillMissing.length){
+      item.status="media";
+      item.attempts=0; // Progress through large galleries is not a failed retry.
+      partial++;
+      console.log("PSE_LEGACY_BATCH_MEDIA_PARTIAL; source_id="+id+"; remaining="+stillMissing.length);
+      await persist();
+      continue;
+    }
+    // Last asset has just uploaded: finish creating/verifying the post NOW,
+    // not on a second six-minute Actions run.
+    console.log("PSE_LEGACY_MEDIA_READY=PASS; source_id="+id+
+      "; assets="+article.assets.length+"; same_batch_finalize=true");
+    await persist();
    }
    let html=article.html;
    for(const [originalURL,meta] of Object.entries(state.media)){
