@@ -1,5 +1,6 @@
 /**
  * Author blank-but-valid PSE CMS section schemas through ESC Table's real editor.
+ * Safe to resume after interrupted table creation; never duplicate existing IDs.
  * This only creates/edits three dedicated PSE tables. It never edits Page 248,
  * invents marketing copy/media/statistics, imports posts or builds Astro.
  */
