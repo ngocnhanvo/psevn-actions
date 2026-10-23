@@ -74,15 +74,23 @@ try{
   }else{
     await page.goto(origin+'/wp-admin/post-new.php?post_type=page',{waitUntil:'domcontentloaded',timeout:60000});
     await page.locator('#title').fill(draftTitle);
-    const acfField=async name=>{
-      const root=page.locator('.acf-field[data-name="'+name+'"]');
-      await root.waitFor({state:'visible',timeout:30000});
-      return root.locator('input[type="text"],textarea').first();
+    const fillAcfField=async (name,value,required)=>{
+      const root=page.locator('.acf-field[data-name="'+name+'"]').first();
+      await root.waitFor({state:'attached',timeout:30000});
+      // ACF field visibility is controlled by the site's existing rules.
+      // Optional labels/SEO text must not be forced into hidden controls.
+      if(!await root.isVisible()){
+        if(required)throw Error('Required ACF field is hidden: '+name);
+        console.log('PSE_HOME_DRAFT_OPTIONAL_ACF=HIDDEN; field='+name);
+        return;
+      }
+      const input=root.locator('input[type="text"],textarea').first();
+      await input.fill(value);
     };
-    await (await acfField('label')).fill('Trang chủ PSE - bản nháp thiết kế');
-    await (await acfField('title')).fill('PSE - Trang chủ thiết kế 2026');
-    await (await acfField('action')).fill('HomePage');
-    await (await acfField('key')).fill(draftKey);
+    await fillAcfField('action','HomePage',true);
+    await fillAcfField('key',draftKey,true);
+    await fillAcfField('label','Trang chủ PSE - bản nháp thiết kế',false);
+    await fillAcfField('title','PSE - Trang chủ thiết kế 2026',false);
     const contentField=page.locator('.acf-field[data-name="content"]');
     const textarea=contentField.locator('textarea').first();
     await textarea.waitFor({state:'attached',timeout:30000});
