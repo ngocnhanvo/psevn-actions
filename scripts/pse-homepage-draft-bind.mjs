@@ -124,7 +124,26 @@ try{
       acfContentVisible:fieldVisible,visualTabAvailable:await visualTab.count(),
       visualTabVisible:await visualTab.isVisible().catch(()=>false)
     }));
-    if(!fieldVisible)throw Error('Homepage ACF content field remains hidden after action=HomePage');
+    if(!fieldVisible){
+      const diagnostics=await page.evaluate(()=>{
+        const names=['content','label','title','action','key','product_lang'];
+        const root=document.querySelector('.acf-field[data-name="content"]');
+        const conditions=String(root?.getAttribute('data-conditions')||'');
+        const ids=[...conditions.matchAll(/field_[a-z0-9]+/ig)].map(m=>m[0]);
+        const fields=Array.from(document.querySelectorAll('.acf-field[data-key]'))
+          .filter(x=>names.includes(x.getAttribute('data-name'))||ids.includes(x.getAttribute('data-key')))
+          .map(x=>({
+            name:x.getAttribute('data-name'),key:x.getAttribute('data-key'),
+            visible:!!x.getClientRects().length&&!x.hidden,
+            condition:x.getAttribute('data-conditions'),
+            input:x.querySelector('input:not([type=hidden]),select')?.value||'',
+            selectOptions:Array.from(x.querySelectorAll('select option')).map(o=>o.value).slice(0,12)
+          }));
+        return {conditions,fields};
+      });
+      console.log('PSE_HOME_DRAFT_ACF_CONDITIONAL_DIAG='+JSON.stringify(diagnostics));
+      throw Error('Homepage ACF content field remains hidden after action=HomePage');
+    }
     if(await visualTab.isVisible())await visualTab.click();
     try{
       await page.waitForFunction(id=>Boolean(window.tinymce?.get(id)?.initialized),editorId,{timeout:18000});
