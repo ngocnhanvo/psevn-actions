@@ -1,0 +1,49 @@
+name: PSE WordPress wp-config build-route repair (OWNER AUTHORIZED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-wp-config-route-repair.yml
+      - .pse-wp-config-route-repair-request
+permissions:
+  contents: read
+jobs:
+  wp-config:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'cms(pse): repair verified site build repo binding in wp-config'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Atomically save PSE GitHub Build Website routing only in wp-config.php
+        run: python3 scripts/pse-wp-config-build-routing-repair.py
+      - name: Read back PHP routing and verify signed site identity without Astro build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-wordpress-build-route-audit.py
+          ASTRO_FTP_TARGET="$(python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          val=[x.split('=',1)[1].strip().strip('"').strip("'")
+               for x in os.environ['ENV_FILE'].splitlines()
+               if x.strip().startswith('WC_URL_CLIENT=')]
+          if len(val)!=1:raise RuntimeError('No unique PSE frontend config')
+          u=urlsplit(val[0])
+          if u.scheme!='https' or not u.hostname or u.path not in ('','/') or u.query or u.fragment or u.username or u.password:
+              raise RuntimeError('Invalid PSE frontend origin')
+          print('/domains/'+u.hostname+'/public_html/')
+          PY
+          )"
+          export ASTRO_FTP_TARGET
+          python3 scripts/pse-remote-unzip.py verify
+          echo "PSE_WP_SIGNED_SITE_IDENTITY=PASS"
