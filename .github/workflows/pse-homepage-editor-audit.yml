@@ -28,7 +28,8 @@ jobs:
       - name: Install browser driver wrapper (Chromium pinned in container)
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Inspect PSE WordPress homepage and company editor without saving data
-        if: github.event.head_commit.message != 'cms(pse): verify previous ESC Table save'
+        if: >-
+          github.event.head_commit.message != 'cms(pse): verify previous ESC Table save'
         run: node scripts/pse-homepage-editor-audit.mjs
       - name: Create one verified PSE news ESC Table (idempotent, no publication)
         if: >-
