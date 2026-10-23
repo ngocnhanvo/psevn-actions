@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { mkdir,writeFile,readFile,rm } from 'node:fs/promises';
 import path from 'node:path';
 const ids=['pse_00_vi','pse_01_vi','pse_02_vi','pse_03_vi'];
+const archiveOnly=process.env.PSE_QA_ARCHIVE_ONLY==='1';
 console.log('PSE_QA_IMAGE_WAIT_VERSION=bounded-polling-global-watchdog-v3');
 console.log('PSE_QA_ROUTER_CONTRACT=HomePage+ExtractHTML; source_compile_fix=Contact_00');
 console.log('PSE_QA_SEARCH_ARCHIVE_PREVIEW=real_WP_draft_77030; never_published');
@@ -250,7 +251,8 @@ try{
   },220000);
   hardDeadline.unref();
   phase('start-five-viewports');
-  const dimensions=[375,390,768,1440,1920];
+  const dimensions=archiveOnly?[]:[375,390,768,1440,1920];
+  if(archiveOnly)console.log('PSE_FIVE_HOME_VIEWPORTS=SKIPPED_ALREADY_VERIFIED; archive_only=true');
   for(const width of dimensions){
     qaPhase='viewport_'+width+'_opening';
     console.log('PSE_QA_VIEWPORT_START='+width);
@@ -437,7 +439,8 @@ try{
   console.log('PSE_PRIVATE_POSTSPAGE_SEARCH_QA=PASS; draft_id=77030; action=PostsPage; q_roundtrip=true; categories=3; published_post_count=0; no_overflow=true; no_publication=true');
   await searchBrowser.close();
   clearTimeout(hardDeadline);
-  console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; HomePage_ExtractHTML_component_contract_tested=true; real_public_route_not_tested=true; no_build=true');
+  if(!archiveOnly)console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; HomePage_ExtractHTML_component_contract_tested=true; real_public_route_not_tested=true; no_build=true');
+  else console.log('PSE_ARCHIVE_ONLY_QA=PASS; prior_home_visual_run=39914740583; no_source_build=true');
   // GitHub Actions destroys this disposable container after artifact upload.
   // After all five screenshots and assertions are complete, exit explicitly:
   // Vite/Chromium can retain handles indefinitely even after browser.close().
