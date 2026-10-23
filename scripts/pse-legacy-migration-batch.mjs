@@ -20,7 +20,10 @@ function origin(name){
 const wp=origin("WC_URL"),source=new URL(state.source);
 const CATEGORY={"company":1742,"agriculture-market":1743,"shareholder":1744};
 const ids=Object.keys(state.articles).filter(id=>
- ["pending","media"].includes(state.articles[id].status) && (state.articles[id].attempts||0)<3
+ (["pending","media"].includes(state.articles[id].status) ||
+   (state.articles[id].status==="quarantined" &&
+    state.articles[id].reason==="WP slug occupied by unrelated content")) &&
+   (state.articles[id].attempts||0)<3
 ).sort((a,b)=>Number(b)-Number(a)).slice(0,2);
 if(!ids.length){
  console.log("PSE_MIGRATION_BATCH=NO_PENDING; discovered="+Object.keys(state.articles).length);
@@ -186,6 +189,7 @@ try{
      await persist();
     }
     item.status="media";
+    item.attempts=0; // Progress through large galleries is not a failed retry.
     partial++;
     console.log("PSE_LEGACY_BATCH_MEDIA_PARTIAL; source_id="+id+"; remaining="+Math.max(0,outstanding.length-subset.length));
     await persist();continue;
