@@ -100,7 +100,7 @@ try{
         ed.selection.collapse(false);
       },editorId);
       // This is the actual TinyMCE ESC Table action, not a typed shortcode.
-      await safeClick(contentField.locator('button[title="Insert a ESC Table"]').first());
+      await safeClick(contentField.locator('.mce-btn[title="Insert a ESC Table"],button[title="Insert a ESC Table"]').first());
       const iframe=page.locator('#TB_iframeContent');
       await iframe.waitFor({state:'visible',timeout:30000});
       const insert=page.frameLocator('#TB_iframeContent')
@@ -119,9 +119,9 @@ try{
     await safeClick(page.locator('#save-post'));
     await page.waitForLoadState('domcontentloaded');
     const u=new URL(page.url());
-    const postId=Number(u.searchParams.get('post')||page.locator('#post_ID').getAttribute('value'));
-    const match=await page.locator('#post_ID').inputValue().catch(()=>String(postId));
-    const id=Number(match)||postId;
+    const fromUrl=Number(u.searchParams.get('post')||0);
+    const fromField=await page.locator('#post_ID').inputValue().catch(()=>'0');
+    const id=Number(fromField)||fromUrl;
     if(!Number.isSafeInteger(id)||id<=0||id===248)
       throw Error('Unexpected saved draft post ID');
     const saved=await wpGet('/wp-json/wp/v2/pages/'+id+'?context=edit&_fields=id,status,acf,title');
