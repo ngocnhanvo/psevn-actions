@@ -68,6 +68,7 @@ jobs:
           const astroRequire = createRequire(require.resolve('astro/package.json'));
           const compiler = await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
           const paths = [
+            'src/astro/pages/HomePage.astro',
             'src/astro/tablepress/Pse_00.astro',
             'src/astro/tablepress/Pse_01.astro',
             'src/astro/tablepress/Pse_02.astro',
