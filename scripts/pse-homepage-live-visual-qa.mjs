@@ -39,14 +39,15 @@ try{
     const imageErrors=[...document.querySelectorAll('[data-pse-section] img')]
       .filter(x=>x.complete&&x.naturalWidth===0).length;
     return {sections:names,rects,h1:document.querySelectorAll('h1').length,
-      newsLanes:document.querySelectorAll('.pse-news__lane').length,
+      newsTabs:document.querySelectorAll('[data-pse-news-tab]').length,
+      newsPanels:document.querySelectorAll('[data-pse-news-panel]').length,
       viewport:window.innerWidth,scrollWidth:document.documentElement.scrollWidth,
       imageErrors,obstructedHero:!!document.querySelector('.pse-hero__copy,.pse-hero__shade'),
       searchForm:!!document.querySelector('.pse-tools__search, .pse-tools__message')};
    });
    if(JSON.stringify(v.sections)!==JSON.stringify(expected))
     throw Error('PSE LIVE sections mismatch: '+JSON.stringify(v.sections));
-   if(v.h1!==1||v.obstructedHero||v.newsLanes!==3||!v.searchForm)
+   if(v.h1!==1||v.obstructedHero||v.newsTabs!==3||v.newsPanels!==3||!v.searchForm)
     throw Error('PSE live homepage structure missing: '+JSON.stringify(v));
    if(v.scrollWidth>v.viewport+3||v.rects.some(r=>r.width<100)||v.imageErrors>0)
     throw Error('PSE live viewport/media problem: '+JSON.stringify(v));
@@ -56,7 +57,7 @@ try{
    await page.screenshot({path:output,fullPage:true,animations:'disabled',timeout:20000});
    console.log('PSE_LIVE_VISUAL_VIEWPORT=PASS; width='+width+
     '; sections='+v.sections.join(',')+'; h1='+v.h1+
-    '; news_lanes='+v.newsLanes+'; overflow='+(v.scrollWidth-v.viewport)+
+    '; news_tabs='+v.newsTabs+'; overflow='+(v.scrollWidth-v.viewport)+
     '; broken_section_images='+v.imageErrors);
   }finally{await page.close()}
  }
