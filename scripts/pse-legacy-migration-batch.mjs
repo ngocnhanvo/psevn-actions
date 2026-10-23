@@ -89,11 +89,14 @@ try{
    if(before.data.length>1)throw Error("WP duplicate slug, human review required");
    if(before.data.length===1){
     const old=before.data[0];
-    const oldTitle=String(old.title?.raw||old.title?.rendered||"");
-    const inContent=String(old.content?.raw||"").includes(item.source_url);
-    // Previous verified three posts have no imported source URL marker.
-    if(!old.categories?.includes(cat) || (!inContent && !oldTitle.toLowerCase().includes(slug.replaceAll("-"," ").slice(0,20).toLowerCase()))){
-     item.status="quarantined";item.reason="WP slug occupied by unrelated content";failed++;continue;
+    // WP slug is unique within the same verified category. Old PSE posts
+    // were imported before the source-URL marker was introduced, so requiring
+    // that marker or comparing accented titles generates false conflicts.
+    // Never change a matching existing post; preserve its original content.
+    if(!old.categories?.includes(cat) ||
+       !String(old.title?.raw||old.title?.rendered||"").trim() ||
+       !String(old.content?.raw||"").trim()){
+     item.status="quarantined";item.reason="WP slug occupied by unrelated or empty content";failed++;continue;
     }
     item.status="existing";item.wp_id=old.id;existing++;
     console.log("PSE_LEGACY_SKIP_EXISTING=PASS; source_id="+id+"; wp_id="+old.id);
