@@ -81,8 +81,16 @@ try{
     await page.waitForTimeout(1800);
     console.log('PSE_CMS_NEWS_TABLE_SAVE_ATTEMPT=PASS');
   }
-  await page.goto(list,{waitUntil:'domcontentloaded',timeout:60000});
-  await page.waitForTimeout(1700);
+  // Save Changes can initiate its own navigation. Do not race the browser's redirect.
+  await page.waitForTimeout(2300);
+  try {
+    await page.goto(list,{waitUntil:'domcontentloaded',timeout:60000});
+  } catch(error) {
+    if(!String(error).includes('ERR_ABORTED')) throw error;
+    await page.waitForTimeout(1700);
+    await page.goto(list,{waitUntil:'domcontentloaded',timeout:60000});
+  }
+  await page.waitForTimeout(1800);
   const verified=await page.locator('#wpbody-content').innerText();
   if(!verified.includes(tableId))throw new Error('Read-after-write did not confirm requested ESC Table ID');
   console.log('PSE_CMS_NEWS_TABLE_READ_AFTER_WRITE=PASS; id='+tableId);
