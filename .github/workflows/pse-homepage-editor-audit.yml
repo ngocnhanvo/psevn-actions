@@ -11,6 +11,7 @@ on:
       - scripts/pse-homepage-categories-setup.mjs
       - scripts/pse-homepage-verified-content.mjs
       - scripts/pse-homepage-article-source-audit.mjs
+      - scripts/pse-legacy-feed-date-audit.mjs
       - scripts/pse-homepage-featured-draft-import.mjs
       - scripts/pse-homepage-corporate-info.mjs
       - scripts/pse-homepage-media-source-audit.mjs
@@ -165,3 +166,21 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+
+  legacy-date-audit:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      github.event.head_commit.message == 'test(pse): inspect legacy RSS date metadata without CMS mutation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout existing PSE audit source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect original PSE news RSS metadata, read only
+        run: node scripts/pse-legacy-feed-date-audit.mjs
