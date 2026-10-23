@@ -1,1 +1,3 @@
-Full Vitest of PSE Astro github 8be0b9821578c85da4eb9e3dd331171c73b1d6f9, after retiring old quote fixtures; no build, no deploy.
+PSE development source regression request
+Astro github commit: 023dd0d018a044113d8cc339ae6c6d478a3540fc
+Check: pnpm exec vitest run (no build or deploy)
