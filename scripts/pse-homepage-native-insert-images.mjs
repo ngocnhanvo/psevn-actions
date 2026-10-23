@@ -52,7 +52,8 @@ try{
  const identities=names.map(name=>{
   const found=list.data.filter(x=>x.media_details?.file?.split('/').at(-1)===name);
   if(found.length!==1)throw Error('Missing or duplicate WordPress image '+name);
-  return {name,id:found[0].id,alt:description(names.indexOf(name))};
+  return {name,id:found[0].id,alt:String(found[0].alt_text||'').trim()||description(names.indexOf(name)),
+   currentAlt:String(found[0].alt_text||'').trim()};
  });
  // Confirm each source image is exactly one WordPress-hosted media URL or already a single correct image HTML.
  for(let i=0;i<11;i++){
@@ -77,6 +78,22 @@ try{
   const val=raw[i];
   if(/^\s*<img\b/i.test(val)){console.log('PSE_IMAGE_CELL_ALREADY_STRUCTURED='+i);continue}
   const item=identities[i],row=i+2;
+  // The native WP Image HTML is built from the attachment's SAVED alt_text,
+  // not just the temporary JS attachment model. Persist the SEO alt through
+  // WordPress Media REST only when the image currently has no alt.
+  if(!item.currentAlt){
+   const saved=await page.evaluate(async({id,alt,nonce})=>{
+    const r=await fetch('/wp-json/wp/v2/media/'+id,{
+      method:'POST',credentials:'same-origin',
+      headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify({alt_text:alt})
+    });
+    const payload=await r.json().catch(()=>({}));
+    return {status:r.status,id:payload.id,alt:payload.alt_text};
+   },{id:item.id,alt:item.alt,nonce});
+   if(saved.status!==200||saved.id!==item.id||saved.alt!==item.alt)
+     throw Error('WP Media SEO alt update failed for attachment '+item.id);
+  }
   await page.evaluate(({row})=>{
    const tp=window.tp;
    if(typeof tp.editor.updateSelectionFromCoords!=='function')throw Error('Native spreadsheet selection missing');
