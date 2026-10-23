@@ -18,41 +18,64 @@ async function crawl(dir){
   }
 }
 await crawl(src);
-async function present(target){
+
+async function actualFile(target){
   for(const suffix of moduleExtensions){
     const filename=target+suffix;
-    try{if((await stat(filename)).isFile())return true}catch{}
+    try{if((await stat(filename)).isFile())return filename}catch{}
   }
   for(const suffix of moduleExtensions.slice(1)){
-    try{if((await stat(path.join(target,'index'+suffix))).isFile())return true}catch{}
+    const filename=path.join(target,'index'+suffix);
+    try{if((await stat(filename)).isFile())return filename}catch{}
   }
-  return false;
+  return null;
 }
-const issues=[],perFile=[];
+const missing=[],dependencies=new Map();
 for(const filename of all){
   const raw=await readFile(filename,'utf8');
-  // Include multiline import/export declarations, dynamic import("x"),
-  // side-effect import, and CommonJS require. Only check local specifiers.
+  // Includes regular, side-effect, type-only and dynamic imports.
   const pattern=/(?:\b(?:import|export)\s+(?:[\s\S]{0,350}?\s+from\s*)?|\bimport\s*\(\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
-  const found=new Set();
+  const found=new Set(),resolved=[];
   for(const match of raw.matchAll(pattern)){
-    const value=match[1]?.split(/[?#]/)[0]||'';
-    if(!(value.startsWith('@/')||value.startsWith('./')||value.startsWith('../')))continue;
-    // Work only inside app source, never resolve package names or remote URLs.
-    const target=value.startsWith('@/')?path.resolve(src,value.slice(2)):path.resolve(path.dirname(filename),value);
-    if(!target.startsWith(src+path.sep)&&target!==src){
-      issues.push({source:path.relative(root,filename),specifier:value,reason:'local_path_outside_src'});
+    const spec=match[1]?.split(/[?#]/)[0]||'';
+    if(!(spec.startsWith('@/')||spec.startsWith('./')||spec.startsWith('../')))continue;
+    if(found.has(spec))continue;
+    found.add(spec);
+    const target=spec.startsWith('@/')?path.resolve(src,spec.slice(2)):path.resolve(path.dirname(filename),spec);
+    if(!target.startsWith(root+path.sep)&&target!==root){
+      missing.push({source:path.relative(root,filename),specifier:spec,reason:'import_outside_checked_out_repo',file:filename});
       continue;
     }
-    if(found.has(value))continue;
-    found.add(value);
-    if(!await present(target)){
-      issues.push({source:path.relative(root,filename),specifier:value,reason:'local_import_unresolved'});
+    const hit=await actualFile(target);
+    if(!hit){
+      missing.push({source:path.relative(root,filename),specifier:spec,reason:'unresolved_import',file:filename});
+    }else if(hit.startsWith(src+path.sep)){
+      resolved.push(hit);
     }
   }
-  if(found.size)perFile.push([path.relative(root,filename),found.size]);
+  dependencies.set(filename,resolved);
 }
-console.log('PSE_LOCAL_IMPORT_SCAN='+JSON.stringify({files:all.length,filesWithLocalImports:perFile.length,unresolved:issues.length}));
-for(const error of issues.slice(0,100))console.log('PSE_IMPORT_MISSING='+JSON.stringify(error));
-if(issues.length)throw Error('PSE local source imports unresolved: '+issues.length);
+// Astro compiler treats files under src/pages as routes. ExtractHTML's eager
+// registry adds pages and TablePress components, even if an archive page is not
+// explicitly navigated to. Traverse those roots to distinguish active imports
+// from orphaned React template leftovers.
+const active=new Set(),queue=all.filter(p=>
+  /\/src\/pages\//.test(p)||/\/src\/astro\/pages\//.test(p)||
+  /\/src\/astro\/tablepress\//.test(p));
+for(const seed of queue)active.add(seed);
+while(queue.length){
+  const file=queue.shift();
+  for(const dep of dependencies.get(file)||[]){
+    if(!active.has(dep)){active.add(dep);queue.push(dep)}
+  }
+}
+const relevant=missing.filter(x=>active.has(x.file));
+const inactive=missing.filter(x=>!active.has(x.file));
+console.log('PSE_LOCAL_IMPORT_SCAN='+JSON.stringify({
+  sourceFiles:all.length,activeAstroGraphFiles:active.size,
+  unresolvedActive:relevant.length,unresolvedInactive:inactive.length
+}));
+for(const x of relevant)console.log('PSE_ACTIVE_IMPORT_MISSING='+JSON.stringify({source:x.source,specifier:x.specifier,reason:x.reason}));
+for(const x of inactive.slice(0,35))console.log('PSE_INACTIVE_TEMPLATE_IMPORT='+JSON.stringify({source:x.source,specifier:x.specifier}));
+if(relevant.length)throw Error('PSE active Astro graph has '+relevant.length+' unresolved local imports');
 console.log('PSE_LOCAL_IMPORT_AUDIT=PASS; NO_BUILD=true; NO_DEPLOY=true');
