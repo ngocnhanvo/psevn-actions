@@ -130,7 +130,19 @@ try{
  }
  const tinymceButton=page.locator('#wp-content-wrap .mce-btn[title="Insert a ESC Table"],#wp-content-wrap button[title="Insert a ESC Table"]').first();
  const quickButton=page.locator('#qt_content_tablepress_quicktags_button');
- const input=insertionMode==='tinymce'?tinymceButton:quickButton;
+ let input=insertionMode==='tinymce'?tinymceButton:quickButton;
+ // The existing ESC Table editor sometimes loads TinyMCE without its plugin
+ // toolbar icon. In that case use the official registered Quicktags button,
+ // not literal shortcode insertion.
+ if(insertionMode==='tinymce'&&!await input.isVisible().catch(()=>false)){
+  const textTab=page.locator('#content-html');
+  if(!await textTab.isVisible().catch(()=>false))
+   throw Error('TinyMCE ESC button missing and native Quicktags tab unavailable');
+  await click(textTab);
+  insertionMode='quicktags';
+  await page.locator('textarea#content').fill('');
+  input=quickButton;
+ }
  if(!await input.isVisible().catch(()=>false))
   throw Error('Native WordPress ESC Table Insert Code button unavailable in '+insertionMode+' mode');
  console.log('PSE_PUBLIC_HOME_NATIVE_INSERT_MODE='+insertionMode);
