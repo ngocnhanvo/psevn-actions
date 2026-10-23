@@ -114,13 +114,16 @@ try {
    }
    const check=await api("/wp-json/wp/v2/posts/"+id+"?context=edit&_fields=id,status,slug,categories,content,excerpt,pse_seo_description");
    const p=check.data;
+   const relatedStillPresent=await page.evaluate(html=>{
+     const root=new DOMParser().parseFromString(html,"text/html");
+     return [...root.querySelectorAll("h1,h2,h3,h4,h5,p")].some(el=>
+       String(el.textContent||"").trim().toLocaleLowerCase("vi")==="các bài viết khác");
+   },String(p?.content?.raw||""));
    if(check.status!==200||p?.status!==post.status||p.slug!==post.slug||
      JSON.stringify(p.categories)!==JSON.stringify(post.categories)||
      String(p.excerpt?.raw||"").trim()!==seo||
      String(p.pse_seo_description||"").trim()!==seo||
-     !String(p.content?.raw||"").includes("pse-legacy-attribution")||
-     [...new DOMParser().parseFromString(String(p.content?.raw||""),"text/html").querySelectorAll("h1,h2,h3,h4,h5,p")]
-      .some(el=>String(el.textContent||"").trim().toLocaleLowerCase("vi")==="các bài viết khác"))
+     !String(p.content?.raw||"").includes("pse-legacy-attribution")||relatedStillPresent)
      throw Error("Post correction read-after-write failed");
    row.seo_cleaned=true;
    row.seo_error=null;
