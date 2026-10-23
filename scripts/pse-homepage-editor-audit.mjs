@@ -240,6 +240,27 @@ try{
   });
   console.log('PSE_NEWS_ESC_GRID_AUTHORING_SHAPE='+JSON.stringify(gridShape));
 
+  // WordPress Header menu is the source of navigation. Audit the existing
+  // published tree before any redesign/cutover; no CMS/menu mutation.
+  const menuSummary=await page.evaluate(async ()=>{
+    const res=await fetch('/wp-json/esc-api/v1/menus',{credentials:'same-origin',
+      headers:{Accept:'application/json'}});
+    if(!res.ok)return {http:res.status,configured:false};
+    const body=await res.json();
+    const header=body?.menus?.Header||{};
+    const versions=Object.entries(header).map(([lang,value])=>({
+      lang,code:value?.code||null,type:value?.type||null,
+      items:Array.isArray(value?.items)?value.items.slice(0,20).map(item=>({
+        label:String(item?.label||'').slice(0,95),
+        slug:String(item?.slug||'').slice(0,135),
+        childCount:Array.isArray(item?.children)?item.children.length:0,
+        linkType:item?.linkType||null
+      })):[]
+    }));
+    return {http:res.status,configured:body?.success===true,versions};
+  });
+  console.log('PSE_WP_HEADER_MENU_AUDIT='+JSON.stringify(menuSummary));
+
   console.log('PSE_CMS_AUTHORING_PREFLIGHT=PASS read_only=true no_content_saved=true');
 
   console.log('PSE_EDITOR_AUDIT=PASS read_only=true no_content_saved=true');
