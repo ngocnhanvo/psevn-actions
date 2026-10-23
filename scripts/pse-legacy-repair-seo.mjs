@@ -16,7 +16,7 @@ if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.search||
 const origin=parsed.origin;
 const jobs=Object.entries(state.articles).filter(([sourceId,row])=>
  /^\d{3,6}$/.test(sourceId) && Number.isSafeInteger(row.wp_id) &&
- ["imported","draft_needs_date"].includes(row.status) &&
+ ["imported","draft_needs_date","existing"].includes(row.status) &&
  !row.seo_cleaned && Number(row.seo_attempts||0)<3
 ).slice(0,12);
 if(jobs.length===0){console.log("PSE_LEGACY_SEO_REPAIR=NO_PENDING");process.exit(0)}
@@ -67,7 +67,7 @@ try {
    const source=new URL(row.source_url);
    if(source.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(source.hostname))
      throw Error("Untrusted original source");
-   if(!oldHtml.includes('pse-legacy-attribution')||!oldHtml.includes(row.source_url))
+   if(row.status!=="existing" && (!oldHtml.includes('pse-legacy-attribution')||!oldHtml.includes(row.source_url)))
      throw Error("Post has no exact migration provenance marker");
    const expectedSlug=source.pathname.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
    if(!expectedSlug||post.slug!==expectedSlug)throw Error("Post slug differs from original migration");
@@ -76,9 +76,8 @@ try {
      const doc=new DOMParser().parseFromString(html,"text/html");
      const root=doc.body;
      const footer=root.querySelector("p.pse-legacy-attribution");
-     if(!footer)throw Error("Attribution paragraph missing");
-     const footerNode=footer.cloneNode(true);
-     footer.remove();
+     const footerNode=footer?.cloneNode(true)||null;
+     footer?.remove();
      const normal=s=>String(s||"").replace(/[\u00a0\s]+/g," ").trim().toLocaleLowerCase("vi");
      const heading=[...root.querySelectorAll("h1,h2,h3,h4,h5,p")].find(el=>
        normal(el.textContent)==="các bài viết khác");
@@ -89,7 +88,7 @@ try {
        range.deleteContents();
      }
      const visible=String(root.textContent||"").replace(/\s+/g," ").trim();
-     root.appendChild(footerNode);
+     if(footerNode)root.appendChild(footerNode);
      return {html:root.innerHTML.trim(),bodyText:visible,removed:!!heading};
    },oldHtml);
    if(transformed.bodyText.length<80)throw Error("Article content unexpectedly short after cleanup");
@@ -123,7 +122,7 @@ try {
      JSON.stringify(p.categories)!==JSON.stringify(post.categories)||
      String(p.excerpt?.raw||"").trim()!==seo||
      String(p.pse_seo_description||"").trim()!==seo||
-     !String(p.content?.raw||"").includes("pse-legacy-attribution")||relatedStillPresent)
+     (row.status!=="existing" && !String(p.content?.raw||"").includes("pse-legacy-attribution"))||relatedStillPresent)
      throw Error("Post correction read-after-write failed");
    row.seo_cleaned=true;
    row.seo_error=null;
@@ -141,5 +140,5 @@ try {
 }finally{await persist();await browser.close()}
 console.log("PSE_LEGACY_SEO_REPAIR=PARTIAL; changed="+repaired+"; already_clean="+unchanged+
  "; retry="+failed+"; queued="+Object.values(state.articles).filter(x=>x.wp_id&&
- ["imported","draft_needs_date"].includes(x.status)&&!x.seo_cleaned).length+
+ ["imported","draft_needs_date","existing"].includes(x.status)&&!x.seo_cleaned).length+
  "; no_build=true");
