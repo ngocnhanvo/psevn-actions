@@ -70,7 +70,13 @@ try{
  const response=await ctx.request.get(frontend+'/sitemap.xml',{timeout:20000});
  if(!response.ok())throw Error('Cannot verify current public PSE sitemap status');
  const old=await response.text();
- if(!/<urlset\b/.test(old)||!/<\/urlset>/.test(old)||/<url(?:\s[^>]*)?>/.test(old))
+ const diagnostic={
+   http:response.status(),mime:String(response.headers()['content-type']||'').split(';')[0],
+   bytes:old.length,hasUrlset:/<urlset\b/.test(old),hasClose:/<\/urlset>/.test(old),
+   hasUrlEntry:/<url(?:\s[^>]*)?>/.test(old),looksHtml:/<!doctype html|<html/i.test(old)
+ };
+ console.log('PSE_PUBLIC_SITEMAP_SAFETY_DIAGNOSTIC='+JSON.stringify(diagnostic));
+ if(!diagnostic.hasUrlset||!diagnostic.hasClose||diagnostic.hasUrlEntry)
   throw Error('Current public sitemap is not the verified empty legacy urlset');
  console.log('PSE_SEO_SITEMAP_REPAIR_PREFLIGHT=PASS; existing_mode=auto; old_entries=0; new_entries='+urls.length);
  await tab.goto(origin+'/wp-admin/options-general.php?page=esc-seo-files&tab=sitemap',
