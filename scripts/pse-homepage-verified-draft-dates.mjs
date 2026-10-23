@@ -1,12 +1,15 @@
 /** Preserve externally verified Joomla RSS publication timestamps on the matching
  * private WordPress drafts. Never publish posts or modify their content.
- * Source: PSE original RSS and Atom audit, Actions #39920844804.
+ * Source: PSE original RSS/Atom audits, Actions #39920844804 and #39922060381.
  */
 import { chromium } from 'playwright';
 const records=[
  {id:76975,category:1742,slug:'pvfcco-pse-to-chuc-thanh-cong-giai-pickleball-pse-open-2026',
   title:'PVFCCo-PSE tổ chức thành công Giải Pickleball PSE Open 2026',
   signal:'PSE Open 2026',local:'2026-07-28T02:38:45',gmt:'2026-07-27T19:38:45'},
+ {id:76976,category:1743,slug:'diem-tin-nganh-nong-nghiep-tren-cac-bao-ra-ngay-1462013',
+  title:'Điểm tin ngành Nông nghiệp trên các báo ra ngày 14/6/2013',
+  signal:'NHỮNG VẤN ĐỀ NỔI BẬT',local:'2013-06-17T08:12:14',gmt:'2013-06-17T01:12:14'},
  {id:76977,category:1744,slug:'20261019-cbtt-bao-cao-tai-chinh-q3-2026',
   title:'2026.10.19: CBTT – Báo cáo tài chính Q3/2026',
   signal:'Báo cáo tài chính quý 3 năm 2026',local:'2026-10-19T15:04:22',gmt:'2026-10-19T08:04:22'}
@@ -116,5 +119,5 @@ try{
      '; source=original_PSE_RSS'+(rec.id===76975?'+Atom':'')+
      '; date='+rec.local+'; date_gmt='+rec.gmt+'; status=draft; action='+(same?'verified_no_mutation':'updated'));
  }
- console.log('PSE_PRIVATE_DATES_BATCH=PASS; article_count=2; uncertain_2013_post_76976_UNTOUCHED=true; homepage_248_UNCHANGED=true; no_publication=true; no_build=true');
+ console.log('PSE_PRIVATE_DATES_BATCH=PASS; article_count=3; all_three_original_dates_source_verified=true; homepage_248_UNCHANGED=true; no_publication=true; no_build=true');
 }finally{await browser.close()}
