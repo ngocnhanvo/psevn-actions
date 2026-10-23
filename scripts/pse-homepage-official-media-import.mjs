@@ -88,6 +88,12 @@ try {
     if(existing.length>1)throw Error('Ambiguous existing media for '+asset.key);
     let media=existing[0];
     if(media){
+      console.log('PSE_EXISTING_MEDIA_DETAIL='+JSON.stringify({
+        key:asset.key,id:media.id,slug:media.slug,mime:media.mime_type,
+        sourceHost:(()=>{try{return new URL(media.source_url).hostname}catch{return null}})(),
+        sourcePath:(()=>{try{return new URL(media.source_url).pathname.slice(0,140)}catch{return null}})(),
+        validMediaUrl:wpMediaUrlValid(media.source_url)
+      }));
       if(media.mime_type!==asset.mime||!wpMediaUrlValid(media.source_url))
         throw Error('Existing PSE WordPress media has unexpected type/origin');
       console.log('PSE_OFFICIAL_MEDIA=ALREADY_EXISTS; key='+asset.key+'; id='+media.id);
