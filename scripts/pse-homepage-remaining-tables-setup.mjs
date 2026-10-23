@@ -46,6 +46,16 @@ const origin=readOrigin();
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000}});
 const page=await context.newPage();
+// Attach one handler for the entire session. Re-attaching it for each table
+// races Playwright's dialog.accept() and can abort a partially completed job.
+page.on('dialog',async dialog=>{
+  try{
+    if(dialog.type()==='confirm')await dialog.accept();
+    else await dialog.dismiss();
+  }catch(error){
+    if(!String(error).includes('already handled'))throw error;
+  }
+});
 const auth=async()=>{
   const username=process.env.WP_ADMIN_USERNAME,password=process.env.WP_ADMIN_PASSWORD;
   if(!username||!password)throw new Error('Missing WP Admin credentials');
@@ -89,10 +99,19 @@ try{
   for(const spec of sectionSpecs){
     let existing=await getTable(spec.id);
     if(existing){
-      assertSchema(existing,spec);
-      console.log('PSE_SECTION_TABLE=ALREADY_CORRECT; id='+spec.id+'; no duplicate/mutation');
-      continue;
+      try{
+        assertSchema(existing,spec);
+        console.log('PSE_SECTION_TABLE=ALREADY_CORRECT; id='+spec.id+'; no duplicate/mutation');
+        continue;
+      }catch(error){
+        // Previous attempt might have created the table but stopped before
+        // authoring its columns. Only resume when its dimensions match.
+        if(existing.fields?.length!==spec.rows[0].length||
+           existing.items?.length!==spec.rows.length-2)throw error;
+        console.log('PSE_SECTION_TABLE=RESUME_EXISTING; id='+spec.id);
+      }
     }
+    if(!existing){
     const list=origin+'/wp-admin/admin.php?page=tablepress';
     await page.goto(list,{waitUntil:'domcontentloaded',timeout:60000});
     await page.waitForTimeout(1100);
@@ -110,7 +129,6 @@ try{
     await page.locator('#table-id').waitFor({state:'visible',timeout:45000});
     const generated=await page.locator('#table-id').inputValue();
     if(!/^\d+$/.test(generated))throw new Error('Unexpected generated table ID');
-    page.on('dialog',async dialog=>{if(dialog.type()==='confirm')await dialog.accept();else await dialog.dismiss()});
     await page.locator('#table-id').fill(spec.id);
     await page.locator('#table-name').focus();
     await page.waitForTimeout(450);
@@ -118,6 +136,7 @@ try{
     await page.waitForTimeout(2600);
     existing=await getTable(spec.id);
     if(!existing)throw new Error('Table ID rename not visible in REST, stop to avoid duplicates: '+spec.id);
+    }
     await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=edit&table_id='+spec.id,
       {waitUntil:'domcontentloaded',timeout:60000});
     await page.waitForTimeout(1600);
@@ -131,15 +150,26 @@ try{
     });
     if(edit.id!==spec.id||!edit.setValue||edit.rows?.length!==spec.rows.length||
       edit.rows[0]?.length!==spec.rows[0].length||
-      !edit.rows.every(row=>row.every(v=>String(v??'').trim()==='')))
+      !edit.rows.every((row,y)=>row.every((value,x)=>{
+        const current=String(value??'').trim();
+        return !current||current===spec.rows[y][x];
+      })))
       throw new Error('Unexpected source grid; will not overwrite: '+spec.id);
-    await page.evaluate(rows=>{
-      const tp=window.tp;
-      rows.forEach((row,y)=>row.forEach((val,x)=>{if(val)tp.editor.setValueFromCoords(x,y,val)}));
-      tp.helpers.unsaved_changes.set();
-    },spec.rows);
-    await page.getByRole('button',{name:'Save Changes',exact:true}).first().click();
-    await page.waitForTimeout(2300);
+    const missing=edit.rows.some((row,y)=>row.some((value,x)=>
+      Boolean(spec.rows[y][x])&&!String(value??'').trim()
+    ));
+    if(missing){
+      await page.evaluate(rows=>{
+        const tp=window.tp;
+        rows.forEach((row,y)=>row.forEach((val,x)=>{
+          if(val&&!String(tp.table.data[y][x]??'').trim())
+            tp.editor.setValueFromCoords(x,y,val);
+        }));
+        tp.helpers.unsaved_changes.set();
+      },spec.rows);
+      await page.getByRole('button',{name:'Save Changes',exact:true}).first().click();
+      await page.waitForTimeout(2300);
+    }
     const after=await getTable(spec.id);
     assertSchema(after,spec);
     console.log('PSE_SECTION_TABLE_REST_READ_AFTER_WRITE=PASS; id='+spec.id+
