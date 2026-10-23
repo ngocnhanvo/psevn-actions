@@ -14,8 +14,8 @@ const origin=(()=>{
   return u.origin;
 })();
 const sourceRoot=path.resolve('source');
-const tempQaSrcDir=path.join(sourceRoot,'__pse-qa-src');
-const routePath=path.join(tempQaSrcDir,'pages/__pse_qa.astro');
+const tempQaSrcDir=path.join(sourceRoot,'pse-qa-src');
+const routePath=path.join(tempQaSrcDir,'pages/pse-qa.astro');
 const astroConfigPath=path.join(sourceRoot,'astro.config.mjs');
 let originalConfig;
 
@@ -154,8 +154,8 @@ try{
   if(!originalConfig.includes('noExternal: [/.*/]'))throw Error('Expected inherited Astro SSR config not found');
   const safeConfig=originalConfig
     .replace('noExternal: [/.*/]','noExternal: []')
-    .replace('export default defineConfig({',"export default defineConfig({\n  srcDir: './__pse-qa-src',");
-  if(safeConfig===originalConfig||!safeConfig.includes("srcDir: './__pse-qa-src'"))
+    .replace('export default defineConfig({',"export default defineConfig({\n  srcDir: './pse-qa-src',");
+  if(safeConfig===originalConfig||!safeConfig.includes("srcDir: './pse-qa-src'"))
     throw Error('QA-only Astro srcDir override failed');
   await writeFile(astroConfigPath,safeConfig);
   console.log('PSE_QA_ISOLATED_DEV_SRCDIR=ON; production_source_unmodified=true');
@@ -169,7 +169,7 @@ try{
   for(const stream of [server.stdout,server.stderr]){
     stream.on('data',d=>{output=(output+String(d)).slice(-6000)});
   }
-  const testUrl='http://127.0.0.1:4321/__pse_qa';
+  const testUrl='http://127.0.0.1:4321/pse-qa';
   let ready=false;
   for(let i=0;i<90;i++){
     if(server.exitCode!==null)throw Error('Astro dev server exited before readiness: '+output.slice(-800));
