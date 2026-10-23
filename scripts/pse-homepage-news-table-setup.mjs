@@ -60,9 +60,9 @@ try{
       'PSE homepage 3 news columns: company, agriculture market and shareholder. WordPress posts and category IDs to be linked after verified migration. Not yet published.');
     const numeric=page.locator('input[type="number"]');
     if(await numeric.count()<2)throw new Error('Table row/column inputs unavailable');
-    await numeric.nth(0).fill('4');
+    await numeric.nth(0).fill('5');
     await numeric.nth(1).fill('3');
-    console.log('PSE_CMS_NEWS_TABLE_CREATE_ATTEMPT=START; rows=4 columns=3');
+    console.log('PSE_CMS_NEWS_TABLE_CREATE_ATTEMPT=START; rows=5 columns=3');
     await page.getByRole('button',{name:'Add Table'}).click();
     await page.waitForTimeout(1900);
     const idField=page.locator('#table-id');
@@ -94,5 +94,73 @@ try{
   const verified=await page.locator('#wpbody-content').innerText();
   if(!verified.includes(tableId))throw new Error('Read-after-write did not confirm requested ESC Table ID');
   console.log('PSE_CMS_NEWS_TABLE_READ_AFTER_WRITE=PASS; id='+tableId);
-  console.log('PSE_CMS_NEWS_TABLE_SCOPE=NEW_TABLE_ONLY; HOME_UNCHANGED=true; ARTICLES_UNCHANGED=true; NO_BUILD=true');
+  // PHP's existing REST endpoint uses row 0 for keys, row 1 for labels,
+  // and rows 2.. for component items. Keep three genuinely editable news lanes.
+  const expected=[
+    ['label','categoryId','href'],
+    ['Tên nhóm','ID chuyên mục WordPress','Liên kết chuyên mục'],
+    ['Tin PVFCCo-PSE','',''],
+    ['Tin mùa vụ thị trường','',''],
+    ['Thông tin cổ đông','',''],
+  ];
+  await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=edit&table_id='+tableId,
+    {waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForTimeout(1800);
+  const before=await page.evaluate(()=>{
+    const table=window.tp?.table;
+    return {
+      id:table?.id||table?.meta?.id,
+      data:Array.isArray(table?.data)?table.data.map(row=>Array.from(row)):null,
+      hasEditorSetValue:typeof window.tp?.editor?.setValueFromCoords==='function',
+      hasRowsAppend:!!document.querySelector('#rows-append-number'),
+    };
+  });
+  if(before.id!==tableId||!before.data||before.data[0]?.length!==3)throw new Error('Wrong ESC Table or column count');
+  if(!before.hasEditorSetValue||!before.hasRowsAppend)throw new Error('Required ESC Table GUI editing capability missing');
+  const exact=JSON.stringify(before.data)===JSON.stringify(expected);
+  if(exact){
+    console.log('PSE_CMS_NEWS_FIELDS=ALREADY_CONFIGURED; no extra edit');
+  }else{
+    // A human-edited or partially filled table must not be overwritten.
+    const blank=before.data.every(row=>row.every(cell=>String(cell??'').trim()===''));
+    if(!blank||![4,5].includes(before.data.length)){
+      throw new Error('ESC Table existing grid is not the expected blank draft; manual review before mutation');
+    }
+    if(before.data.length===4){
+      await page.locator('#rows-append-number')
+        .locator('xpath=ancestor::td')
+        .getByRole('button',{name:'Add',exact:true}).click();
+      await page.waitForTimeout(250);
+    }
+    const configured=await page.evaluate(rows=>{
+      const tp=window.tp;
+      const editor=tp?.editor;
+      if(!editor?.setValueFromCoords)throw new Error('Editor change API unavailable');
+      if(editor.options.data.length!==5)throw new Error('Expected exactly five rows after native Add button');
+      rows.forEach((row,y)=>row.forEach((value,x)=>{
+        if(value)editor.setValueFromCoords(x,y,value);
+      }));
+      tp.helpers.unsaved_changes.set();
+      return editor.options.data.length;
+    },expected);
+    if(configured!==5)throw new Error('Table row authoring did not reach five rows');
+    console.log('PSE_CMS_NEWS_FIELDS_GUI_EDIT=PASS; five_rows=true');
+    await page.getByRole('button',{name:'Save Changes',exact:true}).first().click();
+    await page.waitForTimeout(2500);
+  }
+  // WordPress-owned REST data is the actual renderer contract; verify it, not only UI toast.
+  const check=await page.evaluate(async()=>{
+    const response=await fetch('/wp-json/tablepress/v1/table/pse_01_vi',
+      {credentials:'same-origin',headers:{Accept:'application/json','Cache-Control':'no-cache'}});
+    if(!response.ok)throw new Error('ESC Table read-after-write REST HTTP '+response.status);
+    const data=await response.json();
+    return {id:data?.id,fields:data?.fields,items:data?.items};
+  });
+  if(check.id!==tableId||
+    JSON.stringify(check.fields?.map(x=>x.key))!==JSON.stringify(expected[0])||
+    JSON.stringify(check.items?.map(x=>[x.label,x.categoryId,x.href]))!==JSON.stringify(expected.slice(2))){
+    throw new Error('REST read-after-write rows mismatch; do not attach shortcode yet');
+  }
+  console.log('PSE_CMS_NEWS_THREE_LANES_READ_AFTER_WRITE=PASS; items=3; categories=unconfigured; no fabricated posts');
+  console.log('PSE_CMS_NEWS_TABLE_SCOPE=TABLE_STRUCTURE_ONLY; HOME_UNCHANGED=true; ARTICLES_UNCHANGED=true; NO_BUILD=true');
 }finally{await browser.close()}
