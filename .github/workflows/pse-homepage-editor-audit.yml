@@ -123,7 +123,8 @@ jobs:
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.ref == 'refs/heads/main' &&
       github.event_name == 'push' &&
-      github.event.head_commit.message == 'test(pse): verify real CMS homepage sections in Astro dev browser (NO BUILD)'
+      (github.event.head_commit.message == 'test(pse): verify real CMS homepage sections in Astro dev browser (NO BUILD)' ||
+      github.event.head_commit.message == 'test(pse): verify private PSE search archive in isolated browser (NO BUILD)')
     runs-on: ubuntu-latest
     timeout-minutes: 18
     container:
@@ -133,6 +134,7 @@ jobs:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_QA_ARCHIVE_ONLY: ${{ github.event.head_commit.message == 'test(pse): verify private PSE search archive in isolated browser (NO BUILD)' && '1' || '0' }}
     steps:
       - name: Checkout PSE Actions test harness
         uses: actions/checkout@v4
