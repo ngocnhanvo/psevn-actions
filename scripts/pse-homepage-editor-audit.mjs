@@ -146,10 +146,10 @@ try{
     const ta=field?.querySelector('textarea');
     const editor=ta&&window.tinymce?.get(ta.id);
     const buttons=Array.from(field?.querySelectorAll('[role="toolbar"] button,.mce-toolbar button,.mce-menu-item,.mce-btn')||[])
-      .map(x=>({label:(x.getAttribute('aria-label')||x.title||x.textContent||'').replace(/\\s+/g,' ').trim().slice(0,60),
+      .map(x=>({label:(x.getAttribute('aria-label')||x.title||x.textContent||'').replace(/\s+/g,' ').trim().slice(0,60),
                 cls:String(x.className||'').slice(0,80)})).filter(x=>x.label).slice(0,60);
     const data=String(editor?.getContent({format:'raw'})||ta?.value||'');
-    const matches=[...data.matchAll(/\\[table\\s+id=([A-Za-z0-9_-]+)\\s*\\/\\]/gi)].map(m=>m[1]);
+    const matches=[...data.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1]);
     const csrf=window.wpApiSettings?.nonce||window.wp?.apiFetch?.nonceMiddleware?.nonce||'';
     const resp=await fetch('/wp-json/wp/v2/pages/248/revisions?per_page=1&context=edit',
       {credentials:'same-origin',headers:{Accept:'application/json',...(csrf?{'X-WP-Nonce':csrf}:{})}});
@@ -158,7 +158,7 @@ try{
     return {
       editorInitialized:!!editor,
       editorId:ta?.id||null,
-      plugins:typeof editor?.settings?.plugins==='string'?editor.settings.plugins.split(/[,\\s]+/).filter(Boolean).slice(0,35):[],
+      plugins:typeof editor?.settings?.plugins==='string'?editor.settings.plugins.split(/[,\s]+/).filter(Boolean).slice(0,35):[],
       buttons,
       shortcodeIds:matches,
       fieldEmpty:!data.trim(),
