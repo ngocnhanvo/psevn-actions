@@ -134,7 +134,7 @@ try{
     'const page=payload.currentPage;',
     'const data_info=payload.companyInfo;',
     'const pages=payload.pages;',
-    'const headProps={title:page.title,description:"PSE internal design QA",lang:"vi",data_info,WC_URL:process.env.WC_URL,WC_URL_CLIENT:Astro.url.origin,basename:"/"};',
+    'const headProps={title:page.title,description:"PSE internal design QA",lang:"vi",href:Astro.url.href,currentPage:page,data_info,WC_URL:process.env.WC_URL,WC_URL_CLIENT:Astro.url.origin,basename:"/"};',
     '---',
     '<Layout data_info={data_info} pages={pages} menus={[]} currentPage={page} headProps={headProps}>',
     '  <main id="main-content">',
