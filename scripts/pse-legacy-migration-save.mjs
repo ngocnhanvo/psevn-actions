@@ -45,7 +45,7 @@ const pending=local.queue.length>0 || Object.values(local.articles).some(
     (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
       Number(row.attempts||0)<3) ||
     (row.wp_id && ["imported","draft_needs_date","existing"].includes(row.status) &&
-      !row.seo_cleaned && Number(row.seo_attempts||0)<3)
+      !row.seo_cleaned && (Number(row.seo_attempts||0)<3 || row.seo_error==="Post has no exact migration provenance marker"))
 );
 const canContinue=progress && pending && local.runs<250;
 if(process.env.GITHUB_ENV)
