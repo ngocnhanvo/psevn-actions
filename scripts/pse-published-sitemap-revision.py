@@ -64,6 +64,10 @@ def main():
         # UUID contains no credentials; never export file contents or XML.
         with open(os.environ["GITHUB_ENV"], "a", encoding="utf8") as output:
             output.write("PSE_PUBLISHED_SITEMAP_REVISION=" + str(previous) + "\n")
+            # This project inherits the shared Astro SEO engine, which reads
+            # the standard TEMPLATE_ variable; publish the same validated
+            # revision to both names (never expose the token as an XML URL).
+            output.write("TEMPLATE_PUBLISHED_SITEMAP_REVISION=" + str(previous) + "\n")
         print("PASS: verified published PSE sitemap revision marker using FTPS only; " +
               ("already deployed" if previous != "missing" else "legacy/initial deployment"))
     finally:
