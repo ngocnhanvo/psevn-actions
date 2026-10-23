@@ -19,6 +19,7 @@ on:
       - scripts/pse-homepage-visual-qa.mjs
       - scripts/pse-homepage-navigation-audit.mjs
       - scripts/pse-legacy-menu-readonly.mjs
+      - scripts/pse-homepage-header-menu-import.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -48,6 +49,10 @@ jobs:
         if: >-
           github.event_name == 'push' && github.event.head_commit.message == 'test(pse): inspect verified legacy PSE nav hierarchy (READ ONLY)'
         run: node scripts/pse-legacy-menu-readonly.mjs
+      - name: Replace inherited EduResearch Header using native WordPress PSE Menu Import
+        if: >-
+          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): replace inherited research Header menu with verified PSE legacy tree'
+        run: node scripts/pse-homepage-header-menu-import.mjs
       - name: Inspect actual PSE CMS Pages and Header menu before safe replacement
         if: >-
           github.event_name == 'push' && github.event.head_commit.message == 'test(pse): inspect PSE pages and existing Header menu before replacement (READ ONLY)'
