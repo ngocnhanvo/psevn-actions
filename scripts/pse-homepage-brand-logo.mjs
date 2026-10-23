@@ -71,11 +71,23 @@ try {
      media.payload.media_details?.file?.split('/').at(-1)!=='pse-original-logo-2025.jpg'||
      media.payload.media_details?.width!==606||media.payload.media_details?.height!==90)
     throw Error('Official PSE logo is not the previously verified WP Media attachment');
+  if(existingId>0&&existingId!==76980){
+    const previous=await api('/wp-json/wp/v2/media/'+existingId+'?context=edit');
+    const info=previous.payload||{};
+    const guid=String(info.guid?.rendered||info.source_url||'');
+    console.log('PSE_EXISTING_HEADER_LOGO_AUDIT='+JSON.stringify({
+      wpInfoId:62,mediaId:existingId,mediaHTTP:previous.status,
+      mime:info.mime_type||null,slug:info.slug||null,
+      title:typeof info.title?.raw==='string'?info.title.raw.slice(0,100):null,
+      alt:info.alt_text||null,width:info.media_details?.width||null,height:info.media_details?.height||null,
+      file:info.media_details?.file||null,
+      urlPath:(()=>{try{return new URL(guid).pathname}catch{return null}})()
+    }));
+  }
   if(existingId===76980){
     console.log('PSE_HEADER_LOGO=ALREADY_CONFIGURED; media_id=76980; no mutation');
   }else if(existingId>0||typeof logo==='string'&&logo.trim()){
-    console.log('PSE_HEADER_LOGO=FOREIGN_EXISTING_IMAGE; existing_id='+existingId+'; no overwrite');
-    throw Error('WordPress logo has nonempty different value; protect user edits');
+    console.log('PSE_HEADER_LOGO=EXISTING_UNTOUCHED; existing_id='+existingId+'; no overwrite; manual classification needed from audit evidence');
   }else{
     const update=await api('/wp-json/wp/v2/thong-tin-chung/62','POST',{acf:{logo:76980}});
     if(update.status!==200||update.payload.id!==62)
