@@ -22,6 +22,14 @@ let originalConfig;
 
 const shots=path.resolve('artifacts/pse-homepage-visual-qa');
 const pageWait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+let currentQaPhase='initial';
+const qaOverallLimit=setTimeout(()=>{
+  console.error('PSE_QA_GLOBAL_WATCHDOG=FAIL; phase='+currentQaPhase);
+  process.exit(124);
+},240000);
+qaOverallLimit.unref();
+const phase=p=>{currentQaPhase=p;console.log('PSE_QA_PHASE='+p)};
+phase('launch-browser');
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:900}});
 const admin=await context.newPage();
@@ -29,6 +37,7 @@ let server;
 try{
   const username=process.env.WP_ADMIN_USERNAME,password=process.env.WP_ADMIN_PASSWORD;
   if(!username||!password)throw Error('WordPress admin secrets missing');
+  phase('wordpress-admin-login');
   await admin.goto(origin+'/wp-admin/',{waitUntil:'domcontentloaded',timeout:60000});
   if(await admin.locator('#user_login').count()){
     await admin.locator('#user_login').fill(username);
@@ -61,17 +70,21 @@ try{
     if(v.status!==200)throw Error('WordPress REST GET failed HTTP '+v.status+' for '+endpoint.split('?')[0]);
     return v.payload;
   };
+  phase('cms-read-draft');
   const draft=await read('/wp-json/wp/v2/pages/76969?context=edit&_fields=id,status,title,slug,content,acf');
   if(draft.id!==76969||draft.status!=='draft'||draft.acf?.action!=='HomePage'||
     draft.acf?.key!=='pse-home-design-draft')throw Error('Wrong PSE unpublished draft');
   const content=String(draft.content?.raw||'');
   const actual=[...content.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1].toLowerCase());
   if(JSON.stringify(actual)!==JSON.stringify(ids))throw Error('PSE draft shortcodes changed');
+  phase('cms-read-tables');
   const tables=await Promise.all(ids.map(id=>read('/wp-json/tablepress/v1/table/'+id)));
   if(tables.some((table,i)=>table.id!==ids[i]||!Array.isArray(table.items)))
     throw Error('WordPress ESC Table data contract changed');
+  phase('cms-read-corporate');
   const corporate=await read('/wp-json/wp/v2/thong-tin-chung/62?context=edit&_fields=id,acf');
   if(corporate.id!==62||!corporate.acf)throw Error('Canonical company information missing');
+  phase('cms-read-logo');
   const logo=await read('/wp-json/wp/v2/media/76980?context=edit');
   if(logo.id!==76980||logo.media_details?.file?.split('/').at(-1)!=='pse-original-logo-2025.jpg')
     throw Error('Incorrect official logo Media');
@@ -97,6 +110,7 @@ try{
     }));
     throw Error('PSE official logo URL invalid');
   }
+  phase('cms-read-menu');
   const headerMenuResponse=await read('/wp-json/esc-api/v1/menus');
   const headerMenu=headerMenuResponse?.menus?.Header?.vi;
   const menuItems=headerMenu?.items||[];
@@ -104,6 +118,7 @@ try{
      menuItems.map(x=>x.label).join('|')!=='TRANG CHỦ|PVFCCo-PSE|TIN TỨC - SỰ KIỆN|HOẠT ĐỘNG KINH DOANH|QUAN HỆ NHÀ ĐẦU TƯ|LIÊN HỆ')
     throw Error('PSE actual WordPress Header menu is not the verified legacy tree');
   console.log('PSE_QA_WORDPRESS_MENU=PASS; roots=6; no_EduResearch_menu=true');
+  phase('cms-read-pages');
   const pagesRaw=await read('/wp-json/wp/v2/pages?status=publish&per_page=100&_fields=id,slug,acf,title');
   const pages=pagesRaw.map(p=>({
     id:String(p.id),key:String(p.acf?.key||''),action:String(p.acf?.action||''),
@@ -171,6 +186,7 @@ try{
   console.log('PSE_QA_ISOLATED_DEV_SRCDIR=ON; production_source_unmodified=true');
   // Isolated srcDir contains only the temporary PSE preview route. All
   // imported PSE and Layout components remain the original GitHub source.
+  phase('start-isolated-Astro-server');
   server=spawn('pnpm',['dev','--host','127.0.0.1','--port','4321'],{
     cwd:sourceRoot,env:{...process.env,WC_URL:origin,WC_URL_CLIENT:'http://127.0.0.1:4321',PUBLIC_ENABLE_MARKETING:'false'},
     stdio:['ignore','pipe','pipe']
@@ -198,6 +214,7 @@ try{
     process.exit(124);
   },220000);
   hardDeadline.unref();
+  phase('start-five-viewports');
   const dimensions=[375,390,768,1440,1920];
   for(const width of dimensions){
     qaPhase='viewport_'+width+'_opening';
@@ -316,6 +333,7 @@ try{
   clearTimeout(hardDeadline);
   console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; ExtractHTML_router_not_tested=true; no_build=true');
 }finally{
+  clearTimeout(qaOverallLimit);
   if(server&&!server.killed){server.kill('SIGTERM')}
   await rm(routePath,{force:true}).catch(()=>{});
   if(originalConfig!==undefined)await writeFile(astroConfigPath,originalConfig).catch(()=>{});
