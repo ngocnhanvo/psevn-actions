@@ -1,5 +1,6 @@
 /** Source-only Astro DEV browser QA with verified WordPress CMS. Not a build/deploy.
  * Temporary route lives exclusively inside Actions checkout and is not committed.
+ * Reject source-editor placeholder images and visually invisible section geometry.
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
