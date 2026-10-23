@@ -30,5 +30,6 @@ jobs:
       - name: Inspect PSE WordPress homepage and company editor without saving data
         run: node scripts/pse-homepage-editor-audit.mjs
       - name: Create one verified PSE news ESC Table (idempotent, no publication)
-        if: github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): author one verified news ESC Table'
+        if: >-
+          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): author one verified news ESC Table'
         run: node scripts/pse-homepage-news-table-setup.mjs
