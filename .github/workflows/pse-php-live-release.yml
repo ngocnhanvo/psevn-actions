@@ -34,6 +34,8 @@ jobs:
           set -euo pipefail
           php -l source-php/pse-unzip.php
           php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          php -l source-php/wp-content/plugins/github-trigger/vcs-hook.php
+          grep -Fq "'product', 'post', 'page'" source-php/wp-content/plugins/github-trigger/vcs-hook.php
           php -l source-php/wp-content/mu-plugins/esc-github-trigger-config.php
           php -l source-php/wp-content/mu-plugins/esc-seo-files.php
           ! grep -Eqi 'nghiencuukhoahoc|EduResearch Hub' source-php/wp-content/mu-plugins/esc-seo-files.php
