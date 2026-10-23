@@ -9,9 +9,11 @@ on:
       - "scripts/pse-legacy-migration-crawl.py"
       - "scripts/pse-legacy-migration-batch.mjs"
       - "scripts/pse-legacy-migration-save.mjs"
+      - "scripts/pse-legacy-migration-next.mjs"
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: pse-legacy-article-migration-single-writer
   cancel-in-progress: false
@@ -97,6 +99,15 @@ jobs:
           set -euo pipefail
           node --check scripts/pse-legacy-migration-save.mjs
           node scripts/pse-legacy-migration-save.mjs
+      - name: Hand off next bounded batch without relying solely on cron
+        if: success() && env.PSE_IMPORT_WORK == 'yes' && env.PSE_IMPORT_AUTO_NEXT == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-legacy-migration-next.mjs
+          node scripts/pse-legacy-migration-next.mjs
       - name: Upload non-secret batch report
         if: always() && env.PSE_IMPORT_WORK == 'yes'
         uses: actions/upload-artifact@v4

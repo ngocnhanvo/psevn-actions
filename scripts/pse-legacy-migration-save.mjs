@@ -1,7 +1,7 @@
 /** Persist ONLY the PSE migration checkpoint through Github Contents with SHA lease.
  * Called by a single serialized Actions worker. No application source changes.
  */
-import {readFile} from "node:fs/promises";
+import {readFile,appendFile} from "node:fs/promises";
 const token=process.env.GITHUB_TOKEN,repo=process.env.GITHUB_REPOSITORY;
 const file="docs/pse-legacy-migration-state.json";
 if(repo!=="ngocnhanvo/psevn-actions"||!token)throw Error("Wrong GitHub context");
@@ -22,6 +22,35 @@ const update=await fetch(url,{method:"PUT",headers:{...headers,"Content-Type":"a
  body:JSON.stringify({message:"chore(pse): checkpoint serialized legacy article migration batch",
   branch:"main",sha:remote.sha,content})});
 if(!update.ok)throw Error("Checkpoint update rejected HTTP "+update.status+" (not overriding other writer)");
+// Distinguish a real content/source/media advance from a no-op run count.
+// If a batch fails to make progress, don't start endless nested workflows.
+const beforeRecords=Object.keys(original.articles).length;
+const afterRecords=Object.keys(local.articles).length;
+const articleProgress=Object.entries(local.articles).some(([id,row])=>{
+  const previous=original.articles[id];
+  return !previous ||
+    row.status!==previous.status ||
+    Number(row.attempts||0)!==Number(previous.attempts||0) ||
+    row.wp_id!==previous.wp_id;
+});
+const progress=local.seen.length>original.seen.length ||
+  afterRecords>beforeRecords ||
+  Object.keys(local.media||{}).length>Object.keys(original.media||{}).length ||
+  local.queue.length!==original.queue.length ||
+  articleProgress;
+const pending=local.queue.length>0 || Object.values(local.articles).some(
+  row=>(["pending","media"].includes(row.status) && Number(row.attempts||0)<3) ||
+    (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
+      Number(row.attempts||0)<3)
+);
+const canContinue=progress && pending && local.runs<250;
+if(process.env.GITHUB_ENV)
+  await appendFile(process.env.GITHUB_ENV,"PSE_IMPORT_AUTO_NEXT="+(canContinue?"yes":"no")+"\n");
+console.log("PSE_LEGACY_HANDOFF_GATE="+JSON.stringify({
+  progress,pending,next_run:canContinue,
+  batch:local.runs,run_budget:250,
+  no_progress_stop:!progress,budget_stop:local.runs>=250
+}));
 console.log("PSE_LEGACY_QUEUE_CHECKPOINT=PASS; discovered="+Object.keys(local.articles).length+
  "; crawl_pending="+local.queue.length+"; states="+JSON.stringify(statuses)+
  "; batch_run="+local.runs+"; finished="+(local.discovered_complete&&
