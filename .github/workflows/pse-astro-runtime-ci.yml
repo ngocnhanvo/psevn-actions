@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/pse-astro-runtime-ci.yml
       - .pse-template-source-neutral-check
+      - scripts/pse-local-import-resolution-audit.mjs
 permissions:
   contents: read
 jobs:
@@ -22,6 +23,13 @@ jobs:
           path: source
           token: ${{ secrets.SOURCE_REPO_PAT }}
           persist-credentials: false
+      - name: Checkout PSE Actions local resolver (NO BUILD)
+        uses: actions/checkout@v4
+        with:
+          path: actions-hub
+          persist-credentials: false
+      - name: Detect unresolved local Astro/TypeScript imports before any build
+        run: node actions-hub/scripts/pse-local-import-resolution-audit.mjs
       - name: Set up pnpm without installing app
         uses: pnpm/action-setup@v4
         with:
