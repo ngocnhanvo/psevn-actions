@@ -101,10 +101,23 @@ try{
   if(await button.isDisabled())throw Error('WordPress Insert Image button disabled for '+item.id);
   await button.click();
   await page.locator('.media-modal').waitFor({state:'hidden',timeout:15000});
-  // WordPress built the HTML in its editor's helper textarea; TablePress change event stores it into the selected cell.
-  const stored=await page.evaluate(({row})=>String(window.tp.table.data[row][3]||''),{row});
+  // The WP Media frame writes into #textarea-insert-helper. Some ESC Table
+  // builds do not emit the textarea change event reliably; use the native
+  // TablePress helper callback rather than synthesizing HTML/URLs ourselves.
+  await page.waitForFunction(()=>String(document.querySelector('#textarea-insert-helper')?.value||'').includes('<img'),null,{timeout:10000}).catch(()=>{});
+  const result=await page.evaluate(({row})=>{
+   const tp=window.tp,helper=document.querySelector('#textarea-insert-helper');
+   const html=String(helper?.value||'');
+   if(html.startsWith('<img')&&typeof tp.helpers.editor.insert_from_helper_textarea==='function'&&!String(tp.table.data[row][3]||'').includes('<img')){
+    tp.helpers.selection={rows:[row],columns:[3]};
+    tp.helpers.editor.insert_from_helper_textarea.call(helper);
+   }
+   return {stored:String(tp.table.data[row][3]||''),helperPreview:html.slice(0,180),
+     editorCallback:typeof tp.helpers.editor.insert_from_helper_textarea};
+  },{row});
+  const stored=result.stored;
   if(!/^\s*<img\b/i.test(stored)||!(stored.includes('/'+item.name))||!/\balt=["'][^"']+["']/i.test(stored))
-   throw Error('ESC Insert Image generated invalid code in row '+(row+1)+': '+stored.slice(0,180));
+   throw Error('ESC Insert Image output invalid row '+(row+1)+': '+JSON.stringify(result));
   console.log('PSE_INSERT_IMAGE_NATIVE_CELL=PASS; row='+(row+1)+'; attachment_id='+item.id+'; has_alt=true');
  }
  const cells=await page.evaluate(()=>window.tp.table.data.slice(2).map(r=>String(r[3]||'')));
