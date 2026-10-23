@@ -22,7 +22,7 @@ expected_workflow=[
     "PSE_CLIENT_ORIGIN", "PSE_CLIENT_HOST",
     "PSE_DEPLOY_REQUEST_DOMAIN", "ASTRO_FTP_TARGET",
     "FTP_ASTRO_DIR",
-    "pse-staging-build.json", ".pse-sitemap-deploy-state.json",
+    "pse-staging-build.json", ".template-sitemap-deploy-state.json",
 ]
 for item in expected_workflow:
     assert item in workflow, "Missing inherited pipeline/tenant boundary: "+item
@@ -55,8 +55,9 @@ assert "set ssl:verify-certificate no" not in ftp, "Insecure FTP client"
 assert "PSE_CLIENT_HOST" in ftp and "pse-astro.zip" in ftp
 assert "PSE_PUBLISHED_SITEMAP_REVISION" in revision, "Save-token optimization changed"
 assert "FTP_TLS(context=ssl.create_default_context()" in revision, "Sitemap revision must use verified TLS"
-assert "PSE_PUBLISHED_SITEMAP_REVISION" in seo, "Astro Save-token is not connected"
-assert ".pse-sitemap-deploy-state.json" in seo
+assert "TEMPLATE_PUBLISHED_SITEMAP_REVISION" in revision, "Validated PSE FTP token must be forwarded to inherited Astro SEO key"
+assert "TEMPLATE_PUBLISHED_SITEMAP_REVISION" in seo, "Shared Astro SEO Save-token is not connected"
+assert ".template-sitemap-deploy-state.json" in seo, "Shared Astro SEO revision state path changed"
 assert "process.env.WC_URL_CLIENT" in seo, "SEO frontend must be from site config"
 assert "webnvn.com" not in seo, "Hardcoded website hostname remains in Astro SEO"
 print("PSE_PRODUCTION_PIPELINE_STATIC=PASS")
