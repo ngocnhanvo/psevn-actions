@@ -204,7 +204,39 @@ try{
       await view.screenshot({path:path.join(shots,'pse-debug-'+width+'.png'),fullPage:true}).catch(()=>{});
       throw Error('QA hero missing: '+String(error).slice(0,160));
     }
-    await view.waitForTimeout(800);
+    // Hero loads eagerly, while the second (lower) banner is lazy.
+    // Trigger native lazy loading by scrolling the real image into view
+    // before asserting completion. Never treat an offscreen lazy image
+    // as a site regression just because no network request was started.
+    const targets=view.locator('.pse-hero__photo,.pse-promise__background');
+    for(let index=0;index<await targets.count();index++){
+      const img=targets.nth(index);
+      await img.scrollIntoViewIfNeeded({timeout:25000});
+      try{
+        await img.evaluate(async el=>{
+          if(!(el instanceof HTMLImageElement))throw Error('Expected image node');
+          if(el.complete && el.naturalWidth>0)return;
+          await new Promise((resolve,reject)=>{
+            const done=()=>{cleanup();resolve()};
+            const failed=()=>{cleanup();reject(new Error('Image network error'))};
+            const cleanup=()=>{el.removeEventListener('load',done);el.removeEventListener('error',failed)};
+            el.addEventListener('load',done,{once:true});
+            el.addEventListener('error',failed,{once:true});
+            if(el.complete){if(el.naturalWidth>0)done();else failed();}
+          });
+        },{timeout:35000});
+      }catch(error){
+        const diag=await img.evaluate(el=>({
+          src:el.currentSrc||el.src,complete:el.complete,
+          naturalWidth:el.naturalWidth,loading:el.loading
+        })).catch(()=>({unavailable:true}));
+        console.log('PSE_QA_IMAGE_LOADING_FAILURE='+JSON.stringify({viewport:width,index,diag,error:String(error).slice(0,250)}));
+        await view.screenshot({path:path.join(shots,'pse-debug-image-'+width+'.png'),fullPage:true}).catch(()=>{});
+        throw error;
+      }
+    }
+    await view.evaluate(()=>window.scrollTo(0,0));
+    await view.waitForTimeout(500);
     const observed=await view.evaluate(()=>{
       const sections=Array.from(document.querySelectorAll('[data-pse-section]')).map(el=>el.getAttribute('data-pse-section'));
       const imgs=Array.from(document.querySelectorAll('.pse-hero__photo,.pse-promise__background')).map(el=>({
