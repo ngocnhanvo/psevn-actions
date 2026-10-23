@@ -41,7 +41,7 @@ assert "webnvn.com" not in workflow, "Hardcoded hosting domain found in deploy w
 for token in ("VCS_GH_ACTIONS_TOKEN", "VCS_GH_REPO",
               "pse-staging-build.json","pse-astro.zip","X_ESC_DEPLOY_TIMESTAMP",
               "X_ESC_DEPLOY_SIGNATURE","hash_equals","ZipArchive","rollback",
-              "PSE site identity"):
+              "WordPress deploy identity is not configured"):
     assert token.lower() in php.lower(), "Missing PSE signed deploy guard: "+token
 assert all(token in php for token in ("defined('DB_NAME')", "defined('VCS_GH_OWNER')", "defined('VCS_GH_REPO')")), "Deploy identity must be explicitly configured in WordPress"
 assert "DB_NAME === 'nghiencuukhoahoc_181026'" not in php, "Portable PHP cannot pin a cloned database name"
