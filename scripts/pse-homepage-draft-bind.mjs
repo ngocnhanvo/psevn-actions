@@ -63,16 +63,38 @@ try{
   const existing=await wpGet('/wp-json/wp/v2/pages?status=draft&per_page=100&context=edit&_fields=id,status,title,acf');
   const candidates=existing.filter(x=>x.title?.raw===draftTitle||x.acf?.key===draftKey);
   if(candidates.length>1)throw Error('Ambiguous PSE draft: stop before creating anything');
-  if(candidates.length===1){
-    const d=candidates[0];
-    if(d.id===248||d.status!=='draft'||d.acf?.action!=='HomePage'||d.acf?.key!==draftKey)
-      throw Error('Existing draft has unexpected page ownership/action/key');
-    const content=String(d.acf?.content||'');
-    const actual=[...content.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(x=>x[1]);
-    if(JSON.stringify(actual)!==JSON.stringify(ids))throw Error('Existing draft differs from expected ESC Table sequence');
-    console.log('PSE_HOME_DRAFT_BINDING=ALREADY_CORRECT; draft_id='+d.id+'; NO_DUPLICATE=true; HOME_248_UNCHANGED=true; NO_BUILD=true');
-  }else{
-    await page.goto(origin+'/wp-admin/post-new.php?post_type=page',{waitUntil:'domcontentloaded',timeout:60000});
+  const candidate=candidates[0]||null;
+  let completed=false;
+  let resumeId=null;
+  if(candidate){
+    if(candidate.id===248||candidate.status!=='draft'||candidate.title?.raw!==draftTitle)
+      throw Error('Existing draft is not the owned PSE draft target');
+    const content=String(candidate.acf?.content||'');
+    const actual=[...content.matchAll(/\\[table\\s+id=([A-Za-z0-9_-]+)\\s*\\/\\]/g)].map(x=>x[1]);
+    if(candidate.acf?.action==='HomePage'&&candidate.acf?.key===draftKey&&
+       JSON.stringify(actual)===JSON.stringify(ids)){
+      console.log('PSE_HOME_DRAFT_BINDING=ALREADY_CORRECT; draft_id='+candidate.id+
+        '; NO_DUPLICATE=true; HOME_248_UNCHANGED=true; NO_BUILD=true');
+      completed=true;
+    }else if(!content.trim()&&
+       (!candidate.acf?.action||candidate.acf.action==='HomePage')&&
+       (!candidate.acf?.key||candidate.acf.key===draftKey)){
+      // WordPress auto-saves title-only drafts even before Save Draft.
+      // Recover the same verified, empty, uniquely titled draft.
+      resumeId=candidate.id;
+      console.log('PSE_HOME_DRAFT_RECOVER_EMPTY_AUTOSAVE; draft_id='+resumeId);
+    }else{
+      throw Error('Existing PSE draft has foreign or partial content; no overwrite');
+    }
+  }
+  if(!completed){
+    if(resumeId){
+      await page.goto(origin+'/wp-admin/post.php?post='+resumeId+'&action=edit',
+        {waitUntil:'domcontentloaded',timeout:60000});
+    }else{
+      await page.goto(origin+'/wp-admin/post-new.php?post_type=page',
+        {waitUntil:'domcontentloaded',timeout:60000});
+    }
     await page.locator('#title').fill(draftTitle);
     const fillAcfField=async (name,value,required)=>{
       const root=page.locator('.acf-field[data-name="'+name+'"]').first();
