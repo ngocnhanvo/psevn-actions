@@ -20,10 +20,15 @@ function origin(name){
 const wp=origin("WC_URL"),source=new URL(state.source);
 const GROUPS=["company","agriculture-market","shareholder"];
 const candidates=Object.keys(state.articles).filter(id=>
- (["pending","media"].includes(state.articles[id].status) ||
+ ((["pending","media"].includes(state.articles[id].status) &&
+    (state.articles[id].attempts||0)<3) ||
    (state.articles[id].status==="quarantined" &&
-    state.articles[id].reason==="WP slug occupied by unrelated content")) &&
-   (state.articles[id].attempts||0)<3
+    state.articles[id].reason==="WP slug occupied by unrelated content" &&
+    (state.articles[id].attempts||0)<3) ||
+   (state.articles[id].status==="quarantined" &&
+    /^Original media size unsafe; bytes=\d+; ext=pdf$/.test(state.articles[id].reason||"") &&
+    Number((state.articles[id].reason||"").match(/bytes=(\d+)/)?.[1])>80 &&
+    Number((state.articles[id].reason||"").match(/bytes=(\d+)/)?.[1])<24_000_000))
 ).sort((a,b)=>Number(b)-Number(a));
 const continuing=candidates.filter(id=>state.articles[id].status==="media");
 const fresh=candidates.filter(id=>state.articles[id].status!=="media");
@@ -89,6 +94,7 @@ try{
  }
  for(const id of ids){
   const item=state.articles[id];
+  if(item.status==="quarantined" && /^Original media size unsafe; bytes=\d+; ext=pdf$/.test(item.reason||""))item.attempts=0;
   item.attempts=(item.attempts||0)+1;
   const url=new URL(item.source_url);
   if(url.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(url.hostname)||
