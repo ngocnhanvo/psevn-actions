@@ -43,7 +43,9 @@ for token in ("VCS_GH_ACTIONS_TOKEN", "VCS_GH_REPO",
               "X_ESC_DEPLOY_SIGNATURE","hash_equals","ZipArchive","rollback",
               "PSE site identity"):
     assert token.lower() in php.lower(), "Missing PSE signed deploy guard: "+token
-assert "DB_NAME === 'nghiencuukhoahoc_181026'" in php, "Wrong source DB must be rejected"
+assert all(token in php for token in ("defined('DB_NAME')", "defined('VCS_GH_OWNER')", "defined('VCS_GH_REPO')")), "Deploy identity must be explicitly configured in WordPress"
+assert "DB_NAME === 'nghiencuukhoahoc_181026'" not in php, "Portable PHP cannot pin a cloned database name"
+assert "VCS_GH_REPO !== 'psevn-actions'" not in php, "Portable PHP cannot pin a static Actions repository"
 assert "webnvn.com" not in php, "A fixed website hostname remains in signed PHP deploy"
 assert ready=="PSE_ASTRO_UNZIP_PROTOCOL=2"
 for token in ("PSE_ASTRO_UNZIP_PROTOCOL=2","/pse-unzip.php","pse-staging-build.json",
