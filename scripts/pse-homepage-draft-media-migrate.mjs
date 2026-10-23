@@ -94,12 +94,17 @@ try{
      p.date!==c.date||!p.categories?.includes(c.category)||!html)
     throw Error('PSE draft identity/date/category changed; abort all: '+c.id);
   const original=await parse(html);
-  if(original.assets.filter(a=>a.kind==='image').length>c.expected.image||
-     original.assets.filter(a=>a.kind==='document').length>c.expected.document)
-    throw Error('Unexpected PSE private draft asset count '+c.id);
+  const uniqueKind=kind=>new Set(original.assets.filter(a=>a.kind===kind).map(a=>a.url)).size;
+  const uniqueImage=uniqueKind('image'),uniqueDocument=uniqueKind('document');
+  // A financial disclosure often links to the same PDF more than once.
+  // Require exact distinct files, but retain every original link occurrence.
+  if(uniqueImage!==c.expected.image||uniqueDocument!==c.expected.document)
+    throw Error('PSE draft distinct source asset mismatch post='+c.id+
+      ' images='+uniqueImage+' PDFs='+uniqueDocument);
   records.push({...c,html,original,p,allAssets:original.assets});
   console.log('PSE_DRAFT_MEDIA_PREFLIGHT='+JSON.stringify({
    postId:c.id,status:p.status,date:p.date,mediaRefs:original.assets.length,
+   uniqueImages:uniqueImage,uniquePDFs:uniqueDocument,
    inheritedExternal:original.assets.filter(a=>acceptableUrl(a.url)).length
   }));
  }
