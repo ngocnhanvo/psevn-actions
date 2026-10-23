@@ -51,6 +51,45 @@ try{
   if(!wpData.home||!wpData.infoId)throw new Error('Missing canonical home/site info');
   console.log('PSE_EDITOR_HOME_ID='+wpData.home.id);
   console.log('PSE_EDITOR_INFO_ID='+wpData.infoId);
+
+  // Read-only diagnosis: TinyMCE TablePress preview nodes must not survive
+  // into public HomePage render. Do not log private page contents or nonce.
+  const draftMarkup=await page.evaluate(async()=>{
+    const nonceResponse=await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',
+      {credentials:'same-origin'});
+    const nonce=(await nonceResponse.text()).trim();
+    if(!nonceResponse.ok||!nonce||nonce==='0')return {error:'REST nonce unavailable'};
+    const r=await fetch('/wp-json/wp/v2/pages/76969?context=edit&_fields=id,status,acf,content',
+      {credentials:'same-origin',headers:{Accept:'application/json','X-WP-Nonce':nonce}});
+    if(!r.ok)return {http:r.status};
+    const p=await r.json();
+    if(p.id!==76969||p.status!=='draft'||p.acf?.key!=='pse-home-design-draft')
+      return {error:'Incorrect PSE preview draft'};
+    const raw=String(p.content?.raw||'');
+    const clean=s=>s.replace(/(src|href)="[^"]*"/gi,'$1="[URL]"').replace(/\\s+/g,' ').trim();
+    const parsed=new DOMParser().parseFromString(raw,'text/html');
+    const widgets=[...parsed.querySelectorAll('.tablepress-preview-wrap[data-table-id]')];
+    const shortcodes=[...raw.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi)]
+      .map(m=>m[1]);
+    const positions=[...raw.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi)]
+      .map(m=>({id:m[1],context:clean(raw.slice(Math.max(0,m.index-150),m.index+m[0].length+110)).slice(0,320)}));
+    const stripped=parsed.body.cloneNode(true);
+    stripped.querySelectorAll('.tablepress-preview-wrap[data-table-id]').forEach(el=>el.remove());
+    return {
+      draftId:p.id,status:p.status,sourceLength:raw.length,shortcodes,
+      wrapperCount:widgets.length,
+      widgetDetails:widgets.map(el=>({
+        id:el.getAttribute('data-table-id'),
+        nestedShortcodes:[...(el.innerHTML.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi))].map(m=>m[1]),
+        outerSample:clean(el.outerHTML).slice(0,460)
+      })),
+      shortcodeContexts:positions,
+      remainingShortcodes:[...stripped.innerHTML.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi)].map(m=>m[1]),
+      htmlAfterRemovingPreviews:clean(stripped.innerHTML).slice(0,550)
+    };
+  });
+  console.log('PSE_DRAFT_EDITOR_PREVIEW_MARKUP_AUDIT='+JSON.stringify(draftMarkup));
+
   for(const [kind,id] of [['home',wpData.home.id],['information',wpData.infoId]]){
     await page.goto(origin+'/wp-admin/post.php?post='+id+'&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
     if(page.url().includes('wp-login.php'))throw new Error('WP editor redirected to login');
