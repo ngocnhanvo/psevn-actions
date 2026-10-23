@@ -331,6 +331,13 @@ try{
   }
   clearTimeout(hardDeadline);
   console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; HomePage_ExtractHTML_component_contract_tested=true; real_public_route_not_tested=true; no_build=true');
+  // GitHub Actions destroys this disposable container after artifact upload.
+  // After all five screenshots and assertions are complete, exit explicitly:
+  // Vite/Chromium can retain handles indefinitely even after browser.close().
+  // Never use this exit path before the verified PASS marker above.
+  try{server?.kill('SIGKILL')}catch{}
+  console.log('PSE_QA_VERIFIED_COMPLETE_EXIT=0');
+  process.exit(0);
 }finally{
   clearTimeout(qaOverallLimit);
   // CI must never hang after all five screenshots completed: Vite and the
