@@ -14,7 +14,7 @@ const pending=data.queue.length>0 || Object.values(data.articles).some(row=>
   (["pending","media"].includes(row.status)&&Number(row.attempts||0)<3) ||
   (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
     Number(row.attempts||0)<3) ||
-  (row.wp_id && ["imported","draft_needs_date"].includes(row.status) &&
+  (row.wp_id && ["imported","draft_needs_date","existing"].includes(row.status) &&
     !row.seo_cleaned && Number(row.seo_attempts||0)<3));
 if(!pending){console.log("PSE_LEGACY_AUTO_NEXT=COMPLETE; no_dispatch=true");process.exit(0)}
 const url="https://api.github.com/repos/"+repo+
