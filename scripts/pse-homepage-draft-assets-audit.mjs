@@ -1,4 +1,4 @@
-/** Authenticated READ-ONLY PSE draft media/document link audit.
+/** Authenticated READ-ONLY final PSE draft Media Library migration audit.
  * Never publish, edit CMS, FTP or build Astro. */
 import {chromium} from 'playwright';
 const rows=String(process.env.ENV_FILE||'').split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith('WC_URL='));
@@ -8,9 +8,9 @@ if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash||!['','/'].in
  throw Error('CMS URL invalid');
 const origin=u.origin;
 const posts=[
- {id:76975,category:1742,label:'PSE Open 2026'},
- {id:76976,category:1743,label:'Agricultural roundup'},
- {id:76977,category:1744,label:'Q3/2026 Financial Disclosure'}
+ {id:76975,category:1742,label:'PSE Open 2026',date:'2026-07-28T02:38:45',expectedAssets:9,featured:77035},
+ {id:76976,category:1743,label:'Agricultural roundup',date:'2013-06-17T08:12:14',expectedAssets:0,featured:0},
+ {id:76977,category:1744,label:'Q3/2026 Financial Disclosure',date:'2026-10-19T15:04:22',expectedAssets:2,featured:0}
 ];
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1366,height:900}});
@@ -52,9 +52,10 @@ try {
  };
  let total=0,broken=0;
  for(const record of posts){
-   const p=await read('/wp-json/wp/v2/posts/'+record.id+'?context=edit&_fields=id,status,categories,content,featured_media,slug');
-   if(p.id!==record.id||p.status!=='draft'||!p.categories?.includes(record.category))
-     throw Error('Unexpected PSE draft identity id='+record.id);
+   const p=await read('/wp-json/wp/v2/posts/'+record.id+'?context=edit&_fields=id,status,categories,content,featured_media,slug,date');
+   if(p.id!==record.id||p.status!=='draft'||!p.categories?.includes(record.category)||
+      p.date!==record.date||p.featured_media!==record.featured)
+     throw Error('Unexpected private PSE draft date, image or category id='+record.id);
    const urls=await page.evaluate(html=>{
      const doc=new DOMParser().parseFromString(html,'text/html');
      const img=[...doc.querySelectorAll('img[src]')].map(e=>({type:'image',url:e.src}));
@@ -69,7 +70,8 @@ try {
      seen.add(asset.url);
      if(seen.size>40)throw Error('Unexpected oversized PSE article media list id='+record.id);
      const u=new URL(asset.url);
-     const trusted=u.protocol==='https:'&&['www.pse.vn','pse.vn',new URL(origin).hostname].includes(u.hostname);
+     const trusted=u.protocol==='https:'&&
+       u.hostname===new URL(origin).hostname&&u.pathname.startsWith('/wp-content/uploads/');
      let status=0,mime='',error='';
      if(trusted){
        try{const r=await context.request.head(u.href,{timeout:17000});
@@ -83,13 +85,19 @@ try {
      verified.push({kind:asset.type,path:u.pathname.slice(0,160),host:u.hostname,
        status,mime,ok,error});
    }
+   if(verified.length!==record.expectedAssets||verified.some(x=>!x.ok))
+     throw Error('PSE draft Media Library validation failed post='+record.id+
+       ' count='+verified.length+' expected='+record.expectedAssets);
    console.log('PSE_PRIVATE_DRAFT_ASSET_AUDIT='+JSON.stringify({
      draftId:record.id,label:record.label,status:p.status,featuredMedia:p.featured_media,
      referenceCount:verified.length,assets:verified
    }));
  }
+ if(total!==11||broken!==0)
+   throw Error('Private PSE Media Library final audit failed uniqueRefs='+total+' invalid='+broken);
  console.log('PSE_PRIVATE_DRAFT_ASSET_AUDIT_SUMMARY='+JSON.stringify({
-   posts:posts.length,references:total,failedChecks:broken,readOnly:true,
-   postPublication:false,changedCMS:false,noAstroBuild:true
+   posts:posts.length,references:total,failedChecks:broken,
+   allWordPressHosted:true,originalDatesPreserved:true,featuredMediaVerified:true,
+   readOnly:true,postPublication:false,changedCMS:false,noAstroBuild:true
  }));
 }finally{await browser.close()}
