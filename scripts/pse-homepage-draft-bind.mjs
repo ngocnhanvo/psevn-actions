@@ -138,9 +138,9 @@ try{
     const initial=await page.evaluate(id=>{
       const ed=window.tinymce.get(id);
       const html=String(ed.getContent({format:'raw'})||'');
-      const text=String(ed.getBody()?.textContent||'').replace(/[\\s\\u00a0\\u200b]/g,'').trim();
-      const media=/<(?:img|iframe|video|audio|table|script)\\b/i.test(html);
-      const shortcode=/\\[table\\s+id=/i.test(html);
+      const text=String(ed.getBody()?.textContent||'').replace(/[\s\u00a0\u200b]/g,'').trim();
+      const media=/<(?:img|iframe|video|audio|table|script)\b/i.test(html);
+      const shortcode=/\[table\s+id=/i.test(html);
       return {htmlLength:html.length,hasText:!!text,hasMedia:media,hasShortcode:shortcode};
     },editorId);
     console.log('PSE_HOME_DRAFT_INITIAL_MAIN_EDITOR='+JSON.stringify(initial));
