@@ -41,15 +41,17 @@ try{
     return {sections:names,rects,h1:document.querySelectorAll('h1').length,
       newsLanes:document.querySelectorAll('.pse-news__lane').length,
       viewport:window.innerWidth,scrollWidth:document.documentElement.scrollWidth,
-      imageErrors,heroTitle:!!document.querySelector('.pse-hero__title'),
+      imageErrors,obstructedHero:!!document.querySelector('.pse-hero__copy,.pse-hero__shade'),
       searchForm:!!document.querySelector('.pse-tools__search, .pse-tools__message')};
    });
    if(JSON.stringify(v.sections)!==JSON.stringify(expected))
     throw Error('PSE LIVE sections mismatch: '+JSON.stringify(v.sections));
-   if(v.h1!==1||!v.heroTitle||v.newsLanes!==3||!v.searchForm)
+   if(v.h1!==1||v.obstructedHero||v.newsLanes!==3||!v.searchForm)
     throw Error('PSE live homepage structure missing: '+JSON.stringify(v));
    if(v.scrollWidth>v.viewport+3||v.rects.some(r=>r.width<100)||v.imageErrors>0)
     throw Error('PSE live viewport/media problem: '+JSON.stringify(v));
+   if(await page.locator(".pse-news__featured").count()!==3)
+     throw Error("Three verified WordPress news lanes must contain published articles");
    const output=path.join(dir,'pse-live-'+width+'.png');
    await page.screenshot({path:output,fullPage:true,animations:'disabled',timeout:20000});
    console.log('PSE_LIVE_VISUAL_VIEWPORT=PASS; width='+width+

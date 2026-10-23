@@ -54,21 +54,42 @@ try{
    await target.click();
    if(!await slides.nth(5).evaluate(e=>e.classList.contains("is-active")))throw Error("Slider dots do not change active banner");
    await dots.first().click();
-   const copy=page.locator("[data-pse-slide].is-active .pse-hero__copy");
+   const hero=await page.evaluate(()=>{
+     const image=document.querySelector("[data-pse-slide].is-active .pse-hero__photo");
+     return {
+       overlays:document.querySelectorAll(".pse-hero__copy,.pse-hero__shade,.pse-hero__content").length,
+       imageFilter:image?getComputedStyle(image).filter:null,
+       imageOpacity:image?getComputedStyle(image).opacity:null
+     };
+   });
+   if(hero.overlays!==0||hero.imageFilter!=="none"||Number(hero.imageOpacity)!==1)
+     throw Error("Hero must show original photo without overlay or filters: "+JSON.stringify(hero));
+   console.log("PSE_HERO_UNDIMMED=PASS; width="+width+"; original_photo_only=true");
    if(width===1440){
-    await page.mouse.move(6,6);
-    await page.waitForTimeout(400);
-    const before=await copy.evaluate(e=>getComputedStyle(e).opacity);
-    await page.locator("[data-pse-slide].is-active").hover({position:{x:250,y:120}});
-    await page.waitForTimeout(420);
-    const after=await copy.evaluate(e=>getComputedStyle(e).opacity);
-    if(Number(before)>.15||Number(after)<.85)throw Error("Desktop hover hero overlay opacity is wrong: "+before+" / "+after);
-   }else{
-    const opacity=await copy.evaluate(e=>getComputedStyle(e).opacity);
-    if(Number(opacity)<.85)throw Error("Mobile hero overlay must stay readable");
+     const root=page.locator("#desktop-menu [data-menu-trigger]").filter({hasText:/QUAN HỆ NHÀ ĐẦU TƯ/i}).first();
+     if(!await root.count())throw Error("Investor navigation trigger missing");
+     await root.click();
+     const rootId=await root.getAttribute("aria-controls");
+     const rootPanel=page.locator('[id="'+rootId+'"]');
+     await rootPanel.waitFor({state:"visible",timeout:8000});
+     const sub=rootPanel.locator("[data-submenu-trigger]").filter({hasText:/Thông tin Quản trị/i}).first();
+     if(!await sub.count())throw Error("Investor information submenu missing");
+     await sub.click();
+     const nestedId=await sub.getAttribute("aria-controls");
+     const nested=page.locator('[id="'+nestedId+'"]');
+     await nested.waitFor({state:"visible",timeout:8000});
+     await page.waitForTimeout(300);
+     const a=await rootPanel.boundingBox(),b=await nested.boundingBox();
+     if(!a||!b)throw Error("Unable to measure open menu panels");
+     const intersectX=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x);
+     const intersectY=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y);
+     if(intersectX>2&&intersectY>2)throw Error("Nested dropdown covers parent items: "+JSON.stringify({a,b}));
+     if(b.x<0||b.x+b.width>1440)throw Error("Nested dropdown outside viewport");
+     console.log("PSE_NESTED_DROPDOWN_COLLISION=PASS; overlap=false; viewport=1440");
+     await page.keyboard.press("Escape");
    }
    await page.screenshot({path:dir+"/pse-slider-"+width+".png",fullPage:false,animations:"disabled",timeout:20000});
-   console.log("PSE_LEGACY_SLIDER_LIVE=PASS; width="+width+"; slides=11; dots=11; processed_wordpress_media=true; alt=PASS; dot_navigation=PASS; overlay=PASS");
+   console.log("PSE_LEGACY_SLIDER_LIVE=PASS; width="+width+"; slides=11; dots=11; processed_wordpress_media=true; alt=PASS; dot_navigation=PASS; unobstructed=PASS");
   }finally{await page.close()}
  }
  console.log("PSE_LEGACY_SLIDER_LIVE_QA=PASS; desktop_mobile=true; no_writes=true");
