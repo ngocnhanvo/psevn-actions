@@ -1,5 +1,14 @@
 {
   "articles": {
+    "110": {
+      "attempts": 1,
+      "group_hint": "agriculture-market",
+      "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/110-du-bao-sau-benh-tuan-tu-276-372011.html",
+      "status": "draft_needs_date",
+      "wp_id": 77067,
+      "verified_date": null,
+      "reason": "Original source lacks independently verifiable publish timestamp"
+    },
     "114": {
       "attempts": 0,
       "group_hint": "agriculture-market",
@@ -52,6 +61,24 @@
       "attempts": 0,
       "group_hint": "agriculture-market",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/185-bon-phan-cho-cay-che.html",
+      "status": "pending"
+    },
+    "215": {
+      "attempts": 0,
+      "group_hint": "agriculture-market",
+      "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/215-du-bao-sau-benh-tuan-tu-298-49.html",
+      "status": "pending"
+    },
+    "217": {
+      "attempts": 0,
+      "group_hint": "agriculture-market",
+      "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/217-du-bao-sau-benh-tuan-tu-5-119.html",
+      "status": "pending"
+    },
+    "218": {
+      "attempts": 0,
+      "group_hint": "agriculture-market",
+      "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/218-gia-phan-bon-tang-dot-bien-trong-nua-thang-qua.html",
       "status": "pending"
     },
     "341": {
@@ -372,6 +399,24 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1267-chi-doan-co-so-pvfcco-se-to-chuc-chuong-trinh-hanh-trinh-ve-nguon-nam-2017.html",
       "status": "pending"
     },
+    "1268": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1268-bao-cao-tai-chinh-quy-i-2017.html",
+      "status": "pending"
+    },
+    "1282": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1282-bao-cao-tai-chinh-quy-022017.html",
+      "status": "pending"
+    },
+    "1284": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1284-bao-cao-tai-chinh-ban-nien-2017.html",
+      "status": "pending"
+    },
     "1289": {
       "attempts": 0,
       "group_hint": "company",
@@ -382,6 +427,24 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/dang-uy/1290-chi-bo-pvfcco-se-to-chuc-le-ket-nap-dang-vien-moi.html",
+      "status": "pending"
+    },
+    "1292": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1292-bao-cao-tai-chinh-q3-2017.html",
+      "status": "pending"
+    },
+    "1301": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1301-bao-cao-tai-chinh-quy-4-nam-2017.html",
+      "status": "pending"
+    },
+    "1304": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1304-cbtt-bao-cao-tai-chinh-nam-2017-da-duoc-kiem-toan.html",
       "status": "pending"
     },
     "1307": {
@@ -396,10 +459,28 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1308-chi-doan-pvfcco-se-thang-thanh-nien-y-nghia.html",
       "status": "pending"
     },
+    "1313": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1313-bao-cao-tai-chinh-quy-1-2018.html",
+      "status": "pending"
+    },
+    "1326": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1326-bao-cao-tai-chinh-quy-2-nam-2018.html",
+      "status": "pending"
+    },
     "1327": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/thong-tin-quan-tri/1327-bao-cao-tinh-hinh-quan-tri-cong-ty-6-thang-dau-nam-2018.html",
+      "status": "pending"
+    },
+    "1328": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1328-bctc-giua-nien-do-da-duoc-soat-xet-2018.html",
       "status": "pending"
     },
     "1332": {
@@ -408,10 +489,40 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/thong-tin-quan-tri/1332-bao-cao-tinh-hinh-quan-tri-cty-6-thang-dau-nam-2017.html",
       "status": "pending"
     },
+    "1335": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1335-bctc-quy-3-2018.html",
+      "status": "pending"
+    },
+    "1348": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1348-20190118-cv02-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-4-nam-2018.html",
+      "status": "pending"
+    },
+    "1349": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1349-20190128-cbtt-bao-cao-tai-chinh-cty-nam-2018-so-06-dnb-hdqt-ngay-28-01-2019.html",
+      "status": "pending"
+    },
+    "1352": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1352-20190307-cv14-dnb-hdqt-cbtt-bc-tai-chinh-da-kiem-toan-nam-2018.html",
+      "status": "pending"
+    },
     "1353": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1353-20190320-cv18-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2018.html",
+      "status": "pending"
+    },
+    "1359": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1359-20190417-cv28-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-1-nam-2019.html",
       "status": "pending"
     },
     "1360": {
@@ -420,10 +531,40 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1360-chi-bo-pvfcco-se-to-chuc-le-ket-nap-dang-vien-moi.html",
       "status": "pending"
     },
+    "1364": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1364-20190716-cv39-dnb-hdqt-cbtt-bc-tai-chinh-q2-2019.html",
+      "status": "pending"
+    },
+    "1368": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1368-20190814-cv51-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
+      "status": "pending"
+    },
+    "1370": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1370-20191015-cv56-dnb-hdqt-cbtt-bctc-quy-3-nam-2019.html",
+      "status": "pending"
+    },
+    "1378": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1378-20200120-cv07-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-4-nam-2019.html",
+      "status": "pending"
+    },
     "1382": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/thong-tin-quan-tri/1382-20200312-bang-tong-hop-ve-thong-tin-quan-tri-cong-ty-pse.html",
+      "status": "pending"
+    },
+    "1384": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1384-20200316-cv16-dnb-hdqt-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2019.html",
       "status": "pending"
     },
     "1386": {
@@ -432,10 +573,28 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1386-20200327-cv18-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2019.html",
       "status": "pending"
     },
+    "1388": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1388-20200415-cv23-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-1-nam-2020.html",
+      "status": "pending"
+    },
     "1392": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1392-pvfcco-se-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2020.html",
+      "status": "pending"
+    },
+    "1393": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1393-20200716-cv34-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-22020.html",
+      "status": "pending"
+    },
+    "1397": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1397-20200814-cv45-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
       "status": "pending"
     },
     "1398": {
@@ -444,16 +603,52 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1398-20201001-tb55-tb-dnb-thong-bao-ve-ngay-dang-ky-cuoi-cung-de-thuc-hien-quyen-nhan-co-tuc-2019.html",
       "status": "pending"
     },
+    "1399": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1399-20201019-cv57-dnb-cbtt-bao-cao-tai-chinh-quy-3-nam-2020.html",
+      "status": "pending"
+    },
     "1400": {
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1400-pvfcco-se-to-chuc-nhieu-hoat-dong-ky-niem-ngay-phu-nu-viet-nam-20-10.html",
       "status": "pending"
     },
+    "1404": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1404-cv-05-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-4-nam-2020.html",
+      "status": "pending"
+    },
+    "1409": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1409-pvfcco-se-to-chuc-cac-hoat-dong-ky-niem-ngay-quoc-te-phu-nu-8-3.html",
+      "status": "pending"
+    },
+    "1410": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1410-doan-thanh-nien-pvfcco-se-hanh-trinh-ve-nguon-nhieu-y-nghia.html",
+      "status": "pending"
+    },
+    "1411": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1411-cv-18-dnb-hdqt-v-v-cbtt-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2020.html",
+      "status": "pending"
+    },
     "1412": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1412-20210331-cv-19-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2020.html",
+      "status": "pending"
+    },
+    "1414": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1414-20210415-cv-25-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-12021.html",
       "status": "pending"
     },
     "1425": {
@@ -480,16 +675,88 @@
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/dam-phu-my/8-trang-chu/1464-npk-phu-my-16-16-16-te-mo-ta-va-hdsd.html",
       "status": "pending"
     },
+    "1470": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1470-pvfcco-se-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2021.html",
+      "status": "pending"
+    },
+    "1475": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1475-20210713-cv-47-dnb-hdqt-cbtt-bao-cao-tai-chinh-q2-2021.html",
+      "status": "pending"
+    },
+    "1480": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1480-20210812-cv53-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
+      "status": "pending"
+    },
+    "1481": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1481-tang-qua-mttq-thu-duc-va-cbnv-thang-8-2021.html",
+      "status": "pending"
+    },
+    "1486": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1486-20211018-cv-60-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-3-2021.html",
+      "status": "pending"
+    },
+    "1489": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1489-pvfcco-se-to-chuc-hoat-dong-ky-niem-ngay-phu-nu-viet-nam-20-10.html",
+      "status": "pending"
+    },
+    "1493": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1493-npk-phu-my-ra-mat-dong-cong-thuc-moi-npk-phu-my-18-12-8-te-va-npk-phu-my-18-10-8-8s-te.html",
+      "status": "pending"
+    },
+    "1501": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1501-20220120-cbtt-bao-cao-tai-chinh-quy-4-2021.html",
+      "status": "pending"
+    },
+    "1509": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1509-20220313-cbtt-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2021.html",
+      "status": "pending"
+    },
     "1511": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1511-20220330-cv-24-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2021.html",
       "status": "pending"
     },
+    "1513": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1513-20220418-cbtt-bao-cao-tai-chinh-quy-1-2022.html",
+      "status": "pending"
+    },
     "1521": {
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1521-pvfcco-se-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2022.html",
+      "status": "pending"
+    },
+    "1523": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1523-20220718-cbtt-bao-cao-tai-chinh-quy-2-nam-2022.html",
+      "status": "pending"
+    },
+    "1526": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1526-20220811-cbtt-bao-cao-tai-chinh-ban-nien-2022-da-duoc-kiem-toan.html",
       "status": "pending"
     },
     "1527": {
@@ -510,6 +777,12 @@
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1529-pvfcco-se-gioi-thieu-san-pham-npk-phu-my-vi-sinh-biowish-tai-tay-ninh.html",
       "status": "pending"
     },
+    "1535": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1535-20221012-cbtt-bao-cao-tai-chinh-quy-3-nam-2022.html",
+      "status": "pending"
+    },
     "1539": {
       "attempts": 0,
       "group_hint": "agriculture-market",
@@ -520,6 +793,18 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1540-pvfcco-se-to-chuc-hoi-nghi-tong-ket-cong-tac-dang-hoat-dong-kinh-doanh-nam-2022-trien-khai-ke-hoach-cong-tac-nam-2023-va-hoi-nghi-nguoi-lao-dong-nam-2023.html",
+      "status": "pending"
+    },
+    "1542": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1542-20230127-cbtt-bao-cao-tai-chinh-q4-2022.html",
+      "status": "pending"
+    },
+    "1545": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1545-20230306-cbtt-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2022.html",
       "status": "pending"
     },
     "1546": {
@@ -538,6 +823,12 @@
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1548-20230401-du-thao-tai-lieu-va-nq-dhdcd-thuong-nien-2023.html",
+      "status": "pending"
+    },
+    "1549": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1549-20230418-cbtt-bao-cao-tai-chinh-quy-1-2023.html",
       "status": "pending"
     },
     "1550": {
@@ -564,6 +855,24 @@
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1556-chi-doan-pvfcco-pse-va-chi-nhanh-tphcm-ve-nguon-2023.html",
       "status": "pending"
     },
+    "1562": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1562-20230720-cbtt-bao-cao-tai-chinh-q2-2023.html",
+      "status": "pending"
+    },
+    "1564": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1564-20230814-cbtt-bao-cao-tai-chinh-ban-nien-2023-da-duoc-kiem-toan.html",
+      "status": "pending"
+    },
+    "1567": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1567-20231016-cbtt-bao-cao-tai-chinh-quy-3-2023.html",
+      "status": "pending"
+    },
     "1568": {
       "attempts": 0,
       "group_hint": "unmapped",
@@ -576,10 +885,22 @@
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1570-pvfcco-pse-to-chuc-hoi-nghi-tong-ket-cong-tac-dang-hoat-dong-kinh-doanh-nam-2023-trien-khai-ke-hoach-cong-tac-nam-2024-va-hoi-nghi-nguoi-lao-dong-nam-2024.html",
       "status": "pending"
     },
+    "1573": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1573-20240120-cbtt-bao-cao-tai-chinh-q4-2023-cua-pse.html",
+      "status": "pending"
+    },
     "1574": {
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/1574-20240129-cbtt-bc-tinh-hinh-quan-tri-cong-ty-nam-2023-va-danh-sach-co-dong-nha-nuoc-co-dong-lon.html",
+      "status": "pending"
+    },
+    "1576": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1576-20240312-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2023.html",
       "status": "pending"
     },
     "1577": {
@@ -612,6 +933,24 @@
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1582-pvfcco-pse-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2024.html",
       "status": "pending"
     },
+    "1583": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1583-20240417-cbtt-bao-cao-tai-chinh-quy-1-nam-2024.html",
+      "status": "pending"
+    },
+    "1587": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1587-20240718-cbtt-bao-cao-tai-chinh-quy-2-nam-2024.html",
+      "status": "pending"
+    },
+    "1590": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1590-20240814-cbtt-bao-cao-tai-chinh-ban-nien-2024-da-duoc-kiem-toan.html",
+      "status": "pending"
+    },
     "1592": {
       "attempts": 0,
       "group_hint": "company",
@@ -624,6 +963,12 @@
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1594-pvfcco-pse-ung-ho-dong-bao-khac-phuc-thiet-hai-do-bao-lu-tai-cac-tinh-phia-bac.html",
       "status": "pending"
     },
+    "1596": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1596-20241017-cbtt-bao-cao-tai-chinh-quy-3-nam-2024.html",
+      "status": "pending"
+    },
     "1597": {
       "attempts": 0,
       "group_hint": "company",
@@ -634,6 +979,12 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1598-pvfcco-pse-to-chuc-chuoi-cac-cuoc-hoi-thao-tu-van-ky-thuat-va-gioi-thieu-ung-dung-bon-phan-phu-my-bang-may-bay-rai-phan-drone-tai-long-an.html",
+      "status": "pending"
+    },
+    "1608": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1608-2025-01-20-cbtt-bctc-quy-4-2024-va-giai-trinh-chenh-lech-so-voi-cung-ky.html",
       "status": "pending"
     },
     "1609": {
@@ -915,18 +1266,18 @@
     "1734": {
       "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Original source lacks independently verifiable publish timestamp",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1734-20260717-cbtt-bao-cao-tai-chinh-quy-2-2026.html",
       "status": "draft_needs_date",
-      "wp_id": 77066,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77066
     },
     "1735": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Original media size unsafe; bytes=12020111; ext=pdf",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/1735-20260727-bao-cao-tinh-hinh-quan-tri-6-thang-dau-nam-2026-va-danh-sach-co-dong-nha-nuoc-co-dong-lon.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1736": {
       "attempts": 2,
@@ -993,18 +1344,6 @@
   },
   "phase": "discover-and-import",
   "queue": [
-    "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=42",
-    "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=48",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong.html?start=6",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong.html?start=12",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=6",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=12",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=18",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=24",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=30",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=36",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=42",
-    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=48",
     "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=54",
     "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=72",
     "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty.html?start=5",
@@ -1054,9 +1393,11 @@
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=186",
     "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien.html?start=16",
     "https://www.pse.vn/22-tin-tuc-su-kien/thong-tin-thi-truong.html",
-    "https://www.pse.vn/70-tin-tuc-su-kien/thu-vien.html"
+    "https://www.pse.vn/70-tin-tuc-su-kien/thu-vien.html",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=60",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=66"
   ],
-  "runs": 4,
+  "runs": 5,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
@@ -1104,7 +1445,19 @@
     "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=18",
     "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=24",
     "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=30",
-    "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=36"
+    "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=36",
+    "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=42",
+    "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html?start=48",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong.html?start=6",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong.html?start=12",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=6",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=12",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=18",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=24",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=30",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=36",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=42",
+    "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html?start=48"
   ],
   "source": "https://www.pse.vn/",
   "tracker_issue": 3
