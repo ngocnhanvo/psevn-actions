@@ -435,11 +435,28 @@ try{
   }));
   if(queryValues.length!==1||queryValues[0]!=='phân bón'||inputValue!=='phân bón')
     throw Error('WordPress PostsPage search GET query did not round-trip');
-  const archiveOverflow=await searchBrowser.evaluate(()=>
-    document.documentElement.scrollWidth>document.documentElement.clientWidth+3);
-  if(archiveOverflow)throw Error('PSE PostsPage search preview has horizontal overflow at 390px');
+  const archiveIntegrity=await searchBrowser.evaluate(()=>{
+    const body=document.body.innerText||'';
+    const footer=document.querySelector('#footer-contact');
+    return {
+      overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
+      pseHeader:document.querySelector('#main-header')?.classList.contains('pse-header')||false,
+      pseFooter:footer?.classList.contains('pse-footer')||false,
+      hasPseArchiveClass:document.querySelector('#main-content')?.classList.contains('pse-posts')||false,
+      aiWidget:!!document.querySelector('#ai-agent-btn,#contact-widget'),
+      stickySales:!!document.querySelector('#bottom-contact-bar'),
+      fakeHanoiOrZalo:/Hotline Hà Nội|Zalo:/.test(body),
+      inheritedGenericCta:body.includes('Bạn cần thêm thông tin?')
+    };
+  });
+  console.log('PSE_PRIVATE_ARCHIVE_BRANDING_DIAG='+JSON.stringify(archiveIntegrity));
+  if(archiveIntegrity.overflow||!archiveIntegrity.pseHeader||
+     !archiveIntegrity.pseFooter||!archiveIntegrity.hasPseArchiveClass||
+     archiveIntegrity.aiWidget||archiveIntegrity.stickySales||
+     archiveIntegrity.fakeHanoiOrZalo||archiveIntegrity.inheritedGenericCta)
+    throw Error('PSE private SSR archive still inherits non-PSE branding or incorrect contacts');
   await searchBrowser.screenshot({path:path.join(shots,'pse-private-archive-390.png'),fullPage:true,animations:'disabled',timeout:12000});
-  console.log('PSE_PRIVATE_POSTSPAGE_SEARCH_QA=PASS; draft_id=77030; action=PostsPage; q_roundtrip=true; categories=3; published_post_count=0; no_overflow=true; no_publication=true');
+  console.log('PSE_PRIVATE_POSTSPAGE_SEARCH_QA=PASS; draft_id=77030; action=PostsPage; key=ssr-posts; q_roundtrip=true; categories=3; published_post_count=0; no_overflow=true; pse_chrome=true; no_fake_contacts=true; no_publication=true');
   await searchBrowser.close();
   clearTimeout(hardDeadline);
   if(!archiveOnly)console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; HomePage_ExtractHTML_component_contract_tested=true; real_public_route_not_tested=true; no_build=true');
