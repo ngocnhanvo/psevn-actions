@@ -5,6 +5,7 @@
  */
 import {chromium} from "playwright";
 const audit=process.env.PSE_NEWS_AUDIT_ONLY==="1";
+const resync=process.env.PSE_NEWS_RESYNC_ONLY==="1";
 const cfg=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,"")).filter(s=>s.startsWith("WC_URL="));
 if(cfg.length!==1)throw Error("Missing WordPress WC_URL");
 const u=new URL(cfg[0].slice(7).trim().replace(/^['"]|['"]$/g,""));
@@ -77,6 +78,41 @@ try{
  if(audit){
   console.log("PSE_NEWS_PUBLICATION_AUDIT=PASS; eligible="+checked.filter(x=>x.status==="draft").length+
     "; already_published="+checked.filter(x=>x.status==="publish").length+"; no_writes=true");
+  process.exit(0);
+ }
+ if(resync){
+  if(checked.some(x=>x.status!=="publish"))throw Error("Do not sync publication events for unpublished post");
+  await page.goto(origin+"/wp-admin/admin.php?page=vcs-build-trigger",{waitUntil:"domcontentloaded",timeout:60000});
+  if(page.url().includes("wp-login"))throw Error("WordPress build admin login expired");
+  const pending=async()=>{
+    const el=page.locator("#vcs-pending-count");
+    await el.waitFor({state:"attached",timeout:12000});
+    const count=Number((await el.innerText()).trim());
+    if(!Number.isSafeInteger(count)||count<0)throw Error("Invalid WordPress pending counter");
+    return count;
+  };
+  const before=await pending();
+  console.log("PSE_WP_POST_SYNC_PENDING_BEFORE="+before);
+  if(before===0){
+    for(const item of checked){
+      // This invokes core wp_update_post -> save_post for a genuine missed
+      // publication event. Reuse exactly the already verified date/status.
+      const r=await request("/wp-json/wp/v2/posts/"+item.id,"POST",
+        {status:"publish",date:item.date,date_gmt:item.gmt});
+      if(r.status!==200||r.data?.status!=="publish")throw Error("WordPress resave failed "+item.id);
+      const q=await request("/wp-json/wp/v2/posts/"+item.id+
+        "?context=edit&_fields=id,status,slug,date,date_gmt,categories");
+      if(q.status!==200||q.data?.status!=="publish"||q.data.slug!==item.slug||
+        q.data.date!==item.date||q.data.date_gmt!==item.gmt||
+        !q.data.categories?.includes(item.category))throw Error("WordPress resave altered verified post "+item.id);
+      console.log("PSE_POST_CHANGE_EVENT_RESAVE=PASS; id="+item.id);
+    }
+  }
+  await page.reload({waitUntil:"domcontentloaded",timeout:60000});
+  const after=await pending();
+  if(after<3)throw Error("WordPress post-change queue failed to include three source posts");
+  console.log("PSE_POST_CHANGE_EVENTS=PASS; pending_before="+before+"; pending_after="+after+
+    "; posts_verified=3; queued_normal_build=true; no_force=true");
   process.exit(0);
  }
  let changed=0;
