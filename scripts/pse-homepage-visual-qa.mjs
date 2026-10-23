@@ -334,9 +334,20 @@ try{
   console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; ExtractHTML_router_not_tested=true; no_build=true');
 }finally{
   clearTimeout(qaOverallLimit);
-  if(server&&!server.killed){server.kill('SIGTERM')}
+  // CI must never hang after all five screenshots completed: Vite and the
+  // Chromium transport may leave open handles even after successful QA.
+  if(server?.pid){
+    try{server.kill('SIGKILL')}catch{}
+  }
   await rm(routePath,{force:true}).catch(()=>{});
   if(originalConfig!==undefined)await writeFile(astroConfigPath,originalConfig).catch(()=>{});
   await rm(tempQaSrcDir,{recursive:true,force:true}).catch(()=>{});
-  await browser.close();
+  const closed=await Promise.race([
+    browser.close().then(()=>true).catch(()=>false),
+    pageWait(4000).then(()=>false)
+  ]);
+  if(!closed){
+    console.error('PSE_QA_BROWSER_CLOSE_TIMEOUT=forced_cleanup');
+    try{browser.process()?.kill('SIGKILL')}catch{}
+  }
 }
