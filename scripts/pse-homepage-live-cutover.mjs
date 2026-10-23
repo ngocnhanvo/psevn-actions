@@ -61,6 +61,17 @@ try{
  };
  const live=(await get('/wp-json/wp/v2/pages/248?context=edit&_fields=id,status,slug,title,acf,content')).data;
  const draft=(await get('/wp-json/wp/v2/pages/76969?context=edit&_fields=id,status,slug,acf,content')).data;
+ if(process.env.PSE_CUTOVER_AUDIT_ONLY==='1'){
+  const current=String(live.content?.raw||'');
+  console.log('PSE_PUBLIC_HOME_AFTER_SAVE_AUDIT='+JSON.stringify({
+   id:live.id,status:live.status,slug:live.slug,
+   acf_key:live.acf?.key||null,acf_action:live.acf?.action||null,
+   content_bytes:current.length,content_sha256:hash(current),
+   table_ids:parseCodes(current),draft_id:draft.id,draft_status:draft.status
+  }));
+  await browser.close();
+  process.exit(0);
+ }
  if(live.id!==248||live.status!=='publish'||live.acf?.key!=='home'||live.acf?.action!=='HomePage')
   throw Error('Canonical existing published homepage identity changed');
  if(draft.id!==76969||draft.status!=='draft'||draft.acf?.key!=='pse-home-design-draft'||draft.acf?.action!=='HomePage')
