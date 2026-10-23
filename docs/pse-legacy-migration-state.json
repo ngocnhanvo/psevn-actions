@@ -321,18 +321,19 @@
     "327": {
       "attempts": 1,
       "group_hint": "company",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/327-hai-chi-doan-pvfcco-se-pvfcco-sw-tang-bao-cho-hai-don-vi-ket-nghia-chi-doan-tau-ho-ve-ten-lua-hq-011-dinh-tien-hoang-va-hq-012-ly-thai-to.html",
       "status": "draft_needs_date",
-      "wp_id": 77784,
-      "seo_cleaned": true,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77784
     },
     "337": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/337-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2012-cua-pvfcco-se.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "338": {
       "attempts": 0,
@@ -689,11 +690,11 @@
       "status": "pending"
     },
     "1108": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1108-pvfcco-se-cong-bo-thong-tin-bao-cao-tai-chinh-quy-i-nam-2015.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1109": {
       "attempts": 3,
@@ -1286,17 +1287,21 @@
       "status": "pending"
     },
     "1332": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/thong-tin-quan-tri/1332-bao-cao-tinh-hinh-quan-tri-cty-6-thang-dau-nam-2017.html",
-      "status": "pending"
+      "status": "draft_needs_date",
+      "wp_id": 77793,
+      "seo_cleaned": true,
+      "verified_date": null,
+      "reason": "Original source lacks independently verifiable publish timestamp"
     },
     "1335": {
       "attempts": 1,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1335-bctc-quy-3-2018.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1336": {
       "attempts": 0,
@@ -1995,10 +2000,11 @@
       "wp_id": 77165
     },
     "1500": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1500-20211230-thong-bao-mat-giay-chung-nhan-so-huu-cp.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "1501": {
       "attempts": 1,
@@ -2012,10 +2018,11 @@
       "wp_id": 77151
     },
     "1502": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/1502-20220127-cbtt-bao-cao-tinh-hinh-quan-tri-cong-ty-nam-2021.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "1503": {
       "attempts": 1,
@@ -2042,43 +2049,43 @@
     "1505": {
       "attempts": 1,
       "group_hint": "company",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1505-pvfcco-se-to-chuc-gap-mat-mung-xuan-nham-dan-2022.html",
       "status": "draft_needs_date",
-      "wp_id": 77790,
-      "seo_cleaned": true,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77790
     },
     "1506": {
       "attempts": 1,
       "group_hint": "shareholder",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1506-20220211-cbtt-thong-bao-chot-danh-sach-co-dong-tham-du-dhdcd-thuong-nien-nam-2022.html",
       "status": "draft_needs_date",
-      "wp_id": 77786,
-      "seo_cleaned": true,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77786
     },
     "1509": {
-      "attempts": 1,
-      "group_hint": "shareholder",
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1509-20220313-cbtt-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2021.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
-    },
-    "1510": {
-      "attempts": 1,
-      "group_hint": "shareholder",
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1510-20220323-cbtt-gia-han-thoi-gian-to-chuc-dhdcd-thuong-nien-nam-2022.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
-    },
-    "1511": {
       "attempts": 2,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1511-20220330-cv-24-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2021.html",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1509-20220313-cbtt-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2021.html",
       "status": "pending"
+    },
+    "1510": {
+      "attempts": 2,
+      "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1510-20220323-cbtt-gia-han-thoi-gian-to-chuc-dhdcd-thuong-nien-nam-2022.html",
+      "status": "pending"
+    },
+    "1511": {
+      "attempts": 3,
+      "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1511-20220330-cv-24-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2021.html",
+      "status": "quarantined"
     },
     "1512": {
       "attempts": 1,
@@ -3786,6 +3793,11 @@
       "sha256": "723df2474165e466b928ba0e04db56d0456e93b33ebdffc9e967a2abc8c55d9c",
       "url": "/wp-content/uploads/2026/10/pse-legacy-c2633414fd57b293.pdf"
     },
+    "https://www.pse.vn/images/2._CBTT_-_ngay_dang_ky_cuoi_cung.pdf": {
+      "id": 77785,
+      "sha256": "de291bcf6576218b60d538766d763b9fd24ca4fc61f1a2c044321a76c97b8ce3",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-5412d3885cf636bf.pdf"
+    },
     "https://www.pse.vn/images/2._TA_-BC-26-60-BC-H%C4%90QT-B%C3%A1o_c%C3%A1o_t%C3%ACnh_h%C3%ACnh_qu%E1%BA%A3n_tr%E1%BB%8B_C%C3%B4ng_ty_6_th%C3%A1ng_%C4%91%E1%BA%A7u_n%C4%83m_2026.pdf": {
       "id": 77070,
       "sha256": "ef6b8e41ce49dea00d01950529485d9dcab2dec30466b9c279ff5af45fa8373e",
@@ -5206,6 +5218,21 @@
       "sha256": "f860a7b9202bfe833f171234c117f944268ac787e9caf18f59c611ce2fa2e748",
       "url": "/wp-content/uploads/2026/10/pse-legacy-915987534628b66f.jpg"
     },
+    "https://www.pse.vn/images/tet_2022-1.jpg": {
+      "id": 77787,
+      "sha256": "b7a6f8a3790e1b8e6f02c06c341cb50ab8ddcea5ef0049ee1c2662b2f8ed1a3e",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-c26ae3625dcef23d.jpg"
+    },
+    "https://www.pse.vn/images/tet_2022-2.jpg": {
+      "id": 77788,
+      "sha256": "de8eb9ba06ed9ab8507ce241cb3d20f242260159679fc0f13190290dc18d32f8",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-10bdb3e6d9d7f6d5.jpg"
+    },
+    "https://www.pse.vn/images/tet_2022-3.jpg": {
+      "id": 77789,
+      "sha256": "b9051aa8e6de21da5c2d5daca380023bb924b2455c75845224d49b1a162ae2e3",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-b5f8dfd900f5a0db.jpg"
+    },
     "https://www.pse.vn/images/tin-tuc/2015/1141-01.jpg": {
       "id": 77648,
       "sha256": "0fd3893814a95a7672bc9eeeb4cbe7144bd4c534f4cc4e6c8a9bed79c67b766d",
@@ -5961,25 +5988,15 @@
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
     },
-    "https://www.pse.vn/images/2._CBTT_-_ngay_dang_ky_cuoi_cung.pdf": {
-      "id": 77785,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-5412d3885cf636bf.pdf",
-      "sha256": "de291bcf6576218b60d538766d763b9fd24ca4fc61f1a2c044321a76c97b8ce3"
+    "https://www.pse.vn/images/pdf/2017/07/2017-07-28-BC53-BC-HDQT-bao-cao-tinh-hinh-quan-tri-Cty-6-thang-dau-nam-2017.pdf": {
+      "id": 77791,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-2b6097f7f5f8adc1.pdf",
+      "sha256": "527bc25e9ee5ea1262db8016f862083b51f65334601e1d27d41f268e451ac454"
     },
-    "https://www.pse.vn/images/tet_2022-1.jpg": {
-      "id": 77787,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-c26ae3625dcef23d.jpg",
-      "sha256": "b7a6f8a3790e1b8e6f02c06c341cb50ab8ddcea5ef0049ee1c2662b2f8ed1a3e"
-    },
-    "https://www.pse.vn/images/tet_2022-2.jpg": {
-      "id": 77788,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-10bdb3e6d9d7f6d5.jpg",
-      "sha256": "de8eb9ba06ed9ab8507ce241cb3d20f242260159679fc0f13190290dc18d32f8"
-    },
-    "https://www.pse.vn/images/tet_2022-3.jpg": {
-      "id": 77789,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-b5f8dfd900f5a0db.jpg",
-      "sha256": "b9051aa8e6de21da5c2d5daca380023bb924b2455c75845224d49b1a162ae2e3"
+    "https://www.pse.vn/images/pdf/2017/01/2018-01-25-BC08-BC-HDQT-BC-tinh-hinh-QTri-Cty-nam-2017.pdf": {
+      "id": 77792,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-929a422c9c161a9d.pdf",
+      "sha256": "e966109e9e0971a5f84162e7b0a2dcb27f0311a03fd4c4e7489a2ce72d031e98"
     }
   },
   "phase": "discover-and-import",
@@ -6022,7 +6039,7 @@
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=96",
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=102"
   ],
-  "runs": 71,
+  "runs": 72,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
