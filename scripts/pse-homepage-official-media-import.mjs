@@ -71,7 +71,30 @@ try {
       return u.protocol==='https:'&&!u.username&&!u.password&&u.pathname.includes('/wp-content/uploads/');
     }catch{return false}
   };
+  // This installation exposes a valid WordPress Media GUID but sometimes
+  // returns an empty source_url. Accept the GUID only after checking it points
+  // to the same configured WP host, to the exact uploaded filename and a
+  // publicly reachable image of the expected format.
+  const resolveMediaUrl=async(media,asset)=>{
+    const mediaFile=String(media.media_details?.file||'');
+    const expectedFilename=asset.name;
+    const fileName=mediaFile.split('/').at(-1);
+    if(fileName!==expectedFilename)throw Error('Unexpected WordPress attachment file: '+asset.key);
+    const candidates=[media.source_url,media.guid?.rendered].filter(Boolean);
+    const base=new URL(origin);
+    for(const value of candidates){
+      if(!wpMediaUrlValid(value))continue;
+      const u=new URL(value);
+      if(u.hostname!==base.hostname||u.port!==base.port||
+         !u.pathname.endsWith('/'+encodeURIComponent(expectedFilename)))continue;
+      const head=await context.request.head(value,{timeout:45000});
+      const kind=(head.headers()['content-type']||'').split(';')[0].toLowerCase();
+      if(head.ok()&&kind===asset.mime)return value;
+    }
+    throw Error('No validated WordPress-hosted uploaded media URL: '+asset.key);
+  };
   const uploaded={};
+  const verifiedUrls={};
   for(const asset of assets){
     const original=await context.request.get(asset.url,{timeout:60000});
     if(!original.ok())throw Error('Original PSE media HTTP '+original.status()+': '+asset.key);
@@ -98,8 +121,8 @@ try {
         guidPath:(()=>{try{return new URL(media.guid?.rendered).pathname.slice(0,140)}catch{return null}})(),
         mediaFile:media.media_details?.file||null
       }));
-      if(media.mime_type!==asset.mime||!wpMediaUrlValid(media.source_url))
-        throw Error('Existing PSE WordPress media has unexpected type/origin');
+      if(media.mime_type!==asset.mime)
+        throw Error('Existing PSE WordPress media has unexpected MIME: '+asset.key);
       console.log('PSE_OFFICIAL_MEDIA=ALREADY_EXISTS; key='+asset.key+'; id='+media.id);
     }else{
       const response=await context.request.post(origin+'/wp-json/wp/v2/media',{
@@ -117,7 +140,7 @@ try {
         hasWordPressUploadsPath:wpMediaUrlValid(body.source_url)
       }));
       if(response.status()!==201||!Number.isSafeInteger(body.id)||
-         body.mime_type!==asset.mime||!wpMediaUrlValid(body.source_url))
+         body.mime_type!==asset.mime)
         throw Error('PSE WP Media upload failed HTTP '+response.status()+' key='+asset.key);
       media=body;
       console.log('PSE_OFFICIAL_MEDIA=UPLOADED; key='+asset.key+'; id='+media.id+'; original_bytes='+bytes.length);
@@ -127,6 +150,7 @@ try {
        !after.payload.media_details?.width||!after.payload.media_details?.height)
       throw Error('PSE WordPress Media read-after-write invalid for '+asset.key);
     uploaded[asset.key]=after.payload;
+    verifiedUrls[asset.key]=await resolveMediaUrl(after.payload,asset);
     console.log('PSE_OFFICIAL_MEDIA_READ_AFTER_WRITE=PASS; key='+asset.key+'; id='+media.id+
       '; dimensions='+after.payload.media_details.width+'x'+after.payload.media_details.height);
   }
@@ -138,7 +162,7 @@ try {
        current.payload.items?.length<1||!current.payload.fields?.some(f=>f.key===asset.column))
       throw Error('Unexpected ESC Table media cell schema: '+asset.table);
     const actual=String(current.payload.items[asset.row][asset.column]||'');
-    const target=uploaded[asset.key].source_url;
+    const target=verifiedUrls[asset.key];
     if(actual && actual!==target)throw Error('Existing hero/panorama media must not be overwritten: '+asset.table);
     if(actual===target){console.log('PSE_TABLE_MEDIA=ALREADY_BOUND; table='+asset.table);continue}
     await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=edit&table_id='+asset.table,
