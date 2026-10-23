@@ -1,3 +1,3 @@
 PSE development source regression request
-Astro github commit: 8b21691cacf5cc03070cfeb6be0a3a8abcf31957
-Check: WordPress numeric category ID filter and legacy slug compatibility; pnpm exec vitest run and Astro compiler parse (no build or deploy)
+Astro github commit: df19ef77d29c44ca6340725b24ef7a4bae978ced
+Check: homepage H1 fallback with empty or missing CMS hero; category ID tests; Astro compiler parse (NO BUILD)
