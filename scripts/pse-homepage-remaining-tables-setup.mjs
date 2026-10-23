@@ -83,6 +83,16 @@ const getTable=async id=>page.evaluate(async tableId=>{
   if(!r.ok)throw new Error('TablePress REST HTTP '+r.status);
   return r.json();
 },id);
+// TablePress rename/save can finish after the confirmation click returns.
+// Wait for the WordPress REST source of truth, never create a second table.
+const awaitTable=async id=>{
+  for(let i=0;i<12;i++){
+    const table=await getTable(id);
+    if(table)return table;
+    await page.waitForTimeout(1000);
+  }
+  return null;
+};
 const assertSchema=(actual,spec)=>{
   if(!actual||actual.id!==spec.id)throw new Error('REST could not find expected ID '+spec.id);
   const keys=actual.fields?.map(field=>field.key);
@@ -140,7 +150,7 @@ try{
       await page.waitForTimeout(450);
       await page.getByRole('button',{name:'Save Changes',exact:true}).first().click();
       await page.waitForTimeout(2600);
-      existing=await getTable(spec.id);
+      existing=await awaitTable(spec.id);
       if(!existing)throw new Error('Numeric draft rename not confirmed: '+spec.id);
       console.log('PSE_SECTION_TABLE=RECOVERED_NUMERIC_DRAFT; id='+spec.id);
     }else{
@@ -161,7 +171,7 @@ try{
     await page.waitForTimeout(450);
     await page.getByRole('button',{name:'Save Changes',exact:true}).first().click();
     await page.waitForTimeout(2600);
-    existing=await getTable(spec.id);
+    existing=await awaitTable(spec.id);
     if(!existing)throw new Error('Table ID rename not visible in REST, stop to avoid duplicates: '+spec.id);
     }
     }
