@@ -105,7 +105,7 @@ try{
   const company=String(a.tencongty||'');
   const payload={
     currentPage:{...home,content,contents:ids.map((id,i)=>({type:'shortcode',shortcode:id,data:tables[i]}))},
-    pages,
+    tables,pages,
     companyInfo:{
       id:62,tencongty:{vi:company},hotline:{vi:String(a.hotline||'')},
       sodienthoaiHCM:{vi:String(a.sodienthoaihcm||'')},
@@ -116,13 +116,18 @@ try{
   };
   await mkdir(path.dirname(routePath),{recursive:true});
   await mkdir(shots,{recursive:true});
-  // No mock articles and no edits to application source. Render HomePage's
-  // original ExtractHTML -> Pse_00..03 path against actual TablePress records.
+  // No mock content, and no edits to app source. For DEV screenshot QA,
+  // import the four PSE sections directly to avoid the inherited
+  // ExtractHTML eager-registry importing unrelated retired CartPage modules.
+  // Router/ExtractHTML full integration is NOT verified by this test.
   const route=[
     '---',
     'import "@/styles/global.css";',
     'import Layout from "@/astro/components/Layout/Layout.astro";',
-    'import HomePage from "@/astro/pages/HomePage.astro";',
+    'import Hero from "@/astro/tablepress/Pse_00.astro";',
+    'import News from "@/astro/tablepress/Pse_01.astro";',
+    'import PromiseSection from "@/astro/tablepress/Pse_02.astro";',
+    'import Utility from "@/astro/tablepress/Pse_03.astro";',
     'const payload='+JSON.stringify(payload)+';',
     'const page=payload.currentPage;',
     'const data_info=payload.companyInfo;',
@@ -130,7 +135,12 @@ try{
     'const headProps={title:page.title,description:"PSE internal design QA",lang:"vi",data_info,WC_URL:process.env.WC_URL,WC_URL_CLIENT:Astro.url.origin,basename:"/"};',
     '---',
     '<Layout data_info={data_info} pages={pages} menus={[]} currentPage={page} headProps={headProps}>',
-    '  <HomePage currentPage={page} pages={pages} data_info={data_info} basename="/" />',
+    '  <main id="main-content">',
+    '    <Hero data={payload.tables[0]} page={page} />',
+    '    <News data={payload.tables[1]} page={page} props={{data_info,basename:"/"}} />',
+    '    <PromiseSection data={payload.tables[2]} page={page} />',
+    '    <Utility data={payload.tables[3]} page={page} props={{pages,basename:"/"}} />',
+    '  </main>',
     '</Layout>'
   ].join('\n');
   await writeFile(routePath,route);
@@ -195,7 +205,7 @@ try{
     console.log('PSE_REAL_CMS_VISUAL_QA=PASS; viewport='+width+'; '+JSON.stringify(observed));
     await view.close();
   }
-  console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; news_articles_are_still_drafts=true; navigation_not_tested=true; no_build=true');
+  console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; ExtractHTML_router_not_tested=true; no_build=true');
 }finally{
   if(server&&!server.killed){server.kill('SIGTERM')}
   await rm(routePath,{force:true}).catch(()=>{});
