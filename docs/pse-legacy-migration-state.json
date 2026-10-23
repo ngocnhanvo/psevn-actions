@@ -390,15 +390,16 @@
     "347": {
       "attempts": 1,
       "group_hint": "agriculture-market",
+      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/347-suc-mua-phan-bon-tang.html",
-      "status": "quarantined",
-      "reason": "Article contains non-local mandatory media"
+      "status": "quarantined"
     },
     "348": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "agriculture-market",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/348-phan-bon-gia-hai-nha-nong.html",
-      "status": "pending"
+      "status": "quarantined",
+      "reason": "Article contains non-local mandatory media"
     },
     "351": {
       "attempts": 0,
@@ -623,20 +624,21 @@
       "status": "pending"
     },
     "1053": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/1053-ngay-hoi-truyen-thong-2014.html",
-      "status": "pending"
+      "status": "quarantined",
+      "reason": "Excessive media count; special batch required"
     },
     "1056": {
       "attempts": 1,
       "group_hint": "company",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1056-hai-chi-doan-pvfcco-se-pvfcco-sw-tang-bao-cho-hai-don-vi-ket-nghia-chi-doan-tau-ho-ve-ten-lua-hq-011-dinh-tien-hoang-va-hq-012-ly-thai-to-3.html",
       "status": "draft_needs_date",
-      "wp_id": 77908,
-      "seo_cleaned": true,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77908
     },
     "1068": {
       "attempts": 1,
@@ -1162,7 +1164,7 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1294-phan-bon-phu-my-giup-phuc-hoi-va-cho-nang-suat-cao-o-vuon-ca-phe-bi-anh-huong-cua-kho-han-thieu-nuoc.html",
-      "status": "pending"
+      "status": "media"
     },
     "1295": {
       "attempts": 0,
@@ -1171,10 +1173,14 @@
       "status": "pending"
     },
     "1296": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1296-phan-bon-phu-my-giup-tang-nang-suat-va-hieu-qua-kinh-te-tren-cay-thanh-long-tai-long-an.html",
-      "status": "media"
+      "status": "draft_needs_date",
+      "wp_id": 77915,
+      "seo_cleaned": true,
+      "verified_date": null,
+      "reason": "Original source lacks independently verifiable publish timestamp"
     },
     "1297": {
       "attempts": 0,
@@ -1624,27 +1630,31 @@
       "status": "pending"
     },
     "1393": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1393-20200716-cv34-dnb-hdqt-cbtt-bao-cao-tai-chinh-quy-22020.html",
       "status": "pending"
     },
     "1394": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1394-20200720-cv40-dnb-hdqt-cbtt-lua-chon-don-vi-kiem-toan-bctc-nam-2020.html",
-      "status": "pending"
+      "status": "draft_needs_date",
+      "wp_id": 77923,
+      "seo_cleaned": true,
+      "verified_date": null,
+      "reason": "Original source lacks independently verifiable publish timestamp"
     },
     "1395": {
       "attempts": 1,
       "group_hint": "shareholder",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/1395-20200728-bc42-bc-hdqt-bao-cao-tinh-hinh-quan-tri-cong-ty-6-thang-dau-nam-2020.html",
       "status": "draft_needs_date",
-      "wp_id": 77912,
-      "seo_cleaned": true,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77912
     },
     "1396": {
       "attempts": 1,
@@ -1669,12 +1679,12 @@
     "1398": {
       "attempts": 1,
       "group_hint": "shareholder",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1398-20201001-tb55-tb-dnb-thong-bao-ve-ngay-dang-ky-cuoi-cung-de-thuc-hien-quyen-nhan-co-tuc-2019.html",
       "status": "draft_needs_date",
-      "wp_id": 77910,
-      "seo_cleaned": true,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77910
     },
     "1399": {
       "attempts": 1,
@@ -1697,11 +1707,11 @@
       "wp_id": 77509
     },
     "1401": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1401-20201023-cv157-dnb-tchc-ve-viec-chi-tra-co-tuc-nam-2019.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1402": {
       "attempts": 1,
@@ -1714,11 +1724,11 @@
       "wp_id": 77492
     },
     "1403": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1403-20210111-cv02-dnb-hdqt-cbtt-chi-tieu-khkd-2021-pse.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1404": {
       "attempts": 3,
@@ -3970,6 +3980,11 @@
       "sha256": "dfadcb38527fc087c0a2f0f93ee767b7be30477e9bb58f98f60654f894ebfb2c",
       "url": "/wp-content/uploads/2026/10/pse-legacy-edfd6238889cdef5.pdf"
     },
+    "https://www.pse.vn/images/2020.07.28_-_BC42_BC_HDQT_b%C3%A1o_c%C3%A1o_t%C3%ACnh_h%C3%ACnh_qu%E1%BA%A3n_tr%E1%BB%8B_C%C3%B4ng_ty_6_th%C3%A1ng_%C4%91%E1%BA%A7u_n%C4%83m_2020.pdf": {
+      "id": 77911,
+      "sha256": "b33063e253f7ef93290660c54a035c6c5444c12df70974453e9d714956612373",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-f2092405bcaab673.pdf"
+    },
     "https://www.pse.vn/images/2020.07.28_-_CV43_DNB_HDQT_danh_s%C3%A1ch_c%E1%BB%95_%C4%91%C3%B4ng_nh%C3%A0_n%C6%B0%E1%BB%9Bc_c%E1%BB%95_%C4%91%C3%B4ng_l%E1%BB%9Bn.pdf": {
       "id": 77533,
       "sha256": "ab8ab266fbddef6c89b11317d9375d5a877a0b916615a4e4f94b9078cc461544",
@@ -3979,6 +3994,11 @@
       "id": 77524,
       "sha256": "d8d2afcfd5976e426c19e85659132b680593d29976e3503f44fdafa4a63458dd",
       "url": "/wp-content/uploads/2026/10/pse-legacy-c2b8ca70662e8e92.pdf"
+    },
+    "https://www.pse.vn/images/2020.10.01_-_TB55_TB_DNB_TBao_v%E1%BB%81_ng%C3%A0y_%C4%91%C4%83ng_k%C3%BD_cu%E1%BB%91i_c%C3%B9ng_%C4%91%E1%BB%83_th%E1%BB%B1c_hi%E1%BB%87n_quy%E1%BB%81n_nh%E1%BA%ADn_c%E1%BB%95_t%E1%BB%A9c_2019.pdf": {
+      "id": 77909,
+      "sha256": "0a9314ea6286dac163496c4555a5297d41661d1009805a1910a5e7a70aba4f99",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-383d98527fd2035d.pdf"
     },
     "https://www.pse.vn/images/2020.10.19_-_CV57_DNB_HDQT_CBTT_B%C3%A1o_c%C3%A1o_t%C3%A0i_ch%C3%ADnh_Q%C3%BAy_3_n%C4%83m_2020.pdf": {
       "id": 77900,
@@ -5940,6 +5960,36 @@
       "sha256": "53de89c06ef4795282990b895845a994660ccd792aff5b194e947732fd8bc1ff",
       "url": "/wp-content/uploads/2026/10/pse-legacy-4330977d442d046f.jpg"
     },
+    "https://www.pse.vn/images/tin-tuc/2017/1296-01.jpg": {
+      "id": 77902,
+      "sha256": "2fd1e415e6d000b1d0d567bd18f83f00799ff5b1bd97048958cfef1f4aa5d67a",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-efb003bbdb39ad8f.jpg"
+    },
+    "https://www.pse.vn/images/tin-tuc/2017/1296-02.jpg": {
+      "id": 77903,
+      "sha256": "b178f44e2511c00f73ef8b9ca6e0855a1ee3d485205fa4229a8c0a3ae9c16199",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-7fcb96c27735c070.jpg"
+    },
+    "https://www.pse.vn/images/tin-tuc/2017/1296-03.jpg": {
+      "id": 77904,
+      "sha256": "b0e819564afa92096b5a4fe96b7fa791376ed255405f63953abc5849b32c7f30",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-772c2155d7a3d5d5.jpg"
+    },
+    "https://www.pse.vn/images/tin-tuc/2017/1296-04.jpg": {
+      "id": 77905,
+      "sha256": "f71166d905aacff7831d79b6adbf60215ce8ad5ec5a57117377fc9700273a425",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-de815ead667ddf05.jpg"
+    },
+    "https://www.pse.vn/images/tin-tuc/2017/1296-05.jpg": {
+      "id": 77906,
+      "sha256": "42f136feba5f77511912a039a8817feb99eb42ff7eab94f6a2916a82fcf1913b",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-f30d2ea806ae53e6.jpg"
+    },
+    "https://www.pse.vn/images/tin-tuc/2017/1296-06.jpg": {
+      "id": 77907,
+      "sha256": "2f54eaeecd13a82013d95694ed935210ce94a5b8bedc554cbaadd8b5d9624e8a",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-8fb60916489e2152.jpg"
+    },
     "https://www.pse.vn/images/tin-tuc/2017/1299-01.jpg": {
       "id": 77888,
       "sha256": "e0523b287ff735bd756b6d8230ca752c18ca22f871935aed08f5c4f3b60e822d",
@@ -6560,45 +6610,50 @@
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
     },
-    "https://www.pse.vn/images/tin-tuc/2017/1296-01.jpg": {
-      "id": 77902,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-efb003bbdb39ad8f.jpg",
-      "sha256": "2fd1e415e6d000b1d0d567bd18f83f00799ff5b1bd97048958cfef1f4aa5d67a"
+    "https://www.pse.vn/images/tin-tuc/2017/1296-07.jpg": {
+      "id": 77913,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-1752c0e7603dc1b1.jpg",
+      "sha256": "05aec00d46cba0d1179402b279a6ec843a9bf5ed780720e3c7a5a74367a063f3"
     },
-    "https://www.pse.vn/images/tin-tuc/2017/1296-02.jpg": {
-      "id": 77903,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-7fcb96c27735c070.jpg",
-      "sha256": "b178f44e2511c00f73ef8b9ca6e0855a1ee3d485205fa4229a8c0a3ae9c16199"
+    "https://www.pse.vn/images/tin-tuc/2017/1296-08.jpg": {
+      "id": 77914,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-9609e3cbddf3e8dc.jpg",
+      "sha256": "01d568571b7f3c21f9d9fd7b4721d503a4912bb9c642244772493538aa6f244d"
     },
-    "https://www.pse.vn/images/tin-tuc/2017/1296-03.jpg": {
-      "id": 77904,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-772c2155d7a3d5d5.jpg",
-      "sha256": "b0e819564afa92096b5a4fe96b7fa791376ed255405f63953abc5849b32c7f30"
+    "https://www.pse.vn/images/tin-tuc/2017/1294-01.jpg": {
+      "id": 77916,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-37fb9ffb6f54921c.jpg",
+      "sha256": "3d4bfab18c2fceb7302223426d73dff32b45a14fcf14c710fc1e3179c71623a3"
     },
-    "https://www.pse.vn/images/tin-tuc/2017/1296-04.jpg": {
-      "id": 77905,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-de815ead667ddf05.jpg",
-      "sha256": "f71166d905aacff7831d79b6adbf60215ce8ad5ec5a57117377fc9700273a425"
+    "https://www.pse.vn/images/tin-tuc/2017/1294-02.jpg": {
+      "id": 77917,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-acb9b8378f4897e6.jpg",
+      "sha256": "4fb9e150ece9b347c2193b3bb959f5e1bf6b7808cdeb6836d27d953353fd0edd"
     },
-    "https://www.pse.vn/images/tin-tuc/2017/1296-05.jpg": {
-      "id": 77906,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-f30d2ea806ae53e6.jpg",
-      "sha256": "42f136feba5f77511912a039a8817feb99eb42ff7eab94f6a2916a82fcf1913b"
+    "https://www.pse.vn/images/tin-tuc/2017/1294-03.jpg": {
+      "id": 77918,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-0dfca3411f72126d.jpg",
+      "sha256": "178a900358e44ee7fb480953dd194db9eaf9e11e514703ab3d93040f88e71e0a"
     },
-    "https://www.pse.vn/images/tin-tuc/2017/1296-06.jpg": {
-      "id": 77907,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-8fb60916489e2152.jpg",
-      "sha256": "2f54eaeecd13a82013d95694ed935210ce94a5b8bedc554cbaadd8b5d9624e8a"
+    "https://www.pse.vn/images/tin-tuc/2017/1294-04.jpg": {
+      "id": 77919,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-542a1ab9497c5765.jpg",
+      "sha256": "b8ff0fd9a5867db168f0fee38f99afab337d2cd3beb03ef24abf5c4f05123abf"
     },
-    "https://www.pse.vn/images/2020.10.01_-_TB55_TB_DNB_TBao_v%E1%BB%81_ng%C3%A0y_%C4%91%C4%83ng_k%C3%BD_cu%E1%BB%91i_c%C3%B9ng_%C4%91%E1%BB%83_th%E1%BB%B1c_hi%E1%BB%87n_quy%E1%BB%81n_nh%E1%BA%ADn_c%E1%BB%95_t%E1%BB%A9c_2019.pdf": {
-      "id": 77909,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-383d98527fd2035d.pdf",
-      "sha256": "0a9314ea6286dac163496c4555a5297d41661d1009805a1910a5e7a70aba4f99"
+    "https://www.pse.vn/images/tin-tuc/2017/1294-05.jpg": {
+      "id": 77920,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-43509761bb8d088c.jpg",
+      "sha256": "fd65496c7aea003ba2c4a4d40a1eb6a3a8a3ede84bf83f2571e67a6a4aba640d"
     },
-    "https://www.pse.vn/images/2020.07.28_-_BC42_BC_HDQT_b%C3%A1o_c%C3%A1o_t%C3%ACnh_h%C3%ACnh_qu%E1%BA%A3n_tr%E1%BB%8B_C%C3%B4ng_ty_6_th%C3%A1ng_%C4%91%E1%BA%A7u_n%C4%83m_2020.pdf": {
-      "id": 77911,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-f2092405bcaab673.pdf",
-      "sha256": "b33063e253f7ef93290660c54a035c6c5444c12df70974453e9d714956612373"
+    "https://www.pse.vn/images/tin-tuc/2017/1294-06.jpg": {
+      "id": 77921,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-7075fd9c37a722b5.jpg",
+      "sha256": "d1d5e9e5ecb18053a6be4c19aa70eff647e420d878340458da4e7b1feec0d42c"
+    },
+    "https://www.pse.vn/images/2020.07.20_-_CV40_DNB_HDQT_CBTT_l%E1%BB%B1a_ch%E1%BB%8Dn_%C4%91%C6%A1n_v%E1%BB%8B_ki%E1%BB%83m_to%C3%A1n_BCTC_n%C4%83m_2020.pdf": {
+      "id": 77922,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-f287498d05cf1b23.pdf",
+      "sha256": "50beac92c506f67416f3bb6589f54422b7921fc14584ee5b8e780f01c7da088f"
     }
   },
   "phase": "discover-and-import",
@@ -6641,7 +6696,7 @@
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=96",
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=102"
   ],
-  "runs": 86,
+  "runs": 87,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
