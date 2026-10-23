@@ -13,6 +13,7 @@ on:
       - scripts/pse-homepage-article-source-audit.mjs
       - scripts/pse-homepage-featured-draft-import.mjs
       - scripts/pse-homepage-corporate-info.mjs
+      - scripts/pse-homepage-media-source-audit.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,7 +37,7 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Inspect PSE WordPress homepage and company editor without saving data
         if: >-
-          github.event.head_commit.message != 'cms(pse): verify previous ESC Table save' && github.event.head_commit.message != 'cms(pse): author three news lane field rows' && github.event.head_commit.message != 'cms(pse): retry native editor news rows' && github.event.head_commit.message != 'cms(pse): author remaining PSE ESC Table schemas' && github.event.head_commit.message != 'cms(pse): create internal PSE homepage draft via native Insert Code' && github.event.head_commit.message != 'cms(pse): create verified three news categories and bind ESC Table IDs' && github.event.head_commit.message != 'cms(pse): populate verified PSE homepage company copy and official links' && github.event.head_commit.message != 'test(pse): audit verified legacy feature articles for CMS migration (READ ONLY)' && github.event.head_commit.message != 'cms(pse): import three verified PSE featured articles as private drafts' && github.event.head_commit.message != 'cms(pse): restore verified public company information from legacy PSE'
+          github.event.head_commit.message != 'cms(pse): verify previous ESC Table save' && github.event.head_commit.message != 'cms(pse): author three news lane field rows' && github.event.head_commit.message != 'cms(pse): retry native editor news rows' && github.event.head_commit.message != 'cms(pse): author remaining PSE ESC Table schemas' && github.event.head_commit.message != 'cms(pse): create internal PSE homepage draft via native Insert Code' && github.event.head_commit.message != 'cms(pse): create verified three news categories and bind ESC Table IDs' && github.event.head_commit.message != 'cms(pse): populate verified PSE homepage company copy and official links' && github.event.head_commit.message != 'test(pse): audit verified legacy feature articles for CMS migration (READ ONLY)' && github.event.head_commit.message != 'cms(pse): import three verified PSE featured articles as private drafts' && github.event.head_commit.message != 'cms(pse): restore verified public company information from legacy PSE' && github.event.head_commit.message != 'test(pse): audit original PSE homepage branding media (READ ONLY)'
         run: node scripts/pse-homepage-editor-audit.mjs
       - name: Create one verified PSE news ESC Table (idempotent, no publication)
         if: >-
@@ -75,3 +76,8 @@ jobs:
         if: >-
           github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): restore verified public company information from legacy PSE'
         run: node scripts/pse-homepage-corporate-info.mjs
+
+      - name: Read public PSE original homepage image assets for media migration
+        if: >-
+          github.event_name == 'push' && github.event.head_commit.message == 'test(pse): audit original PSE homepage branding media (READ ONLY)'
+        run: node scripts/pse-homepage-media-source-audit.mjs
