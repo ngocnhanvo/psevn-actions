@@ -1,3 +1,3 @@
 PSE UI source-only regression
-Astro github commit: 647cd88850fba3c525f190eda8314079ac980a0a
-Check: updated PSE hero legibility, CMS-rendered sections, preserve unrelated page widgets; Astro parser and Vitest, NO BUILD / NO FTP
+Astro github commit: 404eefbb3b561377e7ab1f3ee18fe10e7b860c09
+Check: draft HomePage action-based PSE header/footer and hero content, CMS widgets; unit + Astro parser, NO BUILD / NO FTP
