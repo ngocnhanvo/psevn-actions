@@ -139,7 +139,11 @@ try{
    if(options.length>1)throw Error('Duplicate PSE Media slug for '+marker);
    let media=options[0];
    if(media){
-    if(media.mime_type!==expectedMime||String(media.media_details?.file||'').split('/').at(-1)!==filename)
+    // PDF attachment records can lack media_details.file on this WP
+    // installation. Keep the strict MIME check; URL+SHA256 below verifies
+    // identity byte-for-byte regardless of optional PDF metadata shape.
+    const recorded=String(media.media_details?.file||'');
+    if(media.mime_type!==expectedMime||(recorded&&recorded.split('/').at(-1)!==filename))
      throw Error('Conflicting WordPress-owned asset marker: '+marker);
     reused++;
    }else{
@@ -155,8 +159,15 @@ try{
     media=res;created++;
    }
    const check=await api('/wp-json/wp/v2/media/'+media.id+'?context=edit');
+   const detailFile=String(check.payload?.media_details?.file||'');
+   console.log('PSE_MEDIA_POSTUPLOAD_INSPECT='+JSON.stringify({
+     postId:rec.id,assetIndex:idx,mediaId:media.id,
+     http:check.http,mime:check.payload?.mime_type||null,
+     metadataFile:detailFile||null,
+     guidPath:(()=>{try{return new URL(check.payload?.guid?.rendered).pathname.slice(0,130)}catch{return null}})()
+   }));
    if(check.http!==200||check.payload.id!==media.id||check.payload.mime_type!==expectedMime||
-      String(check.payload.media_details?.file||'').split('/').at(-1)!==filename)
+      (detailFile&&detailFile.split('/').at(-1)!==filename))
     throw Error('WordPress media read-after-write mismatch: '+rec.id+' asset '+idx);
    const url=mediaUrl(check.payload,filename);
    const saved=await context.request.get(url,{timeout:50000});
