@@ -18,8 +18,18 @@ try{
    await page.locator("[data-pse-slider]").waitFor({state:"attached",timeout:25000});
    const slides=page.locator("[data-pse-slide]"),dots=page.locator("[data-pse-dot]");
    if(await slides.count()!==11||await dots.count()!==11)throw Error("Expected 11 genuine CMS slider items");
-   const data=await page.evaluate(()=>[...document.querySelectorAll("[data-pse-slide]")].map(e=>e.querySelector("img")?.getAttribute("src")||""));
-   if(data.length!==11||data.some(src=>!src||!src.includes("/wp-content/uploads/")))throw Error("Slider has missing/non-WP media");
+   // getData.ts turns native WordPress <img> markup into localized processed
+   // image objects. The public src can be /images/pages/... or WP uploads;
+   // never require a bare uploads URL after this transformation.
+   const data=await page.evaluate(()=>[...document.querySelectorAll("[data-pse-slide]")].map(e=>{
+     const im=e.querySelector("img");
+     return {src:im?.getAttribute("src")||"",alt:im?.getAttribute("alt")||"",
+       width:Number(im?.getAttribute("width")||0),height:Number(im?.getAttribute("height")||0),
+       srcSet:im?.getAttribute("srcset")||""};
+   }));
+   if(data.length!==11||data.some(x=>!x.src||!x.alt.trim()||x.width<700||x.height<240))
+      throw Error("Processed PSE hero images lack SEO alt, valid src or dimensions: "+JSON.stringify(data));
+   console.log("PSE_PROCESSED_IMAGE_OBJECT_SEO=PASS; image_count=11; alt_count=11; valid_dimensions=11");
    await page.locator("[data-pse-slide].is-active img").first().waitFor({state:"visible",timeout:20000});
    if(width===1440){
     await page.mouse.move(3,3);
@@ -29,6 +39,17 @@ try{
     if(initial!==0||next!==1)throw Error("Original PSE desktop carousel autoplay did not advance after 6.2s: "+initial+" -> "+next);
     console.log("PSE_LEGACY_SLIDER_AUTOPLAY=PASS; desktop=true; from=0; to=1");
    }
+   // Exercise ALL eleven real slides and force lazy-loaded pictures to decode
+   // while each is active, including the original image and ten Media assets.
+   for(let i=0;i<11;i++){
+     await dots.nth(i).click();
+     await page.waitForFunction(index=>{
+       const slide=[...document.querySelectorAll("[data-pse-slide]")][index];
+       const image=slide?.querySelector("img");
+       return slide?.classList.contains("is-active") && Boolean(image?.complete && image.naturalWidth>0);
+     },i,{timeout:20000});
+   }
+   console.log("PSE_PROCESSED_IMAGE_LOAD=PASS; width="+width+"; all_11_images_decode=true");
    const target=dots.nth(5);
    await target.click();
    if(!await slides.nth(5).evaluate(e=>e.classList.contains("is-active")))throw Error("Slider dots do not change active banner");
@@ -47,7 +68,7 @@ try{
     if(Number(opacity)<.85)throw Error("Mobile hero overlay must stay readable");
    }
    await page.screenshot({path:dir+"/pse-slider-"+width+".png",fullPage:false,animations:"disabled",timeout:20000});
-   console.log("PSE_LEGACY_SLIDER_LIVE=PASS; width="+width+"; slides=11; dots=11; original_wp_media=true; dot_navigation=PASS; overlay=PASS");
+   console.log("PSE_LEGACY_SLIDER_LIVE=PASS; width="+width+"; slides=11; dots=11; processed_wordpress_media=true; alt=PASS; dot_navigation=PASS; overlay=PASS");
   }finally{await page.close()}
  }
  console.log("PSE_LEGACY_SLIDER_LIVE_QA=PASS; desktop_mobile=true; no_writes=true");
