@@ -55,6 +55,32 @@ jobs:
           pnpm install --frozen-lockfile --prefer-offline
           pnpm exec vitest run
           echo 'PSE_PORTABLE_UI_TESTS=PASS'
+      - name: Parse PSE homepage Astro sections and shared layout (NO BUILD)
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { pathToFileURL } from 'node:url';
+          const require = createRequire(import.meta.url);
+          const astroRequire = createRequire(require.resolve('astro/package.json'));
+          const compiler = await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
+          const paths = [
+            'src/astro/tablepress/Pse_00.astro',
+            'src/astro/tablepress/Pse_01.astro',
+            'src/astro/tablepress/Pse_02.astro',
+            'src/astro/tablepress/Pse_03.astro',
+            'src/astro/components/Layout/Header.astro',
+            'src/astro/components/Layout/Footer.astro',
+          ];
+          for (const file of paths) {
+            await compiler.transform(await readFile(file, 'utf8'), {filename:file});
+            console.log('PSE_ASTRO_PARSE_PASS ' + file);
+          }
+          console.log('PSE_HOMEPAGE_ASTRO_PARSER=PASS; NO_BUILD=PASS');
+          NODE
       - name: Verify retired tenant API and avoid route tests as pages (NO BUILD)
         shell: bash
         run: |
