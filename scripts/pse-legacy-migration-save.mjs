@@ -31,7 +31,9 @@ const articleProgress=Object.entries(local.articles).some(([id,row])=>{
   return !previous ||
     row.status!==previous.status ||
     Number(row.attempts||0)!==Number(previous.attempts||0) ||
-    row.wp_id!==previous.wp_id;
+    row.wp_id!==previous.wp_id ||
+    Boolean(row.seo_cleaned)!==Boolean(previous.seo_cleaned) ||
+    Number(row.seo_attempts||0)!==Number(previous.seo_attempts||0);
 });
 const progress=local.seen.length>original.seen.length ||
   afterRecords>beforeRecords ||
@@ -41,7 +43,9 @@ const progress=local.seen.length>original.seen.length ||
 const pending=local.queue.length>0 || Object.values(local.articles).some(
   row=>(["pending","media"].includes(row.status) && Number(row.attempts||0)<3) ||
     (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
-      Number(row.attempts||0)<3)
+      Number(row.attempts||0)<3) ||
+    (row.wp_id && ["imported","draft_needs_date"].includes(row.status) &&
+      !row.seo_cleaned && Number(row.seo_attempts||0)<3)
 );
 const canContinue=progress && pending && local.runs<250;
 if(process.env.GITHUB_ENV)
