@@ -217,14 +217,22 @@ try{
           if(!(el instanceof HTMLImageElement))throw Error('Expected image node');
           if(el.complete && el.naturalWidth>0)return;
           await new Promise((resolve,reject)=>{
+            const cleanup=()=>{
+              clearTimeout(timer);
+              el.removeEventListener('load',done);
+              el.removeEventListener('error',failed);
+            };
             const done=()=>{cleanup();resolve()};
             const failed=()=>{cleanup();reject(new Error('Image network error'))};
-            const cleanup=()=>{el.removeEventListener('load',done);el.removeEventListener('error',failed)};
+            const timer=setTimeout(()=>{
+              cleanup();
+              reject(new Error('Image load exceeded 12000ms'));
+            },12000);
             el.addEventListener('load',done,{once:true});
             el.addEventListener('error',failed,{once:true});
             if(el.complete){if(el.naturalWidth>0)done();else failed();}
           });
-        },{timeout:35000});
+        },undefined,{timeout:16000});
       }catch(error){
         const diag=await img.evaluate(el=>({
           src:el.currentSrc||el.src,complete:el.complete,
