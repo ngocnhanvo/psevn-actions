@@ -65,6 +65,12 @@ try {
     {key:'panorama',url:'https://www.pse.vn/images/banners/slide-001.jpg',name:'pse-original-panorama-2026.jpg',mime:'image/jpeg',table:'pse_02_vi',column:'background',row:0},
     {key:'logo',url:'https://www.pse.vn/images/headers/logo-2025.jpg',name:'pse-original-logo-2025.jpg',mime:'image/jpeg',table:null,column:null,row:null}
   ];
+  const wpMediaUrlValid=value=>{
+    try{
+      const u=new URL(String(value||''));
+      return u.protocol==='https:'&&!u.username&&!u.password&&u.pathname.includes('/wp-content/uploads/');
+    }catch{return false}
+  };
   const uploaded={};
   for(const asset of assets){
     const original=await context.request.get(asset.url,{timeout:60000});
@@ -82,7 +88,7 @@ try {
     if(existing.length>1)throw Error('Ambiguous existing media for '+asset.key);
     let media=existing[0];
     if(media){
-      if(media.mime_type!==asset.mime||!media.source_url?.startsWith(origin+'/wp-content/uploads/'))
+      if(media.mime_type!==asset.mime||!wpMediaUrlValid(media.source_url))
         throw Error('Existing PSE WordPress media has unexpected type/origin');
       console.log('PSE_OFFICIAL_MEDIA=ALREADY_EXISTS; key='+asset.key+'; id='+media.id);
     }else{
@@ -95,8 +101,13 @@ try {
         }
       });
       const body=await response.json().catch(()=>({}));
+      console.log('PSE_MEDIA_UPLOAD_RESPONSE='+JSON.stringify({
+        key:asset.key,status:response.status(),id:Number.isSafeInteger(body.id)?body.id:null,
+        mime:body.mime_type||null,sourceHost:(()=>{try{return new URL(body.source_url).hostname}catch{return null}})(),
+        hasWordPressUploadsPath:wpMediaUrlValid(body.source_url)
+      }));
       if(response.status()!==201||!Number.isSafeInteger(body.id)||
-         body.mime_type!==asset.mime||!body.source_url?.startsWith(origin+'/wp-content/uploads/'))
+         body.mime_type!==asset.mime||!wpMediaUrlValid(body.source_url))
         throw Error('PSE WP Media upload failed HTTP '+response.status()+' key='+asset.key);
       media=body;
       console.log('PSE_OFFICIAL_MEDIA=UPLOADED; key='+asset.key+'; id='+media.id+'; original_bytes='+bytes.length);
