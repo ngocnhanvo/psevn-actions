@@ -66,12 +66,12 @@ try{
     if(p.id!==76969||p.status!=='draft'||p.acf?.key!=='pse-home-design-draft')
       return {error:'Incorrect PSE preview draft'};
     const raw=String(p.content?.raw||'');
-    const clean=s=>s.replace(/(src|href)="[^"]*"/gi,'$1="[URL]"').replace(/\\s+/g,' ').trim();
+    const clean=s=>s.replace(/(src|href)="[^"]*"/gi,'$1="[URL]"').replace(/\s+/g,' ').trim();
     const parsed=new DOMParser().parseFromString(raw,'text/html');
     const widgets=[...parsed.querySelectorAll('.tablepress-preview-wrap[data-table-id]')];
-    const shortcodes=[...raw.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi)]
+    const shortcodes=[...raw.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)]
       .map(m=>m[1]);
-    const positions=[...raw.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi)]
+    const positions=[...raw.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)]
       .map(m=>({id:m[1],context:clean(raw.slice(Math.max(0,m.index-150),m.index+m[0].length+110)).slice(0,320)}));
     const stripped=parsed.body.cloneNode(true);
     stripped.querySelectorAll('.tablepress-preview-wrap[data-table-id]').forEach(el=>el.remove());
@@ -80,11 +80,11 @@ try{
       wrapperCount:widgets.length,
       widgetDetails:widgets.map(el=>({
         id:el.getAttribute('data-table-id'),
-        nestedShortcodes:[...(el.innerHTML.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi))].map(m=>m[1]),
+        nestedShortcodes:[...(el.innerHTML.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi))].map(m=>m[1]),
         outerSample:clean(el.outerHTML).slice(0,460)
       })),
       shortcodeContexts:positions,
-      remainingShortcodes:[...stripped.innerHTML.matchAll(/\\[table\\s+id=([a-z0-9_-]+)\\s*\\/\\]/gi)].map(m=>m[1]),
+      remainingShortcodes:[...stripped.innerHTML.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1]),
       htmlAfterRemovingPreviews:clean(stripped.innerHTML).slice(0,550)
     };
   });
