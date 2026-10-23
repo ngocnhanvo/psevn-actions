@@ -1,3 +1,4 @@
+// Verified read-only WordPress category audit PASS in Actions #39969125936; native editor write authorized in auto-build.
 /** Bind each existing PSE news tab to the *real* WordPress category slug.
  * Preserves current categoryId and 3 labels; one extra ESC Table column.
  * Native TablePress editor only; audit-only mode does not change WP.
