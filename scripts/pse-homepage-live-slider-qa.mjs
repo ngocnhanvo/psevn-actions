@@ -21,6 +21,14 @@ try{
    const data=await page.evaluate(()=>[...document.querySelectorAll("[data-pse-slide]")].map(e=>e.querySelector("img")?.getAttribute("src")||""));
    if(data.length!==11||data.some(src=>!src||!src.includes("/wp-content/uploads/")))throw Error("Slider has missing/non-WP media");
    await page.locator("[data-pse-slide].is-active img").first().waitFor({state:"visible",timeout:20000});
+   if(width===1440){
+    await page.mouse.move(3,3);
+    const initial=await page.evaluate(()=>[...document.querySelectorAll("[data-pse-slide]")].findIndex(x=>x.classList.contains("is-active")));
+    await page.waitForTimeout(6800);
+    const next=await page.evaluate(()=>[...document.querySelectorAll("[data-pse-slide]")].findIndex(x=>x.classList.contains("is-active")));
+    if(initial!==0||next!==1)throw Error("Original PSE desktop carousel autoplay did not advance after 6.2s: "+initial+" -> "+next);
+    console.log("PSE_LEGACY_SLIDER_AUTOPLAY=PASS; desktop=true; from=0; to=1");
+   }
    const target=dots.nth(5);
    await target.click();
    if(!await slides.nth(5).evaluate(e=>e.classList.contains("is-active")))throw Error("Slider dots do not change active banner");
