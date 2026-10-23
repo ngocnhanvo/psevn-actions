@@ -59,6 +59,20 @@ state=json.load(open(STATE,encoding="utf-8"))
 if state.get("schema")!="pse-legacy-article-migration-v1":raise SystemExit("Unknown migration schema")
 state.setdefault("seen",[]);state.setdefault("queue",[]);state.setdefault("errors",[]);state.setdefault("articles",{})
 seen=set(state["seen"]);pending=set(state["queue"]);started=time.monotonic();visited=0;found=0;failed=0
+# Retry bounded transient source timeouts, including those recorded by older runs.
+# 404s remain quarantined because repeated requests cannot repair missing pages.
+state.setdefault("crawl_retries",{})
+for old in list(state["errors"]):
+ url=old.get("url")
+ if not url or "timed out" not in str(old.get("reason","")).lower():continue
+ if state["crawl_retries"].get(url,0)>=2 or url in pending:continue
+ normalized=clean(url)
+ if not normalized:continue
+ if url in seen:
+  seen.remove(url)
+  state["seen"].remove(url)
+ state["queue"].append(url);pending.add(url)
+ state["crawl_retries"][url]=state["crawl_retries"].get(url,0)+1
 while state["queue"] and visited<MAX_PAGES and time.monotonic()-started<MAX_SECONDS:
  url=state["queue"].pop(0);pending.discard(url)
  url=clean(url)
