@@ -183,9 +183,41 @@ try{
  const before=await readEditor();
  if(JSON.stringify(parseCodes(before))!==JSON.stringify(expected))
   throw Error('Wrong public PSE four-section layout before native WordPress save');
+ // Classic WP Update is a POST navigation. Waiting for an already satisfied
+ // load state returns immediately and may abort the form save on browser close.
+ // Arm the navigation waiter before clicking; never skip WP's native Save.
+ let saveHttp=null;
+ const saveObserved=response=>{
+  try{
+   const url=new URL(response.url());
+   if(response.request().method()==='POST'&&url.origin===origin&&url.pathname==='/wp-admin/post.php')
+    saveHttp=response.status();
+  }catch{}
+ };
+ page.on('response',saveObserved);
+ const newDocument=page.waitForNavigation({waitUntil:'domcontentloaded',timeout:45000}).catch(()=>null);
  await click(page.locator('#publish'));
- await page.waitForLoadState('domcontentloaded',{timeout:60000});
+ const navigation=await newDocument;
+ page.off('response',saveObserved);
  const after=(await get('/wp-json/wp/v2/pages/248?context=edit&_fields=id,status,slug,title,acf,content')).data;
+ const actualCodes=parseCodes(after.content?.raw);
+ const valid=after.id===248&&after.status==='publish'&&after.acf?.key==='home'&&
+    after.acf?.action==='HomePage'&&after.slug===live.slug&&
+    JSON.stringify(actualCodes)===JSON.stringify(expected);
+ if(!valid){
+  const ui=await page.evaluate(()=>({
+   path:location.pathname,saveResponseSeen:document.readyState,
+   notices:[...document.querySelectorAll('.notice-error,.error,.acf-error-message,#message')]
+    .map(n=>(n.textContent||'').replace(/\\s+/g,' ').trim().slice(0,160)).filter(Boolean).slice(0,6)
+  }));
+  console.log('PSE_PUBLIC_HOME_UPDATE_DIAGNOSTIC='+JSON.stringify({
+   navigationOccurred:!!navigation,wp_post_http_status:saveHttp,
+   afterStatus:after.status,afterSlug:after.slug,afterKey:after.acf?.key||null,
+   afterAction:after.acf?.action||null,afterCodes:actualCodes,afterLength:String(after.content?.raw||'').length,
+   path:ui.path,notices:ui.notices
+  }));
+ }
+
  if(after.id!==248||after.status!=='publish'||after.acf?.key!=='home'||after.acf?.action!=='HomePage'||
     after.slug!==live.slug||JSON.stringify(parseCodes(after.content?.raw))!==JSON.stringify(expected))
   throw Error('WordPress homepage read-after-write mismatch after Update button; restore from artifact/revisions before repeat');
