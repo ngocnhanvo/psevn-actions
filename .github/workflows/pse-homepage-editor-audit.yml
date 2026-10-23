@@ -149,7 +149,7 @@ jobs:
           cd source
           pnpm install --frozen-lockfile --prefer-offline
       - name: Render real CMS PSE home in transient Astro DEV server with Playwright
-        run: node scripts/pse-homepage-visual-qa.mjs
+        run: timeout --signal=TERM --kill-after=12s 320s node scripts/pse-homepage-visual-qa.mjs
       - name: Retain screenshots for private PSE visual QA
         if: always()
         uses: actions/upload-artifact@v4
