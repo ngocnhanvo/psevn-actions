@@ -3,7 +3,7 @@
  */
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdir,writeFile,readFile,rm } from 'node:fs/promises';
+import { mkdir,writeFile,readFile,rename,rm } from 'node:fs/promises';
 import path from 'node:path';
 const ids=['pse_00_vi','pse_01_vi','pse_02_vi','pse_03_vi'];
 const origin=(()=>{
@@ -17,6 +17,9 @@ const sourceRoot=path.resolve('source');
 const routePath=path.join(sourceRoot,'src/pages/__pse_qa.astro');
 const astroConfigPath=path.join(sourceRoot,'astro.config.mjs');
 let originalConfig;
+const catchAllPage=path.join(sourceRoot,'src/pages/[...slug].astro');
+const disabledCatchAll=catchAllPage+'.pse-qa-disabled';
+let catchAllMoved=false;
 const shots=path.resolve('artifacts/pse-homepage-visual-qa');
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:900}});
@@ -152,6 +155,12 @@ try{
   if(!originalConfig.includes('noExternal: [/.*/]'))throw Error('Expected inherited Astro SSR config not found');
   await writeFile(astroConfigPath,originalConfig.replace('noExternal: [/.*/]','noExternal: []'));
   console.log('PSE_QA_DEV_ONLY_COMMONJS_EXTERNALIZATION=ON; production_source_unmodified=true');
+  // The inherited catch-all route eagerly imports unrelated CartPage (which
+  // currently references a missing cartStorageKey). This test is only for PSE
+  // sections, so exclude that route inside the disposable runner checkout.
+  await rename(catchAllPage,disabledCatchAll);
+  catchAllMoved=true;
+  console.log('PSE_QA_TEMP_CATCHALL_DISABLED=ON; production_routes_unchanged=true');
   server=spawn('pnpm',['dev','--host','127.0.0.1','--port','4321'],{
     cwd:sourceRoot,env:{...process.env,WC_URL:origin,WC_URL_CLIENT:'http://127.0.0.1:4321',PUBLIC_ENABLE_MARKETING:'false'},
     stdio:['ignore','pipe','pipe']
@@ -210,5 +219,6 @@ try{
   if(server&&!server.killed){server.kill('SIGTERM')}
   await rm(routePath,{force:true}).catch(()=>{});
   if(originalConfig!==undefined)await writeFile(astroConfigPath,originalConfig).catch(()=>{});
+  if(catchAllMoved)await rename(disabledCatchAll,catchAllPage).catch(()=>{});
   await browser.close();
 }
