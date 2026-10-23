@@ -179,6 +179,33 @@ try{
   });
   console.log('PSE_NEWS_TABLE_ASTRO_REST_SHAPE='+JSON.stringify(runtimeShape));
 
+
+  // Observe the existing editable TablePress grid so next writer uses real UI,
+  // never guessed DOM ids or direct database writes.
+  await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=edit&table_id=pse_01_vi',
+    {waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForTimeout(1600);
+  const gridShape=await page.evaluate(()=>{
+    const tp=window.tp;
+    const root=document.querySelector('#wpbody-content')||document.body;
+    return {
+      pageTitle:(root.querySelector('h1')?.textContent||'').trim().slice(0,100),
+      tableId:tp?.table?.id||tp?.table?.meta?.id||null,
+      rawRows:Array.isArray(tp?.table?.data)?tp.table.data.length:null,
+      rawColumns:Array.isArray(tp?.table?.data?.[0])?tp.table.data[0].length:null,
+      editorPresent:!!tp?.editor,
+      visibleButtons:Array.from(root.querySelectorAll('button,input[type=submit]'))
+        .map(x=>(x.textContent||x.value||x.getAttribute('aria-label')||'').trim())
+        .filter(Boolean).slice(0,65),
+      gridSelectors:{
+        table:!!root.querySelector('.jexcel,.jspreadsheet'),
+        cells:root.querySelectorAll('.jexcel td,.jspreadsheet td').length,
+        addRows:!!root.querySelector('[id*=add-rows],[name*=add-rows]')
+      }
+    };
+  });
+  console.log('PSE_NEWS_ESC_GRID_AUTHORING_SHAPE='+JSON.stringify(gridShape));
+
   console.log('PSE_CMS_AUTHORING_PREFLIGHT=PASS read_only=true no_content_saved=true');
 
   console.log('PSE_EDITOR_AUDIT=PASS read_only=true no_content_saved=true');
