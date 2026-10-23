@@ -188,7 +188,21 @@ try{
     view.on('pageerror',e=>browserErrors.push(String(e.message).slice(0,180)));
     const response=await view.goto(testUrl,{waitUntil:'domcontentloaded',timeout:60000});
     if(response?.status()!==200)throw Error('QA route HTTP '+response?.status()+' viewport '+width);
-    await view.locator('[data-pse-section="hero"]').waitFor({timeout:40000});
+    try{
+      await view.locator('[data-pse-section="hero"]').waitFor({timeout:12000});
+    }catch(error){
+      const diagnostic=await view.evaluate(()=>({
+        pageTitle:document.title.slice(0,160),
+        bodyStart:(document.body?.innerText||'').slice(0,1000),
+        sectionCount:document.querySelectorAll('[data-pse-section]').length,
+        heroCount:document.querySelectorAll('[data-pse-section="hero"]').length,
+        errorOverlay:!!document.querySelector('vite-error-overlay,astro-error-overlay'),
+        pageWidth:document.documentElement.scrollWidth
+      })).catch(e=>({captureError:String(e).slice(0,180)}));
+      console.log('PSE_QA_HERO_MISSING='+JSON.stringify({width,diagnostic,serverErrors:output.split('\n').filter(l=>/error|cannot|failed|not found/i.test(l)).slice(-14).map(x=>x.slice(0,250))}));
+      await view.screenshot({path:path.join(shots,'pse-debug-'+width+'.png'),fullPage:true}).catch(()=>{});
+      throw Error('QA hero missing: '+String(error).slice(0,160));
+    }
     await view.waitForTimeout(800);
     const observed=await view.evaluate(()=>{
       const sections=Array.from(document.querySelectorAll('[data-pse-section]')).map(el=>el.getAttribute('data-pse-section'));
