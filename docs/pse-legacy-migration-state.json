@@ -130,6 +130,12 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/235-chi-doan-pvfcco-se-tham-hoi-va-tang-qua-cu-gia-va-tre-em-co-nho-mai-am-chua-tu-an.html",
       "status": "pending"
     },
+    "236": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/236-nghi-quyet-dai-hoi-dong-co-dong-pvfcco-se-ngay-31122011.html",
+      "status": "pending"
+    },
     "239": {
       "attempts": 0,
       "group_hint": "company",
@@ -182,6 +188,12 @@
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/337-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2012-cua-pvfcco-se.html",
+      "status": "pending"
+    },
+    "338": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/338-pvfcco-se-chot-danh-sach-co-dong-de-thuc-hien-quyen-tham-du-dai-hoi-dong-co-dong-thuong-nien-2013.html",
       "status": "pending"
     },
     "341": {
@@ -460,6 +472,12 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1069-doan-thanh-nien-co-quan-tong-cong-ty-va-doan-thanh-nien-cong-ty-dong-nam-bo-to-chuc-chuong-trinh-ve-nguon-tai-huyen-bu-gia-map-tinh-binh-phuoc.html",
       "status": "pending"
     },
+    "1076": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1076-pvfcco-se-bao-cao-tinh-hinh-quan-tri-cong-ty-nam-2014.html",
+      "status": "pending"
+    },
     "1083": {
       "attempts": 0,
       "group_hint": "company",
@@ -472,6 +490,12 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/thong-tin-quan-tri/1084-nghi-quyet-ve-viec-chap-thuan-ke-hoach-kinh-doanh-nam-2015-cua-pvfcco-se.html",
       "status": "pending"
     },
+    "1085": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1085-pvfcco-se-thong-bao-ve-ngay-dang-ky-cuoi-cung-de-thuc-hien-quyen-tham-du-dai-hoi-dong-co-dong-thuong-nien-2015.html",
+      "status": "pending"
+    },
     "1092": {
       "attempts": 0,
       "group_hint": "shareholder",
@@ -482,6 +506,24 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1103-hai-chi-doan-pvfcco-se-pvfcco-sw-tang-bao-cho-hai-don-vi-ket-nghia-chi-doan-tau-ho-ve-ten-lua-hq-011-dinh-tien-hoang-va-hq-012-ly-thai-to-5.html",
+      "status": "pending"
+    },
+    "1104": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1104-thu-moi-tham-du-dai-hoi-dong-co-dong-thuong-nien-2015-cua-pvfcco-se.html",
+      "status": "pending"
+    },
+    "1105": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1105-tai-lieu-dai-hoi-dong-co-dong-phien-hop-thuong-nien-2015-cua-pvfcco-se.html",
+      "status": "pending"
+    },
+    "1109": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1109-bien-ban-va-nghi-quyet-phien-hop-dai-hoi-dong-co-dong-thuong-nien-2015-cua-pvfcco-se.html",
       "status": "pending"
     },
     "1119": {
@@ -518,6 +560,12 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1155-chi-tra-co-tuc-dot-1-nam-2015.html",
+      "status": "media"
+    },
+    "1158": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1158-thong-bao-ve-viec-xet-trao-hoc-bong-dpm-cho-sinh-vien-nam-hoc-2015-2016.html",
       "status": "pending"
     },
     "1161": {
@@ -548,6 +596,12 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1196-chi-doan-pvfcco-se-to-chuc-hoat-dong-ve-nguon-ket-hop-asxh-va-giao-luu-voi-chi-doan-pvfcco-sw.html",
+      "status": "pending"
+    },
+    "1206": {
+      "attempts": 0,
+      "group_hint": "shareholder",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/1206-to-trinh-ve-danh-sach-ung-cu-hdqt-va-bks.html",
       "status": "pending"
     },
     "1207": {
@@ -988,6 +1042,12 @@
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1481-tang-qua-mttq-thu-duc-va-cbnv-thang-8-2021.html",
       "status": "pending"
     },
+    "1484": {
+      "attempts": 0,
+      "group_hint": "unmapped",
+      "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/1484-npk-phu-my-20-5-5-te-mo-ta-va-hdsd.html",
+      "status": "pending"
+    },
     "1486": {
       "attempts": 0,
       "group_hint": "shareholder",
@@ -1036,6 +1096,18 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1513-20220418-cbtt-bao-cao-tai-chinh-quy-1-2022.html",
       "status": "pending"
     },
+    "1514": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1514-chi-doan-pvfcco-se-to-chuc-thanh-cong-dai-hoi-chi-doan-nhiem-ky-2022-2024.html",
+      "status": "pending"
+    },
+    "1515": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1515-pvfcco-se-to-chuc-tap-huan-cho-can-bo-kinh-doanh-thi-truong-ve-san-pham-moi-npk-phu-my-vi-sinh.html",
+      "status": "media"
+    },
     "1521": {
       "attempts": 0,
       "group_hint": "company",
@@ -1076,6 +1148,18 @@
       "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1529-pvfcco-se-gioi-thieu-san-pham-npk-phu-my-vi-sinh-biowish-tai-tay-ninh.html",
+      "status": "pending"
+    },
+    "1531": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1531-lanh-dao-tong-cong-ty-tham-va-lam-viec-tai-cac-tinh-khu-vuc-dong-nam-bo.html",
+      "status": "pending"
+    },
+    "1534": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1534-hoi-thao-truyen-thong-lan-thu-14-cua-pvfcco-pvfcco-se-dat-ket-qua-thanh-cong-ruc-ro.html",
       "status": "pending"
     },
     "1535": {
@@ -1568,16 +1652,16 @@
       "attempts": 0,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1732-20260610-cbtt-danh-sach-co-dong-nha-nuoc-co-dong-chien-luoc-co-dong-lon-va-co-phieu-quy-cong-ty.html",
-      "status": "pending"
+      "status": "media"
     },
     "1733": {
       "attempts": 1,
       "group_hint": "shareholder",
+      "reason": "Original source lacks independently verifiable publish timestamp",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1733-20260630-cbtt-lua-chon-don-vi-soat-xet-va-kiem-toan-bao-cao-tai-chinh-nam-2026.html",
       "status": "draft_needs_date",
-      "wp_id": 77069,
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 77069
     },
     "1734": {
       "attempts": 2,
@@ -1589,11 +1673,13 @@
       "wp_id": 77066
     },
     "1735": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=12020111; ext=pdf",
+      "reason": "Original source lacks independently verifiable publish timestamp",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/1735-20260727-bao-cao-tinh-hinh-quan-tri-6-thang-dau-nam-2026-va-danh-sach-co-dong-nha-nuoc-co-dong-lon.html",
-      "status": "media"
+      "status": "draft_needs_date",
+      "wp_id": 77072,
+      "verified_date": null
     },
     "1736": {
       "attempts": 2,
@@ -1642,6 +1728,16 @@
       "sha256": "853298d7079f9822cbd8c3e48763756800185f7cffbd18cd9108a7f681144f0d",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9ad6fd0414603258.pdf"
     },
+    "https://www.pse.vn/images/2._TA_-BC-26-60-BC-H%C4%90QT-B%C3%A1o_c%C3%A1o_t%C3%ACnh_h%C3%ACnh_qu%E1%BA%A3n_tr%E1%BB%8B_C%C3%B4ng_ty_6_th%C3%A1ng_%C4%91%E1%BA%A7u_n%C4%83m_2026.pdf": {
+      "id": 77070,
+      "sha256": "ef6b8e41ce49dea00d01950529485d9dcab2dec30466b9c279ff5af45fa8373e",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-b1f586e41b1e3e73.pdf"
+    },
+    "https://www.pse.vn/images/3._DS_C%E1%BB%94_%C4%90%C3%94NG_NH%C3%80_N%C6%AF%E1%BB%9AC-_C%E1%BB%94_%C4%90%C3%94NG_L%E1%BB%9AN.pdf": {
+      "id": 77071,
+      "sha256": "775c93ccdc61e0107924a418283cddfa6446ef4975c3c66004a848a691ad32ac",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-499c12b10490857c.pdf"
+    },
     "https://www.pse.vn/images/BCTC_Q2.2026_TA.pdf": {
       "id": 77064,
       "sha256": "0b78db90208ea4004aeb9c0514bba364bdd5ea4583d59073cce16c0f2357edca",
@@ -1662,31 +1758,39 @@
       "sha256": "c2df061a50cc4b24d25136dadaba56014df48c44aabb893a4b1247442ae8206b",
       "url": "/wp-content/uploads/2026/10/pse-legacy-fd16a83159211374.pdf"
     },
-    "https://www.pse.vn/images/2._TA_-BC-26-60-BC-H%C4%90QT-B%C3%A1o_c%C3%A1o_t%C3%ACnh_h%C3%ACnh_qu%E1%BA%A3n_tr%E1%BB%8B_C%C3%B4ng_ty_6_th%C3%A1ng_%C4%91%E1%BA%A7u_n%C4%83m_2026.pdf": {
-      "id": 77070,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-b1f586e41b1e3e73.pdf",
-      "sha256": "ef6b8e41ce49dea00d01950529485d9dcab2dec30466b9c279ff5af45fa8373e"
+    "https://www.pse.vn/images/DS_codonglon.pdf": {
+      "id": 77073,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-718ca4d1a7a3c528.pdf",
+      "sha256": "e993637515bd6a03b139c848e09d60d9c7cb6389f72a87ff2514fa7cb26af1b9"
     },
-    "https://www.pse.vn/images/3._DS_C%E1%BB%94_%C4%90%C3%94NG_NH%C3%80_N%C6%AF%E1%BB%9AC-_C%E1%BB%94_%C4%90%C3%94NG_L%E1%BB%9AN.pdf": {
-      "id": 77071,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-499c12b10490857c.pdf",
-      "sha256": "775c93ccdc61e0107924a418283cddfa6446ef4975c3c66004a848a691ad32ac"
+    "https://www.pse.vn/images/Dai-hoi-Doan/taphuan1.jpg": {
+      "id": 77074,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-4d70974c6fcf87ef.jpg",
+      "sha256": "a7e7d99b582537e5d515d6f1020b945ee05be80479b6a79826420bc40d04d8d4"
+    },
+    "https://www.pse.vn/images/Dai-hoi-Doan/taphuan2.jpg": {
+      "id": 77075,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-b2ace3ccfaa82997.jpg",
+      "sha256": "430b2126517660864ba492ccb02d57fc5c86d1ea187297d7d5e607152d919a18"
+    },
+    "https://www.pse.vn/images/Dai-hoi-Doan/taphuan3.jpg": {
+      "id": 77076,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-9d5394081df88e08.jpg",
+      "sha256": "3fe485a213f70c369e4c568de9c6e3223402e084c1834c6094249a4b7bc545fc"
+    },
+    "https://www.pse.vn/images/pdf/2015/Chi_tra_co_tuc_dot_1_2015.pdf": {
+      "id": 77077,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-880fbcbbc0eb409c.pdf",
+      "sha256": "d31708f56877784b57d309f728fb37e378eaee2e5cd738263f3f9e6f423c4da1"
+    },
+    "https://www.pse.vn/media/jce/icons/pdf.png": {
+      "id": 77078,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png",
+      "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0"
     }
   },
   "phase": "discover-and-import",
   "queue": [
-    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=36",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/49-noi-dung-dang-cap-nhat.html",
-    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html",
-    "https://www.pse.vn/pvfcco-pse/so-do-to-chuc.html",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/kenh-phan-phoi/30-he-thong-phan-phoi-san-pham-tai-cac-tinh-mien-dong-nam-bo.html",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/42-huong-dan-bon-phan-cho-cay-lua.html",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/41-quy-trinh-cham-soc-cay-ca-phe.html",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/40-bon-phan-cho-cay-cao-su.html",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep.html?start=6",
-    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon.html?start=6",
-    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong.html?start=6",
-    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong.html?start=12",
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong.html?start=18",
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=6",
     "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html?start=12",
@@ -1711,9 +1815,24 @@
     "https://www.pse.vn/pvfcco-pse/ban-giam-doc/11-gioi-thieu.html",
     "https://www.pse.vn/pvfcco-pse/dinh-huong-phat-trien/11-gioi-thieu.html",
     "https://www.pse.vn/pvfcco-pse/dinh-huong-phat-trien/11-gioi-thieu/65-hoat-dong-cong-dong.html",
-    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/86-doan-thanh-nien-pse-day-manh-hoat-dong.html"
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/86-doan-thanh-nien-pse-day-manh-hoat-dong.html",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu.html",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=6",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=12",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=18",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=24",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=30",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=36",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=42",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=48",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=54",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=330",
+    "https://www.pse.vn/pvfcco-pse/so-do-to-chuc/11-gioi-thieu/65-hoat-dong-cong-dong.html",
+    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/89-nghi-quyet-dai-hoi-dong-co-dong.html",
+    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/88-bien-ban-dai-hoi-dong-co-dong.html",
+    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/76-thong-bao-mua-co-phieu-quy.html"
   ],
-  "runs": 7,
+  "runs": 8,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
@@ -1797,7 +1916,19 @@
     "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=12",
     "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=18",
     "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=24",
-    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=30"
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=30",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html?start=36",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/49-noi-dung-dang-cap-nhat.html",
+    "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html",
+    "https://www.pse.vn/pvfcco-pse/so-do-to-chuc.html",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/kenh-phan-phoi/30-he-thong-phan-phoi-san-pham-tai-cac-tinh-mien-dong-nam-bo.html",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/42-huong-dan-bon-phan-cho-cay-lua.html",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/41-quy-trinh-cham-soc-cay-ca-phe.html",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/40-bon-phan-cho-cay-cao-su.html",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep.html?start=6",
+    "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon.html?start=6",
+    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong.html?start=6",
+    "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong.html?start=12"
   ],
   "source": "https://www.pse.vn/",
   "tracker_issue": 3
