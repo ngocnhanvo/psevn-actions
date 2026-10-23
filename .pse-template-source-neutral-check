@@ -1,3 +1,3 @@
-PSE UI source-only regression
-Astro github commit: 404eefbb3b561377e7ab1f3ee18fe10e7b860c09
-Check: draft HomePage action-based PSE header/footer and hero content, CMS widgets; unit + Astro parser, NO BUILD / NO FTP
+PSE development source regression request
+Astro github commit: e26e305ec549929b429dd7309218937b24dd0560
+Check: native ESC Table TinyMCE preview normalization (4 PSE shortcodes retained), extract HTML renderer and 323+ existing unit tests, Astro parser (NO BUILD)
