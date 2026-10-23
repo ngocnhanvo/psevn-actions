@@ -21,6 +21,7 @@ const astroConfigPath=path.join(sourceRoot,'astro.config.mjs');
 let originalConfig;
 
 const shots=path.resolve('artifacts/pse-homepage-visual-qa');
+const pageWait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:900}});
 const admin=await context.newPage();
@@ -182,8 +183,18 @@ try{
     }catch{}
   }
   if(!ready)throw Error('Astro dev route not ready (no build): '+output.slice(-1800));
+  // Kill a stalled Playwright/Vite process rather than consume the entire
+  // runner timeout: the browser QA must report the last real phase.
+  let qaPhase='initializing';
+  const hardDeadline=setTimeout(()=>{
+    console.error('PSE_VISUAL_QA_HARD_DEADLINE=FAIL; phase='+qaPhase);
+    process.exit(124);
+  },220000);
+  hardDeadline.unref();
   const dimensions=[375,390,768,1440,1920];
   for(const width of dimensions){
+    qaPhase='viewport_'+width+'_opening';
+    console.log('PSE_QA_VIEWPORT_START='+width);
     const view=await context.newPage();
     await view.setViewportSize({width,height:900});
     const browserErrors=[];
@@ -210,46 +221,47 @@ try{
     // before asserting completion. Never treat an offscreen lazy image
     // as a site regression just because no network request was started.
     const targets=view.locator('.pse-hero__photo,.pse-promise__background');
-    for(let index=0;index<await targets.count();index++){
+    const imageCount=await targets.count();
+    if(imageCount!==2)throw Error('Missing actual PSE banner images: '+imageCount);
+    for(let index=0;index<imageCount;index++){
+      qaPhase='viewport_'+width+'_image_'+index;
+      console.log('PSE_QA_IMAGE_BEGIN='+JSON.stringify({width,index}));
       const img=targets.nth(index);
-      await img.scrollIntoViewIfNeeded({timeout:25000});
-      try{
-        await img.evaluate(async el=>{
-          if(!(el instanceof HTMLImageElement))throw Error('Expected image node');
-          if(el.complete && el.naturalWidth>0)return;
-          await new Promise((resolve,reject)=>{
-            const cleanup=()=>{
-              clearTimeout(timer);
-              el.removeEventListener('load',done);
-              el.removeEventListener('error',failed);
-            };
-            const done=()=>{cleanup();resolve()};
-            const failed=()=>{cleanup();reject(new Error('Image network error'))};
-            const timer=setTimeout(()=>{
-              cleanup();
-              reject(new Error('Image load exceeded 12000ms'));
-            },12000);
-            el.addEventListener('load',done,{once:true});
-            el.addEventListener('error',failed,{once:true});
-            if(el.complete){if(el.naturalWidth>0)done();else failed();}
-          });
-        },undefined,{timeout:16000});
-      }catch(error){
-        const diag=await img.evaluate(el=>({
-          src:el.currentSrc||el.src,complete:el.complete,
-          naturalWidth:el.naturalWidth,loading:el.loading
-        })).catch(()=>({unavailable:true}));
-        console.log('PSE_QA_IMAGE_LOADING_FAILURE='+JSON.stringify({viewport:width,index,diag,error:String(error).slice(0,250)}));
-        await view.screenshot({path:path.join(shots,'pse-debug-image-'+width+'.png'),fullPage:true}).catch(()=>{});
-        throw error;
+      await img.evaluate(el=>el.scrollIntoView({block:'center',behavior:'instant'}));
+      let loaded=false;
+      for(let attempt=0;attempt<25;attempt++){
+        const state=await img.evaluate(el=>({
+          naturalWidth:el.naturalWidth||0,
+          complete:el.complete,
+          currentSrc:el.currentSrc||el.src||'',
+          loading:el.loading
+        }));
+        if(state.naturalWidth>0){loaded=true;break}
+        if(state.complete&&state.naturalWidth===0){
+          console.log('PSE_QA_IMAGE_BROKEN='+JSON.stringify({width,index,sourcePath:(()=>{try{return new URL(state.currentSrc).pathname}catch{return ''}})()}));
+          break;
+        }
+        await pageWait(400);
       }
+      if(!loaded){
+        const last=await img.evaluate(el=>({naturalWidth:el.naturalWidth,
+          complete:el.complete,
+          loading:el.loading,
+          srcPath:(()=>{try{return new URL(el.currentSrc||el.src).pathname}catch{return ''}})()
+        })).catch(()=>({unavailable:true}));
+        console.log('PSE_QA_IMAGE_NOT_READY='+JSON.stringify({width,index,last}));
+        await view.screenshot({path:path.join(shots,'pse-debug-image-'+width+'.png'),fullPage:false,timeout:8000}).catch(()=>{});
+        throw Error('PSE image still failed after bounded 10s polling width='+width+' image='+index);
+      }
+      console.log('PSE_QA_IMAGE_OK='+JSON.stringify({width,index}));
     }
     await view.evaluate(()=>window.scrollTo(0,0));
     await view.waitForTimeout(500);
+    qaPhase='viewport_'+width+'_inspecting';
     const observed=await view.evaluate(()=>{
       const sections=Array.from(document.querySelectorAll('[data-pse-section]')).map(el=>el.getAttribute('data-pse-section'));
       const imgs=Array.from(document.querySelectorAll('.pse-hero__photo,.pse-promise__background')).map(el=>({
-        loaded:el.complete&&el.naturalWidth>0,w:el.naturalWidth
+        loaded:el.naturalWidth>0,w:el.naturalWidth,complete:el.complete
       }));
       return {
         sections,images:imgs,
@@ -266,10 +278,13 @@ try{
       throw Error('Visual layout media/overflow failure width '+width+': '+JSON.stringify(observed));
     if(browserErrors.length)throw Error('Browser script failure width '+width+': '+browserErrors.join(';'));
     const screenshot=path.join(shots,'pse-home-'+width+'.png');
-    await view.screenshot({path:screenshot,fullPage:true,animations:'disabled'});
+    qaPhase='viewport_'+width+'_screenshot';
+    console.log('PSE_QA_SCREENSHOT_START='+width);
+    await view.screenshot({path:screenshot,fullPage:true,animations:'disabled',timeout:12000});
     console.log('PSE_REAL_CMS_VISUAL_QA=PASS; viewport='+width+'; '+JSON.stringify(observed));
     await view.close();
   }
+  clearTimeout(hardDeadline);
   console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; ExtractHTML_router_not_tested=true; no_build=true');
 }finally{
   if(server&&!server.killed){server.kill('SIGTERM')}
