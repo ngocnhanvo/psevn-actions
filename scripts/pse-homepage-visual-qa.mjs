@@ -12,6 +12,7 @@ const archiveOnly=process.env.PSE_QA_ARCHIVE_ONLY==='1';
 console.log('PSE_QA_IMAGE_WAIT_VERSION=bounded-polling-global-watchdog-v3');
 console.log('PSE_QA_ROUTER_CONTRACT=HomePage+ExtractHTML; source_compile_fix=Contact_00');
 console.log('PSE_QA_SEARCH_ARCHIVE_PREVIEW=real_WP_draft_77030; never_published');
+console.log('PSE_QA_ARCHIVE_ONLY_REQUESTED='+(archiveOnly?'yes':'no'));
 const origin=(()=>{
   const values=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith('WC_URL='));
   if(values.length!==1)throw Error('Missing or ambiguous CMS origin');
