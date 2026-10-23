@@ -8,6 +8,7 @@ on:
       - scripts/pse-homepage-news-table-setup.mjs
       - scripts/pse-homepage-remaining-tables-setup.mjs
       - scripts/pse-homepage-draft-bind.mjs
+      - scripts/pse-homepage-categories-setup.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,7 +32,7 @@ jobs:
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Inspect PSE WordPress homepage and company editor without saving data
         if: >-
-          github.event.head_commit.message != 'cms(pse): verify previous ESC Table save' && github.event.head_commit.message != 'cms(pse): author three news lane field rows' && github.event.head_commit.message != 'cms(pse): retry native editor news rows' && github.event.head_commit.message != 'cms(pse): author remaining PSE ESC Table schemas' && github.event.head_commit.message != 'cms(pse): create internal PSE homepage draft via native Insert Code'
+          github.event.head_commit.message != 'cms(pse): verify previous ESC Table save' && github.event.head_commit.message != 'cms(pse): author three news lane field rows' && github.event.head_commit.message != 'cms(pse): retry native editor news rows' && github.event.head_commit.message != 'cms(pse): author remaining PSE ESC Table schemas' && github.event.head_commit.message != 'cms(pse): create internal PSE homepage draft via native Insert Code' && github.event.head_commit.message != 'cms(pse): create verified three news categories and bind ESC Table IDs'
         run: node scripts/pse-homepage-editor-audit.mjs
       - name: Create one verified PSE news ESC Table (idempotent, no publication)
         if: >-
@@ -45,3 +46,8 @@ jobs:
         if: >-
           github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): create internal PSE homepage draft via native Insert Code'
         run: node scripts/pse-homepage-draft-bind.mjs
+
+      - name: Create three verified PSE news categories and bind their real WP IDs
+        if: >-
+          github.event_name == 'push' && github.event.head_commit.message == 'cms(pse): create verified three news categories and bind ESC Table IDs'
+        run: node scripts/pse-homepage-categories-setup.mjs
