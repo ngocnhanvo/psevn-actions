@@ -60,7 +60,7 @@ try{
       throw Error('Not using verified real ESC Table: '+id);
   }
 
-  const existing=await wpGet('/wp-json/wp/v2/pages?status=draft&per_page=100&context=edit&_fields=id,status,title,acf');
+  const existing=await wpGet('/wp-json/wp/v2/pages?status=draft&per_page=100&context=edit&_fields=id,status,title,acf,content');
   const candidates=existing.filter(x=>x.title?.raw===draftTitle||x.acf?.key===draftKey);
   if(candidates.length>1)throw Error('Ambiguous PSE draft: stop before creating anything');
   const candidate=candidates[0]||null;
@@ -69,7 +69,7 @@ try{
   if(candidate){
     if(candidate.id===248||candidate.status!=='draft'||candidate.title?.raw!==draftTitle)
       throw Error('Existing draft is not the owned PSE draft target');
-    const content=String(candidate.acf?.content||'');
+    const content=String(candidate.content?.raw||'');
     const actual=[...content.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(x=>x[1]);
     if(candidate.acf?.action==='HomePage'&&candidate.acf?.key===draftKey&&
        JSON.stringify(actual)===JSON.stringify(ids)){
@@ -113,50 +113,26 @@ try{
     await fillAcfField('key',draftKey,true);
     await fillAcfField('label','Trang chủ PSE - bản nháp thiết kế',false);
     await fillAcfField('title','PSE - Trang chủ thiết kế 2026',false);
-    const contentField=page.locator('.acf-field[data-name="content"]');
-    const textarea=contentField.locator('textarea').first();
+    // PSE theme returns WordPress post_content, not the conditional ACF
+    // field named content. Use the main WP editor + real ESC Table button.
+    const contentField=page.locator('#wp-content-wrap');
+    if(!await contentField.isVisible())
+      throw Error('Main WordPress post_content editor is unavailable');
+    const textarea=page.locator('textarea#content');
     await textarea.waitFor({state:'attached',timeout:30000});
-    const editorId=await textarea.getAttribute('id');
-    if(!editorId)throw Error('Missing TinyMCE editor ID');
-    const visualTab=page.locator('#'+editorId+'-tmce');
-    const fieldVisible=await contentField.isVisible();
-    console.log('PSE_HOME_DRAFT_EDITOR_VISIBILITY='+JSON.stringify({
-      acfContentVisible:fieldVisible,visualTabAvailable:await visualTab.count(),
-      visualTabVisible:await visualTab.isVisible().catch(()=>false)
-    }));
-    if(!fieldVisible){
-      const diagnostics=await page.evaluate(()=>{
-        const names=['content','label','title','action','key','product_lang'];
-        const root=document.querySelector('.acf-field[data-name="content"]');
-        const conditions=String(root?.getAttribute('data-conditions')||'');
-        const ids=[...conditions.matchAll(/field_[a-z0-9]+/ig)].map(m=>m[0]);
-        const fields=Array.from(document.querySelectorAll('.acf-field[data-key]'))
-          .filter(x=>names.includes(x.getAttribute('data-name'))||ids.includes(x.getAttribute('data-key')))
-          .map(x=>({
-            name:x.getAttribute('data-name'),key:x.getAttribute('data-key'),
-            visible:!!x.getClientRects().length&&!x.hidden,
-            condition:x.getAttribute('data-conditions'),
-            input:x.querySelector('input:not([type=hidden]),select')?.value||'',
-            selectOptions:Array.from(x.querySelectorAll('select option')).map(o=>o.value).slice(0,12)
-          }));
-        return {conditions,fields};
-      });
-      console.log('PSE_HOME_DRAFT_ACF_CONDITIONAL_DIAG='+JSON.stringify(diagnostics));
-      throw Error('Homepage ACF content field remains hidden after action=HomePage');
-    }
+    const editorId='content';
+    const visualTab=page.locator('#content-tmce');
     if(await visualTab.isVisible())await visualTab.click();
     try{
-      await page.waitForFunction(id=>Boolean(window.tinymce?.get(id)?.initialized),editorId,{timeout:18000});
+      await page.waitForFunction(id=>Boolean(window.tinymce?.get(id)?.getBody()),editorId,{timeout:18000});
     }catch(err){
-      const detail=await page.evaluate(id=>({
-        id,textareaExists:!!document.getElementById(id),
-        editorPresent:!!window.tinymce?.get(id),
-        initialized:!!window.tinymce?.get(id)?.initialized,
-        editorIds:(window.tinymce?.editors||[]).map(x=>x.id).slice(0,12),
-        tabs:Array.from(document.querySelectorAll('.acf-field[data-name="content"] .wp-switch-editor'))
-          .map(x=>({id:x.id,visible:x.getClientRects().length>0}))
-      }),editorId);
-      console.log('PSE_HOME_DRAFT_EDITOR_NOT_READY='+JSON.stringify(detail));
+      const evidence=await page.evaluate(()=>({
+        mainEditor:!!document.querySelector('#wp-content-wrap'),
+        textarea:!!document.querySelector('textarea#content'),
+        visualTab:!!document.querySelector('#content-tmce'),
+        tinyMceIds:(window.tinymce?.editors||[]).map(x=>x.id).slice(0,12),
+      }));
+      console.log('PSE_DRAFT_MAIN_EDITOR_MISSING='+JSON.stringify(evidence));
       throw err;
     }
     const initial=await page.evaluate(id=>window.tinymce.get(id).getContent({format:'raw'}),editorId);
@@ -194,8 +170,8 @@ try{
     const id=Number(fromField)||fromUrl;
     if(!Number.isSafeInteger(id)||id<=0||id===248)
       throw Error('Unexpected saved draft post ID');
-    const saved=await wpGet('/wp-json/wp/v2/pages/'+id+'?context=edit&_fields=id,status,acf,title');
-    const savedContent=String(saved.acf?.content||'');
+    const saved=await wpGet('/wp-json/wp/v2/pages/'+id+'?context=edit&_fields=id,status,acf,title,content');
+    const savedContent=String(saved.content?.raw||'');
     const stored=[...savedContent.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(m=>m[1]);
     if(saved.status!=='draft'||saved.acf?.action!=='HomePage'||saved.acf?.key!==draftKey||
        JSON.stringify(stored)!==JSON.stringify(ids))
