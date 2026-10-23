@@ -2,3 +2,5 @@ PSE merged-development regression for production Rolldown resolver.
 Astro github commit: 3dd1bc3cacc0ddccbe500d25aaa12b4cb512f92b
 Required: src/lib/cartStorageKey.ts resolves ProductDetailsPage, CartPage, Header/Cart; shared neutral key; all Vitest and Astro parser; NO BUILD, NO FTP.
 Original WordPress-triggered build #39928764588 failed before FTP because this exact source module was missing; do not bypass PHP trigger on retry.
+
+2026-10-23 PSE hover-overlay desktop, carousel autoplay when CMS has 2+ real slides, sticky blur, dropdown flip at viewport edge; source github 8dcf2fe3192fc1253279f3ff284a04e3d29c90fa; run NO BUILD regression and Astro parse only.
