@@ -294,7 +294,10 @@ try{
         newsEmpty:document.querySelectorAll('.pse-news__empty').length,
         h1:document.querySelectorAll('h1').length,
         headerLogo:!!document.querySelector('#header-brandbar img'),
-        headerMenuRoots:document.querySelectorAll('#desktop-menu > ul > li').length
+        headerMenuRoots:document.querySelectorAll('#desktop-menu > ul > li').length,
+        heroCopy:!!document.querySelector('.pse-hero__copy'),
+        legacyAiWidget:!!document.querySelector('#ai-agent-btn'),
+        legacyStickySales:!!document.querySelector('#bottom-contact-bar')
       };
     });
     if(JSON.stringify(observed.sections)!==JSON.stringify(['hero','news','promise','utilities']))
@@ -303,6 +306,8 @@ try{
       throw Error('Visual layout media/overflow failure width '+width+': '+JSON.stringify(observed));
     if(observed.headerMenuRoots!==6)
       throw Error('WordPress Header menu not rendered on PSE homepage, viewport '+width);
+    if(!observed.heroCopy||observed.legacyAiWidget||observed.legacyStickySales)
+      throw Error('PSE homepage still contains unreadable hero or inherited template widgets width='+width+': '+JSON.stringify(observed));
     if(width>=900){
       const trigger=view.locator('#desktop-menu button[data-menu-trigger]').first();
       await trigger.click({timeout:5000});
