@@ -148,27 +148,52 @@ try{
     if(initial.hasText||initial.hasMedia||initial.hasShortcode)
       throw Error('PSE draft main editor has real content; no overwrite');
 
+    const tinymceButton=contentField.locator('.mce-btn[title="Insert a ESC Table"],button[title="Insert a ESC Table"]').first();
+    let insertionMode='tinymce';
+    if(!await tinymceButton.isVisible().catch(()=>false)){
+      // TablePress's own Quicktags button is also an official Insert Code UI.
+      const textTab=page.locator('#content-html');
+      if(!await textTab.isVisible())throw Error('Neither TinyMCE nor Quicktags editor tab is usable');
+      await textTab.click();
+      insertionMode='quicktags';
+    }
+    console.log('PSE_HOME_DRAFT_NATIVE_INSERT_MODE='+insertionMode);
     for(const id of ids){
-      await page.evaluate(id=>{
-        const ed=window.tinymce.get(id);
-        ed.focus();
-        ed.selection.select(ed.getBody(),true);
-        ed.selection.collapse(false);
-      },editorId);
-      // This is the actual TinyMCE ESC Table action, not a typed shortcode.
-      await safeClick(contentField.locator('.mce-btn[title="Insert a ESC Table"],button[title="Insert a ESC Table"]').first());
+      if(insertionMode==='tinymce'){
+        await page.evaluate(editorId=>{
+          const ed=window.tinymce.get(editorId);
+          ed.focus();
+          ed.selection.select(ed.getBody(),true);
+          ed.selection.collapse(false);
+        },editorId);
+        await safeClick(tinymceButton);
+      }else{
+        await page.evaluate(editorId=>{
+          const ta=document.getElementById(editorId);
+          if(!(ta instanceof HTMLTextAreaElement))throw Error('Missing Quicktags textarea');
+          ta.focus();
+          ta.setSelectionRange(ta.value.length,ta.value.length);
+        },editorId);
+        await safeClick(page.locator('#qt_content_tablepress_quicktags_button'));
+      }
       const iframe=page.locator('#TB_iframeContent');
       await iframe.waitFor({state:'visible',timeout:30000});
       const insert=page.frameLocator('#TB_iframeContent')
         .locator('input.insert-shortcode[title="[table id='+id+' /]"]');
       await safeClick(insert);
       await iframe.waitFor({state:'hidden',timeout:30000});
-      const all=await page.evaluate(id=>window.tinymce.get(id).getContent({format:'raw'}),editorId);
+      const all=await page.evaluate(({editorId,mode})=>
+        mode==='quicktags'?document.getElementById(editorId)?.value||'':
+          window.tinymce.get(editorId).getContent({format:'raw'}),
+        {editorId,mode:insertionMode});
       if(!all.includes('[table id='+id+' /]'))
         throw Error('ESC Table native UI did not insert '+id+'; no draft save');
       console.log('PSE_HOME_DRAFT_NATIVE_ESC_INSERT=PASS; table='+id);
     }
-    const beforeSave=await page.evaluate(id=>window.tinymce.get(id).getContent({format:'raw'}),editorId);
+    const beforeSave=await page.evaluate(({editorId,mode})=>
+      mode==='quicktags'?document.getElementById(editorId)?.value||'':
+        window.tinymce.get(editorId).getContent({format:'raw'}),
+      {editorId,mode:insertionMode});
     const actual=[...beforeSave.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(x=>x[1]);
     if(JSON.stringify(actual)!==JSON.stringify(ids))
       throw Error('Native editor output has unexpected shortcode order');
