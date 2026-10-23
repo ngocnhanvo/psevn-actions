@@ -73,8 +73,8 @@ try{
      const rootId=await root.getAttribute("aria-controls");
      const rootPanel=page.locator('[id="'+rootId+'"]');
      await rootPanel.waitFor({state:"visible",timeout:8000});
-     const sub=rootPanel.locator("[data-submenu-trigger]").filter({hasText:/Thông tin Quản trị/i}).first();
-     if(!await sub.count())throw Error("Investor information submenu missing");
+     const sub=rootPanel.locator("[data-submenu-trigger]").filter({hasText:/Tin tức cổ đông/i}).first();
+     if(!await sub.count())throw Error("Verified investor news submenu missing");
      await sub.click();
      const nestedId=await sub.getAttribute("aria-controls");
      const nested=page.locator('[id="'+nestedId+'"]');
