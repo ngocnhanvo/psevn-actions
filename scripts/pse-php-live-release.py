@@ -48,7 +48,11 @@ for name in FILES:
     assert (SOURCE/name).is_file() and (SOURCE/name).stat().st_size>0, name
 assert (SOURCE/"pse-unzip-v2.ready").read_text().strip()=="PSE_ASTRO_UNZIP_PROTOCOL=2"
 trigger_php = (SOURCE / "wp-content/plugins/github-trigger/vcs-build-trigger.php").read_text()
-assert "psevn-actions" in trigger_php
+# The shared trigger intentionally derives its owner/repository from the
+# active site's wp-config.php; requiring a literal project repo here would
+# wrongly reject a portable, already verified WordPress plugin.
+assert "VCS_GH_REPO" in trigger_php and "VCS_GH_OWNER" in trigger_php
+assert "wp_trigger_build" in trigger_php
 assert "nghiencuukhoahoc-actions" not in trigger_php
 
 ftp=ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=25)
