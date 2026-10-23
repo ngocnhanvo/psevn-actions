@@ -127,10 +127,14 @@ try{
       throw new Error('ESC Table existing grid is not the expected blank draft; manual review before mutation');
     }
     if(before.data.length===4){
-      await page.locator('#rows-append-number')
-        .locator('xpath=ancestor::td')
-        .getByRole('button',{name:'Add',exact:true}).click();
-      await page.waitForTimeout(250);
+      // Same native TablePress callback as the React "Add row(s)" button,
+      // avoids relying on whether its responsive panel is currently expanded.
+      await page.evaluate(()=>{
+        const tp=window.tp;
+        if(typeof tp?.callbacks?.append!=='function')throw new Error('Native TablePress row add action missing');
+        tp.callbacks.append('rows',1);
+      });
+      await page.waitForTimeout(350);
     }
     const configured=await page.evaluate(rows=>{
       const tp=window.tp;
