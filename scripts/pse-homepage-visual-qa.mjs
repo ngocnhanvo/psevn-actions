@@ -421,9 +421,14 @@ try{
   await searchBrowser.locator('#search-input').press('Enter');
   await searchBrowser.waitForURL(/\/tin-tuc-su-kien\?q=/,{timeout:20000});
   const afterSearch=new URL(searchBrowser.url());
-  if(afterSearch.searchParams.getAll('q').length!==1 ||
-     afterSearch.searchParams.get('q')!=='phân bón' ||
-     await searchBrowser.locator('#search-input').inputValue()!=='phân bón')
+  await searchBrowser.locator('#search-input').waitFor({state:'visible',timeout:10000});
+  const queryValues=afterSearch.searchParams.getAll('q');
+  const inputValue=await searchBrowser.locator('#search-input').inputValue();
+  console.log('PSE_PRIVATE_SEARCH_ROUNDTRIP_DIAG='+JSON.stringify({
+    path:afterSearch.pathname,queryValues,inputValue,
+    paramNames:[...afterSearch.searchParams.keys()]
+  }));
+  if(queryValues.length!==1||queryValues[0]!=='phân bón'||inputValue!=='phân bón')
     throw Error('WordPress PostsPage search GET query did not round-trip');
   const archiveOverflow=await searchBrowser.evaluate(()=>
     document.documentElement.scrollWidth>document.documentElement.clientWidth+3);
