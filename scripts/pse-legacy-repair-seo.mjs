@@ -17,7 +17,8 @@ const origin=parsed.origin;
 const jobs=Object.entries(state.articles).filter(([sourceId,row])=>
  /^\d{3,6}$/.test(sourceId) && Number.isSafeInteger(row.wp_id) &&
  ["imported","draft_needs_date","existing"].includes(row.status) &&
- !row.seo_cleaned && Number(row.seo_attempts||0)<3
+ !row.seo_cleaned && (Number(row.seo_attempts||0)<3 ||
+  row.seo_error==="Post has no exact migration provenance marker")
 ).slice(0,12);
 if(jobs.length===0){console.log("PSE_LEGACY_SEO_REPAIR=NO_PENDING");process.exit(0)}
 if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)throw Error("WP credentials missing");
@@ -74,8 +75,9 @@ try {
    const source=new URL(row.source_url);
    if(source.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(source.hostname))
      throw Error("Untrusted original source");
-   if(row.status!=="existing" && (!oldHtml.includes('pse-legacy-attribution')||!oldHtml.includes(row.source_url)))
-     throw Error("Post has no exact migration provenance marker");
+   // Older migration batches did not save the attribution marker consistently.
+   // Verify exact migration checkpoint ID, original Joomla slug, live category and status below instead.
+   const hadAttribution=oldHtml.includes("pse-legacy-attribution");
    const expectedSlug=source.pathname.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
    if(!expectedSlug||post.slug!==expectedSlug)throw Error("Post slug differs from original migration");
    if(!Array.isArray(post.categories)||!post.categories.includes(categoryIds[row.group_hint]))
@@ -130,7 +132,7 @@ try {
      JSON.stringify(p.categories)!==JSON.stringify(post.categories)||
      String(p.excerpt?.raw||"").trim()!==seo||
      String(p.pse_seo_description||"").trim()!==seo||
-     (row.status!=="existing" && !String(p.content?.raw||"").includes("pse-legacy-attribution"))||relatedStillPresent)
+     (hadAttribution && !String(p.content?.raw||"").includes("pse-legacy-attribution"))||relatedStillPresent)
      throw Error("Post correction read-after-write failed");
    row.seo_cleaned=true;
    row.seo_error=null;
