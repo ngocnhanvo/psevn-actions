@@ -1,7 +1,7 @@
 name: PSE legacy Joomla articles serialized migration queue (NO ASTRO BUILD)
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,22,37,52 * * * *"
   push:
     branches: [main]
     paths:
@@ -81,7 +81,7 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/pse-legacy-migration-crawl.py
           python3 scripts/pse-legacy-migration-crawl.py
-      - name: Import up to 2 verified WordPress articles and four files per source
+      - name: Import up to 4 verified WordPress articles and four files per source
         if: env.PSE_IMPORT_WORK == 'yes'
         shell: bash
         run: |

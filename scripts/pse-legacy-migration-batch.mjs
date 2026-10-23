@@ -32,9 +32,15 @@ const candidates=Object.keys(state.articles).filter(id=>
 ).sort((a,b)=>Number(b)-Number(a));
 const continuing=candidates.filter(id=>state.articles[id].status==="media");
 const fresh=candidates.filter(id=>state.articles[id].status!=="media");
-const ids=continuing.length?
- [continuing[0], fresh[0]||continuing[1]].filter(Boolean) :
- [fresh[0],fresh.at(-1)].filter((id,index,list)=>id&&list.indexOf(id)===index);
+// Limit work per run, spread across recent and historical source pages, and
+// prioritize finishing a previously-started media-heavy record. No parallel
+// WordPress writers: serialized by the dedicated Actions concurrency group.
+const MAX_ARTICLES_PER_RUN=4;
+const freshChoices=fresh.length>=4?
+ [fresh[0], fresh[Math.floor(fresh.length/3)],
+  fresh[Math.floor(2*fresh.length/3)], fresh.at(-1)] : fresh;
+const picked=[...continuing.slice(0,1),...freshChoices,...continuing.slice(1)];
+const ids=picked.filter((id,i)=>id&&picked.indexOf(id)===i).slice(0,MAX_ARTICLES_PER_RUN);
 if(!ids.length){
  console.log("PSE_MIGRATION_BATCH=NO_PENDING; discovered="+Object.keys(state.articles).length);
  process.exit(0);
