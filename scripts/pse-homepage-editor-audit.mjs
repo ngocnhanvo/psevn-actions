@@ -92,5 +92,71 @@ try{
   }));
   console.log('PSE_VISUAL_BUILDER_ADMIN='+JSON.stringify(builderAudit));
 
+
+  // Continuation: probe the *actual* ESC Table authoring controls before a write.
+  // Deliberately no form submit, navigation click, wp REST mutation, or draft creation.
+  await page.goto(origin+'/wp-admin/admin.php?page=tablepress',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForTimeout(1600);
+  const tableList=await page.evaluate(()=>{
+    const main=document.querySelector('#wpbody-content')||document.body;
+    const labels=Array.from(main.querySelectorAll('h1,h2,button,a,[role=button]'))
+      .map(x=>(x.textContent||x.getAttribute('aria-label')||'').replace(/\s+/g,' ').trim())
+      .filter(x=>x.length>0 && x.length<60);
+    const tableRows=Array.from(main.querySelectorAll('table tbody tr')).length;
+    const addLinks=Array.from(main.querySelectorAll('a[href]'))
+      .filter(x=>/add new|thêm mới/i.test(x.textContent||''))
+      .map(x=>{const u=new URL(x.href);return u.pathname+'?'+u.searchParams.toString().slice(0,100)});
+    return {tableRows,labels:Array.from(new Set(labels)).slice(0,45),addLinks,hasTableList:!!main.querySelector('table')};
+  });
+  console.log('PSE_ESC_TABLE_LIST_AUTHORING='+JSON.stringify(tableList));
+  await page.goto(origin+'/wp-admin/admin.php?page=tablepress&action=add',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForTimeout(1300);
+  const tableAdd=await page.evaluate(()=>{
+    const main=document.querySelector('#wpbody-content')||document.body;
+    return {
+      heading:(main.querySelector('h1')?.textContent||'').trim().slice(0,80),
+      buttonLabels:Array.from(main.querySelectorAll('button,input[type=submit]'))
+        .map(x=>(x.textContent||x.value||x.getAttribute('aria-label')||'').trim()).filter(Boolean).slice(0,38),
+      fieldIds:Array.from(main.querySelectorAll('input,select,textarea'))
+        .map(x=>x.id||x.name).filter(Boolean).slice(0,45),
+      route:location.pathname+'?'+location.search.slice(1,130),
+      error:!!document.querySelector('.wp-die-message,#error-page')
+    };
+  });
+  console.log('PSE_ESC_TABLE_ADD_SCREEN='+JSON.stringify(tableAdd));
+  await page.goto(origin+'/wp-admin/post.php?post='+wpData.home.id+'&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForTimeout(1600);
+  const homeControls=await page.evaluate(()=>{
+    const root=document.querySelector('.acf-field[data-name="content"]');
+    return {
+      fieldExists:!!root,
+      editorIds:Array.from(root?.querySelectorAll('textarea,iframe')||[]).map(x=>x.id||x.name).slice(0,12),
+      editorButtons:Array.from(root?.querySelectorAll('button,.wp-media-buttons a')||[])
+        .map(x=>(x.textContent||x.title||'').replace(/\s+/g,' ').trim()).filter(Boolean).slice(0,32),
+      tinymceAvailable:!!root?.querySelector('iframe,[role=toolbar]'),
+      builderShortcut:!!document.querySelector('.esc-vb-page-shortcut')
+    };
+  });
+  console.log('PSE_HOME_ESC_INSERT_CODE_CAPABILITY='+JSON.stringify(homeControls));
+  await page.goto(origin+'/wp-admin/edit.php?post_type=page&page=esc-visual-builder&esc_vb_page='+wpData.home.id,
+    {waitUntil:'domcontentloaded',timeout:60000});
+  await page.waitForTimeout(1900);
+  const builderControls=await page.evaluate(()=>{
+    const root=document.querySelector('#esc-vb-app')||document.querySelector('#wpbody-content')||document.body;
+    const controls=Array.from(root.querySelectorAll('button,[role=button],a'))
+      .map(x=>(x.textContent||x.getAttribute('aria-label')||x.title||'').replace(/\s+/g,' ').trim())
+      .filter(x=>x.length>0 && x.length<64);
+    return {
+      loaded:!!document.querySelector('#esc-vb-app'),
+      frame:!!document.querySelector('#esc-vb-frame'),
+      addSectionControls:controls.filter(x=>/thêm|add|section|bảng|table|code|chèn/i.test(x)).slice(0,32),
+      labelCount:controls.length,
+      hasSections:!!root.querySelector('[data-esc-section],[data-section-id],.esc-vb-section'),
+      error:!!document.querySelector('.wp-die-message,#error-page')
+    };
+  });
+  console.log('PSE_BUILDER_AUTHORING_CONTROLS='+JSON.stringify(builderControls));
+  console.log('PSE_CMS_AUTHORING_PREFLIGHT=PASS read_only=true no_content_saved=true');
+
   console.log('PSE_EDITOR_AUDIT=PASS read_only=true no_content_saved=true');
 }finally{await browser.close()}
