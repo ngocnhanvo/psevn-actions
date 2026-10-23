@@ -38,5 +38,22 @@ try{
      rootCandidates:rootCandidates.slice(0,12),byName};
  });
  console.log('PSE_LEGACY_NAVIGATION_READONLY='+JSON.stringify(state));
+ const hierarchy=await page.evaluate(()=>{
+   const root=document.querySelector('nav.navigation > ul.nav.unite-nav')
+     ||document.querySelector('ul.nav.unite-nav')
+     ||document.querySelector('nav.navigation ul.nav');
+   if(!root)return {found:false};
+   const clean=x=>String(x||'').replace(/\\s+/g,' ').trim().slice(0,140);
+   const parse=(li,depth)=>{
+     const anchor=li.querySelector(':scope > a[href]');
+     const children=Array.from(li.querySelectorAll(':scope > ul > li, :scope > .dropdown-menu > li'))
+       .slice(0,35).map(x=>depth<4?parse(x,depth+1):null).filter(Boolean);
+     return {label:clean(anchor?.textContent||li.querySelector(':scope > span')?.textContent),
+       url:anchor?.href||'',children};
+   };
+   return {found:true,selector:root.tagName+'.'+root.className,
+     roots:Array.from(root.children).filter(x=>x.tagName==='LI').slice(0,35).map(li=>parse(li,0))};
+ });
+ console.log('PSE_LEGACY_MENU_TREE='+JSON.stringify(hierarchy));
  console.log('PSE_LEGACY_NAVIGATION_SOURCE_PASS; no_wp_mutation=true; no_build=true');
 }finally{await browser.close()}
