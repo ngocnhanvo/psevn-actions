@@ -1,0 +1,36 @@
+name: PSE Task Queue dispatcher
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled, closed, reopened]
+  workflow_dispatch:
+  schedule:
+    - cron: '*/10 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pse-task-queue.yml'
+      - 'scripts/pse-queue-core.mjs'
+      - 'scripts/pse-queue-dispatch.mjs'
+      - 'scripts/pse-queue.test.mjs'
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: pse-task-queue-single-writer
+  cancel-in-progress: false
+jobs:
+  queue:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run deterministic tests
+        run: node --test scripts/pse-queue.test.mjs
+      - name: Resolve issues and handoff
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+        run: node scripts/pse-queue-dispatch.mjs
