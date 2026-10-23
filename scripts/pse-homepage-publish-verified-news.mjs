@@ -1,3 +1,4 @@
+// Owner-requested homepage news visibility. Source/date/media preflight PASS #39959890753; publish only verified legacy posts.
 /** Publish only 3 previously verified PUBLIC articles already on legacy pse.vn.
  * Check all source metadata, category bindings and WordPress media before ANY
  * mutation; use WordPress core post REST with authenticated nonce.
