@@ -154,7 +154,7 @@ try{
   if(!originalConfig.includes('noExternal: [/.*/]'))throw Error('Expected inherited Astro SSR config not found');
   const safeConfig=originalConfig
     .replace('noExternal: [/.*/]','noExternal: []')
-    .replace('export default defineConfig({',"export default defineConfig({\\n  srcDir: './__pse-qa-src',");
+    .replace('export default defineConfig({',"export default defineConfig({\n  srcDir: './__pse-qa-src',");
   if(safeConfig===originalConfig||!safeConfig.includes("srcDir: './__pse-qa-src'"))
     throw Error('QA-only Astro srcDir override failed');
   await writeFile(astroConfigPath,safeConfig);
