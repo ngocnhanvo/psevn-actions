@@ -71,10 +71,16 @@ try {
      media.payload.media_details?.file?.split('/').at(-1)!=='pse-original-logo-2025.jpg'||
      media.payload.media_details?.width!==606||media.payload.media_details?.height!==90)
     throw Error('Official PSE logo is not the previously verified WP Media attachment');
+  let inheritedSquareLogo=false;
   if(existingId>0&&existingId!==76980){
     const previous=await api('/wp-json/wp/v2/media/'+existingId+'?context=edit');
     const info=previous.payload||{};
     const guid=String(info.guid?.rendered||info.source_url||'');
+    inheritedSquareLogo=
+      existingId===75225&&previous.status===200&&info.id===75225&&
+      info.slug==='cropped-logo-jpg'&&info.mime_type==='image/jpeg'&&
+      info.media_details?.width===512&&info.media_details?.height===512&&
+      info.media_details?.file==='2026/10/cropped-logo.jpg';
     console.log('PSE_EXISTING_HEADER_LOGO_AUDIT='+JSON.stringify({
       wpInfoId:62,mediaId:existingId,mediaHTTP:previous.status,
       mime:info.mime_type||null,slug:info.slug||null,
@@ -86,9 +92,10 @@ try {
   }
   if(existingId===76980){
     console.log('PSE_HEADER_LOGO=ALREADY_CONFIGURED; media_id=76980; no mutation');
-  }else if(existingId>0||typeof logo==='string'&&logo.trim()){
-    console.log('PSE_HEADER_LOGO=EXISTING_UNTOUCHED; existing_id='+existingId+'; no overwrite; manual classification needed from audit evidence');
+  }else if((existingId>0||typeof logo==='string'&&logo.trim())&&!inheritedSquareLogo){
+    console.log('PSE_HEADER_LOGO=EXISTING_UNTOUCHED; existing_id='+existingId+'; no overwrite; not recognized as inherited square logo');
   }else{
+    if(inheritedSquareLogo)console.log('PSE_HEADER_LOGO=REPLACE_VERIFIED_INHERITED_SQUARE; previous_id=75225; target_id=76980');
     const update=await api('/wp-json/wp/v2/thong-tin-chung/62','POST',{acf:{logo:76980}});
     if(update.status!==200||update.payload.id!==62)
       throw Error('WordPress site logo ACF update failed HTTP '+update.status);
