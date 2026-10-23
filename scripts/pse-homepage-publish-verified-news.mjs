@@ -7,6 +7,7 @@ import {chromium} from "playwright";
 const audit=process.env.PSE_NEWS_AUDIT_ONLY==="1";
 const resync=process.env.PSE_NEWS_RESYNC_ONLY==="1";
 const pendingAudit=process.env.PSE_NEWS_PENDING_AUDIT_ONLY==="1";
+const nativeSave=process.env.PSE_NEWS_NATIVE_SAVE_ONLY==="1";
 const cfg=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,"")).filter(s=>s.startsWith("WC_URL="));
 if(cfg.length!==1)throw Error("Missing WordPress WC_URL");
 const u=new URL(cfg[0].slice(7).trim().replace(/^['"]|['"]$/g,""));
@@ -80,6 +81,45 @@ try{
   console.log("PSE_NEWS_PUBLICATION_AUDIT=PASS; eligible="+checked.filter(x=>x.status==="draft").length+
     "; already_published="+checked.filter(x=>x.status==="publish").length+"; no_writes=true");
   process.exit(0);
+ }
+ if(nativeSave){
+   if(checked.some(x=>x.status!=="publish"))throw Error("Native Save requires all three published source posts");
+   const count=async()=>{
+     await page.goto(origin+"/wp-admin/admin.php?page=vcs-build-trigger",{waitUntil:"domcontentloaded",timeout:60000});
+     const el=page.locator("#vcs-pending-count");
+     await el.waitFor({state:"visible",timeout:14000});
+     const n=Number((await el.innerText()).trim());
+     if(!Number.isSafeInteger(n)||n<0)throw Error("Invalid WordPress queue count");
+     return n;
+   };
+   let last=await count();
+   console.log("PSE_NATIVE_SAVE_PENDING_BEFORE="+last);
+   if(last===0){
+     for(const [i,item] of checked.entries()){
+       await page.goto(origin+"/wp-admin/post.php?post="+item.id+"&action=edit",
+         {waitUntil:"domcontentloaded",timeout:60000});
+       if(page.url().includes("wp-login")||!await page.locator("#post").count())
+         throw Error("WordPress native editor unavailable: "+item.id);
+       const current=await page.locator("#post_status").inputValue();
+       if(current!=="publish")throw Error("Do not Save non-published post");
+       const done=page.waitForNavigation({waitUntil:"domcontentloaded",timeout:45000}).catch(()=>null);
+       await page.locator("#publish").click();
+       await done;
+       const q=await request("/wp-json/wp/v2/posts/"+item.id+
+         "?context=edit&_fields=id,status,slug,date,date_gmt,categories");
+       if(q.status!==200||q.data.status!=="publish"||q.data.slug!==item.slug||
+         q.data.date!==item.date||q.data.date_gmt!==item.gmt||
+         !q.data.categories?.includes(item.category))
+         throw Error("Native Save altered verified post metadata: "+item.id);
+       const next=await count();
+       console.log("PSE_NATIVE_POST_SAVE=PASS; id="+item.id+"; pending="+next);
+       if(next<last+1)throw Error("Native WordPress post Save did not enter build log");
+       last=next;
+     }
+   }
+   if(last<3)throw Error("Insufficient WordPress real pending events to launch normal build");
+   console.log("PSE_NATIVE_POST_CHANGE_QUEUE=PASS; pending="+last+"; verified_original_posts=3");
+   process.exit(0);
  }
  if(pendingAudit){
    await page.goto(origin+"/wp-admin/admin.php?page=vcs-build-trigger",{waitUntil:"domcontentloaded",timeout:60000});
