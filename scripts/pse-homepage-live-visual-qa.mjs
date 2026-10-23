@@ -1,3 +1,4 @@
+// Validate deployed PSE latest-five news tabs after signed FTP release #39970267985; no CMS or build writes.
 /** Read-only PSE production visual verification after WordPress-controlled deploy.
  * All content and URLs come from the configured frontend. Never signs in,
  * mutates WordPress, invokes Build Website, or opens FTPS.
