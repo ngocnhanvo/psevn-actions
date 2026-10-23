@@ -21,6 +21,7 @@ on:
       - scripts/pse-homepage-corporate-info.mjs
       - scripts/pse-homepage-media-source-audit.mjs
       - scripts/pse-homepage-legacy-slider-import.mjs
+      - docs/PSE_RELEASE_READINESS.md
       - scripts/pse-homepage-official-media-import.mjs
       - scripts/pse-homepage-brand-logo.mjs
       - scripts/pse-homepage-search-page-draft.mjs
