@@ -142,18 +142,14 @@ try{
   };
   await mkdir(path.dirname(routePath),{recursive:true});
   await mkdir(shots,{recursive:true});
-  // No mock content, and no edits to app source. For DEV screenshot QA,
-  // import the four PSE sections directly to avoid the inherited
-  // ExtractHTML eager-registry importing unrelated retired CartPage modules.
-  // Router/ExtractHTML full integration is NOT verified by this test.
+  // Use the actual PSE homepage CMS shortcode pipeline, not a manually
+  // assembled reproduction: HomePage -> ExtractHTML -> Pse_00..03. We only
+  // isolate unrelated site routes in a disposable Astro DEV srcDir. No build.
   const route=[
     '---',
     'import "@/styles/global.css";',
     'import Layout from "@/astro/components/Layout/Layout.astro";',
-    'import Hero from "@/astro/tablepress/Pse_00.astro";',
-    'import News from "@/astro/tablepress/Pse_01.astro";',
-    'import PromiseSection from "@/astro/tablepress/Pse_02.astro";',
-    'import Utility from "@/astro/tablepress/Pse_03.astro";',
+    'import HomePage from "@/astro/pages/HomePage.astro";',
     'const payload='+JSON.stringify(payload)+';',
     'const page=payload.currentPage;',
     'const data_info=payload.companyInfo;',
@@ -162,12 +158,7 @@ try{
     'if (!headProps.href || !headProps.currentPage) throw new Error("Missing required headProps in QA fixture");',
     '---',
     '<Layout data_info={data_info} pages={pages} menus={payload.menuItems} currentPage={page} headProps={headProps}>',
-    '  <main id="main-content">',
-    '    <Hero data={payload.tables[0]} page={page} />',
-    '    <News data={payload.tables[1]} page={page} props={{data_info,basename:"/"}} />',
-    '    <PromiseSection data={payload.tables[2]} page={page} />',
-    '    <Utility data={payload.tables[3]} page={page} props={{pages,basename:"/"}} />',
-    '  </main>',
+    '  <HomePage currentPage={page} pages={pages} data_info={data_info} basename="/" />',
     '</Layout>'
   ].join('\n');
   await writeFile(routePath,route);
@@ -289,6 +280,7 @@ try{
       }));
       return {
         sections,images:imgs,
+        shortcodeWrappers:document.querySelectorAll('[data-tablepress-preview]').length,
         viewport:document.documentElement.clientWidth,
         scroll:document.documentElement.scrollWidth,
         newsEmpty:document.querySelectorAll('.pse-news__empty').length,
@@ -302,6 +294,8 @@ try{
     });
     if(JSON.stringify(observed.sections)!==JSON.stringify(['hero','news','promise','utilities']))
       throw Error('Real PSE section layout missing viewport '+width+': '+JSON.stringify(observed.sections));
+    if(observed.shortcodeWrappers!==4)
+      throw Error('Astro ExtractHTML did not recognize four native ESC Table shortcodes width='+width);
     if(observed.images.length!==2||observed.images.some(i=>!i.loaded)||observed.scroll>observed.viewport+3)
       throw Error('Visual layout media/overflow failure width '+width+': '+JSON.stringify(observed));
     if(observed.headerMenuRoots!==6)
@@ -336,7 +330,7 @@ try{
     await view.close();
   }
   clearTimeout(hardDeadline);
-  console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; ExtractHTML_router_not_tested=true; no_build=true');
+  console.log('PSE_NO_BUILD_COMPONENT_VISUAL_QA=PASS; five_viewports=true; real_wordpress_tables=true; news_articles_are_still_drafts=true; HomePage_ExtractHTML_component_contract_tested=true; real_public_route_not_tested=true; no_build=true');
 }finally{
   clearTimeout(qaOverallLimit);
   // CI must never hang after all five screenshots completed: Vite and the
