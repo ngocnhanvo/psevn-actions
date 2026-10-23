@@ -55,7 +55,7 @@ try{
  for(const slug of ['ve-chung-toi','lien-he']){
   if(posts.some(p=>p.slug===slug&&p.status==='publish'))urls.push(frontend+'/'+slug);
  }
- const xml='<?xml version="1.0" encoding="UTF-8"?>\n'+
+ let xml='<?xml version="1.0" encoding="UTF-8"?>\n'+
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+
   urls.map(u=>'  <url><loc>'+u+'</loc></url>').join('\n')+
   '\n</urlset>\n';
@@ -76,9 +76,25 @@ try{
    hasUrlEntry:/<url(?:\s[^>]*)?>/.test(old),looksHtml:/<!doctype html|<html/i.test(old)
  };
  console.log('PSE_PUBLIC_SITEMAP_SAFETY_DIAGNOSTIC='+JSON.stringify(diagnostic));
- if(!diagnostic.hasUrlset||!diagnostic.hasClose||diagnostic.hasUrlEntry)
-  throw Error('Current public sitemap is not the verified empty legacy urlset');
- console.log('PSE_SEO_SITEMAP_REPAIR_PREFLIGHT=PASS; existing_mode=auto; old_entries=0; new_entries='+urls.length);
+ if(!diagnostic.hasUrlset||!diagnostic.hasClose||diagnostic.looksHtml||
+    /<!DOCTYPE|<!ENTITY/i.test(old))
+  throw Error('Current public PSE sitemap is not a valid urlset source');
+ const locs=[...old.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g)].map(m=>m[1].trim());
+ const entryCount=(old.match(/<url(?:\s[^>]*)?>/g)||[]).length;
+ if(entryCount){
+  // Preserve the existing published sitemap exactly; do not replace
+  // existing public SEO URLs with an arbitrary small migration allowlist.
+  if(entryCount!==locs.length||entryCount>20000||new Set(locs).size!==locs.length)
+   throw Error('Existing published sitemap URL count/duplicates invalid');
+  for(const entry of locs){
+   const url=new URL(entry);
+   if(url.origin!==frontend||url.search||url.hash||url.username||url.password)
+    throw Error('Existing public PSE sitemap contains noncanonical URL');
+  }
+  if(!locs.includes(frontend+'/'))throw Error('Current public sitemap lacks canonical homepage');
+  xml=old.trim()+'\n';
+ }
+ console.log('PSE_SEO_SITEMAP_REPAIR_PREFLIGHT=PASS; existing_mode=auto; old_entries='+entryCount+'; new_entries='+(entryCount||urls.length));
  await tab.goto(origin+'/wp-admin/options-general.php?page=esc-seo-files&tab=sitemap',
   {waitUntil:'domcontentloaded',timeout:60000});
  const form=tab.locator('form[action*="admin-post.php"]').filter({has:tab.locator('input[name="action"][value="esc_seo_files_save"]')});
@@ -96,5 +112,5 @@ try{
     verified.sitemap?.mode!=='manual'||verified.sitemap?.xml?.trim()!==xml.trim()||
     verified.sitemap?.revision===initialRev)
   throw Error('WordPress manual sitemap REST read-after-write mismatch');
- console.log('PSE_SEO_INITIAL_SITEMAP=PASS; source=WordPress_Admin_Save; original_empty_xml_backup=true; homepage_included=true; saved_urls='+urls.length+'; revision_bumped=true; build_not_triggered=true');
+ console.log('PSE_SEO_INITIAL_SITEMAP=PASS; source=WordPress_Admin_Save; existing_public_urlset_preserved=true; homepage_included=true; saved_urls='+(xml.match(/<url(?:\\s[^>]*)?>/g)||[]).length+'; revision_bumped=true; build_not_triggered=true');
 }finally{await browser.close();}
