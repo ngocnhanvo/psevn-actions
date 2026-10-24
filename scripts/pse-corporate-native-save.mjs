@@ -108,7 +108,41 @@ try{
    http:revisions.http,records:info,queuedCurrentPage:current.get(79272)?.action==="modify"
  }));
 
- if(dry){console.log("PSE_CORPORATE_PAGE_LOG_AUDIT=PASS; wp_mutation=false");process.exit(0)}
+
+ if(dry){
+   // Audit the only Page where the Classic Editor changed raw text length:
+   // table-cell whitespace can differ, actual cell text must remain identical.
+   const source=await context.newPage();
+   const response=await source.goto("https://www.pse.vn/pvfcco-pse/ban-kiem-soat.html",
+     {waitUntil:"domcontentloaded",timeout:60000});
+   if(response?.status()!==200)throw Error("Original Ban kiem soat source unavailable");
+   const original=await source.evaluate(()=>{
+     const article=document.querySelector(".item-page [itemprop=articleBody]");
+     if(!article)throw Error("Original corporate table missing");
+     const clone=article.cloneNode(true);
+     const cells=[...clone.querySelectorAll("td,th")].map(n=>(n.textContent||"").replace(/\s+/g," ").trim());
+     clone.querySelectorAll("table").forEach(n=>n.remove());
+     return {cells,otherText:(clone.textContent||"").replace(/\s+/g," ").trim()};
+   });
+   await source.close();
+   const currentHtml=main?.content?.raw||"";
+   const now=await page.evaluate(html=>{
+     const node=document.createElement("div");node.innerHTML=html;
+     const cells=[...node.querySelectorAll("td,th")].map(n=>(n.textContent||"").replace(/\s+/g," ").trim());
+     node.querySelectorAll("table").forEach(n=>n.remove());
+     return {cells,otherText:(node.textContent||"").replace(/\s+/g," ").trim()};
+   },currentHtml);
+   const pass=JSON.stringify(original)===JSON.stringify(now);
+   console.log("PSE_CORPORATE_TABLE_SOURCE_PARITY="+JSON.stringify({
+     slug:"ban-kiem-soat",sourceCells:original.cells.length,wpCells:now.cells.length,
+     sourceTextHash:hash(original.cells.join("|")+original.otherText),
+     wpTextHash:hash(now.cells.join("|")+now.otherText),pass
+   }));
+   if(!pass)throw Error("Corporate WP table does not match verified original Joomla content");
+   console.log("PSE_CORPORATE_PAGE_LOG_AUDIT=PASS; wp_mutation=false");
+   process.exit(0);
+ }
+
  let saved=0;
  for(const item of missing){
   await page.goto(wp+"/wp-admin/post.php?post="+item.id+"&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
