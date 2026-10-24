@@ -1,1 +1,2 @@
 Read-only PSE G7 post-deploy QA 2026-10-24 for Astro signed SHA 1f4730f628df926edb256494264a48dec3b28dfe. All 10 Pages mobile+desktop. Verify table flow, no nested scroll, center media, trailing row cleanup, no excessive gap. No CMS writes or build.
+2026-10-24 rerun after final mobile-only table fix, signed deploy #40093619344 source 8f2cf99f81fdfe64ac2c0e06c3d4bf4bca5740ed. Original #40093023749 =19/20; verify 20/20 now, especially Thành tựu mobile width350 and no nested scroll. No WordPress changes or builds.
