@@ -18,8 +18,9 @@ if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.search||
 const wp=parsed.origin;
 const jobs=Object.entries(state.articles).filter(([sourceId,row])=>
   /^\d{3,6}$/.test(sourceId) && Number.isSafeInteger(row.wp_id) &&
-  ["imported","draft_needs_date"].includes(row.status) &&
-  !row.attribution_cleaned && Number(row.attribution_attempts||0)<3
+  ["imported","draft_needs_date","existing"].includes(row.status) &&
+  ((!row.attribution_cleaned && Number(row.attribution_attempts||0)<3) ||
+   (sourceId==="1201" && !row.attribution_rechecked))
 ).sort((a,b)=>a[0]==="1201"?-1:b[0]==="1201"?1:Number(b[0])-Number(a[0])).slice(0,24);
 if(jobs.length===0){console.log("PSE_ATTRIBUTION_CLEAN=NO_PENDING");process.exit(0)}
 if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)
@@ -87,16 +88,20 @@ try{
      const normal=s=>String(s||"").replace(/[\u00a0\s]+/g," ").trim().toLocaleLowerCase("vi");
      const matches=p=>{
        if(p.matches("p.pse-legacy-attribution"))return true;
-       if(normal(p.textContent)!=="nguồn: pse.vn")return false;
+       const label=normal(p.textContent);
+       if(!/^nguồn\s*:\s*pse\.vn$/.test(label))return false;
        const links=[...p.querySelectorAll("a[href]")];
        if(links.length!==1||normal(links[0].textContent)!=="pse.vn")return false;
-       try{return new URL(links[0].getAttribute("href"),location.href).href===sourceUrl}
-       catch{return false}
+       try{
+         const u=new URL(links[0].getAttribute("href"),location.href),s=new URL(sourceUrl);
+         return ["pse.vn","www.pse.vn"].includes(u.hostname) && u.pathname===s.pathname;
+       }catch{return false}
      };
      const files=()=>[...root.querySelectorAll("a[href]")].map(x=>x.href)
        .filter(x=>/\.(?:pdf|docx?|xlsx?|pptx?)(?:[?#]|$)/i.test(x)).sort();
      const beforeFiles=files();
-     const footers=[...root.querySelectorAll("p")].filter(matches);
+     const all=[...root.querySelectorAll("p,div")].filter(matches);
+     const footers=all.filter(p=>!all.some(child=>child!==p&&p.contains(child)));
      footers.forEach(x=>x.remove());
      let blanks=0;
      const empty=n=>n.nodeType===Node.TEXT_NODE?
@@ -104,7 +109,7 @@ try{
        n.nodeType===Node.ELEMENT_NODE && n.matches("p,div,br") &&
        !n.querySelector("a,img,iframe,object,embed,table,hr") &&
        !String(n.textContent||"").replace(/[\u00a0\s]/g,"");
-     if(footers.length){
+     if(footers.length || sourceUrl.includes("/1201-")){
        while(root.lastChild&&empty(root.lastChild)){root.lastChild.remove();blanks++}
        const last=root.lastElementChild;
        if(last?.matches("p,div")){
@@ -116,12 +121,15 @@ try{
          while(root.lastChild&&empty(root.lastChild)){root.lastChild.remove();blanks++}
        }
      }
-     return {html:root.innerHTML.trim(),removed:footers.length,blanks,
+     const labelDetected=/nguồn\s*:/i.test(html) && /pse\.vn/i.test(html);
+     return {html:root.innerHTML.trim(),removed:footers.length,blanks,labelDetected,
        filesBefore:beforeFiles,filesAfter:files()};
    },{html:original,sourceUrl:row.source_url});
    if(JSON.stringify(transform.filesBefore)!==JSON.stringify(transform.filesAfter))
      throw Error("Attribution cleanup altered attached file links");
-   if(transform.removed){
+   if(!transform.removed && transform.labelDetected && sourceId==="1201")
+     console.log("PSE_LEGACY_ATTRIBUTION_DIAG; source_id=1201; marker_absent=true; label_may_be_elsewhere=true");
+   if(transform.removed || transform.blanks){
      const saved=await api("/wp-json/wp/v2/posts/"+row.wp_id,"POST",{content:transform.html});
      if(saved.status!==200||saved.data?.id!==row.wp_id)
        throw Error("WordPress content correction failed HTTP "+saved.status);
@@ -132,34 +140,43 @@ try{
    const check=await page.evaluate(({html,sourceUrl})=>{
      const root=new DOMParser().parseFromString(html,"text/html").body;
      const normal=s=>String(s||"").replace(/[\u00a0\s]+/g," ").trim().toLocaleLowerCase("vi");
-     const stillPresent=[...root.querySelectorAll("p")].some(p=>{
+     const stillPresent=[...root.querySelectorAll("p,div")].some(p=>{
        if(p.matches("p.pse-legacy-attribution"))return true;
-       if(normal(p.textContent)!=="nguồn: pse.vn")return false;
-       const anchors=[...p.querySelectorAll("a[href]")];
-       return anchors.length===1 && normal(anchors[0].textContent)==="pse.vn" &&
-         new URL(anchors[0].getAttribute("href"),location.href).href===sourceUrl;
+       if(!/^nguồn\s*:\s*pse\.vn$/.test(normal(p.textContent)))return false;
+       const links=[...p.querySelectorAll("a[href]")];
+       if(links.length!==1||normal(links[0].textContent)!=="pse.vn")return false;
+       try{
+         const u=new URL(links[0].getAttribute("href"),location.href),s=new URL(sourceUrl);
+         return ["pse.vn","www.pse.vn"].includes(u.hostname)&&u.pathname===s.pathname;
+       }catch{return false}
      });
      const fileLinks=[...root.querySelectorAll("a[href]")].map(x=>x.href)
        .filter(x=>/\.(?:pdf|docx?|xlsx?|pptx?)(?:[?#]|$)/i.test(x)).sort();
-     const tail=root.lastChild;
-     const blankTail=tail && (tail.nodeType===Node.TEXT_NODE?
-       !String(tail.textContent||"").replace(/[\u00a0\s]/g,""):
-       tail.nodeType===Node.ELEMENT_NODE && tail.matches("p,div,br") &&
+     // WordPress may store harmless whitespace after the final HTML element.
+     // Only empty HTML blocks (<p>, <div>, <br>) render extra blank lines.
+     const tail=root.lastElementChild;
+     const blankTail=tail && tail.matches("p,div,br") &&
        !tail.querySelector("a,img,iframe,object,embed,table,hr") &&
-       !String(tail.textContent||"").replace(/[\u00a0\s]/g,""));
+       !String(tail.textContent||"").replace(/[\u00a0\s]/g,"");
      return {stillPresent,fileLinks,blankTail:!!blankTail};
    },{html:String(current?.content?.raw||""),sourceUrl:row.source_url});
-   if(verify.status!==200||current?.id!==row.wp_id||current.slug!==post.slug||
-      current.status!==post.status||current.date!==post.date||
-      JSON.stringify(current.categories)!==JSON.stringify(post.categories)||
-      String(current.excerpt?.raw||"")!==String(post.excerpt?.raw||"")||
-      String(current.pse_seo_description||"")!==String(post.pse_seo_description||"")||
-      check.stillPresent|| (transform.removed>0 && check.blankTail)||
-      JSON.stringify(check.fileLinks)!==JSON.stringify(transform.filesBefore))
-     throw Error("WordPress cleanup read-after-write mismatch");
+   const mismatches=[
+     [verify.status!==200||current?.id!==row.wp_id,"id"],
+     [current?.slug!==post.slug,"slug"],
+     [current?.status!==post.status,"status"],
+     [current?.date!==post.date,"date"],
+     [JSON.stringify(current?.categories)!==JSON.stringify(post.categories),"taxonomy"],
+     [String(current?.excerpt?.raw||"")!==String(post.excerpt?.raw||""),"excerpt"],
+     [String(current?.pse_seo_description||"")!==String(post.pse_seo_description||""),"seo"],
+     [check.stillPresent,"footer"],
+     [(transform.removed>0||transform.blanks>0)&&check.blankTail,"blank_tail"],
+     [JSON.stringify(check.fileLinks)!==JSON.stringify(transform.filesBefore),"files"]
+   ].filter(x=>x[0]).map(x=>x[1]);
+   if(mismatches.length)throw Error("WordPress cleanup verify: "+mismatches.join(","));
    row.attribution_cleaned=true;
+   if(sourceId==="1201")row.attribution_rechecked=true;
    row.attribution_error=null;
-   if(transform.removed)updated++;else unchanged++;
+   if(transform.removed||transform.blanks)updated++;else unchanged++;
    console.log("PSE_LEGACY_ATTRIBUTION=PASS; source_id="+sourceId+
      "; wp_id="+row.wp_id+"; footer_removed="+transform.removed+
      "; trailing_empty_removed="+transform.blanks+"; attachments_preserved=true; seo_preserved=true");
@@ -175,6 +192,6 @@ try{
 }finally{await persist();await browser.close()}
 console.log("PSE_ATTRIBUTION_CLEAN=PARTIAL; corrected="+updated+"; unchanged="+unchanged+
   "; failed="+failed+"; pending="+Object.values(state.articles).filter(r=>
-    r.wp_id&&["imported","draft_needs_date"].includes(r.status)&&
+    r.wp_id&&["imported","draft_needs_date","existing"].includes(r.status)&&
     !r.attribution_cleaned&&Number(r.attribution_attempts||0)<3).length+
   "; no_build=true");
