@@ -45,9 +45,14 @@ try{
  }
  const source=await ctx.newPage();
  const originalArticles=[];
- const sanitize=async(url,mapping)=>{const r=await source.goto(url,{waitUntil:"domcontentloaded",timeout:65000});if(r?.status()!==200)throw Error("Legacy distribution article HTTP "+r?.status());
-  return source.evaluate(({mapping})=>{
-   const root=document.querySelector(".item-page [itemprop=articleBody]");if(!root)throw Error("Source original articleBody absent");
+ const sanitize=async(url,mapping,minChars=0)=>{const r=await source.goto(url,{waitUntil:"domcontentloaded",timeout:65000});if(r?.status()!==200)throw Error("Legacy distribution article HTTP "+r?.status());
+  let mode="article";
+  const targetPath=new URL(url).pathname;
+  const extract=()=>source.evaluate(({mapping,mode,targetPath})=>{
+   const root=mode==="blog"
+     ? [...document.querySelectorAll(".blog .item,.blog .leading")].find(node=>[...node.querySelectorAll("a[href]")].some(a=>{try{return new URL(a.href).pathname===targetPath}catch{return false}}))
+     : document.querySelector(".item-page [itemprop=articleBody]");
+   if(!root)throw Error("Verified distribution source item missing "+targetPath);
    const clone=root.cloneNode(true);
    clone.querySelectorAll("script,style,noscript,iframe,form,input,textarea,button,object,embed,svg,canvas,.extranews_box,.extranews_separator,.pagination,.relateditems").forEach(el=>el.remove());
    const links=[];
@@ -66,14 +71,21 @@ try{
    }
    const content=(clone.textContent||"").replace(/\s+/g," ").trim();
    return {html:clone.innerHTML,chars:content.length,text:content.slice(0,300),tables:clone.querySelectorAll("table").length,links:[...new Set(links)]};
-  },{mapping});
+  },{mapping,mode,targetPath});
+  let result=await extract();
+  if(result.chars<minChars&&/Nội dung đang cập nhật/i.test(result.text)){
+   const blog=await source.goto(sourceRoot+"/hoat-dong-kinh-doanh/kenh-phan-phoi.html",{waitUntil:"domcontentloaded",timeout:65000});
+   if(blog?.status()!==200)throw Error("Legacy distribution index missing for archival fallback");
+   mode="blog";result=await extract();
+  }
+  return {...result,sourceMode:mode};
  };
  for(const item of targets){
   const legacyUrl=sourceRoot+"/hoat-dong-kinh-doanh/kenh-phan-phoi/"+item.id+"-"+item.slug+".html";
-  const data=await sanitize(legacyUrl,{});
+  const data=await sanitize(legacyUrl,{},item.min);
   if(data.chars<item.min||data.html.length>145000||/<script|javascript:|Подробнее|\.ru\b/i.test(data.html))throw Error("Original distribution source needs manual sanitization "+item.slug);
   const existing=pageBySlug(item.slug)[0];
-  manifest.articles.push({...item,legacyUrl,chars:data.chars,tables:data.tables,links:data.links,existingId:existing?.id||null});
+  manifest.articles.push({...item,legacyUrl,chars:data.chars,tables:data.tables,sourceMode:data.sourceMode,links:data.links,existingId:existing?.id||null});
   originalArticles.push({...item,legacyUrl,data});
  }
  const originalPDF=[...new Set(originalArticles.flatMap(x=>x.data.links))].filter(x=>new URL(x).pathname.toLowerCase().endsWith(".pdf"));
@@ -132,7 +144,7 @@ try{
   return id;
  };
  for(const article of originalArticles){
-  const data=await sanitize(article.legacyUrl,{[pdfUrl]:nativePDF});
+  const data=await sanitize(article.legacyUrl,{[pdfUrl]:nativePDF},article.min);
   if(data.chars<article.min||data.chars!==article.data.chars||/Подробнее|\.ru\b/i.test(data.html))throw Error("Original article changed or unsafe at apply "+article.slug);
   const id=await createPage(article,'<div class="pse-distribution-body">'+data.html+"</div>");
   manifest.articles.find(x=>x.slug===article.slug).pageId=id;
