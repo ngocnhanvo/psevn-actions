@@ -100,6 +100,20 @@ try {
     )).map(x=>({id:x.id,status:x.status,from:x.acf?.from_link,to:x.acf?.to_link,
       type:x.acf?.type,match_type:x.acf?.match_type,enable:x.acf?.enable}))
   }));
+  // Read-only discrepancy audit: native published URL rules versus queued
+  // redirect logs consumed by Astro; never manipulate the log option.
+  const redirectLog=await json('/wp-json/astro/v1/get-redirect-logs');
+  if(redirectLog.status!==200||!Array.isArray(redirectLog.payload))
+    throw Error('PSE redirect log endpoint unavailable for read-only audit');
+  const activeRules=redirects.payload.filter(r=>r.status==='publish'&&r.acf?.enable);
+  console.log('PSE_G3_REDIRECT_LOG_PARITY='+JSON.stringify({
+    published:activeRules.length,
+    publishedIds:activeRules.map(x=>x.id).sort((a,b)=>a-b),
+    logCount:redirectLog.payload.length,
+    logIds:redirectLog.payload.map(x=>x.id).sort((a,b)=>a-b),
+    logActions:redirectLog.payload.map(x=>x.action),
+    wpWrites:false,
+  }));
   const news=await json('/wp-json/wp/v2/posts?status=publish&per_page=5&orderby=date&order=desc&_fields=id,slug,date,categories');
   if(news.status!==200||!Array.isArray(news.payload))throw Error('Cannot inspect published WordPress news sample');
   console.log('PSE_SUBPAGE_PUBLISHED_POST_SAMPLE='+JSON.stringify(news.payload));
