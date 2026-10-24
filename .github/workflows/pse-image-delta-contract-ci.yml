@@ -26,11 +26,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Checkout exact PSE PHP delta feature to test unmerged code
+      - name: Checkout merged PSE PHP master for backward-compatible contract
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          ref: feature/pse-delta-image-ftps-20261025
+          ref: master
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: php-source
           persist-credentials: false
