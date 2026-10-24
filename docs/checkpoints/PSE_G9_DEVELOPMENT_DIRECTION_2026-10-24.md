@@ -24,3 +24,10 @@
 2. Only after successful deployment, update/create .pse-development-direction-live-qa-trigger (one commit), run the READ ONLY script at 390, 768 and 1440px. It checks 5 headings and anchors, historic text, the 10+ row table, horizontal/nested overflow and produces three screenshots.
 3. On visual QA failure, diagnose actual WordPress HTML and browser CSS; fix source rather than hardcoding/censoring CMS data. Reuse normal merge and PHP build rules.
 4. Report CODE_READY, CI, DEPLOY, VISUAL_QA as separate states with evidence.
+
+## Build gate final result (read before continuing)
+
+- Standard PHP/WordPress build request #40103315911 finished **FAIL (policy guard, not code failure)**. Authenticated WP dashboard read succeeded: `PSE_WP_BUILD_STATUS_CHECK=success`, `PSE_WP_PENDING_CHANGE_COUNT=0`, then `PSE_WP_BUILD=NO_PENDING_CHANGES; no owner-approved exception on this event`; exit code 2. Full run: https://github.com/ngocnhanvo/psevn-actions/actions/runs/40103315911.
+- **No downstream Astro deploy was started for G9.** No live QA, no screenshot parity pass. Do NOT retry same normal WordPress Build Website action without a genuine changed pending record; no synthetic CMS edits just to fool the gate.
+- The separate earlier #40101843339 successful deploy belongs to G8, not G9. This G9 source remains CODE_READY + CI_PASS, but LIVE_NOT_DEPLOYED.
+- For G9 release when WordPress remains pending=0, owner must explicitly approve one-time **Build Website ngoại lệ** through the existing PHP/WordPress tool. That authorization is NOT implicit from auto-build mode; NEVER invoke direct Actions build. After an authorized source release, run targeted read-only QA with existing script and trigger once, then record actual result.
