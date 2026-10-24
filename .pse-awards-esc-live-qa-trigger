@@ -1,0 +1,3 @@
+PSE G8 /thanh-tuu read-only browser QA after WordPress-triggered signed Astro release run #40101843339 PASS.
+Expected: 8 awards, 8 authentic images ALT, 17 details, one H1, no legacy table, desktop 1440 and mobile 390 without nested scroll; ensure source ESC Table pse_awards_vi.
+This marker must never trigger a new Astro build, write WordPress, or repeat authoring.
