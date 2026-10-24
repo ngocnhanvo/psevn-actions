@@ -5,3 +5,5 @@ Astro master commit: df289610ba86a779a7ecac72125c0a8e96f90a81
 Check exactly ten published routes, header/breadcrumb/footer, no Joomla sidebar/horizontal overflow, photo loading, and 6 screenshots.
 
 2026-10-24: Verify release run 40068047662 across ten corporate routes, mobile and desktop.
+
+2026-10-24: Read-only QA image decode after DOMContentLoaded; diagnose real srcset and load state. Recheck the same 10 pages after release #40068047662; no WP writes, no build.
