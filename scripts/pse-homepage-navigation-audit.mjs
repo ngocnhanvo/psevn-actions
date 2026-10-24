@@ -1,3 +1,4 @@
+// Subpage rollout gate (2026-10-24): verify current CMS menu and Page action/key before mapping; READ ONLY.
 /** Inspect PSE WordPress Pages and Header nav menu identities without writing. */
 import { chromium } from 'playwright';
 const origin=(()=>{
