@@ -109,18 +109,29 @@ jobs:
           set -euo pipefail
           python3 -m py_compile actions-hub/scripts/pse-remote-unzip.py
           python3 actions-hub/scripts/pse-remote-unzip.py verify
-      - name: Read deployed sitemap Save token from PSE FTPS (no XML transfer)
+      - name: Read sitemap Save token and signed image inventory concurrently (read only)
         shell: bash
         run: |
           set -euo pipefail
           set +x
+          # Signed deployment preflight has already passed. These two reads
+          # have independent outputs (GITHUB_ENV/sitemap state vs image JSON).
+          # Wait for BOTH and propagate any failure before build/deploy.
           python3 -m py_compile actions-hub/scripts/pse-published-sitemap-revision.py
-          python3 actions-hub/scripts/pse-published-sitemap-revision.py
-      - name: Read signed deployed image inventory for safe delta packaging
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 actions-hub/scripts/pse-remote-unzip.py manifest
+          python3 actions-hub/scripts/pse-published-sitemap-revision.py > "$RUNNER_TEMP/pse-sitemap-read.log" 2>&1 &
+          sitemap_pid=$!
+          python3 actions-hub/scripts/pse-remote-unzip.py manifest > "$RUNNER_TEMP/pse-image-read.log" 2>&1 &
+          manifest_pid=$!
+          sitemap_status=0
+          manifest_status=0
+          wait "$sitemap_pid" || sitemap_status=$?
+          wait "$manifest_pid" || manifest_status=$?
+          cat "$RUNNER_TEMP/pse-sitemap-read.log"
+          cat "$RUNNER_TEMP/pse-image-read.log"
+          if (( sitemap_status != 0 || manifest_status != 0 )); then
+            echo "::error::PSE independent prebuild reads failed"
+            exit 1
+          fi
       # GitHub-hosted runners are ephemeral: reuse downloaded packages
       # keyed by the Astro production lockfile. Never cache node_modules or .env.
       - name: Set up pnpm 9 (without installing project dependencies)
