@@ -116,6 +116,11 @@ jobs:
           set +x
           python3 -m py_compile actions-hub/scripts/pse-published-sitemap-revision.py
           python3 actions-hub/scripts/pse-published-sitemap-revision.py
+      - name: Read signed deployed image inventory for safe delta packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 actions-hub/scripts/pse-remote-unzip.py manifest
       # GitHub-hosted runners are ephemeral: reuse downloaded packages
       # keyed by the Astro production lockfile. Never cache node_modules or .env.
       - name: Set up pnpm 9 (without installing project dependencies)
@@ -291,6 +296,10 @@ jobs:
           test ! -e deploy/.env
           test -s deploy/server/entry.mjs
           test -s deploy/client/index.html
+          # All other deploy files remain in the full ZIP. Only unchanged
+          # hashed images can be omitted; PHP revalidates and restores them
+          # inside the staging directory before atomic activation.
+          python3 ../actions-hub/scripts/pse-image-delta-package.py
           cd deploy
           zip -q -r ../upload/pse-astro.zip .
           cd ..
@@ -317,6 +326,13 @@ jobs:
                   raise RuntimeError('Saved sitemap missing or mismatched in archive')
               if not state['changed'] and not absent:
                   raise RuntimeError('Unchanged sitemap XML must be excluded from archive')
+              if 'pse-image-delta.json' in names:
+                  image_delta=json.loads(z.read('pse-image-delta.json'))
+                  if image_delta.get('format') != 1 or not isinstance(image_delta.get('reuse'),list) or not isinstance(image_delta.get('files'),dict):
+                      raise RuntimeError('Malformed signed image delta ZIP manifest')
+                  for name in image_delta['reuse']:
+                      if not isinstance(name,str) or 'client/images/'+name in names or name not in image_delta['files']:
+                          raise RuntimeError('Reused image was improperly uploaded')
               meta=json.loads(z.read('pse-staging-build.json'))
               if meta.get('branch')!='master' or meta.get('commit')!=os.environ['PSE_DEPLOY_COMMIT'] or meta.get('sitemap_revision')!=state['revision']:
                   raise RuntimeError('Archive revision marker mismatch')
