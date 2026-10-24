@@ -75,6 +75,28 @@ try{
  console.log("PSE_CORPORATE_PAGE_LOG_PREFLIGHT="+JSON.stringify({
    total:expected.length,queued:expected.length-missing.length,missing:missing.map(p=>p.id),mode:dry?"audit":"native-save"
  }));
+
+ // WordPress Classic Editor can normalize markup on native Save. Compare the
+ // new Page and its latest revisions before allowing any further native Saves.
+ const revisions=await get("/wp-json/wp/v2/pages/79270/revisions?context=edit&per_page=5&_fields=id,date,content");
+ const main=pages.payload.find(p=>p.id===79270);
+ const fingerprints=await page.evaluate(records=>records.map(record=>{
+   const div=document.createElement("div");div.innerHTML=record.html||"";
+   const text=(div.textContent||"").replace(/\s+/g," ").trim();
+   return {id:record.id,textLength:text.length,
+     plainText:text,images:[...div.querySelectorAll("img")].map(x=>x.getAttribute("src")||""),
+     links:[...div.querySelectorAll("a[href]")].map(x=>x.getAttribute("href")||""),
+     tables:div.querySelectorAll("table").length};
+ }),[{id:"current",html:main?.content?.raw||""},
+     ...(Array.isArray(revisions.payload)?revisions.payload.map(r=>({id:r.id,html:r.content?.raw||""})):[])]);
+ const info=fingerprints.map(x=>({
+   id:x.id,textLength:x.textLength,textHash:hash(x.plainText),
+   images:x.images.length,links:x.links.length,tables:x.tables
+ }));
+ console.log("PSE_CORPORATE_NATIVE_PAGE_REVISIONS="+JSON.stringify({
+   http:revisions.http,records:info,queuedCurrentPage:current.get(79270)?.action==="modify"
+ }));
+
  if(dry){console.log("PSE_CORPORATE_PAGE_LOG_AUDIT=PASS; wp_mutation=false");process.exit(0)}
  let saved=0;
  for(const item of missing){
