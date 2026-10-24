@@ -117,7 +117,7 @@ try{
     return {ok:true,count:rows.length};
    },links);
    if(!prepared.ok||prepared.count!==10)throw Error('WordPress editor preflight failed: '+JSON.stringify(prepared));
-   const save=page.locator('#save_menu_header').first();
+   const save=page.locator('input[name="save_menu"]:visible').first();
    if(!await save.count())throw Error('WordPress native Save Menu button absent');
    await Promise.all([page.waitForLoadState('domcontentloaded'),save.click()]);
    const final=await api('/wp-json/esc-api/v1/menus');
