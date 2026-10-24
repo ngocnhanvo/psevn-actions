@@ -115,6 +115,17 @@ try{
    const result={menu_item_id:item.id,slug,title,source_path:src.pathname,source_text_length:textLength,
      images,source_content_sha256:hash(parsed.html),wordpress_id:existing?.id||null,
      status:existing?.status||"not-created",action:existing?"already-present":"proposed"};
+   // Previous run saved 6 text-only drafts and REST verified all fields.
+   // Do not write those six Pages again while recovering the four image Pages.
+   if(!dryRun && existing?.status==="draft" && parsed.images.length===0 &&
+      existing.acf?.action==="PublicPage" && existing.acf?.key===key &&
+      String(existing.title?.raw||existing.title?.rendered||"").trim()===title &&
+      oldContent.trim().length>40 && !oldContent.includes("Các bài viết khác")){
+     ready++;
+     output.results.push({...result,wordpress_id:existing.id,action:"already-imported",status:"draft"});
+     console.log("PSE_CORPORATE_PAGE_REUSED="+JSON.stringify({id:existing.id,slug,status:"draft"}));
+     continue;
+   }
    // Media must be copied before a Page draft is written; source hotlinks are never published.
    const replacements=new Map();
    if(!dryRun){
@@ -154,16 +165,37 @@ try{
      }
      const fresh=await api(apiPath("media/"+media.id+"?context=edit"));
      if(fresh.http!==200||fresh.payload.id!==media.id)throw Error("WP corporate media readback failed");
-     const mediaUrl=String(fresh.payload.source_url||fresh.payload.guid?.rendered||"");
-     const target=new URL(mediaUrl);
-     if(target.protocol!=="https:"||target.hostname!==wp.hostname||
-       !target.pathname.startsWith("/wp-content/uploads/")||!target.pathname.endsWith("/"+filename))
-       throw Error("Corporate WP Media URL not verified");
-     const check=await context.request.get(mediaUrl,{timeout:55000});
-     if(!check.ok()||hash(await check.body())!==checksum)
-       throw Error("Corporate media uploaded bytes are not identical");
-     replacements.set(asset.src,mediaUrl);
-     console.log("PSE_CORPORATE_MEDIA=PASS; slug="+slug+"; id="+media.id+"; sha256="+checksum.slice(0,16));
+     // PSE WordPress sometimes omits source_url/guid. Use only authenticated
+      // WordPress Media metadata as an alternative, verifying exact bytes.
+      const metadataFile=String(fresh.payload.media_details?.file||"").replace(/^\/+/, "");
+      const candidates=[fresh.payload.source_url,fresh.payload.guid?.rendered];
+      if(/^(?:[0-9]{4}\\/[0-9]{2}\\/)?[a-zA-Z0-9._\\/-]+$/.test(metadataFile) &&
+         metadataFile.split("/").at(-1)===filename && !metadataFile.includes(".."))
+         candidates.push(new URL("/wp-content/uploads/"+metadataFile,wpOrigin).href);
+      let mediaUrl="";
+      for(const candidate of candidates.filter(Boolean)){
+        let target;
+        try{target=new URL(String(candidate),wpOrigin)}catch{continue}
+        if(target.hostname!==wp.hostname||!["https:","http:"].includes(target.protocol)||
+           !target.pathname.startsWith("/wp-content/uploads/")||
+           !target.pathname.endsWith("/"+filename))continue;
+        target.protocol="https:";
+        try{
+          const check=await context.request.get(target.href,{timeout:55000});
+          if(check.ok()&&hash(await check.body())===checksum){mediaUrl=target.href;break}
+        }catch{}
+      }
+      if(!mediaUrl){
+        console.log("PSE_CORPORATE_MEDIA_DIAGNOSTIC="+JSON.stringify({
+          slug,mediaId:media.id,mime:fresh.payload.mime_type,
+          sourceUrlPresent:Boolean(fresh.payload.source_url),
+          guidPresent:Boolean(fresh.payload.guid?.rendered),
+          mediaFile:metadataFile.slice(0,150),expectedFilename:filename
+        }));
+        throw Error("PSE corporate Media URL/checksum not verified for "+slug);
+      }
+      replacements.set(asset.src,mediaUrl);
+      console.log("PSE_CORPORATE_MEDIA=PASS; slug="+slug+"; id="+media.id+"; sha256="+checksum.slice(0,16));
     }
    }
    const finalHtml=await site.evaluate(({html,mapping})=>{
