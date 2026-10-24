@@ -1,0 +1,40 @@
+name: PSE G8 awards native ESC Insert Code Page attachment
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-awards-esc-attach-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-awards-esc-attach
+  cancel-in-progress: false
+jobs:
+  wordpress-page:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_AWARDS_ESC_ATTACH_READONLY: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Replace ONLY legacy awards table via official WordPress Insert Code
+        run: |
+          node --check scripts/pse-awards-esc-attach.mjs
+          node scripts/pse-awards-esc-attach.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-g8-page-rollback-before
+          path: artifacts/pse-awards-esc/before-page-attach.json
+          if-no-files-found: ignore
+          retention-days: 14
