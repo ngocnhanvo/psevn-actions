@@ -1,8 +1,69 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 27,
+  "runs": 28,
   "records": {
+    "187": {
+      "wp_id": 78470,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "192": {
+      "wp_id": 77261,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-07-26",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "193": {
+      "wp_id": 77267,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-07-26",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "194": {
+      "wp_id": 77289,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-07-26",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "215": {
+      "wp_id": 77379,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-08-29",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "217": {
+      "wp_id": 77395,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-09-07",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "218": {
+      "wp_id": 77402,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-09-07",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "233": {
+      "wp_id": 77515,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-12-24",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
     "234": {
       "wp_id": 77530,
       "attempts": 1,
