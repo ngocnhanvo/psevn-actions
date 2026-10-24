@@ -62,7 +62,7 @@ try {
    text:(x.textContent||"").trim().slice(0,70)}));
   if(rich.length) console.log("PSE_HISTORY_RICH_SOURCE="+JSON.stringify({rich,
    tables:[...node.querySelectorAll("table")].map(t=>({chars:t.textContent.length,
-    dates:[...t.textContent.matchAll(/\\b\\d{2}\\/\\d{2}\\/\\d{4}\\b/g)].map(m=>m[0]),
+    dates:[...t.textContent.matchAll(/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/g)].map(m=>m[0]),
     hasImage:!!t.querySelector("img"),hasLinks:!!t.querySelector("a")}))}));
   if(rich.length)throw Error("Unexpected rich source, refuse conversion");
   const txt=(node.textContent||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
