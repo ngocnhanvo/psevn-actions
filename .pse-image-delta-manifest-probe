@@ -1,1 +1,2 @@
 2026-10-25: Verify newly deployed signed PSE PHP image_manifest HMAC response, frontend identity and published image hashes. Strictly READ ONLY: no Astro build, FTP, WordPress writes or file upload.
+2026-10-25: Verify newly merged static-delta PHP release and signed optional static HTML/CSS/JS inventory (read-only), after CI PASS and FTPS PHP release #40143823261. NO ASTRO BUILD / NO FTP.
