@@ -24,3 +24,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-24: PSE G3 approved WordPress-authored news archive intro placement Astro github 141cce2bd5e8f5ea71339d6305fd4206188a9478. Existing all-post/category SSR remains, render Page intro below H1 instead of before. Run Vitest/parser only; NO BUILD, NO FTP.
 
 2026-10-24 PSE G3 follow-up: test Astro github 81a2791f99d553aa8557c068267e55b60bad5280. News subpage dropdown now follows native WP parent/child category hierarchy, Escape close; correct PostsPage SSR CMS page props. Run existing full Vitest + Astro parser only. NO BUILD / NO FTP.
+
+2026-10-24 PSE G3 follow-up final tested source 86cee43a086b643ba2f92a902d70475559220159: same CMS taxonomy hierarchy + category links with SSR href rather than browser JS redirects. Run pre-existing NO BUILD Vitest/Astro parser, no FTP, no WordPress write.
