@@ -1,8 +1,72 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 12,
+  "runs": 13,
   "records": {
+    "1395": {
+      "wp_id": 77912,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-07-28",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1396": {
+      "wp_id": 77534,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-07-28",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1397": {
+      "wp_id": 77525,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-08-15",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1398": {
+      "wp_id": 77910,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-10-01",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1399": {
+      "wp_id": 77901,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-10-19",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1400": {
+      "wp_id": 77509,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-10-22",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1402": {
+      "wp_id": 77492,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2020-12-09",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1405": {
+      "wp_id": 77887,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-01-30",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
     "1406": {
       "wp_id": 77462,
       "attempts": 1,
@@ -608,5 +672,5 @@
     }
   },
   "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
-  "last_migration_batch_observed": 135
+  "last_migration_batch_observed": 136
 }
