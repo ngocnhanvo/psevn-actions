@@ -109,18 +109,27 @@ jobs:
           set -euo pipefail
           python3 -m py_compile actions-hub/scripts/pse-remote-unzip.py
           python3 actions-hub/scripts/pse-remote-unzip.py verify
-      - name: Read deployed sitemap Save token from PSE FTPS (no XML transfer)
+      - name: Read saved sitemap revision and signed image inventory concurrently (READ ONLY)
         shell: bash
         run: |
           set -euo pipefail
           set +x
           python3 -m py_compile actions-hub/scripts/pse-published-sitemap-revision.py
-          python3 actions-hub/scripts/pse-published-sitemap-revision.py
-      - name: Read signed deployed image inventory for safe delta packaging
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 actions-hub/scripts/pse-remote-unzip.py manifest
+          # These two reads are independent. BOTH results must succeed before
+          # dependencies, build or deployment proceed. Signed preflight above
+          # has already validated the PHP server and deploy destination.
+          python3 actions-hub/scripts/pse-published-sitemap-revision.py &
+          sitemap_pid=$!
+          python3 actions-hub/scripts/pse-remote-unzip.py manifest &
+          image_pid=$!
+          sitemap_status=0
+          image_status=0
+          wait "$sitemap_pid" || sitemap_status=$?
+          wait "$image_pid" || image_status=$?
+          if (( sitemap_status != 0 || image_status != 0 )); then
+            echo "::error::PSE signed read-only preflight failed"
+            exit 1
+          fi
       # GitHub-hosted runners are ephemeral: reuse downloaded packages
       # keyed by the Astro production lockfile. Never cache node_modules or .env.
       - name: Set up pnpm 9 (without installing project dependencies)
@@ -352,6 +361,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json,os,urllib.request,urllib.error,time
+          from concurrent.futures import ThreadPoolExecutor
           base=os.environ['PSE_CLIENT_ORIGIN']
           def fetch(path):
               req=urllib.request.Request(base+path,headers={
@@ -368,9 +378,15 @@ jobs:
           last=None
           for attempt in range(5):
               try:
-                  home=fetch('/')
-                  profile=fetch('/api/user/info')
-                  robots=fetch('/robots.txt')
+                  # Three independent GET smoke probes run concurrently,
+                  # but every original status/body requirement remains mandatory.
+                  with ThreadPoolExecutor(max_workers=3) as pool:
+                      home_future=pool.submit(fetch,'/')
+                      profile_future=pool.submit(fetch,'/api/user/info')
+                      robots_future=pool.submit(fetch,'/robots.txt')
+                      home=home_future.result()
+                      profile=profile_future.result()
+                      robots=robots_future.result()
                   # Without a WordPress login cookie the active SSR user endpoint
                   # must return a JSON object, not HTML or an internal error.
                   profile_data=json.loads(profile[2]) if profile[0]==200 and 'json' in profile[1].lower() else None
