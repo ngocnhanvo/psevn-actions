@@ -1,1 +1,2 @@
 DRY run only: WordPress Page #81043 exact original broken image source, verified Joomla JPG 93901 bytes SHA-256 and idempotent native Media mapping.
+Read-only DRY run #40144832200 PASS: Page 81043 has exactly one original image, original Joomla JPEG 93,901 bytes sha256=32d96c7e1c3ab1b53194f235e0320af77da08f8ee02028d98257aed65dd4d099, no existing Media; one-time native WordPress Media+Page replacement with readback, NO BUILD.
