@@ -155,12 +155,53 @@ try{
  }
  const update=page.locator("#publish");
  if(!await update.isVisible())throw Error("Published Page native Update button missing");
+ const preSubmit=await page.evaluate(()=>{
+   const form=document.querySelector("form#post");
+   const text=document.querySelector("textarea#content");
+   const tiny=window.tinymce?.get("content");
+   return {
+     formPresent:!!form,formAction:form?.getAttribute("action"),
+     textMode:document.querySelector("#wp-content-wrap")?.className,
+     textLength:text?.value?.length||0,activeTinyMce:!!tiny&&!tiny.isHidden(),
+     publishDisabled:document.querySelector("#publish")?.disabled===true
+   };
+ });
+ console.log("PSE_AWARDS_ESC_SAVE_PREFLIGHT="+JSON.stringify(preSubmit));
+ // Classic WordPress may normalize Text/TinyMCE during form submission.
+ // Wait for the actual save navigation, then poll authenticated REST rather
+ // than reading too early or claiming success from a mere button click.
+ const navigation=page.waitForNavigation({waitUntil:"domcontentloaded",timeout:17000}).catch(()=>null);
  await update.click();
- await page.waitForLoadState("domcontentloaded");
- const post=await api("/wp-json/wp/v2/pages/"+pageId+"?context=edit&_fields=id,status,slug,modified,content,acf");
- const saved=String(post.data?.content?.raw||"");
+ await navigation;
+ let post,saved="";
+ for(let attempt=0;attempt<8;attempt++){
+   post=await api("/wp-json/wp/v2/pages/"+pageId+"?context=edit&_fields=id,status,slug,modified,content,acf");
+   saved=String(post.data?.content?.raw||"");
+   if(saved!==raw)break;
+   await page.waitForTimeout(950);
+ }
+ const savedShortcodes=[...saved.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(m=>m[1]);
+ const savedMiddle=saved.startsWith(editor.before)&&saved.endsWith(editor.after)
+   ? saved.slice(editor.before.length,saved.length-editor.after.length):"";
+ const unwrappedSaved=savedMiddle.replace(previewRegex,(match,_dq,_bq,token,id)=>{
+   const first=match.slice(0,match.indexOf(">")+1);
+   const actual=/\bdata-table-id=(["'])([a-z0-9_-]+)\1/i.exec(first)?.[2];
+   return actual===tableId&&id===tableId&&token===shortcode?shortcode:match;
+ });
+ console.log("PSE_AWARDS_ESC_SAVE_READBACK="+JSON.stringify({
+   url:page.url(),beforeLength:raw.length,insertedLength:inserted.length,
+   savedLength:saved.length,saveChanged:saved!==raw,
+   shortcodeCount:savedShortcodes.length,oldStillExists:saved.includes("Table_01"),
+   beforePreserved:saved.startsWith(editor.before),afterPreserved:saved.endsWith(editor.after),
+   nativeShortcodeMatched:unwrappedSaved.trim()===shortcode,
+   modifiedBefore:p.modified,modifiedAfter:post?.data?.modified,
+   responseStatus:post?.status,acfKey:post?.data?.acf?.key,acfAction:post?.data?.acf?.action
+ }));
  if(post.status!==200||post.data.id!==pageId||post.data.status!=="publish"||
    post.data.acf?.action!=="PublicPage"||post.data.acf?.key!=="pse-company-thanh-tuu"||
-   saved!==inserted)throw Error("WordPress native Page Save / REST readback mismatch; inspect and restore Page version");
+   JSON.stringify(savedShortcodes)!==JSON.stringify([tableId])||saved.includes("Table_01")||
+   unwrappedSaved.trim()!==shortcode) {
+   throw Error("WordPress native Page Save/REST readback did not preserve verified ESC Table attachment; inspect Page revision");
+ }
  console.log("PSE_AWARDS_ESC_ATTACH=PASS; page=79311; section="+tableId+"; native_insert_code=true; legacy_removed=true; original_outer_content_preserved=true; no_astro_build=true");
 }finally{await browser.close()}
