@@ -23,6 +23,8 @@ jobs:
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      # Only the explicit owner-authorized marker commit can request an exception.
+      PSE_FORCE_BUILD_ONCE: ${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for subpages' }}
       # Origin is resolved from ENV_FILE at runtime; never pin the WP hostname.
     steps:
       - name: Checkout PSE's existing WordPress trigger E2E helper
