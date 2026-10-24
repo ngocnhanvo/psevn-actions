@@ -102,23 +102,38 @@ try {
     fields:table.data?.fields?.map(x=>x.key),
     items:table.data?.items?.length,first:table.data?.items?.slice(0,2)
   }));
- if(table.http!==404)throw Error("ESC Table already exists; inspect safe recovery before creating another");
-
- // Native WordPress ESC Table Add Table + native advanced editor per long text cell.
- await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:60000});
- await page.locator('input[name="table[name]"]').fill("PSE - Quá trình hình thành và phát triển");
- await page.locator('textarea[name="table[description]"]').fill("Mỗi dòng là một cột mốc; có thể sửa, thêm, sắp xếp ngày, tiêu đề và nội dung từng mốc.");
- const sizes=page.locator('input[type="number"]');if(await sizes.count()<2)throw Error("Native ESC Table Add form missing");
- await sizes.nth(0).fill("8");await sizes.nth(1).fill("3");
- await page.getByRole("button",{name:"Add Table"}).click();
- await page.locator("#table-id").waitFor({state:"visible",timeout:30000});
- if(await page.locator("#table-id").getAttribute("readonly")!==null)throw Error("Cannot set ESC Table ID");
- await page.locator("#table-id").fill(tableId);
- await page.locator("#table-name").focus();
- await page.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
- await page.waitForTimeout(1300);
- await page.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,
-  {waitUntil:"domcontentloaded",timeout:60000});
+ const recoverBlank=table.http===200&&table.data?.id===tableId&&
+  table.data.fields?.length===3&&table.data.fields.every(f=>!String(f.key||"").trim())&&
+  table.data.items?.length===6&&table.data.items.every(item=>
+    Object.values(item).every(value=>!String(value||"").trim()));
+ if(table.http!==404&&!recoverBlank)
+   throw Error("Existing ESC Table is not an empty safe recovery candidate");
+ if(recoverBlank)console.log("PSE_HISTORY_ESC_RECOVER_BLANK=PASS; table_exists=true");
+ else {
+  // Native Add Table is required; never create when a blank candidate exists.
+  await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:60000});
+  await page.locator('input[name="table[name]"]').fill("PSE - Quá trình hình thành và phát triển");
+  await page.locator('textarea[name="table[description]"]').fill("Mỗi dòng là một cột mốc; có thể sửa, thêm, sắp xếp ngày, tiêu đề và nội dung từng mốc.");
+  const sizes=page.locator('input[type="number"]');
+  if(await sizes.count()<2)throw Error("Native ESC Table Add form missing");
+  await sizes.nth(0).fill("8");await sizes.nth(1).fill("3");
+  await page.getByRole("button",{name:"Add Table"}).click();
+  await page.locator("#table-id").waitFor({state:"visible",timeout:30000});
+  if(await page.locator("#table-id").getAttribute("readonly")!==null)throw Error("Cannot set ESC Table ID");
+  await page.locator("#table-id").fill(tableId);
+  await page.locator("#table-name").focus();
+  await page.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
+  await page.waitForTimeout(2000);
+ }
+ const editorUrl=origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId;
+ let opened=false;
+ for(let attempt=0;attempt<3&&!opened;attempt++){
+  try{await page.goto(editorUrl,{waitUntil:"domcontentloaded",timeout:60000});opened=true}
+  catch(e){
+   if(attempt===2||!/net::ERR_ABORTED/.test(String(e)))throw e;
+   await page.waitForTimeout(1100);
+  }
+ }
  await page.waitForFunction(()=>Array.isArray(window.tp?.table?.data)&&
   typeof window.tp?.callbacks?.advanced_editor?.open_dialog==="function",null,{timeout:25000});
  const state=await page.evaluate(()=>({id:window.tp.table.id,
