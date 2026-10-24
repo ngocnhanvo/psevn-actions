@@ -6,6 +6,7 @@ on:
       - .pse-corporate-live-qa-trigger
       - .pse-g4-live-qa-trigger
       - .pse-corporate-menu-links-trigger
+      - .pse-corporate-sibling-layout-trigger
 permissions:
   contents: read
 jobs:
@@ -28,11 +29,16 @@ jobs:
         run: |
           node --check scripts/pse-corporate-menu-destination-qa.mjs
           node scripts/pse-corporate-menu-destination-qa.mjs
+      - name: Verify company PublicPage sibling navigation and no short intro (READ ONLY)
+        if: "${{ github.event.head_commit.message == 'test(pse): verify PublicPage menu siblings live' }}"
+        run: |
+          node --check scripts/pse-corporate-sibling-layout-qa.mjs
+          node scripts/pse-corporate-sibling-layout-qa.mjs
       - name: Confirm all ten frontend Pages render without Joomla sidebar and mobile overflow
-        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' }}"
+        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' }}"
         run: node scripts/pse-corporate-live-qa.mjs
       - name: Verify live WordPress article detail pages (read-only G4)
-        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' }}"
+        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' }}"
         run: node scripts/pse-g4-live-article-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
