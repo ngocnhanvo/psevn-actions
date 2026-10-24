@@ -1,0 +1,43 @@
+name: PSE bounded FTPS throughput and bundle composition (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-ftps-transfer-profile.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-ftps-transfer-profile
+  cancel-in-progress: false
+jobs:
+  diagnostic:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - name: Read PSE-only diagnostic source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate offline Python syntax and FTPS client
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-ftps-transfer-profile.py
+          if ! command -v lftp >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -qq -y --no-install-recommends lftp
+          fi
+      - name: Profile existing ZIP READ ONLY and compare removable synthetic test uploads
+        shell: bash
+        run: python3 scripts/pse-ftps-transfer-profile.py
+      - name: Document that official production build did not run
+        shell: bash
+        run: |
+          echo 'PSE_FTPS_PROFILE=PASS; NO_ASTRO_BUILD; NO_PRODUCTION_DEPLOY; ALL_BENCHMARK_FILES_REMOVED'
