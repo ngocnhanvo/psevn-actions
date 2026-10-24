@@ -51,6 +51,13 @@ try{
     JSON.stringify(t.data.items?.map(x=>x.date))!==JSON.stringify(dates)||
     t.data.items.some(item=>!item.title||!item.details))throw Error("Native ESC Table incomplete; Page untouched");
  const raw=String(p.data.content?.raw||"");
+ console.log("PSE_HISTORY_PAGE_INITIAL="+JSON.stringify({
+   pageId,modified:p.data.modified,rawLength:raw.length,
+   shortcodeCount:(raw.match(/\\[table\\s+id=pse_history_vi\\s*\\/\\]/g)||[]).length,
+   legacyTables:(raw.match(/<table\\b/gi)||[]).length,
+   cover:raw.includes("pse-history-cover"),images:(raw.match(/<img\\b/gi)||[]).length,
+   start:raw.slice(0,380),end:raw.slice(-220)
+ }));
  if(raw.includes(shortcode)&&!/<table\b/i.test(raw)&&raw.includes("pse-history-cover")&&/<img\b/i.test(raw)){
   console.log("PSE_HISTORY_ESC_ATTACH=ALREADY_DONE; no_duplicate=true");process.exit(0);
  }
@@ -176,6 +183,16 @@ try{
  const tokens=[...saved.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(x=>x[1]);
  const middle=saved.startsWith(segment.before)&&saved.endsWith(segment.after)
   ?saved.slice(segment.before.length,saved.length-segment.after.length):"";
+ console.log("PSE_HISTORY_PAGE_SAVE_READBACK="+JSON.stringify({
+   http:result?.http,id:result?.data?.id,status:result?.data?.status,
+   action:result?.data?.acf?.action,key:result?.data?.acf?.key,
+   shortcodes:tokens,legacyTableCount:(saved.match(/<table\\b/gi)||[]).length,
+   hasCover:saved.includes("pse-history-cover"),imgCount:(saved.match(/<img\\b/gi)||[]).length,
+   prefixMatch:saved.startsWith(segment.before),suffixMatch:saved.endsWith(segment.after),
+   middleLength:middle.length,coverMatch:middle.startsWith(segment.cover),
+   nativeInsertMatch:unwrap(middle.slice(segment.cover.length)).trim()===shortcode,
+   sampleStart:saved.slice(0,460),sampleEnd:saved.slice(-330)
+ }));
  if(result?.http!==200||result.data?.id!==pageId||result.data?.status!=="publish"||
   result.data.acf?.key!=="pse-company-qua-trinh-hinh-thanh-phat-trien"||
   result.data.acf?.action!=="PublicPage"||
