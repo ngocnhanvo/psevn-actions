@@ -23,6 +23,9 @@ jobs:
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Confirm all ten frontend Pages render without Joomla sidebar and mobile overflow
         run: node scripts/pse-corporate-live-qa.mjs
+      - name: Verify live WordPress article detail pages (read-only G4)
+        if: success()
+        run: node scripts/pse-g4-live-article-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
