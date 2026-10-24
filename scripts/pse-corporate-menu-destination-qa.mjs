@@ -45,6 +45,21 @@ try{
         hrefAttribute:a.getAttribute('href')
       })));
       console.log('PSE_CORPORATE_MENU_OBSERVED='+JSON.stringify({width,slug,links:discovered}));
+      const wpLine=String(process.env.ENV_FILE||'').split(/\\r?\\n/)
+        .map(x=>x.trim()).find(x=>x.startsWith('WC_URL='));
+      if(wpLine){
+        const wp=new URL(wpLine.slice('WC_URL='.length).replace(/^['"]|['"]$/g,''));
+        const raw=await page.request.get(wp.origin+'/wp-json/esc-api/v1/menus',{timeout:20000});
+        const obj=raw.ok()?await raw.json():{};
+        const roots=obj?.menus?.Header?.vi?.items||[];
+        const company=roots.find(x=>String(x.label||'').toLowerCase().includes('pvfcco-pse'));
+        console.log('PSE_CORPORATE_WP_MENU_LIVE='+JSON.stringify({
+          http:raw.status(),company:(company?.children||[]).map(x=>({
+            label:x.label,slug:x.slug,href:x.href,linkType:x.linkType,linkMode:x.linkMode
+          }))
+        }));
+      }
+
       throw Error('Missing/duplicate menu link for '+slug+': '+candidates.length);
     }
     const href=candidates[0].url;
