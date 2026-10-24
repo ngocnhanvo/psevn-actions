@@ -1,0 +1,29 @@
+name: PSE fertilizer Products, detail and 7 PDFs live responsive QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-fertilizer-live-trigger]
+permissions:
+  contents: read
+jobs:
+  visual:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-fertilizer-live-qa.mjs && node scripts/pse-fertilizer-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-fertilizer-responsive-screenshots
+          path: artifacts/pse-product-live/
+          retention-days: 14
+          if-no-files-found: warn
