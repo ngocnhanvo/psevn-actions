@@ -1,0 +1,28 @@
+name: PSE corporate subpages source audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-subpage-source-audit.mjs
+      - .github/workflows/pse-subpage-source-audit.yml
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read public original corporate pages and WordPress menu (NO WRITES)
+        run: node scripts/pse-subpage-source-audit.mjs
