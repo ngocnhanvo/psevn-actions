@@ -82,7 +82,9 @@ try{
  await page.locator("#table-id").fill(tableId);
  await page.locator("#table-name").focus();
  await page.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
- await page.waitForTimeout(1500);\n }\n await page.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
+ await page.waitForTimeout(1500);
+ }
+ await page.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
  await page.waitForFunction(()=>Array.isArray(window.tp?.table?.data)&&typeof window.tp.callbacks?.advanced_editor?.open_dialog==="function"&&typeof window.tp.callbacks?.insert_image?.open_dialog==="function",null,{timeout:24000});
  const blank=await page.evaluate(()=>({id:window.tp.table.id,data:window.tp.table.data}));
  if(blank.id!==tableId||blank.data.length!==4||blank.data.some(r=>r.length!==3||r.some(v=>String(v||"").trim())))throw Error("ESC grid not blank/4x3");
