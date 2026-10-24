@@ -3,8 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/pse-corporate-page-import.mjs
-      - .github/workflows/pse-corporate-page-import.yml
+      - .pse-corporate-import-audit-trigger
 permissions:
   contents: read
 concurrency:
@@ -22,7 +21,7 @@ jobs:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-      PSE_CORPORATE_DRY_RUN: '0'
+      PSE_CORPORATE_DRY_RUN: '1'
     steps:
       - uses: actions/checkout@v4
         with:

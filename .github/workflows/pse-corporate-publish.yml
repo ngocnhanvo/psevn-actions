@@ -3,8 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/pse-corporate-publish.mjs
-      - .github/workflows/pse-corporate-publish.yml
+      - .pse-corporate-release-audit-trigger
 permissions:
   contents: read
 concurrency:
@@ -22,7 +21,7 @@ jobs:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-      PSE_CORPORATE_RELEASE_APPLY: '1'
+      PSE_CORPORATE_RELEASE_APPLY: '0'
     steps:
       - uses: actions/checkout@v4
         with:
