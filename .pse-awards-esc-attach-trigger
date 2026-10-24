@@ -3,3 +3,5 @@ G8 WordPress ESC Table pse_awards_vi authoring PASS #40098249650: eight native i
 Retry native Quicktags Text tab activation after #40098387750 no-save: official switchEditors.go fallback and strict before-write contract.
 
 Retry after #40098572357: wait for TinyMCE body ready, then official WP Text mode and native Insert Code; no direct shortcode writes.
+
+Retry #40098720173: WordPress TinyMCE normalization proven; restore byte-exact authenticated WordPress raw in Classic Text editor before native ESC Insert Code replacement. Fail closed if raw restoration or output differs.
