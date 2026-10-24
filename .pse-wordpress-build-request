@@ -65,3 +65,5 @@ Owner-authorized targeted retry after SEO REST site/revision/llms API fully pass
 2026-10-25 PSE build-speed validation after main PR #4 merge 418938b8 and architecture CI #40133289222 PASS. Request ONE ordinary authenticated WordPress/PHP Build Website only if genuine pending CMS changes > 0 and lock idle; force_build=false always; no direct GitHub dispatch. If no pending changes, report gate without bypass. Compare total Actions runtime and FTP throughput against 90-second target while preserving signed ZIP, checksum, rollback, CMS cache and smoke.
 
 Owner-authorized PSE Vision Mission native ESC Page 79303 and Astro merged PR #36; request WordPress Build Website using existing PHP tool, no exception, 2026-10-25.
+
+2026-10-25: Astro PR #37 merged 36133bc1693c5d3c3011e94a228a947f24b9b19e; owner screenshot requests removal of redundant Vision Mission intro. Request ONE normal WordPress/PHP Build Website if pending changes >0 and build idle; no exception/force or direct Astro Actions dispatch. Verify live only if deploy occurs.
