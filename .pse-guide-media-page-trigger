@@ -1,2 +1,3 @@
 Dry-run source-verified seven original fertilizer manuals to WordPress native Media and PublicPage; preserve original SHA-256.
 Retry dry-run after #40142328664 failed with temporary source PDF ECONNRESET, before any CMS write. Reuse byte cache + bounded source retry.
+DRY RUN #40142500774 PASS; 7 original files byte-for-byte SHA verified and unique, no CMS conflicts, native menu #77012 still points Joomla. Apply once and verify 7 WordPress Media checksums + Page/menu readback.
