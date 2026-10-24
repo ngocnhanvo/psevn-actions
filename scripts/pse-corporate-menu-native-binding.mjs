@@ -19,7 +19,7 @@ const expected=[
  'so-do-to-chuc','qua-trinh-hinh-thanh-phat-trien','tam-nhin-su-menh',
  'dinh-huong-phat-trien','nganh-nghe-kinh-doanh','thanh-tuu'
 ];
-const apply=process.env.PSE_CORPORATE_MENU_BIND_APPLY==='1';
+const apply=['1','true'].includes(String(process.env.PSE_CORPORATE_MENU_BIND_APPLY||'').toLowerCase());
 if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)throw Error('Missing WP Admin credentials');
 const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1440,height:950}});
