@@ -1,3 +1,5 @@
 G8 validated WordPress 79311; create unused ESC Table pse_awards_vi from eight original records; native UI; no live Page edit; no Astro build.
 
 Retry only verified blank preexisting table after native Insert Image failed at row 2 in #40097604421; save WordPress Media ALT first; do not duplicate table.
+
+Retry native WordPress media ALT operation with explicit nonsecret status diagnostic after #40097926294; reuse verified existing blank ESC Table.
