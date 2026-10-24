@@ -1,1 +1,3 @@
 Run desktop/tablet/mobile GET-only after WordPress published build #40137989832.
+
+2026-10-25: after signed WordPress Astro build #40138897750, verify patched Contact corporate header/footer and six routes for 3 widths, no writes.
