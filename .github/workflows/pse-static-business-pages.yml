@@ -1,0 +1,31 @@
+name: PSE verified static business Pages and menu (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-static-business-trigger]
+permissions:
+  contents: read
+concurrency:
+  group: pse-static-business-pages
+  cancel-in-progress: false
+jobs:
+  pages:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_STATIC_SUBPAGES_APPLY: "${{ github.event.head_commit.message == 'cms(pse): publish two verified static business pages' && '1' || '0' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-static-business-pages.mjs && node scripts/pse-static-business-pages.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: pse-business-page-prewrite, path: artifacts/pse-static-subpages/prewrite.json, if-no-files-found: ignore, retention-days: 14}
