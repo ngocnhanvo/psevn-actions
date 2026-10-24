@@ -1,0 +1,27 @@
+name: PSE public post search REST smoke test (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-utility-search-smoke.yml
+      - scripts/pse-utility-search-smoke.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wp-search:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify published WordPress post search by actual slug/title and reject short queries
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-utility-search-smoke.mjs
+          node scripts/pse-utility-search-smoke.mjs
