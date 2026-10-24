@@ -39,6 +39,9 @@ jobs:
           php -l source-php/wp-content/mu-plugins/esc-github-trigger-config.php
           php -l source-php/wp-content/mu-plugins/esc-seo-files.php
           php -l source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php
+          php -l source-php/wp-content/mu-plugins/pse-post-routing-defaults.php
+          php -l source-php/tests/pse-post-routing-defaults.php
+          php source-php/tests/pse-post-routing-defaults.php
           ! grep -Eqi 'nghiencuukhoahoc|EduResearch Hub' source-php/wp-content/mu-plugins/esc-seo-files.php
           php -l source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
           php source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
@@ -92,3 +95,27 @@ jobs:
                   raise RuntimeError('Configured WP unzip readiness endpoint unavailable')
               time.sleep(3)
           PY
+
+  acf-routing-readonly-qa:
+    needs: wordpress-php
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 9
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Chromium JS driver
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify post routing ACF defaults without changing WordPress content
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-acf-post-defaults-verify.mjs
+          node scripts/pse-acf-post-defaults-verify.mjs
