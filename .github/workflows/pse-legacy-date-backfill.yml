@@ -1,0 +1,51 @@
+name: PSE independent Joomla publication date backfill (NO ASTRO BUILD)
+on:
+  schedule:
+    - cron: "10,25,40,55 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-legacy-date-backfill.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: pse-legacy-date-backfill-single-writer
+  cancel-in-progress: false
+jobs:
+  date-backfill:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 22
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install pinned Playwright browser client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fill only unverified dates of verified legacy WordPress drafts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-legacy-search-date.mjs
+          node --check scripts/pse-legacy-date-backfill.mjs
+          node scripts/pse-legacy-date-backfill.mjs
+      - name: Advance the independent date queue without waiting for article imports
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-legacy-date-next.mjs
+          node scripts/pse-legacy-date-next.mjs
