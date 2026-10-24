@@ -95,6 +95,26 @@ try {
       href:tr.querySelector('.row-title')?.getAttribute('href')||''
     })).filter(x=>/điều hướng|chuyển hướng|redirect|link/i.test(x.label)).slice(0,15));
     console.log('PSE_NEWS_ACF_ROUTE_FIELD_GROUPS='+JSON.stringify(fields));
+    const target=fields.find(x=>x.label==='Điều hướng 301/302/307');
+    if(!target||target.id!=='post-53507')throw Error('Unexpected ACF route field group');
+    await page.goto(origin+'/wp-admin/post.php?post=53507&action=edit',
+      {waitUntil:'domcontentloaded',timeout:60000});
+    const fieldAudit=await page.evaluate(()=>{
+      const inputs=[...document.querySelectorAll('input,textarea,select')]
+        .filter(e=>/choices|field.*name|field.*label/i.test(e.name||''))
+        .map(e=>({tag:e.tagName,name:e.name,value:String(e.value||'').slice(0,280),
+          hidden:!!e.closest('[hidden],.acf-hidden')}))
+        .slice(0,55);
+      return {title:document.title,
+        rows:[...document.querySelectorAll('.acf-field-object')].map(e=>({
+          id:e.id,key:e.dataset.key,name:e.querySelector('.acf-field-name')?.textContent?.trim(),
+          label:e.querySelector('.acf-field-label')?.textContent?.trim(),
+          summary:e.textContent?.trim().slice(0,140)
+        })).slice(0,25),
+        inputs};
+    });
+    console.log('PSE_NEWS_ACF_ROUTE_FIELD_EDITOR='+JSON.stringify(fieldAudit));
+
   }
   if(apply){
     const saved=[];let published=false;
