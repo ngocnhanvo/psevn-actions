@@ -1,0 +1,36 @@
+name: PSE single original fertilizer native Product/Media pilot (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-product-pilot-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-original-product-import
+  cancel-in-progress: false
+jobs:
+  wordpress:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-product-pilot.mjs && node scripts/pse-product-pilot.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-source-verified-organic-product-pilot
+          path: artifacts/pse-product-pilot/manifest.json
+          retention-days: 14
+          if-no-files-found: warn
