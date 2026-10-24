@@ -1,0 +1,1 @@
+Read-only preflight verifies 10 native WordPress Page menu item IDs and stale Menu Manager metadata before any native save. No changes or build.
