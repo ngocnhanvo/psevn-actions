@@ -166,10 +166,36 @@ def main():
             total += meta["size"]
             if total > 524288000:
                 raise RuntimeError("Signed image inventory too large")
+        inventory = {"images": images}
+        # The signed PHP inventory may optionally include client-only HTML,
+        # CSS, JS. Older PHP has no 'static' key: full static ZIP fallback.
+        static = result.get("static")
+        if static is not None:
+            if not isinstance(static, dict) or len(static) > 5000:
+                raise RuntimeError("Invalid signed static inventory")
+            static_bytes = 0
+            for name, meta in static.items():
+                if (not isinstance(name, str) or len(name) > 240 or name == "index.html"
+                    or not re.search(r"\.(?:html|css|js)$", name)):
+                    raise RuntimeError("Invalid signed static asset name")
+                pieces = name.split("/")
+                if (not all(re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*", p)
+                            and p not in (".", "..") for p in pieces)
+                    or not isinstance(meta, dict) or type(meta.get("size")) is not int
+                    or meta["size"] < 0 or meta["size"] > 26214400
+                    or not isinstance(meta.get("sha256"), str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", meta["sha256"])):
+                    raise RuntimeError("Invalid signed static asset digest")
+                static_bytes += meta["size"]
+                if static_bytes > 104857600:
+                    raise RuntimeError("Signed static inventory too large")
+            inventory["static"] = static
+            print("PSE_STATIC_DELTA_REMOTE_FILES=%d remote_bytes=%d" %
+                  (len(static), static_bytes))
         target_file = Path("source/.pse-remote-image-manifest.json")
         if not target_file.parent.is_dir():
             raise RuntimeError("Expected checked-out production source directory")
-        target_file.write_text(json.dumps({"images": images}, sort_keys=True),
+        target_file.write_text(json.dumps(inventory, sort_keys=True),
                                encoding="utf-8")
         print("PSE_IMAGE_DELTA_REMOTE_IMAGES=%d remote_bytes=%d" % (len(images), total))
         return

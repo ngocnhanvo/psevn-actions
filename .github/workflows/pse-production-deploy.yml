@@ -305,10 +305,12 @@ jobs:
           test ! -e deploy/.env
           test -s deploy/server/entry.mjs
           test -s deploy/client/index.html
-          # All other deploy files remain in the full ZIP. Only unchanged
-          # hashed images can be omitted; PHP revalidates and restores them
-          # inside the staging directory before atomic activation.
+          # Image and public static reuse only remove bytes from the ZIP
+          # after a signed PHP inventory proves both hash and size unchanged.
+          # server/ SSR, index.html and SEO files remain in every release.
+          # PHP restores every reused byte into verified staging BEFORE swap.
           python3 ../actions-hub/scripts/pse-image-delta-package.py
+          python3 ../actions-hub/scripts/pse-static-delta-package.py
           cd deploy
           zip -q -r ../upload/pse-astro.zip .
           cd ..
@@ -342,6 +344,16 @@ jobs:
                   for name in image_delta['reuse']:
                       if not isinstance(name,str) or 'client/images/'+name in names or name not in image_delta['files']:
                           raise RuntimeError('Reused image was improperly uploaded')
+              if 'pse-static-delta.json' in names:
+                  static_delta=json.loads(z.read('pse-static-delta.json'))
+                  if (static_delta.get('format')!=1 or
+                      not isinstance(static_delta.get('reuse'),list) or
+                      not isinstance(static_delta.get('files'),dict)):
+                      raise RuntimeError('Malformed static delta ZIP marker')
+                  for name in static_delta['reuse']:
+                      if (not isinstance(name,str) or name=='index.html' or
+                          'client/'+name in names or name not in static_delta['files']):
+                          raise RuntimeError('Reused static file was improperly uploaded')
               meta=json.loads(z.read('pse-staging-build.json'))
               if meta.get('branch')!='master' or meta.get('commit')!=os.environ['PSE_DEPLOY_COMMIT'] or meta.get('sitemap_revision')!=state['revision']:
                   raise RuntimeError('Archive revision marker mismatch')
