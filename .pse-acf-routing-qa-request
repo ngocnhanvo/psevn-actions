@@ -1,0 +1,5 @@
+PSE_POST_ACF_QA_ONLY_REQUEST=2026-10-24
+VERIFY_COMMIT=d63ab0128145e16b7fd947a2eeca146d6c447a85
+TARGET=WordPress post ACF action PostDetails and key ssr-post
+NO_FTP=true
+NO_ASTRO_BUILD=true

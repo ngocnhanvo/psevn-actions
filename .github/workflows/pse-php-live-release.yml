@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .pse-php-live-release-request
+      - .pse-acf-routing-qa-request
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +13,12 @@ concurrency:
   cancel-in-progress: false
 jobs:
   wordpress-php:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    # QA marker never uploads PHP.
+    if: >-
+      ${{ github.repository == 'ngocnhanvo/psevn-actions' &&
+          !(github.event_name == 'push' &&
+            (contains(github.event.head_commit.added, '.pse-acf-routing-qa-request') ||
+             contains(github.event.head_commit.modified, '.pse-acf-routing-qa-request'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -98,7 +104,14 @@ jobs:
 
   acf-routing-readonly-qa:
     needs: wordpress-php
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    # QA-only request allows this read-only job when the FTP job was skipped.
+    if: >-
+      ${{ always() && github.repository == 'ngocnhanvo/psevn-actions' &&
+          (needs.wordpress-php.result == 'success' ||
+            (needs.wordpress-php.result == 'skipped' &&
+             github.event_name == 'push' &&
+             (contains(github.event.head_commit.added, '.pse-acf-routing-qa-request') ||
+              contains(github.event.head_commit.modified, '.pse-acf-routing-qa-request')))) }}
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble
@@ -115,6 +128,7 @@ jobs:
       - name: Install pinned Chromium JS driver
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Verify post routing ACF defaults without changing WordPress content
+        shell: bash
         run: |
           set -euo pipefail
           node --check scripts/pse-acf-post-defaults-verify.mjs
