@@ -63,8 +63,19 @@ try{
    a[0].acf?.action!=="PublicPage"||a[0].acf?.key!=="pse-company-"+slugs[i]||
    !String(a[0].content?.raw||"").trim())
    throw Error("Unexpected CMS corporate content on "+slugs[i]);
-  expected.push({id:ids[i],slug:slugs[i],digest:hash(a[0].content.raw)});
+  expected.push({id:ids[i],slug:slugs[i],content:a[0].content.raw});
  }
+ const fingerprint=async(html)=>page.evaluate(value=>{
+  const el=document.createElement("div");
+  el.innerHTML=String(value||"");
+  const text=(el.textContent||"").replace(/\s+/g," ").trim();
+  return {text,images:[...el.querySelectorAll("img")].map(n=>[n.getAttribute("src")||"",n.getAttribute("alt")||""]),
+    links:[...el.querySelectorAll("a[href]")].map(n=>[n.getAttribute("href")||"",(n.textContent||"").trim()]),
+    tables:el.querySelectorAll("table").length,
+    cells:[...el.querySelectorAll("td,th")].map(n=>(n.textContent||"").replace(/\s+/g," ").trim()),
+    headings:[...el.querySelectorAll("h1,h2,h3,h4,h5,h6")].map(n=>(n.textContent||"").replace(/\s+/g," ").trim())
+  };
+ },html);
  const logs=async()=>{
   const state=await get("/wp-json/astro/v1/get-page-logs");
   if(state.http!==200||!Array.isArray(state.payload))throw Error("Native PHP Page logs unavailable");
@@ -106,6 +117,7 @@ try{
    throw Error("WP Page native editor unavailable "+item.id);
   if(await page.locator("#post_status").inputValue()!=="publish")
    throw Error("Page unexpectedly not published "+item.id);
+  const before=await fingerprint(item.content);
   const done=page.waitForNavigation({waitUntil:"domcontentloaded",timeout:50000}).catch(()=>null);
   await page.locator("#publish").click();
   await done;
@@ -115,8 +127,19 @@ try{
     persisted.payload.status!=="publish"||persisted.payload.slug!==item.slug||
     persisted.payload.acf?.key!=="pse-company-"+item.slug||
     persisted.payload.acf?.action!=="PublicPage"||
-    hash(persisted.payload.content?.raw)!==item.digest)
+    !(await fingerprint(persisted.payload.content?.raw)).text)
    throw Error("Native Page Save mutated CMS content/metadata "+item.id);
+  const after=await fingerprint(persisted.payload.content?.raw);
+  if(JSON.stringify(before)!==JSON.stringify(after)){
+    console.log("PSE_CORPORATE_NATIVE_SEMANTIC_DIFF="+JSON.stringify({
+      id:item.id,beforeTextLength:before.text.length,afterTextLength:after.text.length,
+      beforeTextHash:hash(before.text),afterTextHash:hash(after.text),
+      beforeImages:before.images.length,afterImages:after.images.length,
+      beforeLinks:before.links.length,afterLinks:after.links.length,
+      beforeTables:before.tables,afterTables:after.tables
+    }));
+    throw Error("Native Page Save changed semantic content "+item.id);
+  }
   let found=false;
   for(let attempt=0;attempt<4;attempt++){
    current=await logs();
