@@ -38,12 +38,14 @@ try{
       contains2025:details.some(x=>x.includes("Tầm nhìn đến 2025")),
       missionReal:details.some(x=>x.includes("Sản xuất, kinh doanh, phân phối phân bón")),
       images,hidden,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2,
-      nestedScroll,legacyTable:!!main?.querySelector("table"),shortcodeVisible:(main?.textContent||"").includes("[table id=pse_vision_vi"),links:section?.querySelectorAll('nav a[href^="#pse-"]').length||0};
+      nestedScroll,legacyTable:!!main?.querySelector("table"),shortcodeVisible:(main?.textContent||"").includes("[table id=pse_vision_vi"),
+      repeatedIntro:!!section?.querySelector(".pse-vision__intro"),links:section?.querySelectorAll('nav a[href^="#pse-"]').length||0};
    });
    const valid=res?.status()===200&&scan.h1===1&&scan.section&&scan.items===2&&
      JSON.stringify(scan.headings)===JSON.stringify(["Sứ mệnh","Tầm nhìn"])&&
      scan.contains2025&&scan.missionReal&&scan.images.every(x=>x.loaded&&x.alt&&x.visible)&&
-     scan.hidden===0&&!scan.overflow&&scan.nestedScroll.length===0&&!scan.legacyTable&&!scan.shortcodeVisible&&scan.links===2;
+     scan.hidden===0&&!scan.overflow&&scan.nestedScroll.length===0&&!scan.legacyTable&&
+     !scan.shortcodeVisible&&!scan.repeatedIntro&&scan.links===0;
    console.log("PSE_VISION_LIVE_QA="+JSON.stringify({width,http:res?.status(),...scan,ok:valid}));
    if(!valid)fails.push(width);
    if(res?.status()===200)await page.screenshot({path:"artifacts/pse-vision/vision-"+width+".png",fullPage:true});
