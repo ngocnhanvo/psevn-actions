@@ -38,3 +38,5 @@ PSE company PublicPage related menu sibling navigation 2026-10-24: Astro github 
 2026-10-24 G7 final mobile table nested fix Astro github e4777aa677b3643bc9672eb399b38e6d4964a2a6, after original CI #40092446414 PASS 363 tests and 19/20 live page layout, CSS probe #40093236403 proves nestedFixed 422->350px with no scroll. Run existing NO BUILD tests + Astro parser before merge; no duplicate WordPress build.
 
 2026-10-24 G8 Achievements cards: Astro github 1fd1cb8e90e0daee401d91f271b6e7b9ac08f0de; strict data-preserving conversion of verified WP nested achievements table (8 awards, years 2026-2008) to accessible responsive cards with media, years, list descriptions and click-through photo. Keep all unrelated PublicPage, SEO, SSR/cache stable. Test Vitest + Astro parser NO BUILD, no FTP.
+
+2026-10-24 G8 ESC Table migration isolated component: Astro github d6868ce20c85964d66d88b0c204f84bcadfe57d2; tests readPseAwards contract, parses Pse_awards.astro; NO BUILD NO FTP; CMS authoring separate runner.
