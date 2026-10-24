@@ -32,6 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          php -l source-php/pse-image-delta.php
           php -l source-php/pse-unzip.php
           php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
           node --check source-php/wp-content/plugins/github-trigger/vcs-build-trigger.js
