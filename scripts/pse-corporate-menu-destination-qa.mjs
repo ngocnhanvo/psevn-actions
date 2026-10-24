@@ -35,14 +35,14 @@ try{
       label:(a.textContent||'').trim(),
       url:a.href
     })).filter(a=>{
-      try{return new URL(a.url).pathname.replace(/^\\/|\\/$/g,'')===slug;}catch{return false}
+      try{return new URL(a.url).pathname.split('/').filter(Boolean).join('/')===slug;}catch{return false}
     }),slug);
     if(candidates.length!==1)throw Error('Missing/duplicate menu link for '+slug+': '+candidates.length);
     const href=candidates[0].url;
     if(new URL(href).origin!==base)throw Error('Menu still points outside the Astro frontend: '+slug);
-    const link=links.filter({hasText:new RegExp(candidates[0].label.replace(/[.*+?^$\{\}()|[\]\\]/g,'\\$&'))}).first();
+    const link=panel.getByRole('link',{name:candidates[0].label,exact:true});
     await Promise.all([
-      page.waitForURL(u=>u.pathname.replace(/^\\/|\\/$/g,'')===slug,{timeout:20000}),
+      page.waitForURL(u=>u.pathname.split('/').filter(Boolean).join('/')===slug,{timeout:20000}),
       link.click(),
     ]);
     const result=await page.evaluate(()=>({
