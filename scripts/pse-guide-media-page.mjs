@@ -113,7 +113,7 @@ try{
   if(item.http!==200||item.data.mime_type!=="application/pdf")throw Error("WordPress PDF media mismatch "+f.name);
   // Some WordPress Media REST plugins omit source_url for PDFs. Rebuild only
   // from verified WordPress-owned metadata, exactly like the Product image importer.
-  const nativeFile=String(item.data.media_details?.file||"").replace(/^\\/+/, "");
+  const nativeFile=String(item.data.media_details?.file||"").replace(new RegExp("^/+"), "");
   const candidateUrls=[item.data.source_url,item.data.guid?.rendered];
   if(nativeFile&&nativeFile.split("/").every(part=>/^[A-Za-z0-9._-]+$/.test(part))&&nativeFile.split("/").at(-1)===f.filename)
     candidateUrls.push(origin+"/wp-content/uploads/"+nativeFile);
