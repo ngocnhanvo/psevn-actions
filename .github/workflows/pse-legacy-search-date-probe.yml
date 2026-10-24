@@ -1,0 +1,23 @@
+name: PSE Joomla search article-date proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pse-legacy-search-date-probe.yml'
+      - 'scripts/pse-legacy-search-date.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  read-only-search-probe:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-legacy-search-date.mjs
+      - run: node scripts/pse-legacy-search-date.mjs --probe
