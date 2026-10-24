@@ -45,7 +45,7 @@ try{
         hrefAttribute:a.getAttribute('href')
       })));
       console.log('PSE_CORPORATE_MENU_OBSERVED='+JSON.stringify({width,slug,links:discovered}));
-      const wpLine=String(process.env.ENV_FILE||'').split(/\\r?\\n/)
+      const wpLine=String(process.env.ENV_FILE||'').split(String.fromCharCode(10))
         .map(x=>x.trim()).find(x=>x.startsWith('WC_URL='));
       if(wpLine){
         const wp=new URL(wpLine.slice('WC_URL='.length).replace(/^['"]|['"]$/g,''));
