@@ -1,0 +1,21 @@
+name: PSE original WP taxonomy count versus lang-filter listing (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-post-lang-diagnostic-trigger]
+permissions:
+  contents: read
+jobs:
+  compare:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --check scripts/pse-post-lang-diagnostic.mjs && node scripts/pse-post-lang-diagnostic.mjs
