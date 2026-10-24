@@ -57,3 +57,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25: confirm PSE Contact Page uses PSE Header/Footer and no template FooterSection, parser, no Astro build.
 
 2026-10-25 verify PSE Contact shell + no duplicate news category breadcrumb on source latest, NO BUILD.
+
+2026-10-25: regression native WordPress Posts archive must omit broken legacy lang filter for numeric category and all published; legacy PHP slug listing unchanged; no build.
