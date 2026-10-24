@@ -143,6 +143,17 @@ jobs:
         working-directory: source
         run: |
           set -euo pipefail
+          # Fresh GitHub runners install lftp on every run. Start that install
+          # alongside pnpm/Astro rather than serializing it after packaging.
+          # Deployment remains blocked until install succeeds and lftp exists.
+          ftps_install_pid=""
+          if ! command -v lftp >/dev/null 2>&1; then
+            (
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq --no-install-recommends lftp
+            ) > "$RUNNER_TEMP/pse-lftp-install.log" 2>&1 &
+            ftps_install_pid=$!
+          fi
           # Restore verified pnpm store where available; recreate dependencies
           # from the exact lockfile on every run. Cache miss is still safe.
           pnpm install --frozen-lockfile --prefer-offline
@@ -160,6 +171,14 @@ jobs:
             echo "::error::Compiled server does not contain expected WordPress SSR routes"
             exit 1
           fi
+          if [[ -n "$ftps_install_pid" ]]; then
+            if ! wait "$ftps_install_pid"; then
+              cat "$RUNNER_TEMP/pse-lftp-install.log"
+              echo "::error::Unable to prepare encrypted FTPS client"
+              exit 1
+            fi
+          fi
+          command -v lftp >/dev/null 2>&1 || { echo "::error::Missing encrypted FTPS client"; exit 1; }
           echo "Build source SHA: $(git rev-parse HEAD) (master)" >> "$GITHUB_STEP_SUMMARY"
       - name: Package only compiled staging output (strictly no .env)
         shell: bash
@@ -305,14 +324,6 @@ jobs:
                   if required not in names:raise RuntimeError('Missing staged bundle file: '+required)
           print('PASS: ZIP contains dev server/client and provenance, no private environment file.')
           PY
-      - name: Install encrypted FTP client
-        shell: bash
-        run: |
-          set -euo pipefail
-          if ! command -v lftp >/dev/null 2>&1; then
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq --no-install-recommends lftp
-          fi
       - name: Upload compiled staging archive by FTP-TLS
         shell: bash
         run: bash actions-hub/scripts/pse-resumable-ftp.sh
