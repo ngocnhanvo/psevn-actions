@@ -114,6 +114,21 @@ try {
         inputs};
     });
     console.log('PSE_NEWS_ACF_ROUTE_FIELD_EDITOR='+JSON.stringify(fieldAudit));
+
+    const actionAudit=await page.evaluate(()=>({
+      forms:[...document.querySelectorAll('form')].map(x=>({
+        id:x.id,action:(()=>{try{return new URL(x.action).pathname}catch{return ''}})(),
+        method:x.method,buttons:[...x.querySelectorAll('input[type=submit],button[type=submit],button.button-primary')]
+        .slice(0,12).map(b=>({tag:b.tagName,id:b.id,name:b.name||'',
+          type:b.type,value:String(b.value||b.textContent||'').trim().slice(0,75),hidden:!b.getClientRects().length}))
+      })).filter(x=>/post|acf|field/i.test(x.id||'')||x.buttons.length),
+      actionButtons:[...document.querySelectorAll('button,input[type=submit]')]
+       .filter(b=>/update|save|cập nhật|lưu|đăng/i.test(String(b.textContent||b.value||'')))
+       .slice(0,25).map(b=>({id:b.id,name:b.name||'',text:String(b.textContent||b.value||'').trim().slice(0,75),
+         visible:!!b.getClientRects().length}))
+    }));
+    console.log('PSE_NEWS_ACF_NATIVE_SAVE_CONTROLS='+JSON.stringify(actionAudit));
+
     const saveChoice=event.head_commit?.message==='cms(pse): allow Rewrite in WordPress URL routing ACF';
     if(saveChoice){
       const selector='textarea[name="acf_fields[53510][choices]"]';
