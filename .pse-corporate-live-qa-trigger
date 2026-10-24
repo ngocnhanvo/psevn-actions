@@ -10,3 +10,4 @@ Check exactly ten published routes, header/breadcrumb/footer, no Joomla sidebar/
 
 2026-10-24 G3 diagnostic read-only: latest release #40074078655 PASS but zero compiled redirect route rules, native WP has archive Page 77030 plus 8 published redirects. QA now includes six representative archive URL checks at 390px and 1440px, in addition to original corporate regression; do not write WP, trigger Joomla queue or build.
 PSE G3/G4 live QA after 40082015151: validated G4 signed deploy commit b8a8d3d, check corporate/news/post detail on mobile and desktop without writes.
+2026-10-24 read-only G4 article route regression after WordPress approved signed deployment Astro 53e4e4af0f412a396524a368ded8232ffc213f8d. Test 3 real WordPress post links on desktop/mobile, no G2/G3 repeats, no CMS writes or build.
