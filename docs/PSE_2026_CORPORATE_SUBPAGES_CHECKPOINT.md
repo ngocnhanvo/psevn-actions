@@ -1,0 +1,22 @@
+# PSE.VN corporate subpages — implementation checkpoint (2026-10-24)
+
+**Scope:** exactly `ngocnhanvo/psevn-astro` (`github` DEV, `master` PROD), `ngocnhanvo/psevn-php` (`master`), `ngocnhanvo/psevn-actions` (`main`). **Code mode:** auto-build.
+
+## Verified PASS (do not repeat)
+
+1. Read `ngocnhanvo/knowledge/main` AGENTS and CORE-01–08, WordPress/Actions/ESC Table/Playwright/build rules.
+2. Full-width CMS-driven subpage code, Breadcrumbs and no legacy Joomla sidebar: Astro PR [#16](https://github.com/ngocnhanvo/psevn-astro/pull/16) merged `df289610ba86a779a7ecac72125c0a8e96f90a81`; `github` and `master` synchronized. Independent regression [#40065118642](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40065118642): 73 files / 336 tests PASS, Astro component parser PASS. No independent Astro build.
+3. Original Joomla corporate Page menu/article inventory 10/10 source pages: [#40065525595](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40065525595) PASS. `.item-page [itemprop=articleBody]` is the isolated source: exclude Joomla sidebar and 'Các bài viết khác'.
+4. WordPress Page import dry-run 10/10 PASS [#40065932504](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40065932504). First apply imported six text Pages, four image Pages failed due empty/non-HTTPS Media URL; corrected in idempotent script. Final draft import [#40066418509](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40066418509) PASS 10/10, four newly imported, six preverified drafts skipped. 13 authentic images across four Pages are WordPress Media-owned; original SHA-256 verified.
+5. Read-only publish preflight [#40066813809](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40066813809) PASS 10/10 Page action/key, status, content, image count/host, menu references. **Publication** [#40066911844](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40066911844) PASS: 10/10 Pages published; 10 native WordPress MenuTop / Header items converted from old external Joomla URLs to Page links via WordPress REST. Zero error; no rollback needed. Exact Page IDs: `thong-diep=79270`, `hoi-dong-quan-tri=79271`, `ban-kiem-soat=79272`, `ban-giam-doc=79273`, `so-do-to-chuc=79300`, `qua-trinh-hinh-thanh-phat-trien=79301`, `tam-nhin-su-menh=79303`, `dinh-huong-phat-trien=79278`, `nganh-nghe-kinh-doanh=79279`, `thanh-tuu=79311`. All 10 menu item IDs `76985–76994` verified. Existing other menu branches untouched.
+6. Following completion, import and publish workflows were returned to **read-only mode** by Actions commit `e8e05e77b8ca6ad56e6862de0b0358544231e5de`; do not rerun successful data writes.
+7. Existing serialized Joomla **POST** migration worker is separate and remained running; no duplicate job initiated.
+
+## Current unresolved phase: WordPress PHP-controlled frontend build and live QA
+
+- Exactly one existing WordPress Build Website request was triggered through the authorized `pse-wordpress-build-request.yml` workflow via marker commit `33ef6a8d864da60eaaa3b7526d2f12ee7e95a190`, [run #40067127652](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40067127652). **Status when checkpoint written: queued / unknown final conclusion.** Check actual run, PHP pending changes/lock and downstream signed Astro deploy. Never force, dispatch Astro build directly, or reissue a duplicate request.
+- **LIVE_QA_NOT_TESTED:** once the deploy actually succeeds, run existing new browser QA in Actions `scripts/pse-corporate-live-qa.mjs` via a **single commit** to `.pse-corporate-live-qa-trigger`. It checks 10 routes at 390px and 1440px, H1, breadcrumbs, WordPress menu-derived header/footer, no Joomla sidebar/related chrome/horizontal overflow/broken media; retains full-page screenshots for three representative Pages. QA workflow: `.github/workflows/pse-corporate-live-qa.yml` (already committed; do not recreate).
+- On PASS report `PUBLISHED_CMS=PASS`, `DEPLOYED_FRONTEND=PASS`, `VISUAL_QA=PASS` separately. On FAIL inspect exact route and DOM/screenshot, fix only source of failure, rerun affected test, then normal PHP Build Website if changed CMS data; do not bypass release pipeline.
+- Project subpage plan: `ngocnhanvo/psevn-astro/docs/design/PSE_2026_SUBPAGES_IMPLEMENTATION_PLAN.md`. Continue category/news subpages and remaining Joomla POST migration as separate workstreams; corporate pages alone do NOT imply overall website parity.
+
+**Chế độ code: auto-build**
