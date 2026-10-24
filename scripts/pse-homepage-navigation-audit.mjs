@@ -95,7 +95,7 @@ try {
     throw Error('Cannot inspect existing WordPress native URL routing records');
   console.log('PSE_NEWS_ARCHIVE_REDIRECT_PREFLIGHT='+JSON.stringify({
     total:redirects.payload.length,
-    matching:redirects.payload.filter(x=>/tin-tuc-su-kien|ssr\\/posts/i.test(
+    matching:redirects.payload.filter(x=>/tin-tuc-su-kien|ssr\/posts/i.test(
       String(x.acf?.from_link||'')+' '+String(x.acf?.to_link||'')
     )).map(x=>({id:x.id,status:x.status,from:x.acf?.from_link,to:x.acf?.to_link,
       type:x.acf?.type,match_type:x.acf?.match_type,enable:x.acf?.enable}))
