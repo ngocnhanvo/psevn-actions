@@ -83,6 +83,23 @@ try {
     id:c.id,slug:c.slug,name:c.name,parent:c.parent,count:c.count,
     description:String(c.description||'').slice(0,100)
   }))));
+  const archive=await json('/wp-json/wp/v2/pages/77030?context=edit&_fields=id,status,slug,title,acf,content');
+  if(archive.status!==200)throw Error('Cannot inspect WordPress news archive Page #77030');
+  console.log('PSE_NEWS_ARCHIVE_PAGE_PREFLIGHT='+JSON.stringify({
+    id:archive.payload.id,slug:archive.payload.slug,status:archive.payload.status,
+    action:archive.payload.acf?.action,key:archive.payload.acf?.key,
+    contentLength:String(archive.payload.content?.raw||'').trim().length
+  }));
+  const redirects=await json('/wp-json/wp/v2/chuyen-huong-link?status=any&context=edit&per_page=100&_fields=id,status,acf,title');
+  if(redirects.status!==200||!Array.isArray(redirects.payload))
+    throw Error('Cannot inspect existing WordPress native URL routing records');
+  console.log('PSE_NEWS_ARCHIVE_REDIRECT_PREFLIGHT='+JSON.stringify({
+    total:redirects.payload.length,
+    matching:redirects.payload.filter(x=>/tin-tuc-su-kien|ssr\\/posts/i.test(
+      String(x.acf?.from_link||'')+' '+String(x.acf?.to_link||'')
+    )).map(x=>({id:x.id,status:x.status,from:x.acf?.from_link,to:x.acf?.to_link,
+      type:x.acf?.type,match_type:x.acf?.match_type,enable:x.acf?.enable}))
+  }));
   const news=await json('/wp-json/wp/v2/posts?status=publish&per_page=5&orderby=date&order=desc&_fields=id,slug,date,categories');
   if(news.status!==200||!Array.isArray(news.payload))throw Error('Cannot inspect published WordPress news sample');
   console.log('PSE_SUBPAGE_PUBLISHED_POST_SAMPLE='+JSON.stringify(news.payload));
