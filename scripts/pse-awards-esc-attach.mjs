@@ -121,10 +121,14 @@ try{
  if(JSON.stringify(tokens)!==JSON.stringify([tableId])||inserted.includes("Table_01")||
    !inserted.startsWith(editor.before)||!inserted.endsWith(editor.after)||
    inserted.slice(editor.before.length,inserted.length-editor.after.length).trim()!==shortcode) {
+   const middle=inserted.slice(editor.before.length,inserted.length-editor.after.length);
    console.log("PSE_AWARDS_ESC_ATTACH_INSERT_DIAGNOSTIC="+JSON.stringify({
       shortcodeCount:tokens.length,oldStillExists:inserted.includes("Table_01"),
       beforePreserved:inserted.startsWith(editor.before),
-      afterPreserved:inserted.endsWith(editor.after),oldLength:editor.oldLength,newLength:inserted.length
+      afterPreserved:inserted.endsWith(editor.after),oldLength:editor.oldLength,newLength:inserted.length,
+      beforeLength:editor.before.length,afterLength:editor.after.length,
+      middleLength:middle.length,middlePreview:middle.slice(0,320),middleTail:middle.slice(-320),
+      expectedShortcode:shortcode
    }));
    throw Error("Native Insert Code did not precisely replace legacy award table; Page not saved");
  }
