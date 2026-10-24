@@ -1,8 +1,72 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 10,
+  "runs": 11,
   "records": {
+    "1469": {
+      "wp_id": 77859,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-06-25",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1470": {
+      "wp_id": 77378,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-06-27",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1472": {
+      "wp_id": 77850,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-06-29",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1473": {
+      "wp_id": 77372,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-06-29",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1474": {
+      "wp_id": 77367,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-07-02",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1476": {
+      "wp_id": 77359,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-07-14",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1479": {
+      "wp_id": 77351,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-07-15",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1481": {
+      "wp_id": 77836,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2021-09-07",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
     "1485": {
       "wp_id": 77825,
       "attempts": 1,
