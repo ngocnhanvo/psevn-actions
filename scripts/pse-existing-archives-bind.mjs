@@ -29,4 +29,19 @@ try{
   if(saved.http!==200||saved.data.url!==target)throw Error("Menu not persisted "+sp.slug);
   console.log("PSE_EXISTING_ARCHIVE_MENU=PASS; id="+sp.id+"; category="+sp.slug+"; posts="+category.data[0].count+"; no_posts_mutated=true");
  }
+ const home=await api("/wp-json/wp/v2/pages/248?context=edit&_fields=id,slug,status,acf");
+ if(home.http!==200||home.data?.id!==248||home.data.status!=="publish"||home.data.acf?.action!=="HomePage"||home.data.acf?.key!=="home")throw Error("PSE WordPress homepage identity changed");
+ const item=await api("/wp-json/wp/v2/menu-items/76983?context=edit");
+ if(item.http!==200||item.data?.id!==76983||Number(item.data.parent)!==0||String(item.data.title?.raw||item.data.title?.rendered||"").trim()!=="TRANG CHỦ")throw Error("Original homepage menu identity changed");
+ const old=item.data.url||"";
+ const dest=env.WC_URL_CLIENT+"/";
+ if(old!==dest){
+  const source=new URL(old);
+  if(item.data.type!=="custom"||source.href!=="https://www.pse.vn/")throw Error("Homepage menu no longer has verified original URL");
+  const saved=await api("/wp-json/wp/v2/menu-items/76983","POST",{type:"custom",url:dest});
+  if(saved.http!==200||saved.data?.url!==dest)throw Error("Homepage menu Save failed");
+  const read=await api("/wp-json/wp/v2/menu-items/76983?context=edit");
+  if(read.http!==200||read.data.url!==dest)throw Error("Homepage menu readback mismatch");
+  console.log("PSE_HOMEPAGE_MENU=PASS; native_page=248; item=76983; frontend_origin=true");
+ }else console.log("PSE_HOMEPAGE_MENU=ALREADY_DONE; no_write=true");
 }finally{await b.close()}
