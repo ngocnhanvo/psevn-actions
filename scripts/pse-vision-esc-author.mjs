@@ -53,7 +53,11 @@ try{
   existing.data.items?.length===2&&existing.data.items.every((x,i)=>x.title===extracted[i].title&&
    x.details===extracted[i].details&&/<img\b[^>]*alt=["'][^"']+["']/i.test(x.img||""));
  if(same){console.log("PSE_VISION_ESC_AUTHOR=ALREADY_DONE; no_write=true");process.exit(0)}
- if(existing.http!==404)throw Error("ESC Table exists but not verified, refuse overwrite HTTP "+existing.http);
+ const recoverBlank=existing.http===200&&existing.data?.id===tableId&&
+ existing.data.fields?.length===3&&existing.data.fields.every(x=>!String(x.key||"").trim())&&
+ existing.data.items?.length===2&&existing.data.items.every(x=>Object.values(x).every(v=>!String(v||"").trim()));
+ if(existing.http!==404&&!recoverBlank)throw Error("Existing ESC Table is not a safe blank recovery candidate: HTTP "+existing.http);
+ if(recoverBlank)console.log("PSE_VISION_RECOVER_EMPTY_TABLE=true");
  const media=await api("/wp-json/wp/v2/media?context=edit&search=pse-corp-tam-nhin-su-menh&per_page=40");
  if(media.http!==200||!Array.isArray(media.data))throw Error("Source media inventory unavailable");
  const images=extracted.map((x,i)=>{
@@ -67,7 +71,7 @@ try{
    id:pageId,slug:record.data.slug,modified:record.data.modified,acf:record.data.acf,
    original:raw,sha256:hash(raw),items:extracted,images,readBeforeWrite:true
  },null,2)+"\n");
- await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:65000});
+ if(!recoverBlank){await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:65000});
  await page.locator('input[name="table[name]"]').fill("PSE - Tầm nhìn và Sứ mệnh");
  await page.locator('textarea[name="table[description]"]').fill("Hai mục chỉnh sửa và hoán đổi độc lập qua ESC Table: tiêu đề, hình ảnh Insert Image và nội dung Advanced Editor.");
  const sizes=page.locator('input[type="number"]');
@@ -78,8 +82,7 @@ try{
  await page.locator("#table-id").fill(tableId);
  await page.locator("#table-name").focus();
  await page.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
- await page.waitForTimeout(1500);
- await page.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
+ await page.waitForTimeout(1500);\n }\n await page.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
  await page.waitForFunction(()=>Array.isArray(window.tp?.table?.data)&&typeof window.tp.callbacks?.advanced_editor?.open_dialog==="function"&&typeof window.tp.callbacks?.insert_image?.open_dialog==="function",null,{timeout:24000});
  const blank=await page.evaluate(()=>({id:window.tp.table.id,data:window.tp.table.data}));
  if(blank.id!==tableId||blank.data.length!==4||blank.data.some(r=>r.length!==3||r.some(v=>String(v||"").trim())))throw Error("ESC grid not blank/4x3");
@@ -111,6 +114,7 @@ try{
   if(await button.isDisabled())throw Error("Insert Image button disabled");
   await button.click();
   await page.locator(".media-modal").waitFor({state:"hidden",timeout:18000});
+  await page.waitForFunction(()=>String(document.querySelector("#textarea-insert-helper")?.value||"").includes("<img"),null,{timeout:15000}).catch(()=>null);
   const html=await page.evaluate(row=>{
    const tp=window.tp,helper=document.querySelector("#textarea-insert-helper");const s=String(helper?.value||"");
    if(/^<img\b/i.test(s)&&!String(tp.table.data[row][1]||"").includes("<img")){
@@ -119,7 +123,7 @@ try{
    }
    return String(tp.table.data[row][1]||"");
   },row);
-  if(!/<img\b/i.test(html)||!html.includes("/"+asset.name)||!/\balt=["'][^"']+["']/i.test(html))throw Error("Insert Image failed row "+i+" cell="+html.slice(0,150));
+  if(!/<img\b/i.test(html)||!html.includes("/"+asset.name)||!/\balt=["'][^"']+["']/i.test(html)){const helper=await page.evaluate(()=>String(document.querySelector("#textarea-insert-helper")?.value||"").slice(0,400));console.log("PSE_VISION_MEDIA_DIAG="+JSON.stringify({row,html,helper}));throw Error("Insert Image failed row "+i);}
   console.log("PSE_VISION_NATIVE_IMAGE="+JSON.stringify({row,i,title:item.title,mediaId:asset.id,alt:true}));
  }
  const draft=await page.evaluate(()=>window.tp.table.data.map(r=>[...r]));
