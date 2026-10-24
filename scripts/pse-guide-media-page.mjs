@@ -111,15 +111,26 @@ try{
   }
   const item=await api("/wp-json/wp/v2/media/"+id+"?context=edit");
   if(item.http!==200||item.data.mime_type!=="application/pdf")throw Error("WordPress PDF media mismatch "+f.name);
-  const location=String(item.data.source_url||"");
-  let u;try{u=new URL(location)}catch{throw Error("WordPress PDF media URL invalid "+f.name)}
-  if(u.hostname!==cms.hostname||!u.pathname.startsWith("/wp-content/uploads/")||!u.pathname.endsWith("/"+f.filename))throw Error("PDF WordPress URL unexpected "+f.name);
-  u.protocol="https:";
-  const downloaded=await ctx.request.get(u.href,{timeout:65000});
-  if(!downloaded.ok()||sha(await downloaded.body())!==f.sha256)throw Error("Native PDF checksum invalid "+f.name);
-  const edited=await api("/wp-json/wp/v2/media/"+id,"POST",{title:f.label,alt_text:""});
+  // Some WordPress Media REST plugins omit source_url for PDFs. Rebuild only
+  // from verified WordPress-owned metadata, exactly like the Product image importer.
+  const nativeFile=String(item.data.media_details?.file||"").replace(/^\\/+/, "");
+  const candidateUrls=[item.data.source_url,item.data.guid?.rendered];
+  if(nativeFile&&nativeFile.split("/").every(part=>/^[A-Za-z0-9._-]+$/.test(part))&&nativeFile.split("/").at(-1)===f.filename)
+    candidateUrls.push(origin+"/wp-content/uploads/"+nativeFile);
+  let pdfUrl="";
+  for(const rawUrl of candidateUrls.filter(Boolean)){
+    let uri;try{uri=new URL(String(rawUrl),origin)}catch{continue}
+    if(uri.hostname!==cms.hostname||!uri.pathname.startsWith("/wp-content/uploads/")||!uri.pathname.endsWith("/"+f.filename))continue;
+    uri.protocol="https:";
+    try{
+      const downloaded=await ctx.request.get(uri.href,{timeout:65000});
+      if(downloaded.ok()&&sha(await downloaded.body())===f.sha256){pdfUrl=uri.href;break}
+    }catch{}
+  }
+  if(!pdfUrl)throw Error("WordPress Media PDF URL or SHA mismatch "+f.name);
+  const edited=await api("/wp-json/wp/v2/media/"+id,"POST",{title:f.label});
   if(edited.http!==200)throw Error("Native PDF label update refused "+f.label);
-  f.id=id;f.nativeUrl=u.href;mapped.push({label:f.label,url:u.href});
+  f.id=id;f.nativeUrl=pdfUrl;mapped.push({label:f.label,url:pdfUrl});
   console.log("PSE_MANUALS_MEDIA_VERIFIED="+JSON.stringify({label:f.label,id,sha256:f.sha256,bytes:f.bytes}));
  }
  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
