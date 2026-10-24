@@ -41,3 +41,5 @@ PSE company PublicPage related menu sibling navigation 2026-10-24: Astro github 
 
 2026-10-24 G8 ESC Table migration isolated component: Astro github d6868ce20c85964d66d88b0c204f84bcadfe57d2; tests readPseAwards contract, parses Pse_awards.astro; NO BUILD NO FTP; CMS authoring separate runner.
 2026-10-24 development-direction update: psevn-astro/github 85eee036d8937465f57722db7fc67fdd38310edd. Run existing full Vitest and Astro compiler checks (NO BUILD / NO FTP).
+
+2026-10-24 PSE G10 history ESC Table native timeline: Astro github fcd908bc6970b847a3b5854c9ef4abcd412fd92d; run independent Vitest and Astro parser only, NO ASTRO BUILD.
