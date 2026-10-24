@@ -74,6 +74,18 @@ try {
     lang:String(item.acf?.product_lang?.value||item.acf?.product_lang||''),
     path:(()=>{try{return new URL(item.link).pathname}catch{return ''}})()
   })).slice(0,110)));
+  // G3 archive taxonomy inventory: use WordPress native Categories, preserve
+  // parent IDs and existing post assignments before writing any category/menu.
+  const categories=await json('/wp-json/wp/v2/categories?context=edit&per_page=100&hide_empty=false&_fields=id,slug,name,parent,count,description');
+  if(categories.status!==200||!Array.isArray(categories.payload))
+    throw Error('Cannot inspect live WordPress category taxonomy');
+  console.log('PSE_SUBPAGE_CATEGORY_INVENTORY='+JSON.stringify(categories.payload.map(c=>({
+    id:c.id,slug:c.slug,name:c.name,parent:c.parent,count:c.count,
+    description:String(c.description||'').slice(0,100)
+  }))));
+  const news=await json('/wp-json/wp/v2/posts?status=publish&per_page=5&orderby=date&order=desc&_fields=id,slug,date,categories');
+  if(news.status!==200||!Array.isArray(news.payload))throw Error('Cannot inspect published WordPress news sample');
+  console.log('PSE_SUBPAGE_PUBLISHED_POST_SAMPLE='+JSON.stringify(news.payload));
   for(const route of ['/wp-json/wp/v2/menus?context=edit&per_page=100','/wp-json/wp/v2/menu-items?context=edit&per_page=100']){
     const r=await json(route);
     console.log('PSE_NAVIGATION_CORE_REST_AUDIT='+JSON.stringify({
