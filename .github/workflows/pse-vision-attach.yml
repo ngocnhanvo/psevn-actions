@@ -1,0 +1,37 @@
+name: PSE Vision Mission native WordPress Insert Code (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-vision-attach-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-vision-attach
+  cancel-in-progress: false
+jobs:
+  attach:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_VISION_ATTACH_DRY: "${{ github.event.head_commit.message != 'feat(pse): publish native vision mission via Insert Code' && '1' || '0' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-vision-esc-attach.mjs && node scripts/pse-vision-esc-attach.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-vision-page-before-attach
+          path: artifacts/pse-vision/page-before-attach.json
+          if-no-files-found: ignore
+          retention-days: 14
