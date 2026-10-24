@@ -1,8 +1,69 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 25,
+  "runs": 26,
   "records": {
+    "326": {
+      "wp_id": 77781,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-01-03",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "327": {
+      "wp_id": 77784,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-01-03",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "345": {
+      "wp_id": 77885,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-03-14",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "361": {
+      "wp_id": 77949,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-05-03",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "362": {
+      "wp_id": 78339,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "377": {
+      "wp_id": 78099,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-07-03",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "378": {
+      "wp_id": 78079,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-07-03",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1016": {
+      "wp_id": 78123,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2014-03-12",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
     "1024": {
       "wp_id": 78089,
       "attempts": 1,
@@ -1341,5 +1402,5 @@
     }
   },
   "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
-  "last_migration_batch_observed": 177
+  "last_migration_batch_observed": 178
 }
