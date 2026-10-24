@@ -34,8 +34,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          # Only during cross-repository PR validation. Restore master after PHP merge.
-          ref: feature/pse-static-delta-20261025
+          ref: master
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: php-source
           persist-credentials: false
