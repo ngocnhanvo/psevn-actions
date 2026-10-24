@@ -1,0 +1,34 @@
+name: PSE development direction responsive QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-development-direction-live-qa-trigger
+permissions:
+  contents: read
+jobs:
+  page-qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify live development direction navigation, metrics and no nested scrolling
+        run: |
+          node --check scripts/pse-development-direction-live-qa.mjs
+          node scripts/pse-development-direction-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-development-direction-responsive
+          path: artifacts/pse-development-direction/
+          if-no-files-found: warn
+          retention-days: 7
