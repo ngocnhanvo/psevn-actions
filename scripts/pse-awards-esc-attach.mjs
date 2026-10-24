@@ -56,6 +56,13 @@ try{
    tableYears:expectedYears,recordCount:8,readBeforeWrite:true
  },null,2)+"\n");
  await page.goto(origin+"/wp-admin/post.php?post="+pageId+"&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+ // WordPress 7.1 Classic Editor's switchEditors.go requires a ready TinyMCE
+ // iframe; switching immediately after DOMContentLoaded throws getSelection.
+ await page.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:25000}).catch(async()=>{
+   const state=await page.evaluate(()=>({editors:(window.tinymce?.editors||[]).map(x=>({id:x.id,initialized:x.initialized})),mainEditor:!!document.querySelector("#wp-content-wrap")}));
+   console.log("PSE_AWARDS_ESC_TINYMCE_DIAGNOSTIC="+JSON.stringify(state));
+   throw Error("Classic Editor TinyMCE not ready; Page left unchanged");
+ });
  const tab=page.locator("#content-html");
  if(!await tab.isVisible())throw Error("Native WordPress Classic Editor Text tab unavailable");
  await tab.click();
