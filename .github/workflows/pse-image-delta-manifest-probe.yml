@@ -1,0 +1,54 @@
+name: PSE signed image delta manifest preflight (READ ONLY, NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-image-delta-manifest-probe]
+permissions:
+  contents: read
+jobs:
+  manifest:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+    steps:
+      - name: Checkout current PSE signed client
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Derive PSE FTP directory from verified WordPress frontend origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re
+          from urllib.parse import urlsplit
+          values=[]
+          for raw in os.environ['ENV_FILE'].splitlines():
+              m=re.match(r"^\\s*(?:export\\s+)?WC_URL_CLIENT\\s*=\\s*(.*?)\\s*$",raw)
+              if m:values.append(m.group(1).strip().strip('"\\''))
+          if len(values)!=1:raise RuntimeError('Invalid client origin configuration')
+          u=urlsplit(values[0])
+          if u.scheme!='https' or not u.hostname or u.username or u.password or u.port not in (None,443) or u.path not in ('','/') or u.query or u.fragment:
+              raise RuntimeError('Invalid frontend origin')
+          with open(os.environ['GITHUB_ENV'],'a') as env:
+              env.write('ASTRO_FTP_TARGET=/domains/'+u.hostname+'/public_html/\\n')
+              env.write('FTP_ASTRO_DIR=/domains/'+u.hostname+'/public_html/\\n')
+          PY
+      - name: Verify signed WordPress manifest without upload, build or deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source
+          python3 scripts/pse-remote-unzip.py manifest
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('source/.pse-remote-image-manifest.json')
+          if not p.is_file():raise RuntimeError('Missing deployed signed image manifest')
+          images=json.loads(p.read_text())['images']
+          if not isinstance(images,dict) or len(images)==0:raise RuntimeError('No published images to delta-reuse')
+          print('PSE_IMAGE_DELTA_LIVE_MANIFEST=PASS images='+str(len(images)))
+          PY
