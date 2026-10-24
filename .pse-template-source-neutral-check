@@ -47,3 +47,5 @@ PSE company PublicPage related menu sibling navigation 2026-10-24: Astro github 
 2026-10-24 G10 WordPress editorial image preservation CSS: Astro github 23ec04a6075ab52634a05ed02eab26eea07dea32, verify Vitest/SSR parse; NO BUILD.
 
 Validate Vision Mission ESC component and parser, 2026-10-25; NO ASTRO BUILD.
+
+2026-10-25: regression for removed duplicate Vision Mission intro only; no Astro build or FTP.
