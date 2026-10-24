@@ -21,7 +21,7 @@ jobs:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-      PSE_AWARDS_ESC_ATTACH_READONLY: '1'
+      PSE_AWARDS_ESC_ATTACH_READONLY: '0'
     steps:
       - uses: actions/checkout@v4
         with:
