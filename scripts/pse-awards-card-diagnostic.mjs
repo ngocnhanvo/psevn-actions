@@ -27,8 +27,14 @@ try{
        }))};
      });
      const tableMarkup=tables.map(t=>({start:t.outerHTML.slice(0,650),width:Math.round(t.getBoundingClientRect().width)}));
+     const outer=tables[0];
+     const outerRows=[...outer.querySelectorAll("tr")].filter(r=>r.closest("table")===outer).map((row,i)=>({
+       index:i,text:row.textContent.trim().slice(0,160),
+       images:[...row.querySelectorAll("img")].filter(img=>img.closest("table")===outer).map(img=>({src:img.currentSrc||img.src,alt:img.alt,naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,html:img.outerHTML.slice(0,600)}))
+     }));
+
      return {length:article.innerHTML.length,children:article.children.length,
-       tables:tableMarkup,rows,
+       tables:tableMarkup,outerRows,rows,
        articleClasses:article.className,
        imageCount:article.querySelectorAll("img").length,
        bodyOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3};
