@@ -33,3 +33,17 @@
 4. Khi có chứng cứ, cập nhật checkpoint trong FE `docs/design/PSE_2026_SUBPAGES_IMPLEMENTATION_PLAN.md` bằng run IDs và trạng thái thật. Dữ liệu Joomla parity vẫn riêng biệt.
 
 **Không động tới queue Joomla đang chạy, không thay cấu trúc build/cache hay quyền WordPress.**
+
+## 8. Kiểm chứng thực tế sau khi tra cứu Actions REST (24/10/2026, 09:02 UTC)
+
+- CI lần đầu: run #40079457884 attempt 1 FAIL, 349/350 PASS. Nguyên nhân **duy nhất** là assert nguyên văn `currentPage.content = prepareArticleContentImages(...)` trong `src/lib/wordpress/articleImages.test.ts` không còn khớp cách dữ liệu được lưu vào biến `prepared`. Không phải regression xử lý ảnh.
+- Đã chỉnh chính test theo luồng dữ liệu thực trên Astro `github`. CI **rerun failed jobs trên run cũ** #40079457884 attempt 2 **SUCCESS**, 350/350 PASS (77/77 test files), Astro parser PASS, không build/FTP. Không chạy lại test này khi không có code mới.
+- PR #26 tự merge PASS: `b8a8d3d645e6545331a4abf85f5dd4690c7ad797`. Astro `github`/`master` đồng bộ đúng SHA.
+- Build PHP qua workflow #40079788784: **FAIL có chủ đích vì WordPress idle, pending_count=0, exit code 2**. Signed preflight PASS, nhưng **không phát lệnh Astro build, không upload bản G4**. Không force/không sửa CMS giả để vượt gate.
+- Bản deploy thành công gần nhất đã xác minh: run #40077565399, mã nguồn `f9c1fd9474f40e8f7ee1d3b4db1a347355f351d0`, FTPS PASS. Đây là code **trước G4** (`d9ec4ed` và `b8a8d3d`), nên **DEPLOYED_G4 = NO**, không được tuyên bố live H1/related cards đã thay.
+- Read-only corporate + G3 QA #40075519363 chạy **trước** deploy #40077565399: doanh nghiệp 20/20 PASS, archive 0/12 (HTTP 404). Chưa có bằng chứng read-only G3 QA **sau** deploy mới; cần kiểm tra nhưng không tự nói PASS.
+- Không gọi `fetch_commit_workflow_runs` để kết luận không có job: tool này chỉ trả **workflow run liên kết PR**, không liệt kê push runs. **Phải dùng GitHub fetch REST** `https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs?per_page=20` rồi gọi `fetch_workflow_run_jobs` và `fetch_workflow_job_logs` theo ID. Đây là nguyên nhân phiên trước bỏ sót 2 lỗi.
+- QA read-only mới chưa kích hoạt trong lượt điều tra này vì thao tác cập nhật marker workflow bị chặn ở tool. Không tìm đường vòng trái phép. Nếu tiếp tục, rà trạng thái workflow trước khi khởi tạo, tránh trùng.
+- **Cửa tiếp tục phát hành G4:** chỉ khi WordPress thật sự có `pending_count>0`, dùng Build Website chính thức với lock idle, rồi xác minh signed FTPS/SSR/Playwright. Nếu không có pending, cần yêu cầu chủ dự án chỉ đạo build ngoại lệ theo Knowledge; không tự force.
+
+**Chế độ code: auto-build.**
