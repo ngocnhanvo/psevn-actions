@@ -1,4 +1,4 @@
-name: PSE legacy draft provenance mismatch audit (READ ONLY)
+name: PSE legacy published draft date provenance audit (READ ONLY)
 on:
   push:
     branches: [main]
@@ -29,6 +29,7 @@ jobs:
           set -euo pipefail
           node --input-type=module <<'NODE'
           import {chromium} from 'playwright';
+          import {searchDate} from './scripts/pse-legacy-search-date.mjs';
           import {readFile} from 'node:fs/promises';
           const state=JSON.parse(await readFile('docs/pse-legacy-migration-state.json','utf8'));
           if(state.schema!=='pse-legacy-article-migration-v1'||!state.backup_verified)throw Error('Wrong migration checkpoint');
@@ -69,28 +70,39 @@ jobs:
               const r=await fetch(path,{method:'GET',credentials:'same-origin',headers:{'Accept':'application/json','X-WP-Nonce':nonce}});
               return {status:r.status,data:await r.json().catch(()=>null)};
             },{path,nonce});
-            const t=await api('/wp-json/tablepress/v1/table/pse_01_vi');
-            if(t.status!==200||!Array.isArray(t.data?.items))throw Error('Configured PSE category table unavailable');
             for(const id of ['1733','1734','1735']){
               const row=state.articles[id];
-              if(!row||!Number.isSafeInteger(Number(row.wp_id)))throw Error('Missing exact checkpoint ID '+id);
-              const path=new URL(row.source_url).pathname;
-              const expectedSlug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
-              const ix={company:0,'agriculture-market':1,shareholder:2}[row.group_hint];
-              const expectedCategory=Number(t.data.items[ix]?.categoryId);
-              if(!expectedSlug||!expectedCategory)throw Error('Invalid known provenance for '+id);
-              const r=await api('/wp-json/wp/v2/posts/'+row.wp_id+'?context=edit&_fields=id,slug,status,date,categories,title');
-              const actual=r.data||{};
-              const result={
-                source_id:Number(id),wp_id:row.wp_id,http:r.status,record_found:r.status===200,
-                id_match:actual.id===Number(row.wp_id),checkpoint_status:row.status,
-                wp_status:actual.status||null,expected_slug:expectedSlug,actual_slug:actual.slug||null,
-                slug_match:actual.slug===expectedSlug,expected_category:expectedCategory,
-                actual_categories:actual.categories||[],category_match:Array.isArray(actual.categories)&&actual.categories.includes(expectedCategory),
-                title_present:!!String(actual.title?.raw||'').trim()
-              };
-              console.log('PSE_LEGACY_DRAFT_PROVENANCE_AUDIT='+JSON.stringify(result));
+              if(!row||!Number.isSafeInteger(Number(row.wp_id)))throw Error('Missing exact source checkpoint ID '+id);
+              const r=await api('/wp-json/wp/v2/posts/'+row.wp_id+'?context=edit&_fields=id,status,slug,date,date_gmt,title,categories');
+              if(r.status!==200||r.data?.id!==Number(row.wp_id))throw Error('Cannot read exact WordPress post '+id);
+              const wpDate=String(r.data.date||'');
+              const probe=await context.newPage();
+              try{
+                const src=await probe.goto(row.source_url,{waitUntil:'domcontentloaded',timeout:45000});
+                if(src?.status()!==200)throw Error('Cannot read source '+id+' HTTP '+src?.status());
+                const article=await probe.evaluate(()=>({
+                  title:(document.title||'').replace(/\s+-\s+PSE\.VN\s*$/i,'').trim(),
+                  opening:(document.querySelector('[itemprop="articleBody"]')?.textContent||'').replace(/\s+/g,' ').trim().slice(0,300)
+                }));
+                const proof=await searchDate(probe,{
+                  id:Number(id),sourceUrl:row.source_url,
+                  title:article.title,opening:article.opening
+                });
+                console.log('PSE_LEGACY_PUBLISHED_DATE_PROVENANCE='+JSON.stringify({
+                  source_id:Number(id),wp_id:row.wp_id,
+                  wp_status:r.data.status,wp_date:wpDate,wp_day:wpDate.slice(0,10),
+                  checkpoint_status:row.status,checkpoint_verified_date:row.verified_date||null,
+                  joomla_exact_id_title_proof:!!proof.day,
+                  joomla_source_created_day:proof.day||null,
+                  proof_precision:proof.precision||null,
+                  proof_source:proof.source,
+                  wordpress_day_equals_joomla_created_day:!!proof.day&&wpDate.slice(0,10)===proof.day,
+                  source_title_present:article.title.length>0,
+                  source_opening_chars:article.opening.length,
+                  source_search_attempts:proof.attempts||null
+                }));
+              }finally{await probe.close()}
             }
-            console.log('PSE_LEGACY_DRAFT_PROVENANCE_AUDIT_FINISHED=PASS; read_only=true; wordpress_writes=0; astro_build=false');
+            console.log('PSE_LEGACY_PUBLISHED_DATE_AUDIT_FINISHED=PASS; read_only=true; wordpress_writes=0; astro_build=false');
           }finally{await browser.close()}
           NODE
