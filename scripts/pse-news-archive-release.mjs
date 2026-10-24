@@ -61,7 +61,31 @@ try {
 
   const bindMenu=event.head_commit?.message==='cms(pse): bind verified news archive to WordPress Header menu';
   const seoRedirects=event.head_commit?.message==='cms(pse): preserve verified Joomla news category URLs';
-  if(seoRedirects){
+  const introWrite=event.head_commit?.message==='cms(pse): add genuine WordPress news archive introduction';
+  if(introWrite){
+    const url='/wp-json/wp/v2/pages/77030';
+    const current=await api(url+'?context=edit&_fields=id,status,slug,content,acf');
+    if(current.status!==200||current.payload?.id!==77030||
+      current.payload.status!=='publish'||
+      current.payload.slug!=='tin-tuc-su-kien'||
+      current.payload.acf?.action!=='PostsPage'||
+      current.payload.acf?.key!=='ssr-posts')
+      throw Error('WordPress archive identity changed');
+    const text='Tổng hợp tin tức, sự kiện và hoạt động của Công ty Cổ phần Phân bón và Hóa chất Dầu khí Đông Nam Bộ (PVFCCo-PSE).';
+    const html='<p>'+text+'</p>';
+    const previous=String(current.payload?.content?.raw||'').trim();
+    if(previous!==''&&previous!==html)throw Error('Existing WP news intro is not empty; refuse overwrite');
+    if(previous==='') {
+      const changed=await api(url,'POST',{content:html});
+      if(changed.status!==200||changed.payload?.id!==77030)
+        throw Error('Could not save PSE WordPress archive intro');
+    }
+    const check=await api(url+'?context=edit&_fields=id,status,slug,content,acf,modified');
+    if(check.status!==200||check.payload?.status!=='publish'||
+       String(check.payload?.content?.raw||'').trim()!==html)
+      throw Error('News intro REST read-after-write mismatch');
+    console.log('PSE_NEWS_ARCHIVE_INTRO=PASS; page=77030; source=WordPressEditor; section=article-intro; no_articles_changed=true; no_build=true');
+  }else if(seoRedirects){
     const specs=[
       ['tin-cong-ty','tin-tong-hop'],
       ['tin-cong-ty','hoat-dong-chi-bo-hdqt-bks'],
