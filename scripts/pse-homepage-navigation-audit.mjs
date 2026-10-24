@@ -80,9 +80,11 @@ try {
     localizedBuildFlag:window.vcsBuild?.build_configured,
     buildButtonText:(document.querySelector('#vcs-build-btn-main')?.textContent||'').trim(),
     forceDisabled:document.querySelector('#vcs-force-build')?.disabled,
+    scriptVersion:(()=>{const el=document.querySelector('script[src*="vcs-build-trigger.js"]');return el?new URL(el.src).searchParams.get('ver'):null})(),
   }));
   if(verification.warningPresent || !['1',1,true].includes(verification.localizedBuildFlag) ||
-     verification.buildButtonText.includes('chưa được cấu hình') || verification.forceDisabled) {
+     verification.buildButtonText.includes('chưa được cấu hình') || verification.forceDisabled ||
+     verification.scriptVersion!=='1.2.6') {
     throw Error('PSE Build UI regression: localized configured=true not recognized');
   }
   console.log('PSE_BUILD_BUTTON_CONFIGURED=PASS; server_and_client_consistent=true; no_build_triggered=true');
