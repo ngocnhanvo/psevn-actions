@@ -1,2 +1,4 @@
 Dryrun classify investor Posts by exact legacy Joomla article path into actual WordPress Categories. No changes.
 Retry audited source classification after frontend origin initialization fix; read-only.
+
+Owner auto-build confirmed: dry-run #40138255647 passed 5 true taxonomy groups, 271 exact Joomla-to-WP slug matches, release #40138897750 completed. Save native WordPress child categories and assign only source-verified posts; readback and bind 5 header links, 2026-10-25.
