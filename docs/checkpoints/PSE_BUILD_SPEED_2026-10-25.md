@@ -55,3 +55,28 @@ New independent diagnostic [#40137717136](https://github.com/ngocnhanvo/psevn-ac
 - Previously completed SHA-by-SHA image-cache comparison [#40137717136](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137717136) remains **350/350 images unchanged** between the two earlier run snapshots; it does not independently prove equality to the newest #40137989832 output.
 - Thus the transport bottleneck persists. Tuning `lftp` buffers did not reach 90 seconds; switching from lftp to Python FTP_TLS was also slower/essentially equivalent in prior bounded benchmark.
 - **Status: delta image reuse protocol still awaits specific owner approval** under Knowledge core/01 and `psevn-astro/docs/BUILD_ARCHITECTURE_INHERITANCE_POLICY.md`. Detailed existing proposal: [PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md](../proposals/PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md). No source/runtime/deploy protocol changes made in this continuation; no Astro build or FTP deploy triggered.
+
+## 2026-10-25 — Delta Image approved, deployed and measured — 40139560969
+
+**Supersedes the older `approval required` / `NOT IMPLEMENTED` text above.** The owner explicitly approved the specific [Delta Image proposal](../proposals/PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md) in this conversation. No new approval is required for this scoped protocol change.
+
+### What was already done before the present continuation
+- `psevn-actions/main` has signed remote-image manifest preflight, `scripts/pse-image-delta-package.py`, unchanged full ZIP fallback and original WordPress-triggered deploy gate.
+- `psevn-php/master` has `pse-image-delta.php` and signed `pse-unzip.php` integration to verify hashes, copy reused image files inside staging, reject unsafe names/symlinks and preserve atomic activation and rollback.
+- Independent delta unit contracts **PASS** [#40139207204](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139207204); release architecture verification **PASS** [#40139231115](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139231115); verified PHP FTPS deployment **PASS** [#40139258852](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139258852); signed image manifest preflight **PASS** [#40139422918](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139422918).
+- A regular WordPress/PHP Build Website request **PASS** [#40139483353](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139483353) triggered exactly one production Astro release [#40139560969](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139560969). This continuation only **observed** the already running release and did not re-trigger a build.
+
+### Verified first successful Delta Image production deploy
+- `#40139560969`: **SUCCESS**, created 2026-10-24 22:40:24 UTC, completed 22:41:57 UTC, **93 seconds end-to-end** (including GitHub job cleanup).
+- Signed remote image inventory **350 files / 16,806,102 bytes**.
+- `PSE_IMAGE_DELTA=ENABLED total=350 reuse=350 bytes_saved=16806102`.
+- Full ZIP baseline [#40137989832](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137989832): 22,189,765 bytes; new delta ZIP: **5,313,697 bytes** (~76% smaller).
+- New FTPS transfer: **14 seconds** vs 56 seconds baseline. **42 seconds saved on FTP**.
+- Signed PHP unzip and atomic activation **PASS**; homepage HTTP, WordPress-backed `/api/user/info` SSR endpoint and `robots.txt` smoke **PASS**.
+- End-to-end duration improved **122 -> 93 seconds** (29 seconds faster). **90-second objective not yet strictly met** (3-second gap); do not present it as under 90.
+- As always, full ZIP fallback remains for cold/unavailable image inventory, and checks must be revalidated if new media are published.
+
+### Next action
+- Prefer observing the **next normal WordPress-triggered deploy** to measure variation against 90 seconds; do not fabricate WordPress changes, force build, dispatch Astro directly, or repeat the completed production release.
+- If the target is consistently missed, profile independent preflight/cache steps and consider minimal safe parallelization only after inspecting current HEAD and tests; do not remove signature/SSR/rollback or compromise image integrity.
+- Do not alter unrelated active PSE Joomla/news migration jobs.
