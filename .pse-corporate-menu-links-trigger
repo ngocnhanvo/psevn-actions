@@ -1,1 +1,2 @@
 Read-only Playwright menu link test for dropdown PVFCCo-PSE, compare all ten CMS Page URLs against navigation in live Astro site on desktop and mobile. No WordPress writes, no build.
+Repeat read-only QA to report actual dropdown hrefs for route diagnostic, same approved 10 Pages, no build.
