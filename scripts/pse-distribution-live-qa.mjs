@@ -5,7 +5,7 @@ const varLine=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().re
 if(varLine.length!==1)throw Error("PSE WordPress frontend origin absent");
 const origin=new URL(varLine[0].slice(14).replace(/^['"]|['"]$/g,""));
 if(origin.protocol!=="https:"||origin.username||origin.password||origin.search||origin.hash||!["","/"].includes(origin.pathname))throw Error("Invalid PSE frontend origin");
-const wpLine=String(process.env.ENV_FILE||"").split(/\\r?\\n/).map(x=>x.trim().replace(/^export\\s+/,"")).filter(x=>x.startsWith("WC_URL="));
+const wpLine=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,"")).filter(x=>x.startsWith("WC_URL="));
 if(wpLine.length!==1)throw Error("PSE WordPress origin missing for Media host comparison");
 const wpOrigin=new URL(wpLine[0].slice(7).replace(/^['"]|['"]$/g,"")).origin;
 const cases=[
