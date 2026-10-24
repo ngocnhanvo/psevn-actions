@@ -57,7 +57,7 @@ try{
  if(check.status===200){
   if(check.body.id!==tableId||JSON.stringify(check.body.fields?.map(f=>f.key))!==JSON.stringify(keysExpected)||
      check.body.items?.length!==8||check.body.items.some((item,i)=>item.year!==awards[i].year||
-       item.details!==expectedDetails[i]||!/<img\\b[^>]*\\balt=["'][^"']+["']/i.test(item.img||"")))
+       item.details!==expectedDetails[i]||!/<img\b[^>]*\balt=["'][^"']+["']/i.test(item.img||"")))
       throw Error("An ESC Table exists with incomplete/foreign data: no overwrite. ID "+tableId);
   console.log("PSE_AWARDS_ESC_AUTHOR=ALREADY_DONE; table="+tableId+"; count=8; no_page_edit=true");process.exit(0);
  }
