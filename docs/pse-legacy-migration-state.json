@@ -299,11 +299,11 @@
       "wp_id": 77706
     },
     "319": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/319-pvfcco-se-dieu-chinh-ke-hoach-san-xuat-kinh-doanh-nam-2012.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "320": {
       "attempts": 0,
@@ -748,11 +748,11 @@
       "status": "quarantined"
     },
     "1044": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1044-pvfcco-se-cong-bo-thong-tin-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2014.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1045": {
       "attempts": 1,
@@ -1061,17 +1061,18 @@
       "status": "pending"
     },
     "1173": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1173-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo-pvfcco-se-cong-bo-thong-tin-thay-doi-giay-dkkd-lan-thu-11-ngay-18-01-2016.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "1175": {
       "attempts": 1,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1175-bao-cao-tai-chinh-q4-2015.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1176": {
       "attempts": 2,
@@ -1219,31 +1220,32 @@
       "status": "pending"
     },
     "1214": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1214-cong-bo-cac-qd-cua-hdqt-ve-cong-tac-can-bo.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "1216": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1216-ngay-chot-danh-sach-va-chi-tra-co-tuc-dot-2-nam-2015.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1222": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1222-pvfcco-se-chi-tra-co-tuc-dot-2-2015.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1225": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1225-lua-chon-don-vi-kiem-toan-2016.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1228": {
       "attempts": 3,
@@ -1253,11 +1255,11 @@
       "status": "quarantined"
     },
     "1229": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/thong-tin-quan-tri/1229-bao-cao-tinh-hinh-quan-tri-cong-ty-6-thang-dau-nam-2016.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1230": {
       "attempts": 3,
@@ -8674,7 +8676,7 @@
     "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=84",
     "https://www.pse.vn/pvfcco-pse/hoi-dong-quan-tri/11-gioi-thieu.html"
   ],
-  "runs": 110,
+  "runs": 111,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
