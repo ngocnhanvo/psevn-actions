@@ -4,6 +4,8 @@ on:
     branches: [feature/pse-delta-image-ftps-20261025]
     paths:
       - scripts/pse-image-delta-package.py
+      - scripts/pse-static-delta-package.py
+      - tests/pse-static-delta-package.test.py
       - scripts/pse-remote-unzip.py
       - tests/pse-image-delta-package.test.py
       - .github/workflows/pse-image-delta-contract-ci.yml
@@ -13,6 +15,8 @@ on:
     branches: [main]
     paths:
       - scripts/pse-image-delta-package.py
+      - scripts/pse-static-delta-package.py
+      - tests/pse-static-delta-package.test.py
       - scripts/pse-remote-unzip.py
       - .github/workflows/pse-production-deploy.yml
 permissions:
@@ -38,8 +42,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -m py_compile scripts/pse-image-delta-package.py scripts/pse-remote-unzip.py
+          python3 -m py_compile scripts/pse-image-delta-package.py scripts/pse-static-delta-package.py scripts/pse-remote-unzip.py
           python3 tests/pse-image-delta-package.test.py
+          python3 tests/pse-static-delta-package.test.py
           ruby -e 'require "yaml"; YAML.parse_file(ARGV.fetch(0))' .github/workflows/pse-production-deploy.yml
       - name: Verify PHP pure-unit image integrity, symlinks and fallback
         shell: bash
@@ -48,6 +53,7 @@ jobs:
           php -l php-source/pse-image-delta.php
           php -l php-source/pse-unzip.php
           php php-source/tests/pse-image-delta.php
+          php php-source/tests/pse-static-delta.php
       - name: Assert no independent production build or signing bypass
         shell: bash
         run: |
