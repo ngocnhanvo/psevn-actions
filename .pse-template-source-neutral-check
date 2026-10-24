@@ -16,3 +16,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-24: PSE corporate 10 WordPress published Pages absent from latest Astro build (5 cached page keys, live QA 20/20 HTTP 404). Astro github 32cfd5693944a1bbb327f64c20632a7ae3fddf74 reconciles public Page registry with persistent cache, metadata-only per build + full content only for missing/changed IDs; run Vitest, local import and Astro parser NO BUILD/NO FTP before PR.
 
 2026-10-24 G3 PSE news archive development: Astro github d102970d95e6085f858bcf10c5bcd97335a95770. Native WP categories taxonomy registry and categories?slug chosen ID, posts with categories=ID, all-category mode, no custom cat filter for new archive, retain existing SSR legacy callers. Run NO BUILD unit + Astro parser, no WordPress changes/FTP.
+
+2026-10-24 G3: PSE full-width news archive breadcrumb derives parent nodes via WordPress taxonomy IDs instead of hardcoded menu; Astro development branch 45f2ce698e8ae3a747030a21d66272ca223981bd; run unit test suite + Astro parser only, no build or CMS write.
