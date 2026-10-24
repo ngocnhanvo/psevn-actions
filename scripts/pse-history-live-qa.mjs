@@ -17,9 +17,19 @@ try{
   try{
    const response=await page.goto(u.origin+"/qua-trinh-hinh-thanh-phat-trien",
     {waitUntil:"domcontentloaded",timeout:65000});
+   if(await page.locator(".pse-history-cover img").count()){
+     await page.locator(".pse-history-cover img").first().evaluate(async img=>{
+       if(typeof img.decode==="function")await img.decode().catch(()=>{});
+     });
+   }
    const scan=await page.evaluate(()=>{
     const main=document.querySelector("main.pse-public-page");
     const timeline=main?.querySelector('[data-pse-history-source="esc-table"]');
+    const cover=main?.querySelector(".pse-history-cover img");
+    const photo={present:!!cover,alt:cover?.getAttribute("alt")||"",
+      loaded:!!cover&&cover.complete&&cover.naturalWidth>0,
+      visible:!!cover&&cover.getBoundingClientRect().width>50&&
+        getComputedStyle(cover).visibility!=="hidden"};
     const items=[...(timeline?.querySelectorAll(".pse-history__milestone")||[])];
     const expected=["07/08/2008","01/09/2008","22/12/2010","12/01/2011","30/01/2011","01/02/2011"];
     const dates=items.map(x=>{
@@ -39,13 +49,14 @@ try{
       (el.scrollHeight>el.clientHeight+2||el.scrollWidth>el.clientWidth+2)
     }).slice(0,8).map(x=>x.tagName+"."+x.className);
     return {h1:main?.querySelectorAll("h1").length||0,
-      timeline:!!timeline,items:items.length,dates,dateSequenceValid:JSON.stringify(dates)===JSON.stringify(expectedIso),
+      timeline:!!timeline,photo,items:items.length,dates,dateSequenceValid:JSON.stringify(dates)===JSON.stringify(expectedIso),
       textOk,hidden,widthOverflow,nestedScroll,
       siblings:main?.querySelectorAll("[data-pse-menu-related] a").length||0,
       escapedShortcode:(main?.textContent||"").includes("[table id=pse_history_vi")};
    });
    const ok=response?.status()===200&&scan.h1===1&&scan.timeline&&scan.items===6&&
-      scan.dateSequenceValid&&scan.textOk&&scan.hidden===0&&!scan.widthOverflow&&
+      scan.dateSequenceValid&&scan.photo.loaded&&scan.photo.alt&&scan.photo.visible&&
+      scan.textOk&&scan.hidden===0&&!scan.widthOverflow&&
       scan.nestedScroll.length===0&&!scan.escapedShortcode;
    console.log("PSE_HISTORY_LIVE_QA="+JSON.stringify({width,http:response?.status(),...scan,ok}));
    if(response?.status()===200)await page.screenshot({path:output+"/history-"+width+".png",fullPage:true});
