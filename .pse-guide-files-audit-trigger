@@ -1,1 +1,2 @@
 Source audit original PSE fertilizer usage guide (7 attached documents) with SHA-256; read-only.
+Retry read-only file inventory after fixing Playwright APIRequestContext; earlier #40141822398 failed without downloading due invalid browser.request.
