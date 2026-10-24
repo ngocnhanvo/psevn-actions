@@ -168,12 +168,12 @@ try{
      // PSE WordPress sometimes omits source_url/guid. Use only authenticated
       // WordPress Media metadata as an alternative, verifying exact bytes.
       const metadataFile=String(fresh.payload.media_details?.file||"").replace(/^\/+/, "");
-      const candidates=[fresh.payload.source_url,fresh.payload.guid?.rendered];
+      const mediaUrlCandidates=[fresh.payload.source_url,fresh.payload.guid?.rendered];
        if(metadataFile && metadataFile.split("/").every(segment=>/^[a-zA-Z0-9._-]+$/.test(segment)) &&
          metadataFile.split("/").at(-1)===filename && !metadataFile.includes(".."))
-         candidates.push(new URL("/wp-content/uploads/"+metadataFile,wpOrigin).href);
+         mediaUrlCandidates.push(new URL("/wp-content/uploads/"+metadataFile,wpOrigin).href);
       let mediaUrl="";
-      for(const candidate of candidates.filter(Boolean)){
+      for(const candidate of mediaUrlCandidates.filter(Boolean)){
         let target;
         try{target=new URL(String(candidate),wpOrigin)}catch{continue}
         if(target.hostname!==wp.hostname||!["https:","http:"].includes(target.protocol)||
