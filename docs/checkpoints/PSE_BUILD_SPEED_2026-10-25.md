@@ -80,3 +80,17 @@ New independent diagnostic [#40137717136](https://github.com/ngocnhanvo/psevn-ac
 - Prefer observing the **next normal WordPress-triggered deploy** to measure variation against 90 seconds; do not fabricate WordPress changes, force build, dispatch Astro directly, or repeat the completed production release.
 - If the target is consistently missed, profile independent preflight/cache steps and consider minimal safe parallelization only after inspecting current HEAD and tests; do not remove signature/SSR/rollback or compromise image integrity.
 - Do not alter unrelated active PSE Joomla/news migration jobs.
+
+## 2026-10-25 — 87-second measured production success (target met once)
+
+**Supersedes the 93-second / target-not-met status above.**
+
+- Signed Delta Image and WP-triggered full deployment code were already released and tested, as recorded above.
+- Another PSE session merged a minimal parallel read-only preflight step (sitemap Save token and signed image inventory concurrently, AFTER verifying signed target). The workflow continues to wait for both results and fails if either fails. Related architecture verification [#40139847146](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139847146) **PASS**, delta contract [#40139801954](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139801954) **PASS**.
+- A duplicate concurrent implementation attempt from this continuation was identified before merge. Its [PR #11](https://github.com/ngocnhanvo/psevn-actions/pull/11) was **closed unmerged**, preserving the canonical change on `main`.
+- Native PSE WordPress PHP request [#40139893419](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139893419) **PASS** and created the ordinary Astro release [#40139962300](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139962300). This continuation only observed it and never dispatched duplicate builds.
+- [#40139962300](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139962300) **SUCCESS**, created 2026-10-24 22:46:13 UTC, completed 22:47:40 UTC: **87 seconds end-to-end**, meeting the requested 90-second threshold by 3 seconds in this one measured run.
+- Signed image manifest **350 images / 16,806,102 bytes**. `PSE_IMAGE_DELTA=ENABLED total=350 reuse=350 bytes_saved=16806102`.
+- ZIP **5,313,696 bytes**, FTPS **18 seconds** (~0.28 MiB/s); signed unzip/atomic activate **PASS**, homepage + WordPress-backed SSR API + robots HTTP smoke **PASS**.
+- Historic pre-Delta baseline [#40137989832](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137989832): **122 seconds end-to-end**, full ZIP 22,189,765 bytes, upload 56 seconds. End-to-end improved **35 seconds (~29%)**.
+- **Status: DELTA_IMAGE=DEPLOYED_PASS; LIVE_SIGNED_FTPS=PASS; PHP_BUILD=PASS; 90_SECOND_TARGET=MET_IN_ONE_RUN.** This is not a hard latency guarantee: runner startup, cache misses, new images and FTPS network speed vary. Keep the full ZIP fallback and monitor future real WordPress-triggered builds; do not fabricate CMS edits or force another build only for benchmarking.
