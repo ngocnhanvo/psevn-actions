@@ -2,3 +2,5 @@ Read-only Playwright menu link test for dropdown PVFCCo-PSE, compare all ten CMS
 Repeat read-only QA to report actual dropdown hrefs for route diagnostic, same approved 10 Pages, no build.
 
 Read live public WordPress menu JSON versus Astro rendered corporate links. Read-only.
+
+Final click-through after menu native Save #40085525993 and successful signed deploy #40085688546: live ten corporate Page dropdown links, desktop 1440 mobile 390, read-only Playwright; no build or CMS mutation.
