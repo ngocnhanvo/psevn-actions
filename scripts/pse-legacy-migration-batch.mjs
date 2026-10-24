@@ -3,6 +3,7 @@
  * State is persisted separately by the queue's GitHub Contents checkpoint step.
  */
 import {chromium} from "playwright";
+import {searchDate} from "./pse-legacy-search-date.mjs";
 import {createHash} from "node:crypto";
 import {readFile,writeFile} from "node:fs/promises";
 const STATE="docs/pse-legacy-migration-state.json";
@@ -45,7 +46,12 @@ const freshChoices=fresh.length>=4?
 // legacy PDF gallery starve simpler text posts.
 const picked=[...continuing.slice(0,2),...freshChoices,...fresh.slice(1),...continuing.slice(2)];
 const ids=picked.filter((id,i)=>id&&picked.indexOf(id)===i).slice(0,MAX_ARTICLES_PER_RUN);
-if(!ids.length){
+const recoveryIds=Object.keys(state.articles).filter(id=>{
+ const r=state.articles[id];
+ return r.status==="draft_needs_date"&&Number.isSafeInteger(Number(r.wp_id))&&
+   Number(r.wp_id)>0&&!r.verified_date&&(r.date_lookup_attempts||0)<3;
+}).sort((a,b)=>a==="1635"?-1:b==="1635"?1:Number(b)-Number(a)).slice(0,2);
+if(!ids.length&&!recoveryIds.length){
  console.log("PSE_MIGRATION_BATCH=NO_PENDING; discovered="+Object.keys(state.articles).length);
  process.exit(0);
 }
@@ -196,7 +202,26 @@ try{
    if(!article.title||article.chars<100||article.chars>150000||article.html.length>550000)
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
-   const originalDate=iso ? iso.slice(0,19).replace(" ","T") : null;
+   let originalDate=iso ? iso.slice(0,19).replace(" ","T") : null;
+   let discoveredDate=null;
+   // Joomla article pages frequently omit published metadata. In that case
+   // query legacy com_search and REQUIRE the exact source article ID+title.
+   // This recovers the Joomla created DAY, which the owner accepts as the
+   // preserved WordPress publication day (not a claimed historical time).
+   if(!originalDate && article.assets.length<=75){
+    const lookupPage=await context.newPage();
+    try{
+     discoveredDate=await searchDate(lookupPage,{
+      id:Number(id),sourceUrl:item.source_url,title:article.title,
+      opening:article.bodyText.slice(0,300)
+     });
+     if(discoveredDate.day){
+      originalDate=discoveredDate.day+"T00:00:00";
+      console.log("PSE_LEGACY_SEARCH_DATE=VERIFIED; source_id="+id+
+       "; day="+discoveredDate.day+"; precision="+discoveredDate.precision);
+     }
+    }finally{await lookupPage.close()}
+   }
    // Preserve incomplete source dates as reviewable draft instead of fabricating.
    if(article.assets.length>75){
     item.status="quarantined";item.reason="Excessive media count; special batch required";failed++;continue;
@@ -298,6 +323,11 @@ try{
    item.seo_cleaned=true;
    item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
+   if(discoveredDate?.day){
+    item.date_source="joomla_com_search_created";
+    item.date_precision=discoveredDate.precision;
+    item.source_created_date=discoveredDate.day;
+   }
    if(!originalDate)item.reason="Original source lacks independently verifiable publish timestamp";
    imported++;
    console.log("PSE_LEGACY_POST=PASS; source_id="+id+"; wp_id="+postId+"; status="+finalStatus+"; media="+article.assets.length);
@@ -310,6 +340,73 @@ try{
    console.error("PSE_LEGACY_RECORD_ERROR; source_id="+id+"; reason="+item.reason);
    await persist();
   }
+ }
+ // Existing draft posts need the same exact-ID date recovery. No duplicate
+ // CMS records and no content rewrite; only change the date and status after
+ // read-before-write plus post-update REST verification.
+ for(const id of recoveryIds){
+  if(Date.now()-workerStarted>MAX_WORK_MS-65000){
+   console.log("PSE_LEGACY_DATE_BACKFILL=DEFERRED; time_budget=true");
+   break;
+  }
+  const item=state.articles[id];
+  item.date_lookup_attempts=(item.date_lookup_attempts||0)+1;
+  try{
+   const path=new URL(item.source_url).pathname;
+   const slug=path.match(/\\/\\d{3,6}-([^/]+)\\.html$/i)?.[1]?.toLowerCase();
+   const r=await api("/wp-json/wp/v2/posts/"+item.wp_id+"?context=edit&_fields=id,slug,status,title,date,categories");
+   if(r.status!==200||r.data?.id!==item.wp_id||r.data?.status!=="draft"||
+      r.data?.slug!==slug||!r.data?.categories?.includes(cats[item.group_hint]))
+    throw Error("Existing draft provenance/category/status does not match; no update");
+   const sourcePage=await context.newPage();
+   let sourceInfo;
+   try{
+    const response=await sourcePage.goto(item.source_url,{waitUntil:"domcontentloaded",timeout:45000});
+    if(response?.status()!==200)throw Error("Legacy source HTTP "+response?.status());
+    sourceInfo=await sourcePage.evaluate(()=>({
+     title:(document.title||"").replace(/\\s+-\\s+PSE\\.VN\\s*$/i,"").trim(),
+     opening:(document.querySelector('[itemprop="articleBody"]')?.textContent||"").replace(/\\s+/g," ").trim().slice(0,300)
+    }));
+    if(!sourceInfo.opening||sourceInfo.opening.length<70||
+       sourceInfo.title!==String(r.data.title?.raw||"").trim())
+     throw Error("Original source and existing WordPress title/body mismatch");
+    const found=await searchDate(sourcePage,{
+     id:Number(id),sourceUrl:item.source_url,title:sourceInfo.title,opening:sourceInfo.opening
+    });
+    if(!found.day){
+     item.date_lookup_error="No exact source-ID search result with readable date";
+     console.log("PSE_LEGACY_DATE_BACKFILL=UNVERIFIED; source_id="+id);
+     await persist();continue;
+    }
+    const normalized=found.day+"T00:00:00";
+    // Joomla search shows creation DATE only. Midnight is a deterministic
+    // technical placeholder: date_precision=day records the lack of exact time.
+    const staged=await api("/wp-json/wp/v2/posts/"+item.wp_id,"POST",{date:normalized});
+    if(staged.status!==200||staged.data?.status!=="draft"||staged.data.date!==normalized)
+     throw Error("Cannot stage verified source day on original WordPress draft");
+    const published=await api("/wp-json/wp/v2/posts/"+item.wp_id,"POST",{date:normalized,status:"publish"});
+    if(published.status!==200||published.data?.status!=="publish")
+     throw Error("WordPress date backfill publication rejected");
+    const readback=await api("/wp-json/wp/v2/posts/"+item.wp_id+"?context=edit&_fields=id,slug,status,date,categories");
+    if(readback.status!==200||readback.data?.slug!==slug||
+       readback.data?.status!=="publish"||readback.data?.date!==normalized)
+     throw Error("WordPress date backfill read-after-write mismatch");
+    item.status="imported";
+    item.verified_date=normalized;
+    item.source_created_date=found.day;
+    item.date_source=found.source;
+    item.date_precision=found.precision;
+    delete item.reason;
+    delete item.date_lookup_error;
+    console.log("PSE_LEGACY_DATE_BACKFILL=PASS; source_id="+id+
+     "; wp_id="+item.wp_id+"; source_created_day="+found.day+"; wp_status=publish");
+   }finally{await sourcePage.close()}
+  }catch(e){
+   item.date_lookup_error=String(e instanceof Error?e.message:e).slice(0,190);
+   console.log("PSE_LEGACY_DATE_BACKFILL=RETRY_OR_REVIEW; source_id="+id+
+    "; reason="+item.date_lookup_error);
+  }
+  await persist();
  }
 }finally{await persist();await browser.close()}
 console.log("PSE_MIGRATION_BATCH=PARTIAL; imported="+imported+"; existing="+existing+
