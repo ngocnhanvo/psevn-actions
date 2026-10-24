@@ -42,6 +42,32 @@ try {
         contentLength:article?.innerText?.length};
     });
     console.log("PSE_PUBLIC_LAYOUT_DIAGNOSTIC="+JSON.stringify({width,slug,http:response?.status()||0,...info}));
+    if(width===390 && slug==="thanh-tuu"){
+      const cases={
+        nestedFixed:'.pse-public-body table table{table-layout:fixed!important}',
+        rootFixed:'.pse-public-body table{table-layout:fixed!important}',
+        nestedCellsAuto:'.pse-public-body table table td{width:auto!important;min-width:0!important}',
+        nestedFixedAuto:'.pse-public-body table table{table-layout:fixed!important}.pse-public-body table table td{width:auto!important;min-width:0!important}',
+        rootBlockNestedFixed:'.pse-public-body table:has(table){display:block!important;width:100%!important;height:auto!important;overflow:visible!important}.pse-public-body table table{display:table!important;table-layout:fixed!important}',
+      };
+      for(const [name,css] of Object.entries(cases)){
+        const style=await page.addStyleTag({content:css});
+        const result=await page.evaluate(()=>{
+          const article=document.querySelector(".pse-public-body .article-content");
+          const tables=[...article.querySelectorAll("table")].map(t=>({
+            w:Math.round(t.getBoundingClientRect().width),
+            client:t.clientWidth,scroll:t.scrollWidth,layout:getComputedStyle(t).tableLayout,
+            display:getComputedStyle(t).display
+          }));
+          return {documentWidth:document.documentElement.scrollWidth,
+            clientWidth:document.documentElement.clientWidth,
+            articleWidth:article.clientWidth,tables};
+        });
+        console.log("PSE_MOBILE_TABLE_CSS_PROBE="+JSON.stringify({name,...result}));
+        await style.evaluate(el=>el.remove());
+      }
+    }
+
    }
   } finally {await page.close()}
  }
