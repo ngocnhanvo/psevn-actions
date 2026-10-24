@@ -36,7 +36,7 @@ let bodyProbe=null;
 for(const candidate of articles.body){
  const content=String(candidate.content?.rendered||"").replace(/<[^>]*>/g," ");
  const other=[candidate.slug,candidate.title?.rendered,candidate.excerpt?.rendered].join(" ").toLocaleLowerCase("vi-VN");
- const tokens=content.match(/[\\p{L}][\\p{L}\\p{M}]{10,}/gu)||[];
+ const tokens=content.match(/[\p{L}][\p{L}\p{M}]{10,}/gu)||[];
  const token=tokens.find(t=>!other.includes(t.toLocaleLowerCase("vi-VN"))&&t.length<=80);
  if(token){bodyProbe={id:candidate.id,token};break}
 }
