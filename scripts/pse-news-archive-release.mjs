@@ -60,7 +60,7 @@ try {
   const event=JSON.parse(await (await import('node:fs/promises')).readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
   if(event.head_commit?.message==='cms(pse): publish missing WordPress post detail fallback') {
     await ensurePsePostDetailFallback({page,api,origin});
-  }
+  } else {
   const apply=event.head_commit?.message==='cms(pse): publish verified news archive and native URL rewrites';
 
   const bindMenu=event.head_commit?.message==='cms(pse): bind verified news archive to WordPress Header menu';
@@ -406,6 +406,7 @@ try {
       if(published)try{await api('/wp-json/wp/v2/pages/77030','POST',{status:'draft'})}catch{}
       throw err;
     }
+  }
   }
   }
 }finally{await browser.close()}
