@@ -1,0 +1,39 @@
+name: PSE corporate Page publish and native menu cutover
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-corporate-publish.mjs
+      - .github/workflows/pse-corporate-publish.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-corporate-release
+  cancel-in-progress: false
+jobs:
+  wordpress-release:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_CORPORATE_RELEASE_APPLY: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Preflight then publish verified Pages and bind native WordPress menu
+        run: node scripts/pse-corporate-publish.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-corporate-release-checkpoint
+          path: artifacts/pse-corporate-release.json
+          if-no-files-found: warn
+          retention-days: 7
