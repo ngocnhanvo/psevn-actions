@@ -90,7 +90,8 @@ try {
         if(check.status!==200||check.payload.status!=='draft'||
            check.payload.acf?.from_link!==rule.source||check.payload.acf?.to_link!==rule.dest||
            String(check.payload.acf?.type).toLowerCase()!=='rewrite'||
-           check.payload.acf?.match_type!==rule.match)throw Error('Native redirect readback mismatch');
+           check.payload.acf?.match_type!==rule.match||
+           ![true,1,'1'].includes(check.payload.acf?.enable))throw Error('Native redirect readback mismatch');
       }
       if(p.status==='draft'){
         const pub=await api('/wp-json/wp/v2/pages/77030','POST',{status:'publish'});
