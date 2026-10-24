@@ -1,0 +1,7 @@
+{
+  "schema": "pse-legacy-date-backfill-v1",
+  "tracker_issue": 3,
+  "runs": 0,
+  "records": {},
+  "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer."
+}
