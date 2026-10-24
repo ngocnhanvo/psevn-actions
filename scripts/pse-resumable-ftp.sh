@@ -35,6 +35,9 @@ set cmd:fail-exit yes
 set net:max-retries 3
 set net:reconnect-interval-base 3
 set net:timeout 25
+# Increase FTPS TCP buffers for high-latency long-haul uploads.
+# The server-side SHA-256, resume and TLS rules below stay unchanged.
+set net:socket-buffer 4194304
 set ftp:passive-mode yes
 set ftp:ssl-force yes
 set ftp:ssl-protect-data yes
