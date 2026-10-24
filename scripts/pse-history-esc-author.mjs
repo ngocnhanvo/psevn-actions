@@ -97,7 +97,12 @@ try {
    console.log("PSE_HISTORY_ESC_AUTHOR=ALREADY_DONE; page_unchanged=true");
    process.exit(0);
  }
- if(table.http!==404)throw Error("ESC Table exists with unexpected content or API unavailable, no overwrite");
+ console.log("PSE_HISTORY_ESC_TABLE_PREFLIGHT="+JSON.stringify({
+    http:table.http,id:table.data?.id,name:table.data?.name,
+    fields:table.data?.fields?.map(x=>x.key),
+    items:table.data?.items?.length,first:table.data?.items?.slice(0,2)
+  }));
+ if(table.http!==404)throw Error("ESC Table already exists; inspect safe recovery before creating another");
 
  // Native WordPress ESC Table Add Table + native advanced editor per long text cell.
  await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:60000});
