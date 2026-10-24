@@ -13,3 +13,5 @@ G8 Insert Code preview shape verified from failed diagnostic #40100801768; retry
 PSE G8 after-save readback only; #40101018178 rejected strict byte equality after Save. Confirm native shortcode state and audit rendered content before further writes or build.
 
 G8 final guarded native Page Save retry: read-only #40101251789 confirmed original HTML still present. Wait for WordPress navigation and REST readback; verify ESC Table shortcode and original surrounding content, no Astro build in this workflow.
+
+G8 post-save verification only: #40101524168 authenticated REST proves saved Page now has one awards shortcode, no Table_01, same ACF/status but 4-byte WordPress normalization. Never perform another Page Save; inspect safe readback snippet before build.
