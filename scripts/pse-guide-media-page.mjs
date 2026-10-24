@@ -20,7 +20,27 @@ const expected=new Map([
  ["Tay_Ninh_2014.pdf","a3d784617acb31b2bd577b862dbb7d4ec3bdd142d17b53b9830f18e5b2e79329"]
 ]);
 const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
+async function fetchVerifiedPDF(url, digest) {
+  let lastError;
+  for(let attempt=1;attempt<=3;attempt++) {
+    try {
+      const response=await download.get(url,{timeout:70000});
+      if(!response.ok())throw Error("Original PDF HTTP "+response.status());
+      const bytes=await response.body();
+      if(bytes.toString("ascii",0,5)!=="%PDF-"||bytes.length<100||bytes.length>35000000||sha(bytes)!==digest)
+        throw Error("Original PDF hash/header mismatch");
+      return bytes;
+    }catch(error){
+      lastError=error;
+      if(/hash\/header mismatch/.test(String(error)))throw error;
+      if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*1500));
+    }
+  }
+  throw new Error("Original PDF source unavailable after bounded retry: "+String(lastError?.message||lastError).slice(0,125));
+}
+
 const browser=await chromium.launch({headless:true}),ctx=await browser.newContext({viewport:{width:1440,height:900}}),p=await ctx.newPage(),download=await request.newContext({timeout:70000});
+const verifiedBuffers=new Map();
 const saved={mode:apply?"apply":"dry",source,slug,files:[],page:null,menu:null};
 try{
  await p.goto(origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
@@ -66,10 +86,9 @@ try{
   if(u.protocol!=="https:"||u.hostname!=="www.pse.vn"||!u.pathname.startsWith("/images/huong-dan-su-dung/")||!u.pathname.endsWith(".pdf"))throw Error("Unknown guide source "+f.url);
   const name=decodeURIComponent(u.pathname.split("/").at(-1));
   if(!expected.has(name))throw Error("Unexpected manual filename "+name);
-  const remote=await download.get(f.url,{timeout:70000});
-  if(!remote.ok())throw Error("Original manual HTTP "+remote.status()+" "+name);
-  const content=await remote.body(),digest=sha(content);
-  if(content.toString("ascii",0,5)!=="%PDF-"||digest!==expected.get(name)||content.length<100||content.length>35000000)throw Error("Original PDF bytes hash invalid "+name);
+  const content=await fetchVerifiedPDF(f.url,expected.get(name));
+  const digest=sha(content);
+  verifiedBuffers.set(name,content);
   const filename="pse-guide-"+digest.slice(0,18)+".pdf",marker=filename.slice(0,-4);
   const present=await api("/wp-json/wp/v2/media?context=edit&search="+encodeURIComponent(marker)+"&per_page=100&_fields=id,slug,mime_type,source_url,media_details");
   if(present.http!==200||!Array.isArray(present.data))throw Error("WP Media search unavailable "+name);
@@ -83,8 +102,8 @@ try{
  for(const f of saved.files){
   let id=f.existingId;
   if(!id){
-   const original=await download.get(f.url,{timeout:70000});if(!original.ok())throw Error("Source download failed during media import "+f.name);
-   const bytes=await original.body();if(sha(bytes)!==f.sha256)throw Error("Original bytes changed before upload "+f.name);
+   const bytes=verifiedBuffers.get(f.name);
+   if(!bytes||sha(bytes)!==f.sha256)throw Error("Original bytes changed before upload "+f.name);
    const uploaded=await ctx.request.post(origin+"/wp-json/wp/v2/media",{data:bytes,headers:{"X-WP-Nonce":nonce,"Content-Type":"application/pdf","Content-Disposition":'attachment; filename="'+f.filename+'"',Accept:"application/json"},timeout:120000});
    const data=await uploaded.json().catch(()=>({}));
    if(uploaded.status()!==201||data.mime_type!=="application/pdf"||!Number.isSafeInteger(Number(data.id)))throw Error("PDF media upload failed "+f.name+" HTTP "+uploaded.status());
