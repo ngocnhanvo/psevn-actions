@@ -1,2 +1,3 @@
 Read-only dry-run of three original PSE distribution pages and true PDF; no WordPress write while product build is active.
 Retry original archive source dry-run: Joomla article 'Hệ thống kho' detail is only 'Nội dung đang cập nhật', while verified original category blog has real warehouse table. Fallback only for placeholder and matched original item; no write.
+Dry-run #40143870394 PASS: 3 original source articles (59/595/1271 chars), sanitized archive fallback only for true warehouse placeholder, 1 original 8,933,156-byte PDF SHA256 6c706244..., no existing slug/media conflict, Menu 77013 verified. Signed Astro release #40143412040 and parallel PHP release #40143823261 completed; apply native Pages/Media idempotently with readback.
