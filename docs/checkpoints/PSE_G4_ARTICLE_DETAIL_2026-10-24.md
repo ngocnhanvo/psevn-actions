@@ -47,3 +47,12 @@
 - **Cửa tiếp tục phát hành G4:** chỉ khi WordPress thật sự có `pending_count>0`, dùng Build Website chính thức với lock idle, rồi xác minh signed FTPS/SSR/Playwright. Nếu không có pending, cần yêu cầu chủ dự án chỉ đạo build ngoại lệ theo Knowledge; không tự force.
 
 **Chế độ code: auto-build.**
+
+
+## G2: Xác minh liên kết menu PVFCCo-PSE (24/10/2026)
+
+- Nguồn: 10 corporate WordPress Pages đã publish và native menu items 76985–76994 đã bind, nhưng WordPress Menu Manager vẫn giữ metadata `_esc_menu_link_type=custom`. Playwright run #40084793921 xác nhận cả Astro menu và WordPress `esc-api/v1/menus` lúc đó đều hiển thị liên kết Joomla cũ.
+- Trên Actions `main`, script `scripts/pse-corporate-menu-native-binding.mjs` dùng WordPress Admin native Menu Manager, xác thực 10 item Page IDs, sau đó Save Menu có readback. Run #40085525993 PASS: saved 10, `linkMode=page`, `linkType=internal`, `menu_dirty=true`. Không sửa PHP/DB hay gán cứng URL Astro.
+- WordPress PHP Build Website run #40085624269 PASS với `pending_count=1` và mode normal; Astro signed FTPS run #40085688546 PASS, source master `b8a8d3d645e6545331a4abf85f5dd4690c7ad797`; logs: WordPress Header `1 changed, wordpress`, signed unzip SUCCESS và GET homepage/API PASS.
+- Kiểm thử **nhấp thật** 10 dropdown entries desktop (1440px) + mobile (390px): [Actions #40085955883](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40085955883) **20/20 PASS**, links `/<slug>`, GET HTTP 200, đúng H1 Page, không tràn ngang. Không tái chạy hoặc lưu menu/build nếu không có yêu cầu thay đổi mới.
+- Hạng mục riêng ngoài yêu cầu menu này: search route `/tim-kiem` vẫn cần khắc phục regression được ghi ở checkpoint cũ; không nhầm với thành công menu/trang con.
