@@ -93,7 +93,7 @@ try {
         const result=await api(endpoint,'POST',{title:rule.name,status:'draft',
           acf:{from_link:rule.source,to_link:rule.dest,type:'Rewrite',match_type:rule.match,enable:true}});
         if(result.status!==201||!Number.isSafeInteger(Number(result.payload?.id)))
-          throw Error('Cannot stage WordPress rewrite '+rule.source+' status='+result.status);
+          throw Error('Cannot stage WordPress rewrite '+rule.source+' status='+result.status+' code='+String(result.payload?.code||'unknown')+' detail='+String(result.payload?.message||'').slice(0,300)+' invalidKeys='+Object.keys(result.payload?.data?.params||{}).join(','));
         const id=Number(result.payload.id);saved.push(id);
         const check=await api(endpoint+'/'+id+'?context=edit&_fields=id,status,acf');
         if(check.status!==200||check.payload.status!=='draft'||
