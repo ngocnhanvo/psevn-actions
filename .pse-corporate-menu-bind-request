@@ -1,3 +1,5 @@
 Read-only preflight verifies 10 native WordPress Page menu item IDs and stale Menu Manager metadata before any native save. No changes or build.
 
 Preflight verified ten original Page references on Menu #1687, native page item count=10 and ten stale custom mode fields. Authorize native WordPress menu editor save and readback; no Astro build in this workflow.
+
+Retry: prior run #40085360877 did not save (header control hidden); use visible native Save Menu button after revalidating current WP state. Exact ten original item IDs only.
