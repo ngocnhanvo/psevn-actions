@@ -180,6 +180,13 @@ try{
      const rawDates=[
        ...document.querySelectorAll('meta[property="article:published_time"],meta[itemprop="datePublished"],meta[name="date"],meta[name="DC.date.issued"],time[datetime],[itemprop="datePublished"],.article-info dd.published,.article-info dd.created')
      ].map(e=>e.getAttribute("content")||e.getAttribute("datetime")||e.textContent||"");
+     // Remove empty editor blocks only at the article tail.
+     const isBlank=node=>node.nodeType===Node.TEXT_NODE
+       ? !String(node.textContent||"").replace(/[\u00a0\s]/g,"")
+       : node.nodeType===Node.ELEMENT_NODE && node.matches("p,div,br") &&
+         !node.querySelector("a,img,iframe,object,embed,table,hr") &&
+         !String(node.textContent||"").replace(/[\u00a0\s]/g,"");
+     while(copy.lastChild && isBlank(copy.lastChild))copy.lastChild.remove();
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
@@ -252,8 +259,6 @@ try{
     if(html.includes(originalURL))html=html.split(originalURL).join(meta.url);
    }
    if(article.assets.some(x=>html.includes(x)))throw Error("Mandatory media still linked to source");
-   const canonical=item.source_url;
-   const footer='<p class="pse-legacy-attribution">Nguồn: <a href="'+canonical+'">PSE.VN</a></p>';
    // Always stage as a draft first: public publication happens only after
    // WordPress REST readback verifies links, title, category and original date.
    const normalized=String(article.bodyText||"").replace(/\s+/g," ").trim();
@@ -263,7 +268,7 @@ try{
    const seoDescription=(units.length>158 && space>115?candidate.slice(0,space):candidate).trim();
    if(seoDescription.length<65||seoDescription.length>200)
      throw Error("Cannot derive a grounded SEO description from original article body");
-   const data={title:article.title,slug,categories:[cat],content:html+"\n"+footer,
+   const data={title:article.title,slug,categories:[cat],content:html.trim(),
      excerpt:seoDescription,pse_seo_description:seoDescription,status:"draft"};
    if(originalDate)data.date=originalDate;
    const created=await api("/wp-json/wp/v2/posts","POST",data);
@@ -276,7 +281,7 @@ try{
    if(check.data?.pse_seo_description!==seoDescription||String(check.data?.excerpt?.raw||"").trim()!==seoDescription)
      throw Error("WordPress Yoast SEO description/excerpt readback did not match");
    if(check.status!==200||check.data.slug!==slug||!check.data.categories?.includes(cat)||
-      check.data.status!=="draft"||!raw.includes("PSE.VN")||
+      check.data.status!=="draft"||!raw.trim()||
       !String(check.data.title?.raw||"").trim() ||
       article.assets.some(x=>!raw.includes(state.media[x].url)))
     throw Error("WordPress staged draft did not preserve all source/media links");
@@ -291,6 +296,7 @@ try{
    }
    item.status=originalDate?"imported":"draft_needs_date";
    item.seo_cleaned=true;
+   item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
    if(!originalDate)item.reason="Original source lacks independently verifiable publish timestamp";
    imported++;
