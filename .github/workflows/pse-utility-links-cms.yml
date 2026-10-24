@@ -1,0 +1,37 @@
+name: PSE utility links ESC Table authoring (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-utility-links-cms.yml
+      - scripts/pse-homepage-utility-links.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-utility-links-cms-editor
+  cancel-in-progress: false
+jobs:
+  edit-useful-links:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright Chromium client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Safely author exactly seven PSE utility links in existing ESC Table
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-homepage-utility-links.mjs
+          node scripts/pse-homepage-utility-links.mjs
