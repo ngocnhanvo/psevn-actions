@@ -129,6 +129,7 @@ try{
   if(await insert.isDisabled())throw Error("Insert Image button disabled");
   await insert.click();
   await page.locator(".media-modal").waitFor({state:"hidden",timeout:18000});
+  await page.waitForFunction(()=>String(document.querySelector("#textarea-insert-helper")?.value||"").includes("<img"),null,{timeout:12000}).catch(()=>{});
   const result=await page.evaluate(({row})=>{
    const tp=window.tp,helper=document.querySelector("#textarea-insert-helper");
    const html=String(helper?.value||"");
@@ -139,7 +140,8 @@ try{
    return String(tp.table.data[row][1]||"");
   },{row});
   if(!/<img\b/i.test(result)||!result.includes("/"+image.name)||!/\balt=["'][^"']+["']/i.test(result)){
-    console.log("PSE_AWARDS_ESC_INSERT_DIAGNOSTIC="+JSON.stringify({row,cell:result.slice(0,420),name:image.name,altExpected:alt}));
+    const helperValue=await page.evaluate(()=>String(document.querySelector("#textarea-insert-helper")?.value||"").slice(0,520));
+    console.log("PSE_AWARDS_ESC_INSERT_DIAGNOSTIC="+JSON.stringify({row,cell:result.slice(0,420),helperValue,name:image.name,altExpected:alt}));
     throw Error("Native Insert Image failed row "+row);
   }
   console.log("PSE_AWARDS_ESC_CELL="+JSON.stringify({row:row+1,year:awards[i].year,mediaId:image.id,hasAlt:true,source:"native-editor"}));
