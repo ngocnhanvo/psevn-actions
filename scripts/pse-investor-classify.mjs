@@ -48,7 +48,10 @@ try{
  for(const spec of specs){
   const item=menus.data.filter(x=>Number(x.id)===spec.id);
   if(item.length!==1||Number(item[0].parent)!==spec.parent||String(item[0].title?.raw||item[0].title?.rendered||"").trim()!==spec.name)throw Error("Menu identity mismatch "+spec.slug);
-  const legacy=new URL(item[0].url);if(legacy.hostname!=="www.pse.vn"||legacy.protocol!=="https:"||legacy.pathname!=="/quan-he-nha-dau-tu/"+(spec.id===77023||spec.id===77024?"tin-tuc-co-dong/":"")+spec.slug+".html")throw Error("Unexpected original category URL "+spec.slug);
+  const sourcePath="/quan-he-nha-dau-tu/"+(spec.id===77023||spec.id===77024?"tin-tuc-co-dong/":"")+spec.slug+".html";
+  const legacy=new URL(sourcePath,"https://www.pse.vn");
+  const currentUrl=item[0].url||"",liveUrl=envFrontend+"/tin-tuc-su-kien/?cat="+spec.slug;
+  if(item[0].type!=="custom"||![legacy.href,liveUrl].includes(currentUrl))throw Error("Unexpected original or migrated category URL "+spec.slug);
   const base=legacy.pathname.replace(/\.html$/,"/"),pending=[legacy.href],visited=new Set(),found=new Map();
   while(pending.length){
    if(visited.size>=75)throw Error("Too many legacy category archive pages "+spec.slug);
