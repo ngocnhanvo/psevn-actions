@@ -5,6 +5,7 @@ on:
     paths:
       - .pse-corporate-live-qa-trigger
       - .pse-g4-live-qa-trigger
+      - .pse-corporate-menu-links-trigger
 permissions:
   contents: read
 jobs:
@@ -22,11 +23,16 @@ jobs:
         with:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify ten WordPress menu links actually navigate to corporate child Pages
+        if: "${{ github.event.head_commit.message == 'test(pse): verify corporate menu destinations' }}"
+        run: |
+          node --check scripts/pse-corporate-menu-destination-qa.mjs
+          node scripts/pse-corporate-menu-destination-qa.mjs
       - name: Confirm all ten frontend Pages render without Joomla sidebar and mobile overflow
-        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' }}"
+        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' }}"
         run: node scripts/pse-corporate-live-qa.mjs
       - name: Verify live WordPress article detail pages (read-only G4)
-        if: success()
+        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' }}"
         run: node scripts/pse-g4-live-article-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
