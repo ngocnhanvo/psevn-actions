@@ -118,10 +118,19 @@ try{
  await frame.waitFor({state:"hidden",timeout:30000});
  const inserted=await textarea.inputValue();
  const tokens=[...inserted.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(x=>x[1]);
+ const middle=inserted.slice(editor.before.length,inserted.length-editor.after.length);
+ // Native Insert Code adds an editor-only preview div with img + shortcode
+ // badge, not a bare shortcode. Match only the narrowly verified structure.
+ // Astro stripEscTableEditorPreviews removes the same editor preview at render.
+ const previewRegex=/<div\b(?=[^>]*\bclass=(["'])[^"']*\btablepress-preview-wrap\b[^"']*\1)[^>]*>\s*(?:<img\b[^>]*>\s*)?<span\b(?=[^>]*\bclass=(["'])[^"']*\btablepress-preview-badge\b[^"']*\2)[^>]*>\s*(\[table\s+id=([a-z0-9_-]+)\s*\/\])\s*<\/span>\s*<\/div>/gi;
+ const unwrapped=middle.replace(previewRegex,(match,_divQuote,_badgeQuote,originalToken,id)=>{
+   const openingDiv=match.slice(0,match.indexOf(">")+1);
+   const actualId=/\bdata-table-id=(["'])([a-z0-9_-]+)\1/i.exec(openingDiv)?.[2];
+   return actualId===tableId && id===tableId && originalToken===shortcode ? shortcode : match;
+ });
  if(JSON.stringify(tokens)!==JSON.stringify([tableId])||inserted.includes("Table_01")||
    !inserted.startsWith(editor.before)||!inserted.endsWith(editor.after)||
-   inserted.slice(editor.before.length,inserted.length-editor.after.length).trim()!==shortcode) {
-   const middle=inserted.slice(editor.before.length,inserted.length-editor.after.length);
+   unwrapped.trim()!==shortcode) {
    console.log("PSE_AWARDS_ESC_ATTACH_INSERT_DIAGNOSTIC="+JSON.stringify({
       shortcodeCount:tokens.length,oldStillExists:inserted.includes("Table_01"),
       beforePreserved:inserted.startsWith(editor.before),
