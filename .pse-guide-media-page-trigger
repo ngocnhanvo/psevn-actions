@@ -2,3 +2,4 @@ Dry-run source-verified seven original fertilizer manuals to WordPress native Me
 Retry dry-run after #40142328664 failed with temporary source PDF ECONNRESET, before any CMS write. Reuse byte cache + bounded source retry.
 DRY RUN #40142500774 PASS; 7 original files byte-for-byte SHA verified and unique, no CMS conflicts, native menu #77012 still points Joomla. Apply once and verify 7 WordPress Media checksums + Page/menu readback.
 Prior apply #40142673182 stopped on first PDF Media readback because source_url omitted, before publishing Page/menu. One Media may exist: detect original checksum filename, reuse idempotently, verify WP-owned file and continue.
+#40142834093 ended in node --check SyntaxError before any CMS mutation. Corrected PDF path regex. Retry exact idempotent source-proven PDF import.
