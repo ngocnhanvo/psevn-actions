@@ -1,0 +1,1 @@
+2026-10-25: Verify newly deployed signed PSE PHP image_manifest HMAC response, frontend identity and published image hashes. Strictly READ ONLY: no Astro build, FTP, WordPress writes or file upload.
