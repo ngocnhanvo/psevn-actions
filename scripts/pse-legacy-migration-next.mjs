@@ -12,6 +12,7 @@ if(data.schema!=="pse-legacy-article-migration-v1"||data.tracker_issue!==3 ||
   !Number.isSafeInteger(data.runs) || data.runs>=250)throw Error("Invalid migration state or budget");
 const pending=data.queue.length>0 || Object.values(data.articles).some(row=>
   (["pending","media"].includes(row.status)&&Number(row.attempts||0)<3) ||
+  (row.status==="quarantined" && row.reason==="Source content incomplete or oversized" && !row.short_content_rechecked) ||
   (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
     Number(row.attempts||0)<3) ||
   (row.wp_id && ["imported","draft_needs_date","existing"].includes(row.status) &&

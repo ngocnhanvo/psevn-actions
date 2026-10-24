@@ -37,6 +37,7 @@ const articleProgress=Object.entries(local.articles).some(([id,row])=>{
     Boolean(row.attribution_cleaned)!==Boolean(previous.attribution_cleaned) ||
     Number(row.attribution_attempts||0)!==Number(previous.attribution_attempts||0) ||
     Number(row.date_lookup_attempts||0)!==Number(previous.date_lookup_attempts||0) ||
+    Boolean(row.short_content_rechecked)!==Boolean(previous.short_content_rechecked) ||
     row.verified_date!==previous.verified_date;
 });
 const progress=local.seen.length>original.seen.length ||
@@ -46,6 +47,7 @@ const progress=local.seen.length>original.seen.length ||
   articleProgress;
 const pending=local.queue.length>0 || Object.values(local.articles).some(
   row=>(["pending","media"].includes(row.status) && Number(row.attempts||0)<3) ||
+    (row.status==="quarantined" && row.reason==="Source content incomplete or oversized" && !row.short_content_rechecked) ||
     (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
       Number(row.attempts||0)<3) ||
     (row.wp_id && ["imported","draft_needs_date","existing"].includes(row.status) &&
