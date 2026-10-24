@@ -26,6 +26,18 @@ try{
   forms.push({path,http:r.http,count:Array.isArray(arr)?arr.length:null,records:(Array.isArray(arr)?arr:[]).slice(0,40).map(x=>({id:x.id,title:String(x.title?.rendered||x.title||"").slice(0,80),tagNames:[...String(x.form||x.properties?.form||"").matchAll(/\[(?:text\*?|email\*?|tel\*?|textarea\*?|select\*?|submit)\s+([a-zA-Z0-9_-]+)/g)].map(m=>m[1]),hasMail:!!(x.mail||x.properties?.mail)}))});
  }
  console.log("PSE_COMPLAINT_NATIVE_CF7="+JSON.stringify({routes:cf7Routes,forms}));
+ const nativeForm=await get("/wp-json/contact-form-7/v1/contact-forms/49442");
+ const cfg=nativeForm.data?.properties||{};
+ const markup=String(cfg.form||"");
+ const mail=cfg.mail||{};
+ const contactRoute=root.data.routes?.["/contact-form-7/v1/contact-forms"]||{};
+ console.log("PSE_COMPLAINT_CF7_CONTRACT="+JSON.stringify({http:nativeForm.http,id:nativeForm.data?.id,
+   title:nativeForm.data?.title,propertyNames:Object.keys(cfg),existingFormTagNames:[...markup.matchAll(/\\[(?:text|email|tel|textarea|select)(?:\\*)?\\s+([a-zA-Z0-9_-]+)/g)].map(x=>x[1]),
+   mailConfigured:Boolean(mail.recipient&&mail.sender&&mail.subject&&mail.body),mail2Active:!!cfg.mail_2?.active,
+   configErrorCount:nativeForm.data?.config_errors?.length||0,
+   writeMethodSupported:contactRoute.endpoints?.some(x=>Array.isArray(x.methods)&&x.methods.includes("POST"))||false,
+   postFieldNames:contactRoute.endpoints?.filter(x=>x.methods?.includes("POST")).flatMap(x=>Object.keys(x.args||{}))||[]}));
+
  const choose=[77020,77025],existingMenus=menus.data.filter(x=>choose.includes(Number(x.id))).map(x=>({id:x.id,name:String(x.title?.raw||x.title?.rendered||"").trim(),type:x.type,parent:x.parent,url:x.url}));
  const existingPages=pages.data.filter(x=>/khieu-nai|khieu nai|y-kien|thong-tin-tai-chinh|finance|contact/i.test(x.slug)).map(x=>({id:x.id,slug:x.slug,status:x.status,action:x.acf?.action,key:x.acf?.key,contentLen:String(x.content?.raw||"").length}));
  console.log("PSE_COMPLAINT_NATIVE_MENU="+JSON.stringify({menus:existingMenus,pages:existingPages}));
