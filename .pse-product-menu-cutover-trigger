@@ -1,1 +1,3 @@
 Read-only product WP Catalog native categories and source Header menu audit; DO NOT bind before live Astro build.
+
+2026-10-25: Re-evaluate native Product 6 category Header cutover in READ-ONLY after batch 6 #40143075701 PASS, catalog 80968 and 44 source products; no menu writes before live Product release.
