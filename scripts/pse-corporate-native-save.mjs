@@ -135,6 +135,8 @@ try{
    const pass=JSON.stringify(original)===JSON.stringify(now);
    console.log("PSE_CORPORATE_TABLE_SOURCE_PARITY="+JSON.stringify({
      slug:"ban-kiem-soat",sourceCells:original.cells.length,wpCells:now.cells.length,
+     cellDiffs:original.cells.map((v,i)=>({i,source:v,wp:now.cells[i]||""})).filter(x=>x.source!==x.wp),
+     sourceOtherText:original.otherText.slice(0,180),wpOtherText:now.otherText.slice(0,180),
      sourceTextHash:hash(original.cells.join("|")+original.otherText),
      wpTextHash:hash(now.cells.join("|")+now.otherText),pass
    }));
