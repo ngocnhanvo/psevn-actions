@@ -31,3 +31,10 @@
 ## Status
 - ASTRO_CODE/MERGE: PASS, CI: PASS, NATIVE_ESC_AUTHOR: PASS, WORDPRESS_ATTACH: SAVED + READBACK PASS.
 - PHP normal build trigger PASS. Signed deploy and live QA: **PENDING at first checkpoint**.
+
+## Final live deployment and QA — verified complete
+- Normal WordPress/PHP build [#40108179317](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40108179317) **SUCCESS**, `pending_count=2`, `PSE_FORCE_BUILD_ONCE=false`; no exception and no duplicate build.
+- Downstream Astro `master` exact SHA `9b139247ab942b05852480fca63f52fed74fe43f`, signed bundle / FTPS [#40108247001](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40108247001) **SUCCESS**, `SIGNED_UNZIP_SUCCESS`, production smoke PASS.
+- Responsive read-only Playwright [#40108416292](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40108416292) **SUCCESS 3/3** at **390/768/1440px**. All three: HTTP 200, one H1, 6 ESC Table milestones with all six source dates in the original order, nonempty texts, existing WordPress photo present/loaded/visible with ALT, no hidden/clipped text, no horizontal overflow, no nested scroll, 11 sibling menu links, no exposed shortcode. Three full-page screenshots uploaded as artifact `pse-g10-history-responsive`.
+- Final status: **CODE_READY=PASS; CI=PASS; NATIVE_ESC=PASS; WORDPRESS_PAGE=PASS; PHP_BUILD=PASS; SIGNED_FTPS=PASS; LIVE_QA=PASS.**
+- No further deployment, re-save, tests, or mutations required for G10 unless new user feedback arrives.
