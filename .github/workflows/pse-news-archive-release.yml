@@ -1,0 +1,31 @@
+name: PSE news archive WordPress Page and rewrites (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-news-archive-release.mjs
+      - .github/workflows/pse-news-archive-release.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-news-archive-release
+  cancel-in-progress: false
+jobs:
+  cms:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate WordPress-owned SSR news archive and apply only on authorized commit
+        run: node scripts/pse-news-archive-release.mjs
