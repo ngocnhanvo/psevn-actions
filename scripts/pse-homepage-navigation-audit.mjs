@@ -75,6 +75,17 @@ try {
       forceDisabled:!!document.querySelector('#vcs-force-build')?.disabled
     }))
   ));
+  const verification=await page.evaluate(()=>({
+    warningPresent:[...document.querySelectorAll('.notice-warning')].some(x=>(x.textContent||'').includes('Chưa cấu hình GitHub Actions')),
+    localizedBuildFlag:window.vcsBuild?.build_configured,
+    buildButtonText:(document.querySelector('#vcs-build-btn-main')?.textContent||'').trim(),
+    forceDisabled:document.querySelector('#vcs-force-build')?.disabled,
+  }));
+  if(verification.warningPresent || !['1',1,true].includes(verification.localizedBuildFlag) ||
+     verification.buildButtonText.includes('chưa được cấu hình') || verification.forceDisabled) {
+    throw Error('PSE Build UI regression: localized configured=true not recognized');
+  }
+  console.log('PSE_BUILD_BUTTON_CONFIGURED=PASS; server_and_client_consistent=true; no_build_triggered=true');
   const restNonce=await page.evaluate(async()=>{
     const cached=window.wpApiSettings?.nonce;
     if(cached)return cached;
