@@ -1,7 +1,49 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 0,
-  "records": {},
-  "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer."
+  "runs": 1,
+  "records": {
+    "1725": {
+      "wp_id": 77135,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1726": {
+      "wp_id": 77122,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1727": {
+      "wp_id": 77117,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1728": {
+      "wp_id": 77116,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1729": {
+      "wp_id": 77106,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1733": {
+      "wp_id": 77069,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1734": {
+      "wp_id": 77066,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1735": {
+      "wp_id": 77072,
+      "attempts": 0,
+      "status": "published_preserved"
+    }
+  },
+  "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
+  "last_migration_batch_observed": 131
 }
