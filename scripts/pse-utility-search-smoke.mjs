@@ -36,8 +36,10 @@ let bodyProbe=null;
 for(const candidate of articles.body){
  const content=String(candidate.content?.rendered||"").replace(/<[^>]*>/g," ");
  const other=[candidate.slug,candidate.title?.rendered,candidate.excerpt?.rendered].join(" ").toLocaleLowerCase("vi-VN");
- const tokens=content.match(/[\p{L}][\p{L}\p{M}]{10,}/gu)||[];
- const token=tokens.find(t=>!other.includes(t.toLocaleLowerCase("vi-VN"))&&t.length<=80);
+ const tokens=content.match(/[\p{L}][\p{L}\p{M}]{4,}/gu)||[];
+ // Some real PSE news are short PDF notices, so >10-letter unique words
+ // are not guaranteed. Try genuine body-only terms as short as 5 letters.
+ const token=tokens.find(t=>!other.includes(t.toLocaleLowerCase("vi-VN"))&&t.length<=60);
  if(token){bodyProbe={id:candidate.id,token};break}
 }
 if(!bodyProbe)throw Error("Cannot find a grounded content-only search token");
