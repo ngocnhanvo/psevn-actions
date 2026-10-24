@@ -22,3 +22,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-24 PSE G3 archive: signed Astro deploy #40074078655 PASS but 0 redirect route rules despite WordPress published Rewrite records 79699/79700. Fix Astro github 6d9ed3f226bfc4fe9dabc5e7a7c9a71317f2a65c reconciles active WordPress redirect ID+modified registry with incremental cached redirect logs, refresh only on actual drift. Run isolated Vitest + parser, no build, no FTP.
 
 2026-10-24: PSE G3 approved WordPress-authored news archive intro placement Astro github 141cce2bd5e8f5ea71339d6305fd4206188a9478. Existing all-post/category SSR remains, render Page intro below H1 instead of before. Run Vitest/parser only; NO BUILD, NO FTP.
+
+2026-10-24 PSE G3 follow-up: test Astro github 81a2791f99d553aa8557c068267e55b60bad5280. News subpage dropdown now follows native WP parent/child category hierarchy, Escape close; correct PostsPage SSR CMS page props. Run existing full Vitest + Astro parser only. NO BUILD / NO FTP.
