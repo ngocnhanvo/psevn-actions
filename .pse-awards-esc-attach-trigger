@@ -9,3 +9,5 @@ Retry #40098720173: WordPress TinyMCE normalization proven; restore byte-exact a
 G8 resumed checkpoint: single diagnostic rerun with bounded middlePreview/middleTail logging on validation failure; no repeat ESC Table authoring, no Astro build. Verify Page unchanged on failure.
 
 G8 Insert Code preview shape verified from failed diagnostic #40100801768; retry only native editor-authoritative preview acceptance after strict boundary and token validation. No repeat authoring or Astro build.
+
+PSE G8 after-save readback only; #40101018178 rejected strict byte equality after Save. Confirm native shortcode state and audit rendered content before further writes or build.
