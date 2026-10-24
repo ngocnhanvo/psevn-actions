@@ -169,7 +169,7 @@ try{
       // WordPress Media metadata as an alternative, verifying exact bytes.
       const metadataFile=String(fresh.payload.media_details?.file||"").replace(/^\/+/, "");
       const candidates=[fresh.payload.source_url,fresh.payload.guid?.rendered];
-      if(/^(?:[0-9]{4}\\/[0-9]{2}\\/)?[a-zA-Z0-9._\\/-]+$/.test(metadataFile) &&
+       if(metadataFile && metadataFile.split("/").every(segment=>/^[a-zA-Z0-9._-]+$/.test(segment)) &&
          metadataFile.split("/").at(-1)===filename && !metadataFile.includes(".."))
          candidates.push(new URL("/wp-content/uploads/"+metadataFile,wpOrigin).href);
       let mediaUrl="";
