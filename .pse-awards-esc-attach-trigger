@@ -5,3 +5,5 @@ Retry native Quicktags Text tab activation after #40098387750 no-save: official 
 Retry after #40098572357: wait for TinyMCE body ready, then official WP Text mode and native Insert Code; no direct shortcode writes.
 
 Retry #40098720173: WordPress TinyMCE normalization proven; restore byte-exact authenticated WordPress raw in Classic Text editor before native ESC Insert Code replacement. Fail closed if raw restoration or output differs.
+
+G8 resumed checkpoint: single diagnostic rerun with bounded middlePreview/middleTail logging on validation failure; no repeat ESC Table authoring, no Astro build. Verify Page unchanged on failure.
