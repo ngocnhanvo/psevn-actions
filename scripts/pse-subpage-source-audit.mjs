@@ -27,7 +27,9 @@ try{
  }
  if(page.url().includes("wp-login"))throw Error("Login failed");
  const res=await page.evaluate(async()=>{
-   const r=await fetch("/wp-json/wp/v2/menu-items?context=edit&per_page=100",{credentials:"same-origin"});
+   const nonce=window.wpApiSettings?.nonce || (await (await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"})).text()).trim();
+   if(!/^[a-zA-Z0-9]{8,24}$/.test(nonce))throw Error("WP REST nonce missing");
+   const r=await fetch("/wp-json/wp/v2/menu-items?context=edit&per_page=100",{credentials:"same-origin",headers:{"X-WP-Nonce":nonce}});
    return {status:r.status,items:await r.json()};
  });
  if(res.status!==200||!Array.isArray(res.items))throw Error("WP menu items not readable");
