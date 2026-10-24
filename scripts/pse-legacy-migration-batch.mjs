@@ -29,7 +29,10 @@ const candidates=Object.keys(state.articles).filter(id=>
    (state.articles[id].status==="quarantined" &&
     /^Original media size unsafe; bytes=\d+; ext=pdf$/.test(state.articles[id].reason||"") &&
     Number((state.articles[id].reason||"").match(/bytes=(\d+)/)?.[1])>80 &&
-    Number((state.articles[id].reason||"").match(/bytes=(\d+)/)?.[1])<24_000_000))
+    Number((state.articles[id].reason||"").match(/bytes=(\d+)/)?.[1])<24_000_000) ||
+   (state.articles[id].status==="quarantined" &&
+    state.articles[id].reason==="Source content incomplete or oversized" &&
+    !state.articles[id].short_content_rechecked))
 ).sort((a,b)=>Number(b)-Number(a));
 const continuing=candidates.filter(id=>state.articles[id].status==="media");
 const fresh=candidates.filter(id=>state.articles[id].status!=="media");
@@ -181,6 +184,13 @@ try{
     break;
   }
   const item=state.articles[id];
+  // One bounded second look for source pages that are legitimate short PDF/link notices.
+  // Legacy 100-character minimum was too strict for investor disclosures.
+  if(item.status==="quarantined" && item.reason==="Source content incomplete or oversized" &&
+     !item.short_content_rechecked){
+    item.short_content_rechecked=true;
+    item.attempts=2; // Exactly one recheck; never loop indefinitely on invalid HTML.
+  }
   if(item.status==="quarantined" && /^Original media size unsafe; bytes=\d+; ext=pdf$/.test(item.reason||""))item.attempts=0;
   item.attempts=(item.attempts||0)+1;
   const url=new URL(item.source_url);
@@ -266,7 +276,11 @@ try{
      return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:rawDates,assets};
     });
    }finally{await original.close()}
-   if(!article.title||article.chars<100||article.chars>150000||article.html.length>550000)
+   // Short source notices are valid when they have substantial text (65+ chars)
+   // or 20+ chars backed by actual linked media. Never synthesize an article body.
+   const verifiedShortNotice=article.chars>=65 ||
+     (article.chars>=20 && article.assets.length>0);
+   if(!article.title||!verifiedShortNotice||article.chars>150000||article.html.length>550000)
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
    let originalDate=iso ? iso.slice(0,19).replace(" ","T") : null;
@@ -354,11 +368,14 @@ try{
    // Always stage as a draft first: public publication happens only after
    // WordPress REST readback verifies links, title, category and original date.
    const normalized=String(article.bodyText||"").replace(/\s+/g," ").trim();
-   const units=Array.from(normalized);
+   // SEO description for a short document notice uses ONLY its source title
+   // and exact visible source text; no invented financial/legal details.
+   const seoText=article.chars<100?article.title+". "+normalized:normalized;
+   const units=Array.from(seoText);
    const candidate=units.slice(0,158).join("");
    const space=candidate.lastIndexOf(" ");
    const seoDescription=(units.length>158 && space>115?candidate.slice(0,space):candidate).trim();
-   if(seoDescription.length<65||seoDescription.length>200)
+   if(seoDescription.length<35||seoDescription.length>200)
      throw Error("Cannot derive a grounded SEO description from original article body");
    const data={title:article.title,slug,categories:[cat],content:html.trim(),
      excerpt:seoDescription,pse_seo_description:seoDescription,status:"draft"};
