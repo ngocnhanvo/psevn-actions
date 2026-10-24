@@ -18,7 +18,9 @@ const jobs=Object.entries(state.articles).filter(([sourceId,row])=>
  /^\d{3,6}$/.test(sourceId) && Number.isSafeInteger(row.wp_id) &&
  ["imported","draft_needs_date","existing"].includes(row.status) &&
  !row.seo_cleaned && (Number(row.seo_attempts||0)<3 ||
-  row.seo_error==="Post has no exact migration provenance marker")
+  row.seo_error==="Post has no exact migration provenance marker" ||
+  (row.seo_error==="Article content unexpectedly short after cleanup" &&
+   Number(row.seo_attempts||0)===3))
 ).slice(0,12);
 if(jobs.length===0){console.log("PSE_LEGACY_SEO_REPAIR=NO_PENDING");process.exit(0)}
 if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)throw Error("WP credentials missing");
@@ -99,18 +101,33 @@ try {
      }
      const visible=String(root.textContent||"").replace(/\s+/g," ").trim();
      if(footerNode)root.appendChild(footerNode);
-     return {html:root.innerHTML.trim(),bodyText:visible,removed:!!heading};
+     const verifiedDocuments=[...root.querySelectorAll("a[href]")].filter(a=>
+       /\.(?:pdf|docx?|xlsx?|pptx?)(?:[?#]|$)/i.test(a.getAttribute("href")||"")).length;
+     return {html:root.innerHTML.trim(),bodyText:visible,removed:!!heading,
+       verifiedDocuments};
    },oldHtml);
-   if(transformed.bodyText.length<80)throw Error("Article content unexpectedly short after cleanup");
    const normalized=transformed.bodyText.replace(/\s+/g," ").trim();
-   const letters=Array.from(normalized);
+   const headingText=String(post.title?.raw||post.title?.rendered||"").replace(/<[^>]*>/g,"").trim();
+   const shortDocument=normalized.length<80 && transformed.verifiedDocuments>0 &&
+     headingText.length>=15;
+   // Short PDF/disclosure notices often contain only a document link.
+   // Reject genuinely empty/invalid pages; never fabricate missing article text.
+   if(normalized.length<80 && !shortDocument)
+     throw Error("Article content unexpectedly short after cleanup");
    let seo=normalized;
+   if(shortDocument){
+     const contextText=normalized.toLocaleLowerCase("vi")===headingText.toLocaleLowerCase("vi")
+       ? headingText : headingText+": "+normalized;
+     seo=contextText.length>=65?contextText:
+       contextText+" — xem tài liệu đính kèm trên PSE.VN.";
+   }
+   const letters=Array.from(seo);
    if(letters.length>158){
      const first=letters.slice(0,158).join("");
      const at=first.lastIndexOf(" ");
      seo=(at>115?first.slice(0,at):first).trim();
    }
-   if(seo.length<65||seo.length>200)throw Error("SEO description length out of range");
+   if(seo.length<30||seo.length>200)throw Error("SEO description length out of range");
    const metadataAvailable=Object.prototype.hasOwnProperty.call(post,"pse_seo_description");
    if(!metadataAvailable)throw Error("PSE SEO REST bridge not deployed; retry after verified FTPS release");
    const edits={};
@@ -138,7 +155,8 @@ try {
    row.seo_error=null;
    if(Object.keys(edits).length)repaired++;else unchanged++;
    console.log("PSE_LEGACY_POST_SEO=PASS; source_id="+sourceId+"; wp_id="+id+
-      "; removed_related="+transformed.removed+"; metadata=true; post_status_preserved=true");
+      "; removed_related="+transformed.removed+"; short_document="+shortDocument+
+      "; metadata=true; post_status_preserved=true");
   }catch(e){
    row.seo_attempts=Number(row.seo_attempts||0)+1;
    row.seo_error=String(e?.message||e).slice(0,160);
