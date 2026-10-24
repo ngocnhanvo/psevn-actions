@@ -87,6 +87,15 @@ try {
   console.log('PSE_NEWS_ARCHIVE_PREFLIGHT='+JSON.stringify({
     mode:apply?'apply':'audit',page:77030,status:p.status,existingRedirects:existing.payload.length,
     proposals:specs.map(x=>({source:x.source,dest:x.dest,match:x.match})),menuMutation:false,build:false}));
+  if(!apply){
+    await page.goto(origin+'/wp-admin/edit.php?post_type=acf-field-group',
+      {waitUntil:'domcontentloaded',timeout:60000});
+    const fields=await page.locator('#the-list tr').evaluateAll(rows=>rows.map(tr=>({
+      id:tr.id,label:(tr.querySelector('.row-title')?.textContent||'').trim(),
+      href:tr.querySelector('.row-title')?.getAttribute('href')||''
+    })).filter(x=>/điều hướng|chuyển hướng|redirect|link/i.test(x.label)).slice(0,15));
+    console.log('PSE_NEWS_ACF_ROUTE_FIELD_GROUPS='+JSON.stringify(fields));
+  }
   if(apply){
     const saved=[];let published=false;
     try{
