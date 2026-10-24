@@ -28,3 +28,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-24 PSE G3 follow-up final tested source 86cee43a086b643ba2f92a902d70475559220159: same CMS taxonomy hierarchy + category links with SSR href rather than browser JS redirects. Run pre-existing NO BUILD Vitest/Astro parser, no FTP, no WordPress write.
 
 2026-10-24 PSE G4 detail continuation: Astro github ff0c9676f0bae5b9434f89d23f8f52e2a11a1279. Test actual post-detail H1 normalization and remove related posts on PSE only; preserve WordPress CMS content, media, dated semantic time. Existing independent NO BUILD Vitest and Astro parser. No WordPress writes/FTP/build.
+
+2026-10-24 PSE G5: physical Astro route detection and protection against CMS single-segment post fallback, github 911595dbe2a2296dd695863f2deb0d45e4518f48. Verify Vitest including new 3 matcher tests, Astro parser, no Astro build, no FTP.
