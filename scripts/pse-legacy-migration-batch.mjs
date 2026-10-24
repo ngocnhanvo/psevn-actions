@@ -49,12 +49,7 @@ const freshChoices=fresh.length>=4?
 // legacy PDF gallery starve simpler text posts.
 const picked=[...continuing.slice(0,2),...freshChoices,...fresh.slice(1),...continuing.slice(2)];
 const ids=picked.filter((id,i)=>id&&picked.indexOf(id)===i).slice(0,MAX_ARTICLES_PER_RUN);
-const recoveryIds=Object.keys(state.articles).filter(id=>{
- const r=state.articles[id];
- return r.status==="draft_needs_date"&&Number.isSafeInteger(Number(r.wp_id))&&
-   Number(r.wp_id)>0&&!r.verified_date&&(r.date_lookup_attempts||0)<3;
-}).sort((a,b)=>a==="1635"?-1:b==="1635"?1:Number(b)-Number(a)).slice(0,2);
-if(!ids.length&&!recoveryIds.length){
+if(!ids.length){
  console.log("PSE_MIGRATION_BATCH=NO_PENDING; discovered="+Object.keys(state.articles).length);
  process.exit(0);
 }
@@ -111,94 +106,7 @@ try{
    throw Error("PSE news category slug lookup mismatch: "+group);
   cats[group]=expectedId;
  }
- // Existing draft posts need the same exact-ID date recovery. No duplicate
- // CMS records and no content rewrite; only change the date and status after
- // read-before-write plus post-update REST verification.
- for(const id of recoveryIds){
-  if(Date.now()-workerStarted>MAX_WORK_MS-65000){
-   console.log("PSE_LEGACY_DATE_BACKFILL=DEFERRED; time_budget=true");
-   break;
-  }
-  const item=state.articles[id];
-  try{
-   const path=new URL(item.source_url).pathname;
-   const slug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
-   const postPath="/wp-json/wp/v2/posts/"+item.wp_id;
-   const identityMatches=r=>r.status===200&&r.data?.id===Number(item.wp_id)&&
-     r.data?.slug===slug&&r.data?.categories?.includes(cats[item.group_hint])&&
-     Boolean(String(r.data?.title?.raw||"").trim());
-   const preservePublished=async r=>{
-    if(!identityMatches(r)||r.data?.status!=="publish")return false;
-    // An existing published date is owner-controlled: do not change it even
-    // if Joomla's CREATED day differs from WordPress's date.
-    item.status="existing";
-    item.date_resolution="wordpress_already_published_preserved";
-    delete item.date_lookup_error;
-    console.log("PSE_LEGACY_DATE_BACKFILL=SKIP_PUBLISHED; source_id="+id+
-      "; wp_id="+item.wp_id+"; wordpress_date_preserved=true");
-    await persist();
-    return true;
-   };
-   const r=await api(postPath+"?context=edit&_fields=id,slug,status,title,date,categories");
-   if(!identityMatches(r))throw Error("Existing WordPress post ID/slug/category/title mismatch; no date update");
-   if(await preservePublished(r))continue;
-   if(r.data.status!=="draft")throw Error("Existing WordPress post is not a draft; no date update");
-   item.date_lookup_attempts=(item.date_lookup_attempts||0)+1;
-   const sourcePage=await context.newPage();
-   let sourceInfo;
-   try{
-    const response=await sourcePage.goto(item.source_url,{waitUntil:"domcontentloaded",timeout:45000});
-    if(response?.status()!==200)throw Error("Legacy source HTTP "+response?.status());
-    sourceInfo=await sourcePage.evaluate(()=>({
-     title:(document.title||"").replace(/\s+-\s+PSE\.VN\s*$/i,"").trim(),
-     opening:(document.querySelector('[itemprop="articleBody"]')?.textContent||"").replace(/\s+/g," ").trim().slice(0,300)
-    }));
-    if(!sourceInfo.opening||sourceInfo.opening.length<70||
-       sourceInfo.title!==String(r.data.title?.raw||"").trim())
-     throw Error("Original source and existing WordPress title/body mismatch");
-    const found=await searchDate(sourcePage,{
-     id:Number(id),sourceUrl:item.source_url,title:sourceInfo.title,opening:sourceInfo.opening
-    });
-    if(!found.day){
-     item.date_lookup_error="No exact source-ID search result with readable date";
-     console.log("PSE_LEGACY_DATE_BACKFILL=UNVERIFIED; source_id="+id);
-     await persist();continue;
-    }
-    const normalized=found.day+"T00:00:00";
-    // The owner may have manually published the article while Joomla was
-    // queried. Re-read WordPress immediately before attempting any write.
-    const beforeWrite=await api(postPath+"?context=edit&_fields=id,slug,status,title,date,categories");
-    if(!identityMatches(beforeWrite))throw Error("WordPress provenance changed before date backfill; no update");
-    if(await preservePublished(beforeWrite))continue;
-    if(beforeWrite.data.status!=="draft")throw Error("WordPress post status changed before date backfill; no update");
-    // Joomla provides only the created day; 00:00 is a technical placeholder.
-    const staged=await api("/wp-json/wp/v2/posts/"+item.wp_id,"POST",{date:normalized});
-    if(staged.status!==200||staged.data?.status!=="draft"||staged.data.date!==normalized)
-     throw Error("Cannot stage verified source day on original WordPress draft");
-    const published=await api(postPath,"POST",{date:normalized,status:"publish"});
-    if(published.status!==200||published.data?.status!=="publish")
-     throw Error("WordPress date backfill publication rejected");
-    const readback=await api("/wp-json/wp/v2/posts/"+item.wp_id+"?context=edit&_fields=id,slug,status,date,categories");
-    if(readback.status!==200||readback.data?.slug!==slug||
-       readback.data?.status!=="publish"||readback.data?.date!==normalized)
-     throw Error("WordPress date backfill read-after-write mismatch");
-    item.status="imported";
-    item.verified_date=normalized;
-    item.source_created_date=found.day;
-    item.date_source=found.source;
-    item.date_precision=found.precision;
-    delete item.reason;
-    delete item.date_lookup_error;
-    console.log("PSE_LEGACY_DATE_BACKFILL=PASS; source_id="+id+
-     "; wp_id="+item.wp_id+"; source_created_day="+found.day+"; wp_status=publish");
-   }finally{await sourcePage.close()}
-  }catch(e){
-   item.date_lookup_error=String(e instanceof Error?e.message:e).slice(0,190);
-   console.log("PSE_LEGACY_DATE_BACKFILL=RETRY_OR_REVIEW; source_id="+id+
-    "; reason="+item.date_lookup_error);
-  }
-  await persist();
- }
+ // Date backfill runs independently; importer never modifies existing post dates.
  for(const id of ids){
   if(Date.now()-workerStarted>MAX_WORK_MS){
     console.log("PSE_LEGACY_BATCH_TIME_BUDGET=STOP; unprocessed_records_remain_queued=true");
