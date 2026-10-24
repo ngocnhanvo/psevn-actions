@@ -1,0 +1,40 @@
+name: PSE G8 awards ESC Table native editor preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-awards-esc-audit.mjs
+      - .github/workflows/pse-awards-esc-audit.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-awards-esc-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Inspect real achievement rows, WordPress Media IDs and native ESC editor
+        run: |
+          node --check scripts/pse-awards-esc-audit.mjs
+          node scripts/pse-awards-esc-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-g8-esc-audit
+          path: artifacts/pse-awards-esc/audit.json
+          if-no-files-found: ignore
+          retention-days: 14
