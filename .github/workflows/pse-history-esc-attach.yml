@@ -1,0 +1,41 @@
+name: PSE G10 native WordPress history Insert Code
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-history-esc-attach.yml
+      - .pse-history-esc-attach-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-history-esc-attach
+  cancel-in-progress: false
+jobs:
+  native-editor:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_HISTORY_ATTACH_DRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify and use native Insert Code while keeping WordPress history photo
+        run: |
+          node --check scripts/pse-history-esc-attach.mjs
+          node scripts/pse-history-esc-attach.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-g10-history-before-attach
+          path: artifacts/pse-history-esc/before-attach.json
+          if-no-files-found: ignore
+          retention-days: 14
