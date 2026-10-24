@@ -47,3 +47,11 @@ New independent diagnostic [#40137717136](https://github.com/ngocnhanvo/psevn-ac
 - With measured FTPS ~0.39 MiB/s, avoiding transmission of those bytes would theoretically save ~41 seconds; additional PHP manifest read/hash/copy time is unmeasured and the 90-second end-to-end target is NOT VERIFIED.
 - Test is read-only with respect to hosting and production: no WordPress changes, no FTP, no Astro build/deploy; GitHub Actions PASS.
 - Owner architecture-approval gate remains in force: **do not edit production ZIP, PHP signed unzip protocol or atomic activation** until the explicit proposed delta-image transport change is authorized.
+
+## 2026-10-25 — Continuation checkpoint: newer production measurement
+
+- Re-read Knowledge main, PSE Astro AGENTS, deployment inheritance policy and PSE Actions source. Checked current runs and previously completed independent diagnostics before taking action.
+- Latest signed production deploy **[#40137989832](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137989832)**: 2026-10-24 22:18:31–22:20:33 UTC, **122 seconds end-to-end**. ZIP **22,189,765 bytes**, FTPS transfer **56 seconds / 0.38 MiB/s**. Signed unzip returned PASS, homepage/user SSR/robots smoke PASS. This is a new measured datapoint, not a rerun triggered by this checkpoint.
+- Previously completed SHA-by-SHA image-cache comparison [#40137717136](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137717136) remains **350/350 images unchanged** between the two earlier run snapshots; it does not independently prove equality to the newest #40137989832 output.
+- Thus the transport bottleneck persists. Tuning `lftp` buffers did not reach 90 seconds; switching from lftp to Python FTP_TLS was also slower/essentially equivalent in prior bounded benchmark.
+- **Status: delta image reuse protocol still awaits specific owner approval** under Knowledge core/01 and `psevn-astro/docs/BUILD_ARCHITECTURE_INHERITANCE_POLICY.md`. Detailed existing proposal: [PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md](../proposals/PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md). No source/runtime/deploy protocol changes made in this continuation; no Astro build or FTP deploy triggered.
