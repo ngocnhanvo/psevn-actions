@@ -2,3 +2,4 @@
 Dry-run #40140528045 PASS: 49 source rows, 44 unique verified source IDs, 2 without IDs quarantined, 3 duplicate occurrences collapsed. Native pilot Product #80936 and Media #80935 PASS #40140372278. Apply bounded batch 1/6, with REST/media checksum readback.
 Batch 1/6 #40140615829 PASS 8/8 verified native WordPress Products with original image checksum; proceed ONLY with source-verified batch 2/6.
 Batch 2/6 #40141153859 PASS 8/8 Product+media checksum and readback; WordPress Product catalog Page #80968 published #40141462735. Proceed exact batch 3/6 only.
+Batch 3/6 #40141587035 PASS 8/8, products 24/44+ pilot already included. Source-driven batch 4/6 only after verified prior batch.
