@@ -1,0 +1,58 @@
+name: PSE image delta signed deploy unit contracts (NO ASTRO BUILD)
+on:
+  push:
+    branches: [feature/pse-delta-image-ftps-20261025]
+    paths:
+      - scripts/pse-image-delta-package.py
+      - scripts/pse-remote-unzip.py
+      - tests/pse-image-delta-package.test.py
+      - .github/workflows/pse-image-delta-contract-ci.yml
+      - .github/workflows/pse-production-deploy.yml
+      - .github/workflows/pse-php-live-release.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/pse-image-delta-package.py
+      - scripts/pse-remote-unzip.py
+      - .github/workflows/pse-production-deploy.yml
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact PSE Actions feature changes
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact PSE PHP delta feature to test unmerged code
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: feature/pse-delta-image-ftps-20261025
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: php-source
+          persist-credentials: false
+      - name: Check signed client, package code and YAML syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-image-delta-package.py scripts/pse-remote-unzip.py
+          python3 tests/pse-image-delta-package.test.py
+          ruby -e 'require "yaml"; YAML.parse_file(ARGV.fetch(0))' .github/workflows/pse-production-deploy.yml
+      - name: Verify PHP pure-unit image integrity, symlinks and fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l php-source/pse-image-delta.php
+          php -l php-source/pse-unzip.php
+          php php-source/tests/pse-image-delta.php
+      - name: Assert no independent production build or signing bypass
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'types: [wp_trigger_build]' .github/workflows/pse-production-deploy.yml
+          grep -Fq 'pse-remote-unzip.py unpack' .github/workflows/pse-production-deploy.yml
+          grep -Fq 'set ssl:verify-certificate yes' scripts/pse-resumable-ftp.sh
+          echo 'PSE_DELTA_UNIT_CONTRACT=PASS; NO_ASTRO_BUILD; NO_FTP; NO_DEPLOY'
