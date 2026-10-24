@@ -202,3 +202,5 @@ try {
     }
   }
 }finally{await browser.close()}
+
+// One-time reviewed G3 Page+native rewrite cutover; guarded by exact commit and preflight.
