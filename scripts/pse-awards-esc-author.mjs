@@ -54,27 +54,31 @@ try{
  const keysExpected=["year","img","details"];
  const expectedDetails=awards.map(a=>a.list.map(li=>"<li>"+li+"</li>").join(""));
  const check=await api("/wp-json/tablepress/v1/table/"+tableId,nonce);
+ const alreadyValid=check.status===200&&check.body.id===tableId&&
+   JSON.stringify(check.body.fields?.map(f=>f.key))===JSON.stringify(keysExpected)&&
+   check.body.items?.length===8&&check.body.items.every((item,i)=>item.year===awards[i].year&&
+     item.details===expectedDetails[i]&&/<img\b[^>]*\balt=["'][^"']+["']/i.test(item.img||""));
+ if(alreadyValid){console.log("PSE_AWARDS_ESC_AUTHOR=ALREADY_DONE; no_change=true");process.exit(0)}
+ if(![200,404].includes(check.status))throw Error("Unsafe ESC Table availability HTTP "+check.status);
+ if(check.status===200&&check.body.id!==tableId)throw Error("ESC Table ID conflict");
  if(check.status===200){
-  if(check.body.id!==tableId||JSON.stringify(check.body.fields?.map(f=>f.key))!==JSON.stringify(keysExpected)||
-     check.body.items?.length!==8||check.body.items.some((item,i)=>item.year!==awards[i].year||
-       item.details!==expectedDetails[i]||!/<img\b[^>]*\balt=["'][^"']+["']/i.test(item.img||"")))
-      throw Error("An ESC Table exists with incomplete/foreign data: no overwrite. ID "+tableId);
-  console.log("PSE_AWARDS_ESC_AUTHOR=ALREADY_DONE; table="+tableId+"; count=8; no_page_edit=true");process.exit(0);
+   // An interrupted editing session may leave a genuinely empty table.
+   // Continue only if all ten editor rows are proved blank below.
+   console.log("PSE_AWARDS_ESC_RECOVERY=INSPECT_EXISTING_UNSAVED_TABLE");
+ }else{
+   await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:60000});
+   await page.locator('input[name="table[name]"]').fill("PSE - Thành tựu, 8 giải thưởng");
+   await page.locator('textarea[name="table[description]"]').fill("Mỗi dòng ESC Table là một giải thưởng có Năm, ảnh Insert Image và các nội dung chi tiết riêng.");
+   const sizes=page.locator('input[type="number"]');if(await sizes.count()<2)throw Error("ESC Add Table schema missing");
+   await sizes.nth(0).fill("10");await sizes.nth(1).fill("3");
+   await page.getByRole("button",{name:"Add Table"}).click();
+   await page.locator("#table-id").waitFor({state:"visible",timeout:30000});
+   if(await page.locator("#table-id").getAttribute("readonly")!==null)throw Error("Cannot name ESC Table");
+   await page.locator("#table-id").fill(tableId);
+   await page.locator("#table-name").focus();
+   await page.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
+   await page.waitForTimeout(1500);
  }
- if(check.status!==404)throw Error("ESC Table route not safely absent, HTTP "+check.status);
- // Native ESC Table authoring, entirely separate from the published Page.
- await page.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:60000});
- await page.locator('input[name="table[name]"]').fill("PSE - Thành tựu, 8 giải thưởng");
- await page.locator('textarea[name="table[description]"]').fill("Mỗi dòng ESC Table là một giải thưởng có Năm, ảnh Insert Image và các nội dung chi tiết riêng.");
- const sizes=page.locator('input[type="number"]');if(await sizes.count()<2)throw Error("ESC Add Table schema missing");
- await sizes.nth(0).fill("10");await sizes.nth(1).fill("3");
- await page.getByRole("button",{name:"Add Table"}).click();
- await page.locator("#table-id").waitFor({state:"visible",timeout:30000});
- if(await page.locator("#table-id").getAttribute("readonly")!==null)throw Error("Cannot name ESC Table");
- await page.locator("#table-id").fill(tableId);
- await page.locator("#table-name").focus();
- await page.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
- await page.waitForTimeout(1500);
  await page.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:60000});
  await page.waitForFunction(()=>Array.isArray(window.tp?.table?.data)&&typeof window.tp?.callbacks?.insert_image?.open_dialog==="function"&&typeof window.tp?.callbacks?.advanced_editor?.open_dialog==="function",null,{timeout:25000});
  const state=await page.evaluate(()=>({id:window.tp.table.id,rows:window.tp.table.data.length,cols:window.tp.table.data[0]?.length,blank:window.tp.table.data.every(r=>r.every(x=>!String(x||"").trim()))}));
@@ -95,11 +99,26 @@ try{
   const code=await page.evaluate(row=>String(window.tp.table.data[row][2]||""),row);
   if(code!==expectedDetails[i])throw Error("Native Advanced Editor output mismatch row "+row);
   const label=await page.evaluate(({year,html})=>{const root=document.createElement("div");root.innerHTML=html;const first=(root.querySelector("li")?.textContent||"").replace(/\s+/g," ").trim();return (first||"Thành tựu của PVFCCo-PSE")+" ("+year+")"},{year:awards[i].year,html:expectedDetails[i]});
-  const alt=label.slice(0,170);
+  const sharedMedia=images.filter(x=>x.id===images[i].id).length>1;
+  const alt=sharedMedia?"Hình ảnh giấy chứng nhận thành tựu của PVFCCo-PSE":label.slice(0,170);
+  const image=images[i];
+  const metadata=await api("/wp-json/wp/v2/media/"+image.id+"?context=edit",nonce);
+  if(metadata.status!==200||metadata.body.id!==image.id)throw Error("WP Media detail mismatch");
+  if(!String(metadata.body.alt_text||"").trim()){
+    const change=await page.evaluate(async({id,alt,nonce})=>{
+      const r=await fetch("/wp-json/wp/v2/media/"+id,{
+        method:"POST",credentials:"same-origin",
+        headers:{"X-WP-Nonce":nonce,"Content-Type":"application/json",Accept:"application/json"},
+        body:JSON.stringify({alt_text:alt})
+      });
+      const json=await r.json().catch(()=>({}));
+      return {status:r.status,id:json.id,alt:json.alt_text};
+    },{id:image.id,alt,nonce});
+    if(change.status!==200||change.id!==image.id||change.alt!==alt)throw Error("WP Media native SEO ALT save failed");
+  }
   // Use native ESC Table Insert Image, selecting the verified original WordPress Media attachment.
   await page.evaluate(row=>{const tp=window.tp;tp.editor.updateSelectionFromCoords(1,row,1,row);tp.editor.setValueFromCoords(1,row,"");tp.callbacks.insert_image.open_dialog(null)},row);
   await page.locator(".media-modal").waitFor({state:"visible",timeout:20000});
-  const image=images[i];
   const chosen=await page.evaluate(async({id,alt})=>{const frame=window.wp.media.editor.get("textarea-insert-helper");if(!frame?.state?.())throw Error("Missing native WP media frame");const a=window.wp.media.attachment(id);await a.fetch();if(!a.get("url"))throw Error("Missing WP Media source");a.set("alt",alt);frame.state().get("selection").reset([a]);return {id:a.id,alt:a.get("alt")}},{id:image.id,alt});
   if(chosen.id!==image.id||chosen.alt!==alt)throw Error("Wrong WP attachment");
   const insert=page.locator(".media-modal .media-toolbar-primary button.media-button").last();
@@ -116,7 +135,10 @@ try{
    }
    return String(tp.table.data[row][1]||"");
   },{row});
-  if(!/<img\b/i.test(result)||!result.includes("/"+image.name)||!/\balt=["'][^"']+["']/i.test(result))throw Error("Native Insert Image failed row "+row);
+  if(!/<img\b/i.test(result)||!result.includes("/"+image.name)||!/\balt=["'][^"']+["']/i.test(result)){
+    console.log("PSE_AWARDS_ESC_INSERT_DIAGNOSTIC="+JSON.stringify({row,cell:result.slice(0,420),name:image.name,altExpected:alt}));
+    throw Error("Native Insert Image failed row "+row);
+  }
   console.log("PSE_AWARDS_ESC_CELL="+JSON.stringify({row:row+1,year:awards[i].year,mediaId:image.id,hasAlt:true,source:"native-editor"}));
  }
  const draft=await page.evaluate(()=>window.tp.table.data.map(row=>[...row]));
