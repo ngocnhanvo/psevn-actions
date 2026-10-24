@@ -130,9 +130,14 @@ try{
    if(!transform.removed && transform.labelDetected && sourceId==="1201")
      console.log("PSE_LEGACY_ATTRIBUTION_DIAG; source_id=1201; marker_absent=true; label_may_be_elsewhere=true");
    if(transform.removed || transform.blanks){
-     const saved=await api("/wp-json/wp/v2/posts/"+row.wp_id,"POST",{content:transform.html});
+     const saved=await api("/wp-json/wp/v2/posts/"+row.wp_id,"POST",{content:transform.html,date:post.date});
      if(saved.status!==200||saved.data?.id!==row.wp_id)
        throw Error("WordPress content correction failed HTTP "+saved.status);
+     if(saved.data?.date!==post.date){
+       const restored=await api("/wp-json/wp/v2/posts/"+row.wp_id,"POST",{date:post.date});
+       if(restored.status!==200||restored.data?.date!==post.date)
+         throw Error("WordPress original post date could not be restored after content edit");
+     }
    }
    const verify=await api("/wp-json/wp/v2/posts/"+row.wp_id+
      "?context=edit&_fields=id,slug,status,date,categories,content,excerpt,pse_seo_description");
