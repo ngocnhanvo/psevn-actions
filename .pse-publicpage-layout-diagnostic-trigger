@@ -1,2 +1,4 @@
 Read only CMS content width, scroll container and whitespace baseline for PublicPage screenshot cases 2026-10-24, no build/WordPress writes.
 2026-10-24 expanded audit ten PublicPages with actual row/cell sizes to distinguish Joomla table fixed dimensions from excess whitespace; no build or write.
+
+2026-10-24 after deploy 1f4730f: targeted read-only mobile CSS candidate comparison for nested award-table overflow. Do not build.
