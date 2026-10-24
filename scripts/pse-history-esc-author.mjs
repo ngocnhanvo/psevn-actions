@@ -54,42 +54,24 @@ try {
    record.data.status!=="publish"||record.data.acf?.key!=="pse-company-qua-trinh-hinh-thanh-phat-trien"||
    record.data.acf?.action!=="PublicPage")throw Error("PSE history page identity mismatch");
  const raw=String(record.data.content?.raw||"");
- const domAudit=await page.evaluate(html=>{
-  const node=document.createElement("div");node.innerHTML=html;
-  return {
-   top:[...node.children].map(e=>({tag:e.tagName,cls:e.className,id:e.id,chars:(e.textContent||"").length})),
-   cells:[...node.querySelectorAll("td")].map((e,i)=>({i,chars:(e.textContent||"").length,text:(e.textContent||"").replace(/\\s+/g," ").trim().slice(0,380),
-     htmlStart:e.innerHTML.slice(0,360),img:!!e.querySelector("img")})),
-   images:[...node.querySelectorAll("img")].map(x=>({
-     alt:x.getAttribute("alt"),src:x.getAttribute("src"),width:x.getAttribute("width"),height:x.getAttribute("height")
-   })),
-   flattenedText:(node.textContent||"").replace(/\\s+/g," ").trim().slice(0,1700),
-   rich:[...node.querySelectorAll("a,img,iframe,script,form")].map(x=>({
-    tag:x.tagName.toLowerCase(),parent:x.parentElement?.tagName||"",
-    inTable:!!x.closest("table"),inCell:!!x.closest("td"),label:(x.textContent||"").trim().slice(0,55)
-   })),
-   tables:[...node.querySelectorAll("table")].map((t,i)=>({
-    i,chars:t.textContent.length,containsFirst:t.textContent.includes("07/08/2008"),
-    containsLast:t.textContent.includes("01/02/2011"),
-    imageCount:t.querySelectorAll("img").length,linkCount:t.querySelectorAll("a").length,
-    cells:t.querySelectorAll("td").length
-   }))
-  };
- },raw);
- console.log("PSE_HISTORY_DOM_AUDIT="+JSON.stringify(domAudit));
  const extracted=await page.evaluate(html=>{
-  const node=document.createElement("div");node.innerHTML=html;
-  const rich=[...node.querySelectorAll("a,img,iframe,script,form")].map(x=>({
-   tag:x.tagName.toLowerCase(),parent:x.parentElement?.tagName||"",
-   insideTable:!!x.closest("table"),insideTd:!!x.closest("td"),
-   text:(x.textContent||"").trim().slice(0,70)}));
-  if(rich.length) console.log("PSE_HISTORY_RICH_SOURCE="+JSON.stringify({rich,
-   tables:[...node.querySelectorAll("table")].map(t=>({chars:t.textContent.length,
-    dates:[...t.textContent.matchAll(/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/g)].map(m=>m[0]),
-    hasImage:!!t.querySelector("img"),hasLinks:!!t.querySelector("a")}))}));
-  if(rich.length)throw Error("Unexpected rich source, refuse conversion");
-  const txt=(node.textContent||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
-  return txt.split(/;\s*/).map(x=>x.trim()).filter(Boolean);
+  const root=document.createElement("div");root.innerHTML=html;
+  const tables=[...root.querySelectorAll("table")];
+  if(root.children.length!==1||tables.length!==1)throw Error("History source wrapper has changed");
+  const cells=[...tables[0].querySelectorAll("td")];
+  if(cells.length!==7)throw Error("History table cells changed");
+  const image=cells[0].querySelector("img");
+  if(!image?.getAttribute("src")||!image.getAttribute("alt")||
+     cells[0].querySelectorAll("img").length!==1)throw Error("History illustration missing");
+  if(cells.slice(1).some((cell,i)=>i!==1 && (cell.textContent||"").trim().replace(/\u00a0/g,"")))
+     throw Error("Unexpected historical content outside main text cell");
+  const body=cells[2];
+  if(body.querySelector("a,img,iframe,script,form"))throw Error("Unexpected rich historical body");
+  const paras=[...body.querySelectorAll("p")];
+  if(paras.length!==6||body.querySelectorAll("p").length!==body.children.length)
+     throw Error("History paragraph structure changed");
+  return paras.map(p=>(p.textContent||"").replace(/\u00a0/g," ")
+    .replace(/\s+/g," ").trim());
  },raw);
  if(extracted.length!==6||extracted.some((x,i)=>{
   const matches=[...x.matchAll(/\b\d{2}\/\d{2}\/\d{4}\b/g)].map(m=>m[0]);
@@ -97,7 +79,7 @@ try {
  }))throw Error("Original six verified milestones changed; page untouched");
  const events=extracted.map((text,i)=>({
   date:expectedDates[i],title:headlines[i],
-  details:"<p>"+escapeHtml(text)+(i<extracted.length-1?";":"")+"</p>"
+  details:"<p>"+escapeHtml(text)+"</p>"
  }));
  await mkdir("artifacts/pse-history-esc",{recursive:true});
  await writeFile("artifacts/pse-history-esc/original-page.json",JSON.stringify({
