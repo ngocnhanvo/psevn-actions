@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   diagnostic:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -41,3 +41,54 @@ jobs:
         shell: bash
         run: |
           echo 'PSE_FTPS_PROFILE=PASS; NO_ASTRO_BUILD; NO_PRODUCTION_DEPLOY; ALL_BENCHMARK_FILES_REMOVED'
+  cached-assets:
+    name: Inspect restored WordPress image cache (NO BUILD)
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PSE Astro production source for cache path only
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Restore existing production WordPress/image cache without rebuilding
+        uses: actions/cache/restore@v4
+        with:
+          path: source/.cache
+          key: pse-prod-dot-cache-v2-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            pse-prod-dot-cache-v2-${{ runner.os }}-
+      - name: Report only aggregate cache asset sizes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from collections import defaultdict
+          from zipfile import ZipFile, ZIP_DEFLATED
+          import tempfile
+          root=Path("source/.cache")
+          if not root.is_dir():
+              raise SystemExit("Existing production cache not restored")
+          groups=defaultdict(lambda:[0,0])
+          images=[]
+          for p in root.rglob("*"):
+              if not p.is_file(): continue
+              bucket="images" if "images" in p.relative_to(root).parts else "other-data"
+              groups[bucket][0]+=1
+              groups[bucket][1]+=p.stat().st_size
+              if bucket=="images": images.append(p)
+          for bucket, (count,size) in sorted(groups.items()):
+              print("CACHE_GROUP",bucket,"count",count,"raw_bytes",size)
+          with tempfile.TemporaryFile() as stream:
+              with ZipFile(stream,"w",compression=ZIP_DEFLATED,compresslevel=6) as archive:
+                  for i,p in enumerate(images):
+                      archive.write(p,arcname=f"image_{i}{p.suffix}")
+              stream.seek(0,2)
+              print("CACHE_IMAGES_ESTIMATED_ZIP_BYTES",stream.tell())
+          print("PSE_ASSET_CACHE_INVENTORY=PASS; NO_ASTRO_BUILD; NO_FTP; NO_DEPLOY")
+          PY
