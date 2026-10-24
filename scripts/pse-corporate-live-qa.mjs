@@ -69,5 +69,55 @@ try{
  }
  console.log("PSE_CORPORATE_LIVE_SUMMARY="+JSON.stringify({checked:20,success,failures,
    no_wp_write:true,no_build:true,source:"published WordPress Page+Astro"}));
+ // G3 verification is required after changes to the shared Header menu,
+ // so the same run detects regressions on corporate Pages and news archives.
+ const newsRoutes=[
+  {path:"/tin-tuc-su-kien/",posts:true},
+  {path:"/tin-tuc-su-kien/?cat=tin-cong-ty",posts:true},
+  {path:"/tin-tuc-su-kien/?cat=thong-tin-co-dong",posts:true},
+  {path:"/tin-tuc-su-kien/?cat=tin-tong-hop"},
+  {path:"/tin-tuc-su-kien/?cat=anh"},
+  {path:"/tin-tuc-su-kien/2",posts:true}
+ ];
+ let newsPass=0,newsFail=0;
+ for(const width of [390,1440]){
+  const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
+  try{
+   for(let n=0;n<newsRoutes.length;n++){
+    const route=newsRoutes[n];
+    let http=0;
+    try{
+     const r=await page.goto(url.origin+route.path,{waitUntil:"domcontentloaded",timeout:45000});
+     http=r?.status()||0;
+     const detail=await page.evaluate(()=>{
+       const main=document.querySelector("#main-content.pse-posts");
+       const cards=main?.querySelectorAll("#posts-grid .grid > div").length||0;
+       const crumbs=document.querySelector('nav[aria-label="Đường dẫn trang"]');
+       return {main:!!main,h1:main?.querySelectorAll("h1").length||0,
+        cards,breadcrumb:!!crumbs,sidebar:!!main?.querySelector(".sidebar,.moduletable,#sidebar"),
+        overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
+        filter:!!main?.querySelector("#category-dropdown-container"),
+        seoDescription:!!document.querySelector('meta[name="description"]')
+       };
+     });
+     const pass=http===200&&detail.main&&detail.h1===1&&detail.breadcrumb&&
+       detail.filter&&!detail.sidebar&&!detail.overflow&&(!route.posts||detail.cards>0);
+     console.log("PSE_NEWS_LIVE="+JSON.stringify({width,path:route.path,http,...detail,ok:pass}));
+     if(pass)newsPass++;else newsFail++;
+     if(http===200&&n<=2)await page.screenshot({
+       path:dir+"/news-"+width+"-"+n+".png",fullPage:true
+     });
+    }catch(e){
+     newsFail++;
+     console.log("PSE_NEWS_LIVE_ERROR="+JSON.stringify({width,path:route.path,
+       http,error:String(e).slice(0,230)}));
+    }
+   }
+  }finally{await page.close()}
+ }
+ console.log("PSE_NEWS_LIVE_SUMMARY="+JSON.stringify({
+   checked:12,success:newsPass,failures:newsFail,no_wp_write:true,no_build:true
+ }));
+ if(newsFail)process.exitCode=1;
  if(failures)process.exitCode=1;
 }finally{await browser.close()}
