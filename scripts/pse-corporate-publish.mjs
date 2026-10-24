@@ -110,12 +110,12 @@ try{
      const res=await api(url("pages/"+p.wpId),"POST",{status:"publish"});
      if(res.http!==200||res.body?.id!==p.wpId||res.body.status!=="publish")
        throw Error("Page publish failed HTTP "+res.http+" "+p.slug);
+     report.published.push({id:p.wpId,slug:p.slug});
      const saved=await api(url("pages/"+p.wpId+"?context=edit&_fields=id,status,slug,acf,content"));
      if(saved.http!==200||saved.body.status!=="publish"||saved.body.slug!==p.slug||
         saved.body.acf?.action!=="PublicPage"||saved.body.acf?.key!=="pse-company-"+p.slug||
         sha(saved.body.content?.raw||"")!==p.htmlSha)
        throw Error("WP published Page read-after-write differs "+p.slug);
-     report.published.push({id:p.wpId,slug:p.slug});
      console.log("PSE_CORPORATE_PAGE_PUBLISHED="+JSON.stringify({id:p.wpId,slug:p.slug}));
    }
    for(const p of pair){
@@ -125,11 +125,11 @@ try{
      });
      if(change.http!==200||change.body?.id!==p.itemId)
        throw Error("WP Page menu item bind failed HTTP "+change.http+" "+p.slug);
+     report.menu_updated.push({id:p.itemId,slug:p.slug,wpId:p.wpId});
      const after=await api(url("menu-items/"+p.itemId+"?context=edit"));
      if(after.http!==200||after.body.id!==p.itemId||after.body.type!=="post_type"||
         after.body.object!=="page"||Number(after.body.object_id)!==p.wpId)
        throw Error("WP Menu read-after-write mismatch "+p.slug);
-     report.menu_updated.push({id:p.itemId,slug:p.slug,wpId:p.wpId});
      console.log("PSE_CORPORATE_MENU_LINKED="+JSON.stringify({id:p.itemId,slug:p.slug,wpId:p.wpId}));
    }
  }
