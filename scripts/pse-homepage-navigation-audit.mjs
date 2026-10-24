@@ -37,6 +37,44 @@ try {
     await Promise.all([page.waitForLoadState('domcontentloaded'),page.locator('#wp-submit').click()]);
   }
   if(page.url().includes('wp-login'))throw Error('WordPress admin login failed');
+  // Read-only build UI diagnostic. Never print GitHub token, WP nonce or
+  // credentials; compare server-rendered button with localized JS state.
+  const firstBuildPage=await page.goto(
+    origin+'/wp-admin/admin.php?page=vcs-build-trigger',
+    {waitUntil:'domcontentloaded',timeout:60000}
+  );
+  if(firstBuildPage?.status()!==200)throw Error("PSE WP Build UI not reachable");
+  const buildUi=await page.evaluate(()=>{
+    const button=document.querySelector('#vcs-build-btn-main');
+    const force=document.querySelector('#vcs-force-build');
+    const vcs=window.vcsBuild;
+    const warning=[...document.querySelectorAll('.notice-warning')]
+      .some(n=>(n.textContent||'').includes('Chưa cấu hình GitHub Actions'));
+    return {
+      buttonText:(button?.textContent||'').trim().slice(0,110),
+      buttonDisabled:!!button?.disabled,
+      forceDisabled:!!force?.disabled,
+      configNoticeVisible:warning,
+      clientConfigType:typeof vcs?.build_configured,
+      clientConfigured:vcs?.build_configured===true,
+      clientConfigLiteral:String(vcs?.build_configured).slice(0,24),
+      clientPendingCount:Number(vcs?.pending_count??-1),
+      displayPendingCount:document.querySelector('#vcs-pending-count')?.textContent?.trim(),
+      scripts:[...document.querySelectorAll('script[src*="vcs-build-trigger"]')]
+        .map(s=>{try{const u=new URL(s.src);return {path:u.pathname,version:u.searchParams.get('ver')}}catch{return{path:'invalid'}}}),
+      loginRedirect:location.pathname.includes('wp-login')
+    };
+  });
+  console.log('PSE_BUILD_UI_INITIAL='+JSON.stringify(buildUi));
+  await page.waitForTimeout(1500);
+  console.log('PSE_BUILD_UI_AFTER_JS='+JSON.stringify(
+    await page.evaluate(()=>({
+      buttonText:(document.querySelector('#vcs-build-btn-main')?.textContent||'').trim().slice(0,110),
+      disabled:!!document.querySelector('#vcs-build-btn-main')?.disabled,
+      buildConfigured:window.vcsBuild?.build_configured===true,
+      forceDisabled:!!document.querySelector('#vcs-force-build')?.disabled
+    }))
+  ));
   const restNonce=await page.evaluate(async()=>{
     const cached=window.wpApiSettings?.nonce;
     if(cached)return cached;
