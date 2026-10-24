@@ -8,6 +8,7 @@ on:
       - .pse-corporate-menu-links-trigger
       - .pse-corporate-sibling-layout-trigger
       - .pse-publicpage-layout-diagnostic-trigger
+      - .pse-publicpage-layout-live-trigger
 permissions:
   contents: read
 jobs:
@@ -38,11 +39,16 @@ jobs:
       - name: Diagnose PSE CMS body widths and nested scroll (READ ONLY)
         if: "${{ github.event.head_commit.message == 'test(pse): diagnose PublicPage layout' }}"
         run: node scripts/pse-publicpage-layout-diagnostic.mjs
+      - name: Verify all ten PSE PublicPage table layouts, overflow and gaps (READ ONLY)
+        if: "${{ github.event.head_commit.message == 'test(pse): verify PublicPage table flow after G7 deploy' }}"
+        run: |
+          node --check scripts/pse-publicpage-layout-live-qa.mjs
+          node scripts/pse-publicpage-layout-live-qa.mjs
       - name: Confirm all ten frontend Pages render without Joomla sidebar and mobile overflow
-        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' }}"
+        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' && github.event.head_commit.message != 'test(pse): verify PublicPage table flow after G7 deploy' }}"
         run: node scripts/pse-corporate-live-qa.mjs
       - name: Verify live WordPress article detail pages (read-only G4)
-        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' }}"
+        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' && github.event.head_commit.message != 'test(pse): verify PublicPage table flow after G7 deploy' }}"
         run: node scripts/pse-g4-live-article-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
