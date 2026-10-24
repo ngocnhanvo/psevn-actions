@@ -24,3 +24,15 @@ On a genuine WordPress content change that creates pending events, run **one** o
 
 ## Rollback
 Revert Actions PR #4 (both changed files) through a reviewed commit. No PHP, frontend source, CMS or secrets migration was performed.
+
+## 2026-10-25 05:00 ICT — FTPS slowdown reproduced and source measured
+
+This supersedes the earlier `NOT MEASURED` status above.
+
+- Latest live production build **[#40135974794](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40135974794)** = **129s** including FTP **54s**, ZIP **22,140,603 bytes**, FTPS **0.39 MiB/s**; signed unzip/SSR smoke PASS. Earlier after optimization [#40134437874](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40134437874) = 122s, FTPS 52s (0.41 MiB/s). Thus socket buffer change did **not** establish improvement and 90-second target is **FAIL/NOT ACHIEVED** in these runs.
+- Reproducible bounded FTPS profiling **[#40136422393](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40136422393)**, 6 MiB random data, same runner: Python FTPS certificate verified 15.68s / 0.38 MiB/s, lftp 4 MiB buffer 18.09s / 0.33 MiB/s. Temporary artifacts removed. Official production ZIP was removed by signed deploy, so archive directory composition cannot be fetched read-only over FTP after activation.
+- Restored independent WordPress cache investigation **[#40136637928](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40136637928)**: 350 images, 16,806,102 raw bytes, ZIP estimate 16,848,095 bytes; 12 other cache files = 372,646 bytes. Existing `.cache` cache restore PASS; NO ASTRO BUILD, NO FTP. **It does not prove all 350 files are unchanged between deploys.**
+- Root cause: 0.3–0.4 MiB/s long-haul FTPS throughput combined with full ~22MB ZIP each time. To meet 90s from the current 129s while preserving full build, substantial asset-reuse/delta packaging is indicated, not more buffering.
+- A specific architecture-change proposal is stored at **[docs/proposals/PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md](../proposals/PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md)**. **Status: pending owner architecture approval; NOT IMPLEMENTED**. Full ZIP signed deploy continues unchanged.
+- Next permitted action: with owner approval, implement the source + signed PHP manifest/copy/verify/fallback with unit + live WordPress-triggered end-to-end QA and measured runtime. Without approval, do not change deployment protocol, hardcode domains or force Astro build.
+
