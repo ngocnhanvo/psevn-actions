@@ -1,11 +1,11 @@
 /** Original PSE Distribution Channel content/data mapping; read-only, no CMS writes. */
-import {chromium} from "playwright";
+import {chromium,request} from "playwright";
 const origin="https://www.pse.vn";
 const target=origin+"/hoat-dong-kinh-doanh/kenh-phan-phoi.html";
 const vars=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""));
 const wc=vars.filter(x=>x.startsWith("WC_URL="));if(wc.length!==1)throw Error("PSE WP origin missing");
 const site=new URL(wc[0].slice(7).replace(/^['"]|['"]$/g,""));if(site.protocol!=="https:"||site.username||site.password)throw Error("PSE WP origin invalid");
-const browser=await chromium.launch({headless:true});const source=await browser.newPage();
+const browser=await chromium.launch({headless:true});const source=await browser.newPage();const api=await request.newContext({timeout:50000});
 try{
  const r=await source.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
  if(r?.status()!==200)throw Error("Joomla Kênh phân phối HTTP "+r?.status());
@@ -41,7 +41,7 @@ try{
  for(const [path,item] of rows){
   const name=path.split("/").at(-1).replace(/^\d+-/,"").replace(/\.html$/,"");
   const postsUrl=site.origin+"/wp-json/wp/v2/posts?slug="+encodeURIComponent(name)+"&_fields=id,slug,status,title,categories&per_page=10";
-  const fetchRes=await browser.request.get(postsUrl,{timeout:50000});
+  const fetchRes=await api.get(postsUrl,{timeout:50000});
   if(!fetchRes.ok())throw Error("WP Posts registry HTTP "+fetchRes.status());
   const posts=await fetchRes.json();
   verified.push({...item,slug:name,matchedPosts:posts.map(p=>({id:p.id,slug:p.slug,status:p.status,categories:p.categories}))});
@@ -49,4 +49,4 @@ try{
  console.log("PSE_DISTRIBUTION_PARITY="+JSON.stringify({sourcePages:seen.size,sourceArticles:rows.size,exactWpMatches:verified.filter(x=>x.matchedPosts.length===1).length,records:verified}).slice(0,19000));
  if(rows.size<3||rows.size>30)throw Error("Distribution source article list unexpectedly changed: "+rows.size);
  console.log("PSE_DISTRIBUTION_AUDIT=PASS; noCmsWrite=true; noBuild=true");
-}finally{await browser.close()}
+}finally{await api.dispose();await browser.close()}
