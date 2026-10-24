@@ -1,0 +1,1 @@
+Read-only PSE G7 post-deploy QA 2026-10-24 for Astro signed SHA 1f4730f628df926edb256494264a48dec3b28dfe. All 10 Pages mobile+desktop. Verify table flow, no nested scroll, center media, trailing row cleanup, no excessive gap. No CMS writes or build.
