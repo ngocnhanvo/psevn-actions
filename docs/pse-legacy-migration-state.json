@@ -299,11 +299,11 @@
       "wp_id": 77706
     },
     "319": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/319-pvfcco-se-dieu-chinh-ke-hoach-san-xuat-kinh-doanh-nam-2012.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "320": {
       "attempts": 0,
@@ -691,10 +691,11 @@
       "status": "pending"
     },
     "1027": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1027-pvfcco-se-thong-bao-chot-danh-sach-co-dong-nhan-co-tuc-dot-22013.html",
-      "status": "pending"
+      "status": "pending",
+      "reason": "Source content incomplete or oversized"
     },
     "1031": {
       "attempts": 1,
@@ -1061,11 +1062,11 @@
       "status": "pending"
     },
     "1173": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1173-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo-pvfcco-se-cong-bo-thong-tin-thay-doi-giay-dkkd-lan-thu-11-ngay-18-01-2016.html",
-      "status": "pending",
-      "reason": "Source content incomplete or oversized"
+      "status": "pending"
     },
     "1175": {
       "attempts": 1,
@@ -1214,38 +1215,39 @@
       "status": "pending"
     },
     "1213": {
-      "attempts": 0,
-      "group_hint": "shareholder",
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1213-ban-cung-cap-thong-tin-ca-nhan-thanh-vien-hdqt-bks-uy-quyen-nguoi-cung-cap-thong-tin.html",
-      "status": "pending"
-    },
-    "1214": {
       "attempts": 1,
       "group_hint": "shareholder",
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1214-cong-bo-cac-qd-cua-hdqt-ve-cong-tac-can-bo.html",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1213-ban-cung-cap-thong-tin-ca-nhan-thanh-vien-hdqt-bks-uy-quyen-nguoi-cung-cap-thong-tin.html",
       "status": "pending",
       "reason": "Source content incomplete or oversized"
     },
-    "1216": {
+    "1214": {
       "attempts": 2,
+      "group_hint": "shareholder",
+      "reason": "Source content incomplete or oversized",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1214-cong-bo-cac-qd-cua-hdqt-ve-cong-tac-can-bo.html",
+      "status": "pending"
+    },
+    "1216": {
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1216-ngay-chot-danh-sach-va-chi-tra-co-tuc-dot-2-nam-2015.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1222": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1222-pvfcco-se-chi-tra-co-tuc-dot-2-2015.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1225": {
-      "attempts": 2,
+      "attempts": 3,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1225-lua-chon-don-vi-kiem-toan-2016.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1228": {
       "attempts": 3,
@@ -8676,7 +8678,7 @@
     "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=84",
     "https://www.pse.vn/pvfcco-pse/hoi-dong-quan-tri/11-gioi-thieu.html"
   ],
-  "runs": 111,
+  "runs": 112,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
