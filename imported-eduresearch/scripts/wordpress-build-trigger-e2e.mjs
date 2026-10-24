@@ -137,15 +137,21 @@ try {
     throw new Error('WordPress still reports an active build; do not dispatch another one');
   }
   console.log('PSE_WP_PENDING_CHANGE_COUNT=' + state.pending);
-  if (!Number.isInteger(state.pending) || state.pending <= 0) {
-    console.log('PSE_WP_BUILD=NO_PENDING_CHANGES; force_build not permitted by project Knowledge policy');
+  // Explicit one-shot owner approval flows only through this WordPress/PHP
+  // authenticated endpoint. The plugin still enforces nonce, privilege and lock.
+  const approvedException = process.env.PSE_FORCE_BUILD_ONCE === 'true';
+  if (!Number.isInteger(state.pending) || (state.pending <= 0 && !approvedException)) {
+    console.log('PSE_WP_BUILD=NO_PENDING_CHANGES; no owner-approved exception on this event');
     process.exitCode = 2;
   } else {
 
-  const result = await page.evaluate(async () => {
+  const isExceptional = state.pending <= 0 && approvedException;
+  console.log('PSE_WP_BUILD_REQUEST_MODE=' + (isExceptional ? 'owner-approved-exception' : 'normal'));
+  const result = await page.evaluate(async (forceBuild) => {
     const body = new URLSearchParams({
       action: 'vcs_trigger_build',
       nonce: globalThis.vcsBuild.nonce,
+      force_build: forceBuild ? '1' : '0',
     });
 
     const response = await fetch(globalThis.vcsBuild.ajax_url, {
@@ -164,7 +170,7 @@ try {
     }
 
     return { status: response.status, payload };
-  });
+  }, isExceptional);
 
   if (result.status !== 200 || result.payload?.success !== true) {
     const message = result.payload?.data?.message || result.payload?.raw || JSON.stringify(result.payload);
