@@ -120,15 +120,15 @@ try {
       const input=page.locator(selector);
       if(await input.count()!==1)throw Error('ACF routing type field missing');
       const original=await input.inputValue();
-      if(original!=='301\\n302\\n307' && original!=='301\\n302\\n307\\nRewrite')
+      if(original!=='301\n302\n307' && original!=='301\n302\n307\nRewrite')
         throw Error('ACF field choices changed; will not overwrite');
-      if(original==='301\\n302\\n307'){
+      if(original==='301\n302\n307'){
         const parentRow=page.locator('.acf-field-object[data-key="field_6ab80bab2af52"]');
         if(await parentRow.count()!==1)throw Error('ACF type row key mismatch');
         if(!await input.isVisible()){
           await parentRow.getByText('Chỉnh sửa',{exact:true}).first().click();
         }
-        await input.fill('301\\n302\\n307\\nRewrite');
+        await input.fill('301\n302\n307\nRewrite');
         await input.dispatchEvent('change');
         const save=page.locator('#publish');
         if(await save.count()!==1)throw Error('ACF native WordPress Update button missing');
@@ -137,7 +137,7 @@ try {
           {waitUntil:'domcontentloaded',timeout:60000});
       }
       const verified=await page.locator(selector).inputValue();
-      if(verified!=='301\\n302\\n307\\nRewrite')throw Error('ACF Type choices did not persist');
+      if(verified!=='301\n302\n307\nRewrite')throw Error('ACF Type choices did not persist');
       const option=await api(endpoint,'OPTIONS');
       const enums=option.payload?.schema?.properties?.acf?.properties?.type?.items?.enum||[];
       if(option.status!==200||!enums.includes('Rewrite'))
