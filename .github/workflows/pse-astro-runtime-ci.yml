@@ -81,6 +81,7 @@ jobs:
             'src/astro/tablepress/Pse_01.astro',
             'src/astro/tablepress/Pse_02.astro',
             'src/astro/tablepress/Pse_03.astro',
+            'src/astro/tablepress/Pse_awards.astro',
             'src/pages/tim-kiem.astro',
             'src/astro/components/Layout/Header.astro',
             'src/astro/components/Menu/Desktop.astro',
