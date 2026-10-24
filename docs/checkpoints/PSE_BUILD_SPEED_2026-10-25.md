@@ -94,3 +94,26 @@ New independent diagnostic [#40137717136](https://github.com/ngocnhanvo/psevn-ac
 - ZIP **5,313,696 bytes**, FTPS **18 seconds** (~0.28 MiB/s); signed unzip/atomic activate **PASS**, homepage + WordPress-backed SSR API + robots HTTP smoke **PASS**.
 - Historic pre-Delta baseline [#40137989832](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137989832): **122 seconds end-to-end**, full ZIP 22,189,765 bytes, upload 56 seconds. End-to-end improved **35 seconds (~29%)**.
 - **Status: DELTA_IMAGE=DEPLOYED_PASS; LIVE_SIGNED_FTPS=PASS; PHP_BUILD=PASS; 90_SECOND_TARGET=MET_IN_ONE_RUN.** This is not a hard latency guarantee: runner startup, cache misses, new images and FTPS network speed vary. Keep the full ZIP fallback and monitor future real WordPress-triggered builds; do not fabricate CMS edits or force another build only for benchmarking.
+
+## 2026-10-25 — Owner-approved Delta Image successfully deployed; 90s target met once
+
+**Owner approval:** explicit approval in this conversation to implement `docs/proposals/PSE_DELTA_IMAGE_FTPS_DEPLOY_2026-10-25.md`. Preserve branch/security and official WP Build Website gate.
+
+### Code, checks and production release
+
+- PHP `ngocnhanvo/psevn-php/master` [PR #1](https://github.com/ngocnhanvo/psevn-php/pull/1), merge `cf32e5c3b7c848b8413af6f992750c9379769b60`: `pse-image-delta.php` plus signed read-only `image_manifest` in `pse-unzip.php`, complete stage image verification by size/SHA-256 before existing atomic activate/rollback. Signed full ZIP remains backward compatible.
+- Actions `ngocnhanvo/psevn-actions/main` [PR #9](https://github.com/ngocnhanvo/psevn-actions/pull/9), merge `3f6b13d1c7084df3d8abd3be09a8b6381f89501f`: signed remote inventory; compiler-source image delta packager, full fallback, archive validation, existing protected PHP uploader includes new helper.
+- Dedicated offline unit contracts [#40139149765](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139149765), and follow-up [#40139801954](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139801954) PASS: PHP syntax, image reuse, FULL ZIP fallback, wrong hash, missing/unlisted image, traversal and symlink rejection, Python packaging. Production release isolation CI [#40139231115](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139231115) PASS.
+- Protected PHP FTPS release [#40139258852](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139258852) PASS: only `pse-image-delta.php` and `pse-unzip.php` changed; each SHA-256 readback verified. Remaining PHP files unchanged. No Astro build in PHP release.
+- Signed live manifest read-only [#40139422918](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139422918) PASS: **350 deployed images / 16,806,102 bytes**; no upload/build.
+- One normal (NOT force) authenticated WP build request [#40139483353](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139483353) PASS with `pending_count=1`; actual production [#40139560969](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139560969) SUCCESS **93 seconds** 22:40:24–22:41:57 UTC, 350/350 reused, 16,806,102 bytes omitted, ZIP 5,313,697 bytes, upload 14s, signed unzip & live homepage/API/robots smoke PASS.
+- Further owner-scoped safe performance optimization: [Actions PR #10](https://github.com/ngocnhanvo/psevn-actions/pull/10) merge `c19c30ab21b01863c70b9a83644aed0dd93dc13a`. Parallel only the independent signed sitemap/manifest reads and independent read-only postdeploy GET requests. Both signed preflight and original three HTTP smoke PASS requirements stay unchanged. NO BUILD architecture CI [#40139847146](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139847146) PASS.
+- Second normal WP request [#40139893419](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139893419) PASS with genuine `pending_count=1`, normal mode, no force. Actual production build [#40139962300](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40139962300) **SUCCESS in 87 seconds** (2026-10-24 22:46:13–22:47:40 UTC): `PSE_IMAGE_DELTA=ENABLED total=350 reuse=350 bytes_saved=16806102`, transferred 5,313,696 bytes in 18s (~0.28 MiB/s), signed unzip PASS and homepage, WordPress-backed SSR and robots.txt GET smoke PASS. **TARGET <=90s = PASS on this actual run.**
+
+### Interpretation and continuity
+
+- Compared with the pre-delta 122s production build, latest is **35s faster end-to-end**; upload payload drops ~22.2 MB to ~5.31 MB.
+- **Do not guarantee future 90s**: FTPS throughput varies (14s first delta vs 18s second), and real content changes can legitimately require additional media; cold-cache/full-ZIP is an intentional fallback.
+- No change to pnpm build, WordPress data cache or CMS, sitemap Save semantics, server credentials, FTPS/TLS validation, source repository identity, and PHP nonce/build lock.
+- **No automatic additional build needed:** two production releases and all mandatory signed/SSR checks PASS. Never dispatch Astro directly or force when pending=0.
+- Rollback if needed: revert Actions PR #10 for sequential reads, revert Actions PR #9 for full ZIP; existing PHP image helper is backward-compatible. PHP signed release uses SHA-256 verified FTP rollback procedure.
