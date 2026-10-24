@@ -1,0 +1,40 @@
+name: PSE G10 corporate history ESC Table author (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-history-esc-author.mjs
+      - .github/workflows/pse-history-esc-author.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-history-esc-author
+  cancel-in-progress: false
+jobs:
+  esc-table:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate six source milestones and author native ESC Table item rows
+        run: |
+          node --check scripts/pse-history-esc-author.mjs
+          node scripts/pse-history-esc-author.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-history-esc-original-page
+          path: artifacts/pse-history-esc/original-page.json
+          if-no-files-found: ignore
+          retention-days: 14
