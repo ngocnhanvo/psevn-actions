@@ -1,0 +1,34 @@
+name: PSE G10 history native ESC Table live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-history-live-qa-trigger
+permissions:
+  contents: read
+jobs:
+  history-responsive:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify native ESC Table timeline and no nested scrolling on 3 viewport sizes
+        run: |
+          node --check scripts/pse-history-live-qa.mjs
+          node scripts/pse-history-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-g10-history-responsive
+          path: artifacts/pse-history/
+          if-no-files-found: ignore
+          retention-days: 7
