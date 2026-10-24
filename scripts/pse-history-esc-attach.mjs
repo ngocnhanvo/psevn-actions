@@ -51,14 +51,20 @@ try{
     JSON.stringify(t.data.items?.map(x=>x.date))!==JSON.stringify(dates)||
     t.data.items.some(item=>!item.title||!item.details))throw Error("Native ESC Table incomplete; Page untouched");
  const raw=String(p.data.content?.raw||"");
- if(raw.includes(shortcode)&&!/<table\b/i.test(raw)){
+ if(raw.includes(shortcode)&&!/<table\b/i.test(raw)&&raw.includes("pse-history-cover")&&/<img\b/i.test(raw)){
   console.log("PSE_HISTORY_ESC_ATTACH=ALREADY_DONE; no_duplicate=true");process.exit(0);
  }
  if(raw.includes(shortcode))throw Error("Partial existing shortcode; Page untouched");
  const sourceText=await page.evaluate(html=>{
    const root=document.createElement("div");root.innerHTML=html;
-   if(root.querySelector("a,img,iframe,script,form"))throw Error("Unexpected complex source");
-   return (root.textContent||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
+   const table=root.querySelector("table");
+   if(root.children.length!==1||root.querySelectorAll("table").length!==1)throw Error("Unexpected history source table count");
+   const cells=[...table.querySelectorAll("td")];
+   if(cells.length!==7||cells[0].querySelectorAll("img").length!==1||
+      !cells[0].querySelector("img")?.getAttribute("alt"))throw Error("Source image/table changed");
+   const paras=[...cells[2].querySelectorAll("p")];
+   if(paras.length!==6)return "";
+   return paras.map(p=>(p.textContent||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim()).join(" ");
  },raw);
  const tableText=await page.evaluate(items=>{
   const node=document.createElement("div");
@@ -87,22 +93,32 @@ try{
  const segment=await page.evaluate(raw=>{
   const el=document.querySelector("textarea#content");
   if(!(el instanceof HTMLTextAreaElement))throw Error("Editor textarea missing");
-  // Native Visual->Text normalization is not allowed to modify the other page HTML.
   if(el.value!==raw){el.value=raw;el.dispatchEvent(new Event("input",{bubbles:true}))}
-  if(el.value!==raw)throw Error("Cannot restore saved WordPress body exactly");
+  if(el.value!==raw)throw Error("Cannot restore original WordPress body");
   const matches=[...raw.matchAll(/<table\b[^>]*>/gi)];
-  if(matches.length!==1)throw Error("Expected precisely one legacy historical table, got "+matches.length);
+  if(matches.length!==1)throw Error("History Page no longer has one legacy table");
   const start=matches[0].index;
-  const tags=/<\/?table\b[^>]*>/gi;let depth=0,end=-1;
-  for(const m of raw.slice(start).matchAll(tags)){
+  let depth=0,end=-1;
+  for(const m of raw.slice(start).matchAll(/<\/?table\b[^>]*>/gi)){
    depth+=/^<\//.test(m[0])?-1:1;
    if(depth===0){end=start+m.index+m[0].length;break}
   }
-  if(end<=start)throw Error("Legacy table not balanced");
-  const original=raw.slice(start,end);
-  if(!["07/08/2008","01/02/2011"].every(d=>original.includes(d)))throw Error("Wrong legacy historical table selected");
-  el.focus();el.setSelectionRange(start,end);
-  return {before:raw.slice(0,start),after:raw.slice(end),oldLength:original.length};
+  if(end<=start)throw Error("Unbalanced historical table");
+  const old=raw.slice(start,end);
+  const container=document.createElement("div");container.innerHTML=old;
+  const table=container.querySelector("table");
+  const image=table?.querySelector("img");
+  if(!["07/08/2008","01/02/2011"].every(d=>old.includes(d))||
+    table?.querySelectorAll("img").length!==1||!image?.getAttribute("alt")||
+    !image.getAttribute("src")||table.querySelectorAll("td").length!==7)
+    throw Error("Historical source changed, refuse replacement");
+  // Preserve the exact existing CMS image as regular WordPress editorial HTML.
+  // Only the timeline shortcode below is inserted by the native Insert Code UI.
+  const cover='<figure class="pse-history-cover">'+image.outerHTML+"</figure>\n\n";
+  const next=raw.slice(0,start)+cover+raw.slice(end);
+  el.value=next;el.dispatchEvent(new Event("input",{bubbles:true}));
+  el.focus();el.setSelectionRange(start+cover.length,start+cover.length);
+  return {before:raw.slice(0,start),after:raw.slice(end),cover,oldLength:old.length};
  },raw);
  const button=page.locator("#qt_content_tablepress_quicktags_button");
  if(!await button.isVisible())throw Error("Native ESC Table Insert Code button missing");
@@ -121,7 +137,7 @@ try{
   return id===tableId&&mark===tableId&&token===shortcode?shortcode:all;
  });
  if(JSON.stringify(ids)!==JSON.stringify([tableId])||!inserted.startsWith(segment.before)||
-    !inserted.endsWith(segment.after)||unwrap(body).trim()!==shortcode) {
+    !inserted.endsWith(segment.after)||!body.startsWith(segment.cover)||unwrap(body.slice(segment.cover.length)).trim()!==shortcode) {
   console.log("PSE_HISTORY_INSERT_DIAGNOSTIC="+JSON.stringify({
    ids,prefix:inserted.startsWith(segment.before),suffix:inserted.endsWith(segment.after),
    body:body.slice(0,350),oldLength:segment.oldLength
@@ -147,7 +163,7 @@ try{
   result.data.acf?.key!=="pse-company-qua-trinh-hinh-thanh-phat-trien"||
   result.data.acf?.action!=="PublicPage"||
   JSON.stringify(tokens)!==JSON.stringify([tableId])||
-  unwrap(middle).trim()!==shortcode||/<table\b/i.test(saved))
+  !middle.startsWith(segment.cover)||unwrap(middle.slice(segment.cover.length)).trim()!==shortcode||/<table\b/i.test(saved))
   throw Error("Native Page save/readback not verified, inspect revision");
  console.log("PSE_HISTORY_ESC_ATTACH=PASS; page=79301; table="+tableId+
   "; native_insert_code=true; six_milestones_preserved=true; no_astro_build=true");
