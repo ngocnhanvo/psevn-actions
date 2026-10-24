@@ -1,5 +1,6 @@
 /** Prepare the WordPress-authored PSE news/search archive as a private Page draft. Do not publish/cut over or build Astro. Idempotent REST read-after-write. */
 import { chromium } from 'playwright';
+import { ensurePsePostDetailFallback } from './pse-post-routing-fallback.mjs';
 const origin=(()=>{
   const rows=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith('WC_URL='));
   if(rows.length!==1)throw Error('Missing or ambiguous WC_URL');
@@ -57,6 +58,9 @@ try {
 
 
   const event=JSON.parse(await (await import('node:fs/promises')).readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
+  if(event.head_commit?.message==='cms(pse): publish missing WordPress post detail fallback') {
+    await ensurePsePostDetailFallback({page,api,origin});
+  }
   const apply=event.head_commit?.message==='cms(pse): publish verified news archive and native URL rewrites';
 
   const bindMenu=event.head_commit?.message==='cms(pse): bind verified news archive to WordPress Header menu';
