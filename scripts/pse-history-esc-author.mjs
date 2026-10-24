@@ -54,6 +54,23 @@ try {
    record.data.status!=="publish"||record.data.acf?.key!=="pse-company-qua-trinh-hinh-thanh-phat-trien"||
    record.data.acf?.action!=="PublicPage")throw Error("PSE history page identity mismatch");
  const raw=String(record.data.content?.raw||"");
+ const domAudit=await page.evaluate(html=>{
+  const node=document.createElement("div");node.innerHTML=html;
+  return {
+   top:[...node.children].map(e=>({tag:e.tagName,cls:e.className,id:e.id,chars:(e.textContent||"").length})),
+   rich:[...node.querySelectorAll("a,img,iframe,script,form")].map(x=>({
+    tag:x.tagName.toLowerCase(),parent:x.parentElement?.tagName||"",
+    inTable:!!x.closest("table"),inCell:!!x.closest("td"),label:(x.textContent||"").trim().slice(0,55)
+   })),
+   tables:[...node.querySelectorAll("table")].map((t,i)=>({
+    i,chars:t.textContent.length,containsFirst:t.textContent.includes("07/08/2008"),
+    containsLast:t.textContent.includes("01/02/2011"),
+    imageCount:t.querySelectorAll("img").length,linkCount:t.querySelectorAll("a").length,
+    cells:t.querySelectorAll("td").length
+   }))
+  };
+ },raw);
+ console.log("PSE_HISTORY_DOM_AUDIT="+JSON.stringify(domAudit));
  const extracted=await page.evaluate(html=>{
   const node=document.createElement("div");node.innerHTML=html;
   const rich=[...node.querySelectorAll("a,img,iframe,script,form")].map(x=>({
