@@ -25,13 +25,26 @@ try{
   try{
    for(const slug of slugs){
     const res=await page.goto(url.origin+"/"+slug,{waitUntil:"domcontentloaded",timeout:65000});
+    // The optimized Astro Page images may be srcset-only. DOMContentLoaded is
+    // earlier than image selection/download; wait for decode before QA verdict.
+    const hasImages=await page.locator("#main-content.pse-public-page img").count();
+    if(res?.status()===200 && hasImages>0){
+      await page.waitForFunction(()=>{
+        const imgs=[...document.querySelectorAll("#main-content.pse-public-page img")];
+        return imgs.length>0 && imgs.every(img=>img.complete && img.naturalWidth>0);
+      },null,{timeout:18000}).catch(()=>{});
+    }
     const scan=await page.evaluate(()=>{
      const main=document.querySelector("#main-content.pse-public-page");
      const title=main?.querySelector("h1");
      const breadcrumb=document.querySelector('nav[aria-label="Đường dẫn trang"]');
      const images=main?[...main.querySelectorAll("img")].map(i=>({
        src:i.currentSrc||i.src,loaded:i.complete&&i.naturalWidth>0,
-       alt:i.getAttribute("alt")||""
+       alt:i.getAttribute("alt")||"",
+       srcAttribute:i.getAttribute("src")||"",
+       srcsetPrefix:(i.getAttribute("srcset")||"").slice(0,120),
+       complete:i.complete,
+       naturalWidth:i.naturalWidth
      })):[];
      const viewportWidth=document.documentElement.clientWidth;
      return {h1:!!title,heading:(title?.textContent||"").trim().slice(0,90),
