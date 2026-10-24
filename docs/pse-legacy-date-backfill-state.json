@@ -1,7 +1,7 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 30,
+  "runs": 31,
   "records": {
     "110": {
       "wp_id": 77067,
@@ -314,9 +314,8 @@
     },
     "1112": {
       "wp_id": 80227,
-      "attempts": 1,
-      "status": "unverified",
-      "reason": "No exact Joomla ID/title created day evidence"
+      "attempts": 0,
+      "status": "published_preserved"
     },
     "1115": {
       "wp_id": 78334,
