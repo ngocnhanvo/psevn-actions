@@ -120,14 +120,30 @@ try{
    break;
   }
   const item=state.articles[id];
-  item.date_lookup_attempts=(item.date_lookup_attempts||0)+1;
   try{
    const path=new URL(item.source_url).pathname;
    const slug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
-   const r=await api("/wp-json/wp/v2/posts/"+item.wp_id+"?context=edit&_fields=id,slug,status,title,date,categories");
-   if(r.status!==200||r.data?.id!==item.wp_id||r.data?.status!=="draft"||
-      r.data?.slug!==slug||!r.data?.categories?.includes(cats[item.group_hint]))
-    throw Error("Existing draft provenance/category/status does not match; no update");
+   const postPath="/wp-json/wp/v2/posts/"+item.wp_id;
+   const identityMatches=r=>r.status===200&&r.data?.id===Number(item.wp_id)&&
+     r.data?.slug===slug&&r.data?.categories?.includes(cats[item.group_hint])&&
+     Boolean(String(r.data?.title?.raw||"").trim());
+   const preservePublished=async r=>{
+    if(!identityMatches(r)||r.data?.status!=="publish")return false;
+    // An existing published date is owner-controlled: do not change it even
+    // if Joomla's CREATED day differs from WordPress's date.
+    item.status="existing";
+    item.date_resolution="wordpress_already_published_preserved";
+    delete item.date_lookup_error;
+    console.log("PSE_LEGACY_DATE_BACKFILL=SKIP_PUBLISHED; source_id="+id+
+      "; wp_id="+item.wp_id+"; wordpress_date_preserved=true");
+    await persist();
+    return true;
+   };
+   const r=await api(postPath+"?context=edit&_fields=id,slug,status,title,date,categories");
+   if(!identityMatches(r))throw Error("Existing WordPress post ID/slug/category/title mismatch; no date update");
+   if(await preservePublished(r))continue;
+   if(r.data.status!=="draft")throw Error("Existing WordPress post is not a draft; no date update");
+   item.date_lookup_attempts=(item.date_lookup_attempts||0)+1;
    const sourcePage=await context.newPage();
    let sourceInfo;
    try{
@@ -149,12 +165,17 @@ try{
      await persist();continue;
     }
     const normalized=found.day+"T00:00:00";
-    // Joomla search shows creation DATE only. Midnight is a deterministic
-    // technical placeholder: date_precision=day records the lack of exact time.
+    // The owner may have manually published the article while Joomla was
+    // queried. Re-read WordPress immediately before attempting any write.
+    const beforeWrite=await api(postPath+"?context=edit&_fields=id,slug,status,title,date,categories");
+    if(!identityMatches(beforeWrite))throw Error("WordPress provenance changed before date backfill; no update");
+    if(await preservePublished(beforeWrite))continue;
+    if(beforeWrite.data.status!=="draft")throw Error("WordPress post status changed before date backfill; no update");
+    // Joomla provides only the created day; 00:00 is a technical placeholder.
     const staged=await api("/wp-json/wp/v2/posts/"+item.wp_id,"POST",{date:normalized});
     if(staged.status!==200||staged.data?.status!=="draft"||staged.data.date!==normalized)
      throw Error("Cannot stage verified source day on original WordPress draft");
-    const published=await api("/wp-json/wp/v2/posts/"+item.wp_id,"POST",{date:normalized,status:"publish"});
+    const published=await api(postPath,"POST",{date:normalized,status:"publish"});
     if(published.status!==200||published.data?.status!=="publish")
      throw Error("WordPress date backfill publication rejected");
     const readback=await api("/wp-json/wp/v2/posts/"+item.wp_id+"?context=edit&_fields=id,slug,status,date,categories");
