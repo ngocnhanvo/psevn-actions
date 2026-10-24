@@ -8,6 +8,7 @@
 - Run [#40134437874](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40134437874) = **122 giây**, upload **52 giây**, tốc độ **0.41 MiB/s**.
 - Bài kiểm tra FTPS độc lập [#40136422393](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40136422393): cùng runner, dữ liệu ngẫu nhiên 6 MiB, Python FTPS/TLS verified **15.68s = 0.38 MiB/s**; `lftp` buffer 4 MiB **18.09s = 0.33 MiB/s**. File thử nghiệm đã xóa; không build/deploy.
 - Cache WordPress production được khôi phục [#40136637928](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40136637928): **350 ảnh, 16,806,102 raw bytes**, kích thước nếu ZIP riêng **16,848,095 bytes**; dữ liệu khác 12 file / 372,646 bytes. Không build/deploy. **Chưa đo ảnh nào thực sự thay đổi qua hai bản deploy**; đây là tổng ảnh cache, KHÔNG phải số byte chắc chắn tiết kiệm.
+- **Đã bổ sung đối chiếu thực tế** bằng [run #40137717136](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40137717136): hai cache production từ #40134437874 và #40135974794 có **350/350 ảnh khớp đường dẫn, kích thước và SHA-256**, tổng **16.806.102 byte không đổi**; thêm mới 0, thay đổi 0, bị xóa 0. Đây là bằng chứng chắc chắn cho hai snapshot cache này, nhưng chưa phải phép kiểm tra trực tiếp ZIP trên hosting và không dự đoán các build có ảnh mới. Workflow đọc-only, không build/FTP/deploy.
 - Kết luận: buffer / thay FTPS client đơn thuần không thể bảo đảm mục tiêu **90 giây**. Đường truyền có thông lượng khoảng 0.3–0.4 MiB/s.
 
 ## Thay đổi dự kiến (cần chủ sở hữu phê duyệt kiến trúc trước khi sửa)
