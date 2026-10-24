@@ -42,11 +42,11 @@ try{
   const nodes=menu.data.filter(x=>x.id===f.id&&Number(x.parent)===77005&&String(x.title?.raw||x.title?.rendered||"").trim()===f.name);
   if(nodes.length!==1)throw Error("Product family menu changed "+f.slug);
   const cate=categories.data.filter(c=>c.slug===f.slug&&Number(c.parent)===Number(root[0].id));
-  if(cate.length!==1)throw Error("Original ProductCategory not imported yet "+f.slug);
+  if(cate.length>1||(!cate.length&&apply))throw Error("Original ProductCategory missing/conflicting "+f.slug);
   const from="https://www.pse.vn/hoat-dong-kinh-doanh/san-pham/"+f.slug+".html";
   const to=frontend+"/san-pham/?cat="+f.slug;
   if(nodes[0].url!==from&&nodes[0].url!==to)throw Error("Product family external link changed unexpectedly "+f.slug);
-  return{...f,from,to,currentUrl:nodes[0].url,categoryId:cate[0].id,count:cate[0].count};
+  return{...f,from,to,currentUrl:nodes[0].url,categoryId:cate[0]?.id||null,count:cate[0]?.count||0};
  });
  const rewrite={from:"^/san-pham/([a-z0-9-]+)$",to:"/ssr/products/$1/detail"};
  const found=rewrites.data.filter(x=>x.acf?.from_link===rewrite.from);
@@ -55,7 +55,7 @@ try{
  const readyParent=parent[0].type==="post_type"&&parent[0].object==="page"&&Number(parent[0].object_id)===80968;
  if(!readyParent&&parent[0].type!=="custom")throw Error("Cannot convert unknown parent menu type");
  console.log("PSE_PRODUCT_MENU_PREFLIGHT="+JSON.stringify({mode:apply?"apply":"dry",nativePage:catalog.data.id,publishedProducts:products.total,rootCategory:root[0].id,menuParent:parent[0].id,alreadyBoundParent:readyParent,families:ready.map(x=>({slug:x.slug,category:x.categoryId,count:x.count,alreadyBound:x.currentUrl===x.to})),existingRewrite:found[0]?.id||null}));
- if(!apply){console.log("PSE_PRODUCT_MENU=DRY_PASS; no_cms_mutation=true; no_build=true");process.exit(0)}
+ if(!apply){console.log("PSE_PRODUCT_MENU="+(ready.every(x=>x.categoryId)?"DRY_PASS":"DRY_PENDING_CATEGORIES")+"; no_cms_mutation=true; no_build=true");process.exit(0)}
  // No activation before the built public catalog actually works.
  const site=await browser.newPage();
  const live=await site.goto(frontend+"/san-pham/",{waitUntil:"domcontentloaded",timeout:60000});
