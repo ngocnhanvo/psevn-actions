@@ -74,6 +74,15 @@ try {
   if(existing.payload.some(x=>String(x.acf?.from_link||'').includes('tin-tuc-su-kien')||
      String(x.acf?.to_link||'').includes('tin-tuc-su-kien')))
     throw Error('Archive rewrite exists or collides; refuse overwrite');
+  const option=await api(endpoint,'OPTIONS');
+  const fields=option.payload?.schema?.properties||{};
+  console.log('PSE_NEWS_REDIRECT_REST_SCHEMA='+JSON.stringify({
+    http:option.status,properties:Object.keys(fields).sort(),
+    acfProperties:Object.keys(fields.acf?.properties||{}).sort(),
+    required:option.payload?.schema?.required||[],
+    endpoints:(option.payload?.endpoints||[]).map(x=>({methods:x.methods,
+      acceptedKeys:Object.keys(x.args||{}).slice(0,30)}))
+  }));
   console.log('PSE_NEWS_ARCHIVE_PREFLIGHT='+JSON.stringify({
     mode:apply?'apply':'audit',page:77030,status:p.status,existingRedirects:existing.payload.length,
     proposals:specs.map(x=>({source:x.source,dest:x.dest,match:x.match})),menuMutation:false,build:false}));
