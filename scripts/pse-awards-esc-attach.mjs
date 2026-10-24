@@ -60,7 +60,19 @@ try{
  if(!await tab.isVisible())throw Error("Native WordPress Classic Editor Text tab unavailable");
  await tab.click();
  const textarea=page.locator("textarea#content");
- await textarea.waitFor({state:"visible",timeout:25000});
+ if(!await textarea.isVisible()){
+   await page.evaluate(()=>{
+     if(typeof window.switchEditors?.go!=="function")throw Error("WordPress native switchEditors.go not available");
+     window.switchEditors.go("content","html");
+   });
+   await page.waitForTimeout(850);
+ }
+ if(!await textarea.isVisible()){
+   const state=await page.evaluate(()=>({wrapper:document.querySelector("#wp-content-wrap")?.className,textTab:document.querySelector("#content-html")?.className,visualTab:document.querySelector("#content-tmce")?.className,textareaHidden:document.querySelector("textarea#content")?.getAttribute("aria-hidden")}));
+   console.log("PSE_AWARDS_ESC_NATIVE_TEXT_DIAGNOSTIC="+JSON.stringify(state));
+   throw Error("Native WP editor text mode did not activate; no Page Save");
+ }
+ await textarea.waitFor({state:"visible",timeout:20000});
  const editor=await page.evaluate((raw)=>{
    const el=document.querySelector("textarea#content");
    if(!(el instanceof HTMLTextAreaElement))throw Error("WP Text editor missing");
