@@ -21,7 +21,12 @@ try{
   await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
  }
  if(page.url().includes("wp-login"))throw Error("WP login rejected");
- const nonce=await page.evaluate(()=>window.wpApiSettings?.nonce||"");
+ const nonce=await page.evaluate(async()=>{
+  if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
+  const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
+  if(!r.ok)throw Error("WP nonce HTTP "+r.status);
+  return (await r.text()).trim();
+ });
  if(!/^[a-z0-9]{8,24}$/i.test(nonce))throw Error("WP REST nonce missing");
  const api=async route=>page.evaluate(async({route,nonce})=>{const r=await fetch(route,{credentials:"same-origin",headers:{"X-WP-Nonce":nonce,"Cache-Control":"no-cache"}});return {http:r.status,data:await r.json().catch(()=>({}))}},{route,nonce});
  const response=await api("/wp-json/wp/v2/pages/79311?context=edit&_fields=id,slug,status,acf,content,title,modified");
