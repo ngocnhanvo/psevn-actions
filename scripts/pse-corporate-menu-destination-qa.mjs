@@ -37,7 +37,16 @@ try{
     })).filter(a=>{
       try{return new URL(a.url).pathname.split('/').filter(Boolean).join('/')===slug;}catch{return false}
     }),slug);
-    if(candidates.length!==1)throw Error('Missing/duplicate menu link for '+slug+': '+candidates.length);
+    if(candidates.length!==1){
+      const discovered=await links.evaluateAll(nodes=>nodes.map(a=>({
+        label:(a.textContent||'').trim().slice(0,100),
+        hostname:new URL(a.href).hostname,
+        path:new URL(a.href).pathname,
+        hrefAttribute:a.getAttribute('href')
+      })));
+      console.log('PSE_CORPORATE_MENU_OBSERVED='+JSON.stringify({width,slug,links:discovered}));
+      throw Error('Missing/duplicate menu link for '+slug+': '+candidates.length);
+    }
     const href=candidates[0].url;
     if(new URL(href).origin!==base)throw Error('Menu still points outside the Astro frontend: '+slug);
     const link=panel.getByRole('link',{name:candidates[0].label,exact:true});
