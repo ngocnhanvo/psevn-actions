@@ -1,1 +1,2 @@
 Dry-run source-verified seven original fertilizer manuals to WordPress native Media and PublicPage; preserve original SHA-256.
+Retry dry-run after #40142328664 failed with temporary source PDF ECONNRESET, before any CMS write. Reuse byte cache + bounded source retry.
