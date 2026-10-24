@@ -1,1 +1,2 @@
 2026-10-25 source-backed agricultural knowledge category DRY RUN, no WordPress writes.
+Dry-run #40139748087 PASS: original categories 3, exact published matches 2+4, existing category conflicts 0. Publish native categories with readback.
