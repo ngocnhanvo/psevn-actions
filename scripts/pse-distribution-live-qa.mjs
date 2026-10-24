@@ -5,6 +5,9 @@ const varLine=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().re
 if(varLine.length!==1)throw Error("PSE WordPress frontend origin absent");
 const origin=new URL(varLine[0].slice(14).replace(/^['"]|['"]$/g,""));
 if(origin.protocol!=="https:"||origin.username||origin.password||origin.search||origin.hash||!["","/"].includes(origin.pathname))throw Error("Invalid PSE frontend origin");
+const wpLine=String(process.env.ENV_FILE||"").split(/\\r?\\n/).map(x=>x.trim().replace(/^export\\s+/,"")).filter(x=>x.startsWith("WC_URL="));
+if(wpLine.length!==1)throw Error("PSE WordPress origin missing for Media host comparison");
+const wpOrigin=new URL(wpLine[0].slice(7).replace(/^['"]|['"]$/g,"")).origin;
 const cases=[
  {path:"/kenh-phan-phoi/",name:"Kênh phân phối",type:"landing",minLinks:3},
  {path:"/quy-che-nha-phan-phoi/",name:"Quy chế Nhà phân phối",type:"pdf",minDocs:1},
@@ -36,7 +39,7 @@ try{
      });
      let ok=res?.status()===200&&data.main&&data.header&&data.footer&&!data.overflow&&data.heading.length===1&&data.heading[0]===item.name&&!data.internalScrolling.length;
      if(item.type==="landing")ok=ok&&cases.slice(1).every(other=>data.links.some(link=>new URL(link).pathname===other.path));
-     if(item.type==="pdf")ok=ok&&data.docs.length>=item.minDocs&&data.docs.every(x=>new URL(x).hostname==="admin-pse.webnvn.com");
+     if(item.type==="pdf")ok=ok&&data.docs.length>=item.minDocs&&data.docs.every(x=>new URL(x).origin===wpOrigin);
      if(item.type==="table")ok=ok&&data.tables>=1&&data.rows>=item.minRows&&data.textLength>=200;
      const record={width,path:item.path,http:res?.status(),...data,links:data.links.slice(0,6),pass:ok};
      console.log("PSE_DISTRIBUTION_LIVE="+JSON.stringify(record).slice(0,4400));
