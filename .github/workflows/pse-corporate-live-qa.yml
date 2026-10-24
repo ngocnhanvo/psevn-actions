@@ -10,6 +10,7 @@ on:
       - .pse-publicpage-layout-diagnostic-trigger
       - .pse-publicpage-layout-live-trigger
       - .pse-awards-card-diagnostic-trigger
+      - .pse-awards-card-live-qa-trigger
 permissions:
   contents: read
 jobs:
@@ -48,11 +49,16 @@ jobs:
       - name: Inspect imported achievement content for card redesign (READ ONLY)
         if: "${{ github.event.head_commit.message == 'test(pse): inspect achievements card data' }}"
         run: node scripts/pse-awards-card-diagnostic.mjs
+      - name: Verify real achievements rendered as eight responsive cards (READ ONLY)
+        if: "${{ github.event.head_commit.message == 'test(pse): verify achievement cards live' }}"
+        run: |
+          node --check scripts/pse-awards-card-live-qa.mjs
+          node scripts/pse-awards-card-live-qa.mjs
       - name: Confirm all ten frontend Pages render without Joomla sidebar and mobile overflow
-        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' && github.event.head_commit.message != 'test(pse): verify PublicPage table flow after G7 deploy' && github.event.head_commit.message != 'test(pse): inspect achievements card data' }}"
+        if: "${{ github.event.head_commit.message != 'test(pse): verify G4 article detail after published WP Rewrite' && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' && github.event.head_commit.message != 'test(pse): verify PublicPage table flow after G7 deploy' && github.event.head_commit.message != 'test(pse): inspect achievements card data' && github.event.head_commit.message != 'test(pse): verify achievement cards live' }}"
         run: node scripts/pse-corporate-live-qa.mjs
       - name: Verify live WordPress article detail pages (read-only G4)
-        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' && github.event.head_commit.message != 'test(pse): verify PublicPage table flow after G7 deploy' && github.event.head_commit.message != 'test(pse): inspect achievements card data' }}"
+        if: "${{ success() && github.event.head_commit.message != 'test(pse): verify corporate menu destinations' && github.event.head_commit.message != 'test(pse): verify PublicPage menu siblings live' && github.event.head_commit.message != 'test(pse): diagnose PublicPage layout' && github.event.head_commit.message != 'test(pse): verify PublicPage table flow after G7 deploy' && github.event.head_commit.message != 'test(pse): inspect achievements card data' && github.event.head_commit.message != 'test(pse): verify achievement cards live' }}"
         run: node scripts/pse-g4-live-article-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
