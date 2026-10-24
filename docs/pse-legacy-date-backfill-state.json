@@ -1,8 +1,48 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 5,
+  "runs": 6,
   "records": {
+    "1563": {
+      "wp_id": 77553,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1564": {
+      "wp_id": 77548,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1570": {
+      "wp_id": 77546,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1571": {
+      "wp_id": 77532,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1574": {
+      "wp_id": 77523,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1575": {
+      "wp_id": 77521,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1577": {
+      "wp_id": 77519,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1579": {
+      "wp_id": 77502,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
     "1580": {
       "wp_id": 77500,
       "attempts": 0,
