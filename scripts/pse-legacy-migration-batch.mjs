@@ -353,7 +353,7 @@ try{
   item.date_lookup_attempts=(item.date_lookup_attempts||0)+1;
   try{
    const path=new URL(item.source_url).pathname;
-   const slug=path.match(/\\/\\d{3,6}-([^/]+)\\.html$/i)?.[1]?.toLowerCase();
+   const slug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
    const r=await api("/wp-json/wp/v2/posts/"+item.wp_id+"?context=edit&_fields=id,slug,status,title,date,categories");
    if(r.status!==200||r.data?.id!==item.wp_id||r.data?.status!=="draft"||
       r.data?.slug!==slug||!r.data?.categories?.includes(cats[item.group_hint]))
@@ -364,8 +364,8 @@ try{
     const response=await sourcePage.goto(item.source_url,{waitUntil:"domcontentloaded",timeout:45000});
     if(response?.status()!==200)throw Error("Legacy source HTTP "+response?.status());
     sourceInfo=await sourcePage.evaluate(()=>({
-     title:(document.title||"").replace(/\\s+-\\s+PSE\\.VN\\s*$/i,"").trim(),
-     opening:(document.querySelector('[itemprop="articleBody"]')?.textContent||"").replace(/\\s+/g," ").trim().slice(0,300)
+     title:(document.title||"").replace(/\s+-\s+PSE\.VN\s*$/i,"").trim(),
+     opening:(document.querySelector('[itemprop="articleBody"]')?.textContent||"").replace(/\s+/g," ").trim().slice(0,300)
     }));
     if(!sourceInfo.opening||sourceInfo.opening.length<70||
        sourceInfo.title!==String(r.data.title?.raw||"").trim())
