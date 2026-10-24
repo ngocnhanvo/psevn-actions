@@ -1,1 +1,2 @@
 Audit original distribution posts and native WP Posts before migration. Strict read-only.
+Retry narrowly failed #40142638775 read-only audit after fixing browser.request.get misuse; no WP write/build.
