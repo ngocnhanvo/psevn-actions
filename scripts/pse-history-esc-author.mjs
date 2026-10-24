@@ -58,6 +58,12 @@ try {
   const node=document.createElement("div");node.innerHTML=html;
   return {
    top:[...node.children].map(e=>({tag:e.tagName,cls:e.className,id:e.id,chars:(e.textContent||"").length})),
+   cells:[...node.querySelectorAll("td")].map((e,i)=>({i,chars:(e.textContent||"").length,text:(e.textContent||"").replace(/\\s+/g," ").trim().slice(0,380),
+     htmlStart:e.innerHTML.slice(0,360),img:!!e.querySelector("img")})),
+   images:[...node.querySelectorAll("img")].map(x=>({
+     alt:x.getAttribute("alt"),src:x.getAttribute("src"),width:x.getAttribute("width"),height:x.getAttribute("height")
+   })),
+   flattenedText:(node.textContent||"").replace(/\\s+/g," ").trim().slice(0,1700),
    rich:[...node.querySelectorAll("a,img,iframe,script,form")].map(x=>({
     tag:x.tagName.toLowerCase(),parent:x.parentElement?.tagName||"",
     inTable:!!x.closest("table"),inCell:!!x.closest("td"),label:(x.textContent||"").trim().slice(0,55)
