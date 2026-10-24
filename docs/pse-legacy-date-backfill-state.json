@@ -1,8 +1,67 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 17,
+  "runs": 18,
   "records": {
+    "1291": {
+      "wp_id": 77940,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1293": {
+      "wp_id": 78233,
+      "attempts": 1,
+      "status": "retry",
+      "reason": "page.goto: Timeout 45000ms exceeded.\nCall log:\n  - navigating to \"https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1293-pvfcco-se-tung-bung-to-chuc-n"
+    },
+    "1294": {
+      "wp_id": 77927,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-10-31",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1295": {
+      "wp_id": 78172,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-11-14",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1296": {
+      "wp_id": 77915,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-11-21",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1297": {
+      "wp_id": 78179,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-11-24",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1299": {
+      "wp_id": 77892,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-11-30",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1300": {
+      "wp_id": 78159,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-12-08",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
     "1304": {
       "wp_id": 78144,
       "attempts": 1,
@@ -928,5 +987,5 @@
     }
   },
   "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
-  "last_migration_batch_observed": 138
+  "last_migration_batch_observed": 139
 }
