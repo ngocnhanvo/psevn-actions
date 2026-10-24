@@ -114,6 +114,37 @@ try {
         inputs};
     });
     console.log('PSE_NEWS_ACF_ROUTE_FIELD_EDITOR='+JSON.stringify(fieldAudit));
+    const saveChoice=event.head_commit?.message==='cms(pse): allow Rewrite in WordPress URL routing ACF';
+    if(saveChoice){
+      const selector='textarea[name="acf_fields[53510][choices]"]';
+      const input=page.locator(selector);
+      if(await input.count()!==1)throw Error('ACF routing type field missing');
+      const original=await input.inputValue();
+      if(original!=='301\\n302\\n307' && original!=='301\\n302\\n307\\nRewrite')
+        throw Error('ACF field choices changed; will not overwrite');
+      if(original==='301\\n302\\n307'){
+        const parentRow=page.locator('.acf-field-object[data-key="field_6ab80bab2af52"]');
+        if(await parentRow.count()!==1)throw Error('ACF type row key mismatch');
+        if(!await input.isVisible()){
+          await parentRow.getByText('Chỉnh sửa',{exact:true}).first().click();
+        }
+        await input.fill('301\\n302\\n307\\nRewrite');
+        await input.dispatchEvent('change');
+        const save=page.locator('#publish');
+        if(await save.count()!==1)throw Error('ACF native WordPress Update button missing');
+        await Promise.all([page.waitForLoadState('domcontentloaded'),save.click()]);
+        await page.goto(origin+'/wp-admin/post.php?post=53507&action=edit',
+          {waitUntil:'domcontentloaded',timeout:60000});
+      }
+      const verified=await page.locator(selector).inputValue();
+      if(verified!=='301\\n302\\n307\\nRewrite')throw Error('ACF Type choices did not persist');
+      const option=await api(endpoint,'OPTIONS');
+      const enums=option.payload?.schema?.properties?.acf?.properties?.type?.items?.enum||[];
+      if(option.status!==200||!enums.includes('Rewrite'))
+        throw Error('ACF REST schema does not yet permit Rewrite');
+      console.log('PSE_NEWS_ACF_REWRITE_CHOICE=PASS; group=53507; field=53510; choices=301,302,307,Rewrite; noRedirectChange=true; noBuild=true');
+    }
+
 
   }
   if(apply){
