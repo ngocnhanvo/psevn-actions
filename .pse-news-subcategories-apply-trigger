@@ -1,1 +1,3 @@
 Dry-run map original PSE 4 nonempty company news subcategories to WordPress posts, exclude identical slug from multiple Joomla article IDs.
+
+2026-10-25: dry-run #40139256341 PASS verified 13 published posts across four original Joomla company categories; excluded one ambiguous legacy id/slug. Apply native WP categories and verify readback.
