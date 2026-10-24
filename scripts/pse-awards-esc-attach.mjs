@@ -46,7 +46,15 @@ try{
  const shortcode="[table id="+tableId+" /]";
  const existing=[...raw.matchAll(/\[table\s+id=([A-Za-z0-9_-]+)\s*\/\]/g)].map(m=>m[1]);
  if(existing.includes(tableId)&&!raw.includes("Table_01")){
-   console.log("PSE_AWARDS_ESC_ATTACH=ALREADY_DONE; page="+pageId+"; do_not_save=true");
+   if(existing.length!==1)throw Error("Duplicate shortcode found in saved awards Page");
+   const previewCount=(raw.match(/tablepress-preview-wrap/g)||[]).length;
+   console.log("PSE_AWARDS_ESC_PAGE_READBACK="+JSON.stringify({
+     pageId,slug:p.slug,status:p.status,action:p.acf.action,key:p.acf.key,
+     modified:p.modified,rawLength:raw.length,rawSha256:hash(raw),
+     shortcodeCount:existing.length,hasLegacyTable:false,
+     previewCount,firstChars:raw.slice(0,120),lastChars:raw.slice(-150),
+     alreadyAttached:true,readOnly:true
+   }));
    process.exit(0);
  }
  if(existing.includes(tableId)||!raw.includes("Table_01"))throw Error("Page partially migrated; refuse overwrite");
