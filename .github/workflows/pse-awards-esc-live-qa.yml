@@ -1,0 +1,34 @@
+name: PSE G8 live ESC Table awards source and responsive QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-awards-esc-live-qa-trigger
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify live 8 ESC Table award cards and all 17 descriptions at two viewport widths
+        run: |
+          node --check scripts/pse-awards-esc-live-qa.mjs
+          node scripts/pse-awards-esc-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-g8-esc-live-screenshots
+          path: artifacts/pse-g8-esc-live/
+          if-no-files-found: ignore
+          retention-days: 14
