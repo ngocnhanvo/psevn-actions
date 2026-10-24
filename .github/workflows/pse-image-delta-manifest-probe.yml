@@ -23,19 +23,21 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os,re
+          import os
           from urllib.parse import urlsplit
           values=[]
           for raw in os.environ['ENV_FILE'].splitlines():
-              m=re.match(r"^\\s*(?:export\\s+)?WC_URL_CLIENT\\s*=\\s*(.*?)\\s*$",raw)
-              if m:values.append(m.group(1).strip().strip('"\\''))
-          if len(values)!=1:raise RuntimeError('Invalid client origin configuration')
+              entry=raw.strip()
+              if entry.startswith('export '): entry=entry[7:].strip()
+              if entry.startswith('WC_URL_CLIENT='):
+                  values.append(entry.split('=',1)[1].strip().strip(chr(34)+chr(39)))
+          if len(values)!=1: raise RuntimeError('Invalid client origin configuration')
           u=urlsplit(values[0])
           if u.scheme!='https' or not u.hostname or u.username or u.password or u.port not in (None,443) or u.path not in ('','/') or u.query or u.fragment:
               raise RuntimeError('Invalid frontend origin')
           with open(os.environ['GITHUB_ENV'],'a') as env:
-              env.write('ASTRO_FTP_TARGET=/domains/'+u.hostname+'/public_html/\\n')
-              env.write('FTP_ASTRO_DIR=/domains/'+u.hostname+'/public_html/\\n')
+              print('ASTRO_FTP_TARGET=/domains/'+u.hostname+'/public_html/',file=env)
+              print('FTP_ASTRO_DIR=/domains/'+u.hostname+'/public_html/',file=env)
           PY
       - name: Verify signed WordPress manifest without upload, build or deploy
         shell: bash
