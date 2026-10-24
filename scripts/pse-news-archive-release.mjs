@@ -60,7 +60,83 @@ try {
   const apply=event.head_commit?.message==='cms(pse): publish verified news archive and native URL rewrites';
 
   const bindMenu=event.head_commit?.message==='cms(pse): bind verified news archive to WordPress Header menu';
-  if(bindMenu){
+  const seoRedirects=event.head_commit?.message==='cms(pse): preserve verified Joomla news category URLs';
+  if(seoRedirects){
+    const specs=[
+      ['tin-cong-ty','tin-tong-hop'],
+      ['tin-cong-ty','hoat-dong-chi-bo-hdqt-bks'],
+      ['tin-cong-ty','hoat-dong-cong-doan-doan-tn-nu-cong'],
+      ['tin-cong-ty','dang-uy'],
+      ['thu-vien','anh'],
+      ['thu-vien','video']
+    ];
+    const endpoint='/wp-json/wp/v2/chuyen-huong-link';
+    const [categories,existing,archive]=await Promise.all([
+      api('/wp-json/wp/v2/categories?context=edit&per_page=100&hide_empty=false&_fields=id,slug,parent'),
+      api(endpoint+'?context=edit&status=any&per_page=100&_fields=id,status,acf'),
+      api('/wp-json/wp/v2/pages/77030?context=edit&_fields=id,slug,status,acf')
+    ]);
+    if(categories.status!==200||!Array.isArray(categories.payload)||
+       existing.status!==200||!Array.isArray(existing.payload)||
+       archive.status!==200||archive.payload?.status!=='publish'||
+       archive.payload?.acf?.key!=='ssr-posts')throw Error('PSE legacy news redirect preflight failed');
+    const cat=slug=>{
+      const found=categories.payload.filter(x=>x.slug===slug);
+      if(found.length!==1)throw Error('Unknown or ambiguous news category: '+slug);
+      return found[0];
+    };
+    const planned=specs.map(([parent,child])=>{
+      if(Number(cat(child).parent)!==Number(cat(parent).id))
+        throw Error('WordPress news taxonomy ancestry mismatch');
+      const source='/tin-tuc-su-kien/'+parent+'/'+child+'.html';
+      const dest='/tin-tuc-su-kien/?cat='+encodeURIComponent(child);
+      const matching=existing.payload.filter(x=>x.acf?.from_link===source);
+      if(matching.length>1)throw Error('Duplicate WordPress redirect source');
+      if(matching.length===1){
+        const obj=matching[0];
+        if(obj.status!=='publish'||Number(obj.acf?.type)!==301||
+          obj.acf?.to_link!==dest||obj.acf?.match_type!=='Exact'||!obj.acf?.enable)
+          throw Error('Pre-existing redirect differs; refuse overwrite');
+      }
+      return {source,dest,already:matching.length===1};
+    });
+    console.log('PSE_NEWS_LEGACY_REDIRECT_PREFLIGHT='+JSON.stringify({
+      checked:planned.length,already:planned.filter(x=>x.already).length,
+      pending:planned.filter(x=>!x.already).length,noPostWrites:true,noAstroBuild:true
+    }));
+    const created=[];
+    try{
+      for(const rule of planned){
+        if(rule.already)continue;
+        const saved=await api(endpoint,'POST',{
+          title:'PSE preserved Joomla news category',status:'draft',
+          acf:{from_link:rule.source,to_link:rule.dest,
+            type:301,match_type:'Exact',enable:true}
+        });
+        if(saved.status!==201||!Number.isSafeInteger(Number(saved.payload?.id)))
+          throw Error('Cannot stage legacy category redirect: '+rule.source+' HTTP '+saved.status);
+        const id=Number(saved.payload.id);
+        created.push(id);
+        const check=await api(endpoint+'/'+id+'?context=edit&_fields=id,status,acf');
+        if(check.status!==200||check.payload?.status!=='draft'||
+          check.payload?.acf?.from_link!==rule.source||
+          check.payload?.acf?.to_link!==rule.dest)
+          throw Error('Legacy category redirect readback mismatch: '+id);
+      }
+      for(const id of created){
+        const pub=await api(endpoint+'/'+id,'POST',{status:'publish'});
+        if(pub.status!==200||pub.payload?.status!=='publish')
+          throw Error('Cannot publish verified legacy category redirect: '+id);
+      }
+      console.log('PSE_NEWS_LEGACY_REDIRECTS=PASS; published='+created.length+
+        '; originals_preserved=true; no_articles_mutated=true; no_build=true');
+    }catch(err){
+      for(const id of created){
+        try{await api(endpoint+'/'+id,'POST',{status:'draft',acf:{enable:false}})}catch{}
+      }
+      throw err;
+    }
+  }else if(bindMenu){
     const rows=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,''));
     const client=rows.filter(x=>x.startsWith('WC_URL_CLIENT='));
     if(client.length!==1)throw Error('Missing frontend origin');
