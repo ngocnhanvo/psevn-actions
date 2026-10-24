@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .pse-corporate-release-audit-trigger
+      - .pse-corporate-menu-bind-request
 permissions:
   contents: read
 concurrency:
@@ -22,13 +23,20 @@ jobs:
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
       PSE_CORPORATE_RELEASE_APPLY: '0'
+      PSE_CORPORATE_MENU_BIND_APPLY: "${{ github.event.head_commit.message == 'cms(pse): bind ten company menu items to published Pages' }}"
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Preflight then publish verified Pages and bind native WordPress menu
+        if: "${{ github.event.head_commit.message != 'cms(pse): bind ten company menu items to published Pages' && github.event.head_commit.message != 'test(pse): audit native company menu binding before save' }}"
         run: node scripts/pse-corporate-publish.mjs
+      - name: Verify original WordPress Page references and save Menu Manager fields
+        if: "${{ github.event.head_commit.message == 'cms(pse): bind ten company menu items to published Pages' || github.event.head_commit.message == 'test(pse): audit native company menu binding before save' }}"
+        run: |
+          node --check scripts/pse-corporate-menu-native-binding.mjs
+          node scripts/pse-corporate-menu-native-binding.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
