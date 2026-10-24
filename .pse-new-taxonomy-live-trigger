@@ -1,1 +1,2 @@
 2026-10-25 read-only live QA after WP-native investor and agriculture categories have been published.
+WordPress-created investor/agriculture subcategories with 271 + 6 verified post assignments; frontend category language query fix PR #40 included signed Astro release #40143412040. Revalidate 16 prior failed/partial cases at 390/1440.
