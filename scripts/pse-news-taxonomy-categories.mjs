@@ -1,6 +1,7 @@
 /** Original Joomla news menu -> native WordPress taxonomy, idempotent.
  * By default READ ONLY. Apply only on exact reviewed GitHub commit message.
  * Never modify existing taxonomy, articles, menu, Pages, Redirects or Astro build.
+ * Preflight audit PASS #40069609241: seven missing categories, zero conflicts.
  */
 import {chromium} from "playwright";
 import {readFile,writeFile,mkdir} from "node:fs/promises";
