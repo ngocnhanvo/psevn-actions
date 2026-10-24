@@ -114,7 +114,10 @@ try{
       const json=await r.json().catch(()=>({}));
       return {status:r.status,id:json.id,alt:json.alt_text};
     },{id:image.id,alt,nonce});
-    if(change.status!==200||change.id!==image.id||change.alt!==alt)throw Error("WP Media native SEO ALT save failed");
+    if(change.status!==200||change.id!==image.id||change.alt!==alt){
+      console.log("PSE_AWARDS_ESC_ALT_DEBUG="+JSON.stringify({year:awards[i].year,mediaId:image.id,status:change.status,returnedId:change.id,expectedLength:alt.length,returnedLength:String(change.alt||"").length,returnedPreview:String(change.alt||"").slice(0,100)}));
+      throw Error("WP Media native SEO ALT save failed");
+    }
   }
   // Use native ESC Table Insert Image, selecting the verified original WordPress Media attachment.
   await page.evaluate(row=>{const tp=window.tp;tp.editor.updateSelectionFromCoords(1,row,1,row);tp.editor.setValueFromCoords(1,row,"");tp.callbacks.insert_image.open_dialog(null)},row);
