@@ -1,0 +1,103 @@
+name: PSE image cache delta evidence (READ ONLY, NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-image-cache-delta-audit.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-image-cache-delta-audit
+  cancel-in-progress: false
+jobs:
+  compare:
+    name: Compare retained images between two successful production builds
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Restore historical production WordPress image cache
+        uses: actions/cache/restore@v4
+        with:
+          path: source/.cache
+          key: pse-prod-dot-cache-v2-${{ runner.os }}-40134437874
+          fail-on-cache-miss: true
+      - name: Read exact historical image hashes (no archive upload)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path('source/.cache/images')
+          if not root.is_dir():raise RuntimeError('Historical images cache missing')
+          snapshot={}
+          for file in root.rglob('*'):
+              if file.is_symlink():raise RuntimeError('Unexpected symbolic link in cache')
+              if not file.is_file():continue
+              key=file.relative_to(root).as_posix()
+              size=file.stat().st_size
+              if size>100*1024*1024:raise RuntimeError('Unexpected image size')
+              h=hashlib.sha256()
+              with file.open('rb') as stream:
+                  for chunk in iter(lambda:stream.read(1024*1024),b''):h.update(chunk)
+              snapshot[key]=[size,h.hexdigest()]
+              if len(snapshot)>10000:raise RuntimeError('Unexpected image count')
+          result=Path(os.environ['RUNNER_TEMP'])/'pse-image-cache-before.json'
+          result.write_text(json.dumps(snapshot),encoding='utf8')
+          print('BEFORE_IMAGE_COUNT=',len(snapshot),'BEFORE_IMAGE_BYTES=',sum(x[0] for x in snapshot.values()))
+          PY
+      - name: Clear only runner-local restored cache
+        shell: bash
+        run: rm -rf source/.cache
+      - name: Restore subsequent production WordPress image cache
+        uses: actions/cache/restore@v4
+        with:
+          path: source/.cache
+          key: pse-prod-dot-cache-v2-${{ runner.os }}-40135974794
+          fail-on-cache-miss: true
+      - name: Compare image checksums and estimate duplicate FTPS bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,os,tempfile
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          before=json.loads((Path(os.environ['RUNNER_TEMP'])/'pse-image-cache-before.json').read_text(encoding='utf8'))
+          root=Path('source/.cache/images')
+          if not root.is_dir():raise RuntimeError('Latest images cache missing')
+          after={}
+          for file in root.rglob('*'):
+              if file.is_symlink():raise RuntimeError('Unexpected symbolic link in cache')
+              if not file.is_file():continue
+              name=file.relative_to(root).as_posix()
+              h=hashlib.sha256()
+              with file.open('rb') as stream:
+                  for chunk in iter(lambda:stream.read(1048576),b''):h.update(chunk)
+              after[name]=[file.stat().st_size,h.hexdigest()]
+              if len(after)>10000:raise RuntimeError('Unexpected image count')
+          same={key for key,v in after.items() if before.get(key)==v}
+          modified={key for key in before.keys()&after.keys() if before[key]!=after[key]}
+          added=after.keys()-before.keys()
+          removed=before.keys()-after.keys()
+          total=sum(v[0] for v in after.values())
+          reused=sum(after[k][0] for k in same)
+          changed=sum(after[k][0] for k in modified|added)
+          with tempfile.TemporaryFile() as stream:
+              with ZipFile(stream,'w',compression=ZIP_DEFLATED,compresslevel=6) as z:
+                  for i,name in enumerate(sorted(modified|added)):
+                      p=root/name
+                      z.write(p,arcname=f'images/{i}{p.suffix}')
+              stream.seek(0,2)
+              estimate=stream.tell()
+          print('IMAGE_CACHE_COMPARISON=PASS')
+          print('PRIOR_CACHE_RUN=40134437874')
+          print('LATEST_CACHE_RUN=40135974794')
+          print(f'PRIOR_IMAGE_COUNT={len(before)} LATEST_IMAGE_COUNT={len(after)}')
+          print(f'UNCHANGED_IMAGES={len(same)} UNCHANGED_RAW_BYTES={reused}')
+          print(f'MODIFIED_IMAGES={len(modified)} ADDED_IMAGES={len(added)} REMOVED_IMAGES={len(removed)}')
+          print(f'LATEST_RAW_IMAGE_BYTES={total} NEW_OR_CHANGED_RAW_BYTES={changed}')
+          print(f'NEW_OR_CHANGED_IMAGE_ZIP_ESTIMATE_BYTES={estimate}')
+          print('NO_ASTRO_BUILD=PASS; NO_FTP=PASS; NO_DEPLOY=PASS')
+          PY
