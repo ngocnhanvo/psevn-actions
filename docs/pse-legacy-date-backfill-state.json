@@ -1,8 +1,63 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 19,
+  "runs": 20,
   "records": {
+    "1271": {
+      "wp_id": 78211,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-04-28",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1272": {
+      "wp_id": 77259,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-05-08",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1273": {
+      "wp_id": 77237,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-05-16",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1274": {
+      "wp_id": 77202,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-05-29",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1275": {
+      "wp_id": 77222,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2017-05-30",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "1276": {
+      "wp_id": 77168,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1277": {
+      "wp_id": 77192,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1278": {
+      "wp_id": 77188,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
     "1280": {
       "wp_id": 77174,
       "attempts": 0,
@@ -1039,5 +1094,5 @@
     }
   },
   "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
-  "last_migration_batch_observed": 139
+  "last_migration_batch_observed": 140
 }
