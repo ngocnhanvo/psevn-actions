@@ -7,3 +7,5 @@ Retry after #40098572357: wait for TinyMCE body ready, then official WP Text mod
 Retry #40098720173: WordPress TinyMCE normalization proven; restore byte-exact authenticated WordPress raw in Classic Text editor before native ESC Insert Code replacement. Fail closed if raw restoration or output differs.
 
 G8 resumed checkpoint: single diagnostic rerun with bounded middlePreview/middleTail logging on validation failure; no repeat ESC Table authoring, no Astro build. Verify Page unchanged on failure.
+
+G8 Insert Code preview shape verified from failed diagnostic #40100801768; retry only native editor-authoritative preview acceptance after strict boundary and token validation. No repeat authoring or Astro build.
