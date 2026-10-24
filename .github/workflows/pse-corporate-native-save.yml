@@ -1,0 +1,32 @@
+name: PSE corporate WordPress Page incremental-log recovery
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-corporate-native-save.mjs
+      - .github/workflows/pse-corporate-native-save.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-corporate-native-save
+  cancel-in-progress: false
+jobs:
+  wp-save:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_CORPORATE_NATIVE_SAVE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Save only untracked published Pages in native WP editor (never force build)
+        run: node scripts/pse-corporate-native-save.mjs
