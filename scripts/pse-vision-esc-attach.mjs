@@ -56,7 +56,7 @@ try{
  if(JSON.stringify(check.titles)!==JSON.stringify(t.data.items.map(x=>x.title))||
    check.desc.some((x,i)=>x!==t.data.items[i].details))throw Error("ESC content not identical to source WordPress Page");
  const parity=await page.evaluate(items=>items.map(i=>{const d=document.createElement("div");d.innerHTML=String(i.img||"");const im=d.querySelector("img");return {src:im?.getAttribute("src")||"",alt:im?.getAttribute("alt")||""}}),t.data.items);
- if(parity.some((x,i)=>x.src!==check.images[i]||!x.alt)){
+ if(parity.some((x,i)=>new URL(x.src,origin).href!==new URL(check.images[i],origin).href||!x.alt)){
   console.log("PSE_VISION_IMAGE_PARITY_DIAGNOSTIC="+JSON.stringify({source:check.images,native:parity}));
   throw Error("ESC image source parity failed");
  }
