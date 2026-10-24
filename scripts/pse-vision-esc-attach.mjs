@@ -72,7 +72,19 @@ try{
  if(!await textarea.isVisible()){await page.evaluate(()=>window.switchEditors?.go("content","html"));await page.waitForTimeout(800)}
  if(!await textarea.isVisible())throw Error("Text tab unavailable");
  const before=await textarea.inputValue();
- if(before!==raw)throw Error("Page modified concurrently, refuse attach");
+ const recheck=await get("/wp-json/wp/v2/pages/"+pageId+"?context=edit&_fields=id,slug,status,acf,content,modified");
+ if(recheck.http!==200||recheck.data?.id!==pageId||recheck.data.modified!==p.data.modified||
+    String(recheck.data.content?.raw||"")!==raw)throw Error("Page changed after initial REST inspection; stop before WP write");
+ if(before!==raw){
+  console.log("PSE_VISION_EDITOR_NORMALIZATION="+JSON.stringify({
+   editorLength:before.length,restLength:raw.length,editorHash:hash(before),restHash:hash(raw)
+  }));
+  await page.evaluate(original=>{const el=document.querySelector("textarea#content");
+   if(!(el instanceof HTMLTextAreaElement))throw Error("WP Text editor missing");
+   el.value=original;el.dispatchEvent(new Event("input",{bubbles:true}));
+  },raw);
+  if(await textarea.inputValue()!==raw)throw Error("Cannot restore original content in native editor");
+ }
  await textarea.fill("");
  await textarea.focus();
  const button=page.locator("#qt_content_tablepress_quicktags_button");
