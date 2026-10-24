@@ -61,3 +61,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25: regression native WordPress Posts archive must omit broken legacy lang filter for numeric category and all published; legacy PHP slug listing unchanged; no build.
 
 2026-10-25: PSE native CMS ProductsPage component renders ProductCategory exact slugs and user-visible multi-category item memberships with escaped CMS fields, no build.
+
+2026-10-25: verify PSE branded ProductDetailsPage shared header/footer, single product breadcrumb, media responsive image and native Product catalog category membership filtering; no build.
