@@ -1,8 +1,49 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 21,
+  "runs": 22,
   "records": {
+    "1214": {
+      "wp_id": 79395,
+      "attempts": 1,
+      "status": "unverified",
+      "reason": "No exact Joomla ID/title created day evidence"
+    },
+    "1232": {
+      "wp_id": 78254,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1242": {
+      "wp_id": 78528,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1244": {
+      "wp_id": 78509,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1249": {
+      "wp_id": 78434,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1250": {
+      "wp_id": 78430,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1251": {
+      "wp_id": 78464,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "1254": {
+      "wp_id": 78460,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
     "1256": {
       "wp_id": 78245,
       "attempts": 0,
