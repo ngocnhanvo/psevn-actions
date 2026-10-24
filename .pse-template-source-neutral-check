@@ -10,3 +10,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-23 PSE screenshot fixes NEW: hero no text box, no photo shade, nested menu panel never overlays parent items even at constrained right/left widths, WordPress verified news publication separately. Astro github commits bd475b42 and 3f17db25. Run existing NO BUILD Vitest/Astro syntax regression before merge.
 
 2026-10-23 PSE latest news tabs latest 5 per CMS category. Astro github commits 9dd17835a1ab1500f4da8611aaf9f033597049ee, 8786415397d34a1ba3a3dc485a19a6708eb1b6c2. WordPress category slug lookup from saved ESC Table category ID, posts categories=id status=publish orderby=date order=desc per_page=5. Run existing parser/Vitest NO BUILD before merge.
+
+2026-10-24 PSE approved subpages: Astro github eb421acb5f7eca4559d52fdb1737ff0b6ea05434. Independent Vitest + Astro source parser, NO BUILD / NO FTP. Verify menu breadcrumbs, public pages, SSR listing and PostDetails.
