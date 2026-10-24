@@ -20,3 +20,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-24 G3: PSE full-width news archive breadcrumb derives parent nodes via WordPress taxonomy IDs instead of hardcoded menu; Astro development branch 45f2ce698e8ae3a747030a21d66272ca223981bd; run unit test suite + Astro parser only, no build or CMS write.
 
 2026-10-24 PSE G3 archive: signed Astro deploy #40074078655 PASS but 0 redirect route rules despite WordPress published Rewrite records 79699/79700. Fix Astro github 6d9ed3f226bfc4fe9dabc5e7a7c9a71317f2a65c reconciles active WordPress redirect ID+modified registry with incremental cached redirect logs, refresh only on actual drift. Run isolated Vitest + parser, no build, no FTP.
+
+2026-10-24: PSE G3 approved WordPress-authored news archive intro placement Astro github 141cce2bd5e8f5ea71339d6305fd4206188a9478. Existing all-post/category SSR remains, render Page intro below H1 instead of before. Run Vitest/parser only; NO BUILD, NO FTP.
