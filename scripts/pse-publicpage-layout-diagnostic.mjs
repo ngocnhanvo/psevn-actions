@@ -8,7 +8,7 @@ try {
  for(const width of [1440,390]){
   const page=await browser.newPage({viewport:{width,height:900}});
   try {
-   for(const slug of ["qua-trinh-hinh-thanh-phat-trien","ban-giam-doc","hoi-dong-quan-tri","thong-diep"]){
+   for(const slug of ["qua-trinh-hinh-thanh-phat-trien","ban-giam-doc","hoi-dong-quan-tri","thong-diep","ban-kiem-soat","so-do-to-chuc","tam-nhin-su-menh","dinh-huong-phat-trien","nganh-nghe-kinh-doanh","thanh-tuu"]){
     const response=await page.goto(new URL("/"+slug,root.origin).href,{waitUntil:"domcontentloaded",timeout:60000});
     const info=await page.evaluate(()=>{
       const body=document.querySelector(".pse-public-body");
@@ -31,7 +31,11 @@ try {
         childCount:e.children.length,snippet:(e.innerText||"").slice(0,70)}));
       const last=[...article?.querySelectorAll("p,div,table,section")||[]].slice(-8).map(e=>({
         ...stat(e),snippet:(e.innerText||"").slice(-75)}));
-      const tables=nodes.filter(e=>e.tagName==="TABLE").slice(0,3).map(e=>({...stat(e),html:e.outerHTML.slice(0,500)}));
+      const tables=nodes.filter(e=>e.tagName==="TABLE").slice(0,3).map(e=>({...stat(e),html:e.outerHTML.slice(0,500),rows:[...e.rows].slice(0,12).map(r=>({
+        rect:rect(r),height:r.style.height,html:r.outerHTML.slice(0,180),
+        cells:[...r.cells].slice(0,5).map(c=>({rect:rect(c),width:c.style.width,
+          height:c.style.height,html:c.outerHTML.slice(0,120),lastText:(c.innerText||"").slice(-45),
+          br:c.querySelectorAll("br").length}))}))}));
       return {body:body&&stat(body),article:article&&stat(article),scroll,constrained,blocks,last,tables,
         related:document.querySelector("[data-pse-menu-related]")&&stat(document.querySelector("[data-pse-menu-related]")),
         scrollGap:article&&Math.round(document.querySelector("[data-pse-menu-related]")?.getBoundingClientRect().top-article.getBoundingClientRect().bottom),
