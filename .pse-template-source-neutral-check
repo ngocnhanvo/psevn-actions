@@ -12,3 +12,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 2026-10-23 PSE latest news tabs latest 5 per CMS category. Astro github commits 9dd17835a1ab1500f4da8611aaf9f033597049ee, 8786415397d34a1ba3a3dc485a19a6708eb1b6c2. WordPress category slug lookup from saved ESC Table category ID, posts categories=id status=publish orderby=date order=desc per_page=5. Run existing parser/Vitest NO BUILD before merge.
 
 2026-10-24 PSE approved subpages: Astro github eb421acb5f7eca4559d52fdb1737ff0b6ea05434. Independent Vitest + Astro source parser, NO BUILD / NO FTP. Verify menu breadcrumbs, public pages, SSR listing and PostDetails.
+
+2026-10-24: PSE corporate 10 WordPress published Pages absent from latest Astro build (5 cached page keys, live QA 20/20 HTTP 404). Astro github 32cfd5693944a1bbb327f64c20632a7ae3fddf74 reconciles public Page registry with persistent cache, metadata-only per build + full content only for missing/changed IDs; run Vitest, local import and Astro parser NO BUILD/NO FTP before PR.
