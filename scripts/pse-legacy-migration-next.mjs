@@ -17,7 +17,9 @@ const pending=data.queue.length>0 || Object.values(data.articles).some(row=>
   (row.wp_id && ["imported","draft_needs_date","existing"].includes(row.status) &&
     !row.seo_cleaned && (Number(row.seo_attempts||0)<3 || row.seo_error==="Post has no exact migration provenance marker")) ||
   (row.wp_id && ["imported","draft_needs_date","existing"].includes(row.status) &&
-    !row.attribution_cleaned && Number(row.attribution_attempts||0)<3));
+    !row.attribution_cleaned && Number(row.attribution_attempts||0)<3) ||
+  (row.status==="draft_needs_date" && row.wp_id && !row.verified_date &&
+    Number(row.date_lookup_attempts||0)<3));
 if(!pending){console.log("PSE_LEGACY_AUTO_NEXT=COMPLETE; no_dispatch=true");process.exit(0)}
 const url="https://api.github.com/repos/"+repo+
   "/actions/workflows/pse-legacy-article-import-queue.yml/dispatches";
