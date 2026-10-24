@@ -1,9 +1,9 @@
 /** Source-verified WordPress investor child taxonomy migration; safe, idempotent, resumable. */
 import {chromium} from "playwright";
 import {mkdir,writeFile} from "node:fs/promises";
-const envFrontend=(()=>{const s=rows.filter(x=>x.startsWith("WC_URL_CLIENT="));if(s.length!==1)throw Error("PSE frontend origin missing");const u=new URL(s[0].slice(14).replace(/^['"]|['"]$/g,""));if(u.protocol!=="https:"||u.username||u.password||!["","/"].includes(u.pathname)||u.search||u.hash)throw Error("Frontend origin invalid");return u.origin})();
 const authorized=process.env.GITHUB_EVENT_PATH&&JSON.parse(await(await import("node:fs/promises")).readFile(process.env.GITHUB_EVENT_PATH,"utf8")).head_commit?.message==="cms(pse): classify source-verified investor archive articles";
 const rows=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""));
+const envFrontend=(()=>{const s=rows.filter(x=>x.startsWith("WC_URL_CLIENT="));if(s.length!==1)throw Error("PSE frontend origin missing");const u=new URL(s[0].slice(14).replace(/^['"]|['"]$/g,""));if(u.protocol!=="https:"||u.username||u.password||!["","/"].includes(u.pathname)||u.search||u.hash)throw Error("Frontend origin invalid");return u.origin})();
 const v=rows.filter(x=>x.startsWith("WC_URL="));if(v.length!==1)throw Error("PSE WP origin absent");
 const wpUrl=new URL(v[0].slice(7).replace(/^['"]|['"]$/g,""));if(wpUrl.protocol!=="https:"||wpUrl.username||wpUrl.password||!["","/"].includes(wpUrl.pathname)||wpUrl.search||wpUrl.hash)throw Error("Untrusted CMS origin");
 const specs=[{id:77023,parent:77022,name:"Thông tin Quản trị",slug:"thong-tin-quan-tri"},
