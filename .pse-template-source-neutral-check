@@ -31,3 +31,5 @@ Original WordPress-triggered build #39928764588 failed before FTP because this e
 
 2026-10-24 PSE G5: physical Astro route detection and protection against CMS single-segment post fallback, github 911595dbe2a2296dd695863f2deb0d45e4518f48. Verify Vitest including new 3 matcher tests, Astro parser, no Astro build, no FTP.
 2026-10-24 G5 after CI #40087017529 caught regex syntax error, syntax corrected Astro github 208e5555b5aa195882ff301b6acc41276ced3b99. Test existing Vitest+parser NO BUILD; do not rerun the earlier failed same SHA.
+
+PSE company PublicPage related menu sibling navigation 2026-10-24: Astro github ba2305d2da54821a1fe07dec27331102f426dba5. Hide visible short description on PSE PublicPage only (preserve SEO); render related same-parent WordPress Page items in CMS order, previous/next boundaries, preview builder integration. Run existing NO BUILD Vitest/parser; DO NOT FTP, DO NOT restart Joomla importer.
