@@ -83,8 +83,13 @@ try{
  const editor=await page.evaluate((raw)=>{
    const el=document.querySelector("textarea#content");
    if(!(el instanceof HTMLTextAreaElement))throw Error("WP Text editor missing");
+   // WordPress's Visual -> Text conversion can rewrite the original HTML.
+   // Restore the exact authenticated REST raw body in its Text editor before
+   // letting the official ESC Table Insert Code UI replace ONLY Table_01.
+   const wasNormalized=el.value!==raw;
+   if(wasNormalized){el.value=raw;el.dispatchEvent(new Event("input",{bubbles:true}));}
    const text=el.value;
-   if(text!==raw)throw Error("WordPress editor differs from REST raw; no destructive replacement");
+   if(text!==raw)throw Error("Cannot restore exact WordPress raw content in Text editor");
    const matches=[...text.matchAll(/<table\b[^>]*\bid\s*=\s*["']Table_01["'][^>]*>/gi)];
    if(matches.length!==1)throw Error("Expected exactly one outer legacy achievements table");
    const start=matches[0].index;
