@@ -1,0 +1,27 @@
+name: PSE homepage utilities and live search QA (READ ONLY)
+on:
+  workflow_run:
+    workflows: ["PSE Astro build and deploy via WordPress GitHub Trigger"]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-utilities:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify PSE utilities and WordPress search SSR on live hostname
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-utility-live-qa.mjs
+          node scripts/pse-utility-live-qa.mjs
