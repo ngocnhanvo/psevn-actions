@@ -1,8 +1,66 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 26,
+  "runs": 27,
   "records": {
+    "234": {
+      "wp_id": 77530,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-12-24",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "235": {
+      "wp_id": 77539,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2011-12-24",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "239": {
+      "wp_id": 77579,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2012-03-06",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "264": {
+      "wp_id": 78520,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "265": {
+      "wp_id": 78469,
+      "attempts": 0,
+      "status": "published_preserved"
+    },
+    "316": {
+      "wp_id": 77699,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2012-11-22",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "318": {
+      "wp_id": 77706,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2012-11-28",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
+    "325": {
+      "wp_id": 77765,
+      "attempts": 1,
+      "status": "source_day_applied",
+      "source_created_day": "2013-01-03",
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created"
+    },
     "326": {
       "wp_id": 77781,
       "attempts": 1,
@@ -1402,5 +1460,5 @@
     }
   },
   "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
-  "last_migration_batch_observed": 178
+  "last_migration_batch_observed": 179
 }
