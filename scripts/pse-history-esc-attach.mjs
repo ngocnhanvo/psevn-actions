@@ -82,7 +82,24 @@ try{
  },null,2)+"\n");
  await page.goto(origin+"/wp-admin/post.php?post="+pageId+"&action=edit",
   {waitUntil:"domcontentloaded",timeout:60000});
- await page.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:25000});
+ const state=await page.evaluate(()=>({
+  path:location.pathname,login:!!document.querySelector("#user_login"),
+  nativeEditor:!!document.querySelector("form#post"),
+  tab:!!document.querySelector("#content-html"),
+  textVisible:!!document.querySelector("textarea#content")&&
+    getComputedStyle(document.querySelector("textarea#content")).display!=="none",
+  tinymce:!!window.tinymce?.get("content")?.getBody(),
+  activeMode:document.querySelector("#wp-content-wrap")?.className||""
+ }));
+ console.log("PSE_HISTORY_EDITOR_PREFLIGHT="+JSON.stringify(state));
+ if(state.login||!state.nativeEditor||!state.tab)throw Error("Expected native WP Page editor, no write");
+ if(!state.textVisible){
+  // The editor may be configured in Text mode and never initialize TinyMCE.
+  // Wait only for the editor control, not for a Visual-mode-only iframe.
+  await page.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody())||
+     document.querySelector("#wp-content-wrap")?.classList.contains("html-active"),
+     null,{timeout:20000}).catch(()=>null);
+ }
  await page.locator("#content-html").click();
  const textarea=page.locator("textarea#content");
  if(!await textarea.isVisible()){
