@@ -1,10 +1,12 @@
 /** PSE post-release real-browser QA; read only, no form submissions. */
 import { chromium } from "playwright";
+import { mkdir } from "node:fs/promises";
 const rows=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
 const origin=key=>{const r=rows.filter(s=>s.startsWith(key+"="));if(r.length!==1)throw Error("Missing origin "+key);const u=new URL(r[0].slice(key.length+1).replace(/^['"]|['"]$/g,""));if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash||!["","/"].includes(u.pathname))throw Error("Invalid origin");return u.origin};
 const frontend=origin("WC_URL_CLIENT"),wp=origin("WC_URL");
 if(frontend===wp)throw Error("CMS/public origin overlap");
 const browser=await chromium.launch({headless:true});let passed=0;
+await mkdir("artifacts/pse-media-visual",{recursive:true});
 try{
  for(const width of [390,768,1440]){
    const page=await browser.newPage({viewport:{width,height:width===390?844:900}});
@@ -15,6 +17,7 @@ try{
    const cards=page.locator("#posts-grid .pse-media-card");
    const initialCards=await cards.count();
    if(initialCards<1)throw Error("Native WordPress photo album missing from SSR listing "+width);
+   await page.screenshot({path:`artifacts/pse-media-visual/photos-${width}.png`,fullPage:true});
    const available=await cards.locator("a[href]").evaluateAll(elements=>[...new Set(elements.map(a=>a.getAttribute("href")||"").filter(Boolean))]);
    const verifiedAlbums=[
      {slug:"994-nha-dai-doan-ket",count:3},
@@ -62,6 +65,7 @@ try{
    await page.keyboard.press("Escape");
    if(await dialog.isVisible())throw Error("Gallery Escape did not close dialog");
    if(await page.evaluate(()=>document.body.scrollWidth>window.innerWidth+1))throw Error("Album horizontal overflow "+width);
+   if(album.slug==="994-nha-dai-doan-ket")await page.screenshot({path:`artifacts/pse-media-visual/photo-detail-${width}.png`,fullPage:true});
    console.log("PSE_MEDIA_LIVE_PHOTO=PASS width="+width+" album="+album.slug+" photos="+album.count+" lightbox=PASS admin_origin=HIDDEN");
    } // every verified native WordPress album
    await page.goto(frontend+"/tin-tuc-su-kien/video",{waitUntil:"domcontentloaded",timeout:50000});
@@ -74,6 +78,7 @@ try{
    const present=warehouses.filter(x=>body.includes(x));
    if(present.length!==5)throw Error("Verified five warehouse cards missing: "+present.join(","));
    if(await page.evaluate(()=>document.body.scrollWidth>window.innerWidth+1))throw Error("Contact horizontal overflow "+width);
+   await page.screenshot({path:`artifacts/pse-media-visual/contact-${width}.png`,fullPage:true});
    console.log("PSE_MEDIA_LIVE_CONTACT=PASS width="+width+" warehouses=5");
    await page.close();passed++;
  }
