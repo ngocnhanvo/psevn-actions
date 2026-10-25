@@ -1,1 +1,1 @@
-dry-run: ensure published WP page 81043 identity, preserve 3 tables + 11 province rows and only remove 5 empty paragraphs; no write
+approved apply (id=81043), requires sha256 4744854c7e7585112147877be9e6baaa22aaeb151619511d3673f384b238d433; delete exactly 5 paragraphs with no meaningful content; preserve all table/cell/media data; WP post readback; NO BUILD
