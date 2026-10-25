@@ -1,1 +1,2 @@
 Run only after official WordPress PHP build release. Verify frontend Header links at mobile/desktop match saved ESC Menu and preserve intentionally unresolved complaint.
+Signed Astro deploy #40147145969 PASS. Previous QA #40147143119 started before deployment and correctly saw stale 29 Joomla links; retry only live desktop/mobile menu parity against updated WordPress ESC Menu, no build or CMS writes.
