@@ -4,3 +4,5 @@ Signed Astro release #40150677056 SUCCESS after WordPress PHP Build Website #401
 2026-10-25: News dropdown z-index and one-shot article image fallback live verification AFTER WordPress PHP run #40151637840 SUCCESS and signed Astro deploy #40151707639 SUCCESS of master d2e22fae0ae698f07f8374ddbb03bf9fadd5589a. Test 390/768/1440 news category dropdown truly overlays card (elementFromPoint) and SVG /images/posts/no-image.svg returns 200 and synthetic duplicate image error stabilizes. Preserve read-only no-build scope. Also recheck product toolbar to catch regression.
 
 2026-10-25: Recheck news category selection after signed release 40152791739. Check color contrast and category options across three widths. Read-only QA.
+
+2026-10-25: Retry read-only selected category test after fixing Playwright context-only page creation in run 40152937269. No source change or build; keep original deployment.
