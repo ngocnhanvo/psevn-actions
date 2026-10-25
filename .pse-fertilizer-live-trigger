@@ -5,3 +5,5 @@ Signed Astro production release #40143412040 PASS. Re-run 9 target live Product/
 2026-10-25: PSE WordPress native ESC six Product category links PASS #40170200951, Astro active-menu PR #49 master 2f84ebbbb0c89e0481fc5dc7604198a6f9cac6d4, normal WP Build #40170309847 PASS pending=1 and signed FTPS deploy #40170363210 SUCCESS. READ-ONLY Playwright inspect Product Header active links at 390/768/1440 and two Product groups plus all catalog, no build.
 
 2026-10-25: Repeat read-only active menu QA solely to log actual category selected href/aria-current after signed build #40170363210. Previous #40170478154 3/9 passed, 6 category tests failed Wrong category active state/href. Diagnostic extends assertion values, no new WordPress or frontend changes.
+
+2026-10-25: User reported Product NPK 15-15-15 imported detail broken rich table layout, menu not active corresponding WordPress Product category. Run read-only DOM measurements at 390/768/1440 before scoped FE fix; no build, no CMS write.
