@@ -106,6 +106,22 @@ try{
   const menuResult=await api("/wp-json/wp/v2/menu-items?context=edit&per_page=100&_fields=id,url,type");
   if(menuResult.status!==200||!Array.isArray(menuResult.data))
     throw Error("Cannot read native WordPress menu URLs");
+  // Source-host identities come from the tracked Joomla inventory rather
+  // than hardcoded domains; changing the public frontend needs no code edit.
+  let legacyInventory=null;
+  const legacyHostnames=new Set();
+  try{
+    legacyInventory=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
+    for(const entry of Object.values(legacyInventory.articles||{})){
+      try{
+        const u=new URL(String(entry?.source_url||""));
+        if(["https:","http:"].includes(u.protocol)&&!u.username&&!u.password)
+          legacyHostnames.add(u.hostname.replace(/^www\./,""));
+      }catch{}
+    }
+  }catch(e){
+    report.issues.push({reason:"legacy article inventory unavailable",error:String(e).slice(0,120)});
+  }
   const byPageSlug=new Map();
   for(const p of pages){
     if(p.slug&&p.status==="publish"&&!String(p.acf?.key||"").startsWith("ssr-"))
@@ -147,7 +163,7 @@ try{
   for(const item of menuResult.data){
     const raw=String(item.url||"");
     let url;try{url=new URL(raw,front)}catch{continue}
-    if(![front,new URL("https://www.pse.vn").origin,new URL("https://pse.vn").origin].includes(url.origin))
+    if(url.origin!==front&&!legacyHostnames.has(url.hostname.replace(/^www\./,"")))
       continue;
     const from=url.pathname;
     const tail=decodeURIComponent(from.split("/").at(-1)||"").replace(/\.html$/i,"");
@@ -155,9 +171,8 @@ try{
   }
   // Reuse the already collected Joomla article migration manifest, rather than
   // recrawling hundreds of URLs or inventing their Joomla numeric IDs.
-  try{
-    const migration=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
-    for(const entry of Object.values(migration.articles||{})){
+  if(legacyInventory){
+    for(const entry of Object.values(legacyInventory.articles||{})){
       const raw=String(entry?.source_url||"");
       let source;try{source=new URL(raw)}catch{continue}
       const from=source.pathname;
@@ -168,7 +183,7 @@ try{
       if(byPostSlug.get(slug))
         add(from,"/"+slug,"joomla-id+exact-published-wordpress-post-slug");
     }
-  }catch(e){report.issues.push({reason:"legacy article inventory unavailable",error:String(e).slice(0,120)})}
+  }
   // No blanket regex that would turn invalid articles/assets into false 301s.
   report.counts={routes:routes.length,pages:pages.length,posts:posts.length,
     menuUrls:menuResult.data.length,categories:categories.length,proposals:proposals.size};
