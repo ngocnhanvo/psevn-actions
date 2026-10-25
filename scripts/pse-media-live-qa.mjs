@@ -55,7 +55,7 @@ try{
    else console.log("PSE_MEDIA_LIVE_VIDEO=EMPTY_TRUE width="+width);
    const contact=await page.goto(frontend+"/lien-he",{waitUntil:"domcontentloaded",timeout:50000});
    if(contact?.status()!==200)throw Error("Contact Page HTTP "+contact?.status());
-   const body=(await page.locator("main").innerText()).toLowerCase();
+   const body=(await page.locator("main#main-content").first().innerText()).toLowerCase();
    const warehouses=["đồng nai","long an","lâm đồng","bình phước","đắk nông"];
    const present=warehouses.filter(x=>body.includes(x));
    if(present.length!==5)throw Error("Verified five warehouse cards missing: "+present.join(","));
