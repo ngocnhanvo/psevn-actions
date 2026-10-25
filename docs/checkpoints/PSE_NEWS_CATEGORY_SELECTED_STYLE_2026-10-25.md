@@ -13,3 +13,10 @@
 - Resulting signed Astro build/FTPS [#40152791739](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40152791739) **IN PROGRESS at checkpoint creation**. Check exact outcome; never retrigger build already running/successful.
 - NEXT only after Astro deploy PASS: update `.pse-listing-toolbar-live-trigger` once to execute existing enhanced read-only mobile/tablet/desktop QA. If fail, inspect log and distinguish UI flaw/test assumption, then rerun only necessary focused QA. Save final tested statuses here.
 - STATUS at writing: `SOURCE_READY=PASS`, `UNIT_CI=PASS`, `WP_BUILD_ACCEPTED=PASS`, `SIGNED_DEPLOY=IN_PROGRESS`, `LIVE_SELECTED_FILTER_QA=NOT_TESTED`.
+
+## Final verified status — 2026-10-25
+- Signed Astro build and FTPS activation [#40152791739](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40152791739) **SUCCESS** following WordPress/PHP Build Website [#40152731399](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40152731399) SUCCESS; Astro master SHA `7358c5e23c7e8e36830913f0a2678a57771875b7`.
+- Homepage smoke [#40152894039](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40152894039) SUCCESS.
+- First live Playwright [#40152937269](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40152937269) failed **only** in the QA runner because `page.context().newPage()` is unsupported for this browser-owned context. Fix applied in Actions script using `browser.newPage({ viewport })`; **NO source rebuild**.
+- Final live Chromium [#40153020741](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40153020741) **SUCCESS 6/6** on news and product listing at 390/768/1440px. Selected real `Kiến thức nông nghiệp` category link navigates HTTP 200; selected label/icon contrast = **7.45:1** at all three widths; `Uncategorized` absent from category selector on listing and selected pages. Dropdown stacking, click open/close, normal nonsticky scrolling, news local image fallback, product regression PASS.
+- FINAL `SOURCE=PASS`, `UNIT_CI=PASS`, `SIGNED_PRODUCTION_DEPLOY=PASS`, `LIVE_CATEGORY_CONTRAST_AND_FILTER_QA=PASS`. Do not repeat successful builds, merges or QA unless source changes.
