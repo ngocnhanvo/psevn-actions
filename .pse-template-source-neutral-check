@@ -117,3 +117,5 @@ Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vites
 2026-10-25 PSE WordPress media gallery same-origin /api/files image routing: Astro github c92cea24b467dddfc52f238c35a3edada8da2610. Verify mediaAssetUrls Vitest, Astro media listing/detail parser, contact validation. NO BUILD/FTP.
 
 2026-10-25 PSE Contact Page native fallback to established Contact_00 component + source verified warehouse card responsive styles; test current Astro DEV no-build parser and unit, no FTP.
+
+2026-10-25 PSE media proxy PostDetails image test now aligned with proxied publicContent, Contact form fallback and WordPress location info; independent no-build CI only.
