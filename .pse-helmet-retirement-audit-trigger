@@ -1,0 +1,1 @@
+2026-10-26 PSE helmet 22 read-only audit: inspect exact 22 source paths in native WordPress active and Trash registries and their live Astro HTTP statuses. No CMS write, no build, no old-host DNS changes. Existing 669 live 301 PASS remains authoritative; do not rerun it.
