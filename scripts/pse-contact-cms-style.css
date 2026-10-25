@@ -1,0 +1,32 @@
+/* PSE_CONTACT_WORDPRESS_OWNED_LAYOUT_V1 */
+.pse-contact-page{max-width:1440px;width:100%;margin:0 auto;padding:clamp(24px,4vw,54px) clamp(18px,4vw,46px) 70px;display:grid;grid-template-columns:minmax(0,.94fr) minmax(0,1.06fr);gap:22px 24px;align-items:start}
+.pse-contact-page>span:has(.pse-contact-locations){display:contents}
+.pse-contact-page .pse-contact-locations{display:contents}
+.pse-contact-page .pse-contact-locations__intro{grid-column:1/-1;grid-row:1;max-width:960px;margin:0 auto 6px;text-align:center}
+.pse-contact-page .pse-contact-locations__intro>span{display:block;color:#298753;text-transform:uppercase;letter-spacing:.15em;font-weight:800;font-size:12px}
+.pse-contact-page .pse-contact-locations__intro h2{font-size:clamp(28px,3.4vw,43px);margin:10px 0;color:#175238;font-weight:800}
+.pse-contact-page .pse-contact-locations__intro p{max-width:730px;margin:auto;line-height:1.75;color:#5c7767}
+.pse-contact-page .pse-contact-locations__office{grid-column:1;grid-row:2;height:100%;min-width:0}
+.pse-contact-page .pse-contact-locations__section-title{grid-column:1/-1;grid-row:3;margin:28px 0 0;text-align:center;font-size:clamp(23px,2.6vw,30px);font-weight:800;color:#18543a}
+.pse-contact-page .pse-contact-locations__grid{grid-column:1/-1;grid-row:4;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.pse-contact-page .pse-location-card{padding:clamp(20px,3vw,31px);background:#fff;border-radius:19px;border:1px solid #dceadd;box-shadow:0 12px 34px rgba(20,69,37,.055);min-width:0}
+.pse-contact-page .pse-contact-locations__office .pse-location-card{height:100%;background:linear-gradient(115deg,#f2f9eb,#fffcf2);border-color:#cde4d3}
+.pse-contact-page .pse-location-card h3{margin:0 0 15px;font-size:20px;font-weight:800;color:#175b3e}
+.pse-contact-page .pse-location-card dl{display:grid;gap:12px;margin:0}
+.pse-contact-page .pse-location-card dl>div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;line-height:1.7}
+.pse-contact-page .pse-location-card dt{font-size:14px;color:#607568;font-weight:700}
+.pse-contact-page .pse-location-card dd{margin:0;overflow-wrap:anywhere}
+.pse-contact-page .pse-location-card a{color:#176842;text-decoration:none}
+.pse-contact-page .pse-location-card a:hover{text-decoration:underline}
+.pse-contact-page .pse-location-card__map{display:inline-flex;margin-top:18px;border-radius:10px;background:#e7f3e8;padding:9px 15px;font-weight:800;font-size:14px}
+.pse-contact-page [data-tablepress-preview="contact_00_vi"]{grid-column:2;grid-row:2;min-width:0;border:1px solid #d8e8dc;background:#fff;border-radius:20px;box-shadow:0 14px 40px rgba(18,71,36,.055);padding:clamp(16px,2.2vw,26px)}
+.pse-contact-page [data-tablepress-preview="contact_00_vi"] [data-tablepress-preview="contact_00"]{max-width:none;margin:0}
+.pse-contact-page [data-tablepress-preview="contact_00_vi"] .glass-panel{padding:0!important;box-shadow:none!important;border:0!important;background:transparent!important}
+.pse-contact-page [data-tablepress-preview="contact_00_vi"] #contact-form{padding:0;border:0;border-radius:0}
+.pse-contact-page #contact-form :is(input,textarea){background:#fff;border-color:#cbded0;color:#243f30}
+.pse-contact-page #contact-form :is(input,textarea):focus{border-color:#238451;outline:2px solid #c6e9d1}
+.pse-contact-page #submit-btn{background:#1c724a;color:white;border-radius:12px;padding-block:14px;min-height:48px}
+.pse-contact-page #submit-btn:not(:disabled):hover{background:#155639}
+.pse-contact-page #contact-form textarea{min-height:108px}
+@media(max-width:900px){.pse-contact-page{grid-template-columns:minmax(0,1fr)}.pse-contact-page .pse-contact-locations__intro,.pse-contact-page .pse-contact-locations__office,.pse-contact-page [data-tablepress-preview="contact_00_vi"],.pse-contact-page .pse-contact-locations__section-title,.pse-contact-page .pse-contact-locations__grid{grid-column:1}.pse-contact-page .pse-contact-locations__intro{grid-row:1}.pse-contact-page .pse-contact-locations__office{grid-row:2}.pse-contact-page [data-tablepress-preview="contact_00_vi"]{grid-row:3}.pse-contact-page .pse-contact-locations__section-title{grid-row:4}.pse-contact-page .pse-contact-locations__grid{grid-row:5}}
+@media(max-width:760px){.pse-contact-page .pse-contact-locations__grid{grid-template-columns:1fr}.pse-contact-page .pse-location-card dl>div{grid-template-columns:1fr;gap:2px}.pse-contact-page [data-tablepress-preview="contact_00_vi"]{border-radius:16px}}
