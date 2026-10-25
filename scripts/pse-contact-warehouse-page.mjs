@@ -58,7 +58,7 @@ try{
  const raw=String(v.content?.raw||"");
  if(!raw.trim())throw Error("Contact content missing");
  const shortcodes=[...raw.matchAll(/\[table id=([^\]\s]+)\s*\/\]/gi)].map(x=>x[0]);
- if(shortcodes.length===0)throw Error("Cannot preserve native ESC Table: no existing shortcode");
+ // Static business addresses belong in WordPress Editor; no ESC Table is required unless a structured Visual Builder section already exists.\n console.log("PSE_CONTACT_EXISTING_ESC_SHORTCODES="+shortcodes.length);
  const hasLocation=raw.includes('data-pse-contact-locations="source-2026-10-25"');
  await mkdir("artifacts/pse-contact-warehouse",{recursive:true});
  await writeFile("artifacts/pse-contact-warehouse/backup.json",JSON.stringify({id:v.id,slug:v.slug,acf:{action:v.acf?.action,key:v.acf?.key},content:raw,wasUpdated:hasLocation},null,2));
