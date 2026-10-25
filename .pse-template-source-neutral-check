@@ -91,3 +91,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25 PSE corrected SSR product active-menu test expectation for origin-aware public URL, github d7a6b7b040e3a2a1a45a1095b9af63a6c20c60b3. Retry exact independent no-build Vitest after previous run #40169741115 had 400/401 PASS and one obsolete static string assertion; no deployment.
 
 2026-10-25: PSE SSR Header Product category active-context fix: route canonical HeadProps.href through Layout/Header -> desktop and mobile recursive menu, github 05f18abb9579aaef6ba12bffa8c064a728f787b0. Verify all Vitest and Astro syntax (NO BUILD). Live QA #40170609409 identified server render missing aria-current even after canonical ESC URL sync; fix public URL propagation.
+
+2026-10-25 PSE news taxonomy SSR: test WordPress categories > numeric post filter > canonical category /tin-tuc-su-kien/<slug>, pagination, active Header on category/posts, SEO and legacy ?cat 301. Astro DEV b6220ab4c88409cefb9564da7bd8523839194c18. Independent no-build full Vitest; no production build/FTP.
