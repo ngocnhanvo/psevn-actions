@@ -1,1 +1,1 @@
-2026-10-26 owner-specified domain-neutral PSE legacy redirect mapping and helmet-only removal; audit first, no CMS writes or Astro build.
+2026-10-26 guarded native WordPress CMS apply: source-verified Joomla *.html to root-relative 301 only; preflight audit 40217473093 SUCCESS 657/658 target200-canonical, 1 skipped canonical mismatch; preserve all existing Rewrite/301, no force delete, 100 max new targets per pass; inspect artifact and readback before next pass.
