@@ -24,6 +24,7 @@ jobs:
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
       PSE_CONTACT_APPLY: "${{ github.event.head_commit.message == 'cms(pse): publish verified five contact warehouse cards' }}"
+      PSE_CONTACT_REMOVE_NOTE: "${{ github.event.head_commit.message == 'cms(pse): remove verified Contact Page editorial placeholder' }}"
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
