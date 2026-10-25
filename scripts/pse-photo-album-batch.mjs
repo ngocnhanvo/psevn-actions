@@ -17,7 +17,14 @@ const galleries = new Map([
   [995,{slug:"995-phu-nu-viet-nam",title:"Phụ nữ Việt Nam",countMin:11}],
   [991,{slug:"991-ngay-hoi-truyen-thong-2011",title:"Ngày Hội Truyền Thống 2011",countMin:10}],
   [987,{slug:"987-khai-truong-cua-hang-ngay-3-6",title:"Khai trương cửa hàng ngày 3/6",countMin:10}],
-  [975,{slug:"975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013",title:"Đại hội công đoàn nhiệm kỳ II 10/2013",countMin:80}]
+  [975,{slug:"975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013",title:"Đại hội công đoàn nhiệm kỳ II 10/2013",countMin:80}],
+  [986,{slug:"986-hoi-thao-tong-ket-vuon-thuc-nghiem-ngay-3-6-2013",title:"Hội thảo tổng kết vườn thực nghiệm ngày 3/6/2013",countMin:35}],
+  [997,{slug:"997-truong-sa",title:"Trường Sa",countMin:7}],
+  [993,{slug:"993-ngay-truyen-thong",title:"Ngày truyền thống",countMin:11}],
+  [989,{slug:"989-hoi-dong-co-dong-le-ra-mat-va-don-nhan-iso",title:"Hội đồng cổ đông, lễ ra mắt và đón nhận ISO",countMin:98}],
+  [985,{slug:"985-hinh-anh-marketing-2010",title:"Hình ảnh Marketing 2010",countMin:44}],
+  [996,{slug:"996-hoc-van-hoa-doanh-nghiep",title:"Học văn hóa doanh nghiệp",countMin:6}],
+  [992,{slug:"992-mau-bao-bi",title:"Mẫu bao bì",countMin:2}]
 ]);
 if(!command){console.log("PSE_GALLERY_BATCH=NOT_REQUESTED; code_ready=true; noWordPressWrite=true");process.exit(0)}
 const mode=command[1],id=Number(command[2]),batch=Number(command[3]),entry=galleries.get(id);
