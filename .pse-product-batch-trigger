@@ -15,3 +15,5 @@ Second read-only verification of original nested fertilizer tables (after parser
 Verified fertilizer description restoration batch 1, 8 original Joomla IDs with dry audit parity 40155132109; preserves backup and native media/categories.
 
 Read-only diagnostics for six original product detail variants (1707, 1718-1722), after verified batch one. No CMS writes.
+
+Verified fertilizer Product descriptions batch 2 (8 source-matched published Products), readback and backups required.
