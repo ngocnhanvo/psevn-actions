@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install only PSE's GitHub Trigger + signed unzip PHP via verified FTPS.
+"""Install PSE's approved PHP files, including the image endpoint, via verified FTPS.
 
 One-shot release: input is checked-out psevn-php/master, target is the validated
 PSE WordPress docroot. STOR temporary + verified readback; old files are renamed
@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 
 SOURCE = Path("source-php")
 FILES = (
+    "esc-tool/image.php",
     "pse-image-delta.php",
     "pse-unzip.php",
     "pse-unzip-v2.ready",
