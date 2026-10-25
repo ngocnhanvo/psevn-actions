@@ -102,6 +102,7 @@ try{
   const routes=await all("/wp-json/wp/v2/chuyen-huong-link?context=edit&status=any&_fields=id,title,status,acf,route_priority");
   const pages=await all("/wp-json/wp/v2/pages?context=edit&status=publish&_fields=id,slug,status,acf");
   const posts=await all("/wp-json/wp/v2/posts?context=edit&status=publish&_fields=id,slug,status,acf");
+  const categories=await all("/wp-json/wp/v2/categories?hide_empty=false&_fields=id,slug,parent,count");
   const menuResult=await api("/wp-json/wp/v2/menu-items?context=edit&per_page=100&_fields=id,url,type");
   if(menuResult.status!==200||!Array.isArray(menuResult.data))
     throw Error("Cannot read native WordPress menu URLs");
@@ -124,6 +125,21 @@ try{
     if(prev&&prev.to!==to){report.issues.push({from,conflict:[prev.to,to]});proposals.delete(from);return}
     proposals.set(from,{from,to,basis});
   }
+  // The three source category URLs below are verified Joomla paths from the
+  // project's existing bounded public inventory seeds. Never infer redirects
+  // for arbitrary categories: native taxonomy + live target must both exist.
+  const publishedCategories=new Set(categories.map(c=>String(c.slug||"")));
+  const legacyCategoryAliases=[
+    ["/21-tin-tuc-su-kien/tin-cong-ty.html","tin-cong-ty"],
+    ["/hoat-dong-kinh-doanh/thong-tin-thi-truong.html","thong-tin-thi-truong"],
+    ["/quan-he-nha-dau-tu/bao-cao-tai-chinh.html","bao-cao-tai-chinh"],
+  ];
+  if(pages.some(p=>p.slug==="tin-tuc-su-kien"&&p.acf?.key==="ssr-posts")){
+    for(const [source,slug] of legacyCategoryAliases){
+      if(publishedCategories.has(slug))
+        add(source,"/tin-tuc-su-kien/"+slug,"source-inventory+native-wp-category");
+    }
+  }
   // Owner-supplied explicit parity example.
   if(byPageSlug.has("thong-diep"))
     add("/pvfcco-pse/thong-diep.html","/thong-diep","owner-example+published-wp-page");
@@ -131,6 +147,8 @@ try{
   for(const item of menuResult.data){
     const raw=String(item.url||"");
     let url;try{url=new URL(raw,front)}catch{continue}
+    if(![front,new URL("https://www.pse.vn").origin,new URL("https://pse.vn").origin].includes(url.origin))
+      continue;
     const from=url.pathname;
     const tail=decodeURIComponent(from.split("/").at(-1)||"").replace(/\.html$/i,"");
     if(byPageSlug.has(tail))add(from,"/"+tail,"native-menu+published-wp-page");
@@ -153,7 +171,7 @@ try{
   }catch(e){report.issues.push({reason:"legacy article inventory unavailable",error:String(e).slice(0,120)})}
   // No blanket regex that would turn invalid articles/assets into false 301s.
   report.counts={routes:routes.length,pages:pages.length,posts:posts.length,
-    menuUrls:menuResult.data.length,proposals:proposals.size};
+    menuUrls:menuResult.data.length,categories:categories.length,proposals:proposals.size};
   const existingByFrom=new Map();
   for(const r of routes){
     const from=String(r.acf?.from_link||"");
