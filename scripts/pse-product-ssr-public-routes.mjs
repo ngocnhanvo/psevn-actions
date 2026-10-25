@@ -113,7 +113,27 @@ try{
     documentTitle:document.title.slice(0,120)
   }));
   console.log("PSE_PRODUCT_SSR_EDITOR_FORM="+JSON.stringify({key:rule.key,...formState}));
-  await Promise.all([p.waitForLoadState("domcontentloaded"),p.locator("#publish").click()]);
+  // The Classic Editor button can be intercepted by a broken autosave/heartbeat
+  // connection (observed in #40163120396). Submit the existing authenticated
+  // WordPress post form with its native save_post nonce, never a custom REST bypass.
+  const formBefore=await p.locator("form#post").evaluate(form=>({
+    action:new URL(form.action,location.origin).pathname,
+    method:form.method.toLowerCase(),
+    postId:form.querySelector('input[name="post_ID"]')?.value,
+    wpNonce:Boolean(form.querySelector('input[name="_wpnonce"]')?.value),
+    routeNonce:Boolean(form.querySelector('input[name="esc_url_routing_conditions_nonce"]')?.value),
+    priority:form.querySelector('input[name="esc_route_priority"]')?.value,
+    formAction:form.querySelector('input[name="action"]')?.value,
+  }));
+  console.log("PSE_PRODUCT_SSR_FORM_PREFLIGHT="+JSON.stringify({key:rule.key,...formBefore}));
+  if(formBefore.action!=="/wp-admin/post.php"||formBefore.method!=="post"||
+     Number(formBefore.postId)!==record.id||!formBefore.wpNonce||!formBefore.routeNonce||
+     formBefore.priority!==String(rule.priority)||formBefore.formAction!=="editpost")
+    throw Error("Native WordPress post form cannot be safely submitted "+rule.key);
+  await Promise.all([
+    p.waitForNavigation({waitUntil:"domcontentloaded",timeout:60000}),
+    p.locator("form#post").evaluate(form=>HTMLFormElement.prototype.submit.call(form))
+  ]);
   const afterSave=await p.evaluate(()=>({url:location.pathname+location.search,
     notices:[...document.querySelectorAll(".notice-error,.error,.notice-warning")].map(n=>(n.innerText||"").slice(0,160)).slice(0,4),
     priority:document.querySelector('input[name="esc_route_priority"]')?.value||"",
