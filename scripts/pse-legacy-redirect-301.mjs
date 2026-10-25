@@ -233,11 +233,13 @@ try{
       const slug=match[1];
       const wpId=Number(entry.wp_id||0);
       const status=String(entry.status||"");
+      const sameSlug=byPostSlug.get(slug);
+      // Reject duplicate published slugs even when one ID matches: the
+      // public /slug destination would otherwise have ambiguous identity.
       const exactPublished=Number.isSafeInteger(wpId)&&wpId>0&&
-        publishedById.get(wpId)?.slug===slug;
+        publishedById.get(wpId)?.slug===slug&&Number(sameSlug?.id)===wpId;
       const approvedState=status==="imported"||status==="existing";
       manifestIdentity.set(from,{status,wpId,exactPublished,approvedState,slug});
-      const sameSlug=byPostSlug.get(slug);
       if(approvedState&&exactPublished)
         add(from,"/"+slug,"joomla-id+verified-wp-id+published-status");
       else if(sameSlug)
