@@ -1,1 +1,1 @@
-PSE menu per-parent View all checkbox regression: Astro github commit 49dd5d83915345c16d3a122da352c33d7a423aa8. Verify all desktop/mobile tests using existing CI only, NO BUILD.
+PSE Astro DEV cms-owned contact remediation: remove PrivatePage contact hardcoded CSS/data/HTML slicing, expect Contact_00 via ESC Table native shortcode. Validate Vitest + Astro parser; NO BUILD.
