@@ -46,7 +46,9 @@ jobs:
           import { readFileSync } from 'node:fs';
           import { createRequire } from 'node:module';
           const require=createRequire(import.meta.url);
-          const compiler=require('@astrojs/compiler');
+          const {pathToFileURL}=await import('node:url');
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
           for(const f of ['Desktop.astro','DesktopBranch.astro','MobileBranch.astro']){
             const file='src/astro/components/Menu/'+f;
             await compiler.transform(readFileSync(file,'utf8'),{filename:file});
