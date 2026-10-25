@@ -243,6 +243,18 @@ try {
     await keboLink.waitFor({ state: "visible", timeout: 25000 });
     const card = keboLink.locator("xpath=ancestor::article");
     const cardText = (await card.innerText()).replace(/\s+/g, " ");
+    const summaryNode = card.locator("p.whitespace-pre-line").first();
+    if (!await summaryNode.count()) throw Error("Kebo card missing newline-preserving WordPress excerpt");
+    const excerptLines = (await summaryNode.textContent()).split(/\n/).map(x => x.trim()).filter(Boolean);
+    if (excerptLines.length < 9 ||
+        !/^Mã số:\s*23932$/i.test(excerptLines[0]) ||
+        excerptLines[1] !== "Thành phần:" ||
+        !excerptLines.some(x => /^Biuret:\s*1,2%/i.test(x)) ||
+        !excerptLines.includes("Loại cây:")) {
+      throw Error("Kebo CMS short description did not render one specification per line; lines=" + JSON.stringify(excerptLines));
+    }
+    console.log("PSE_PRODUCT_SHORT_DESCRIPTION_LINES=" + JSON.stringify({product:"Kebo",wpId:80940,count:excerptLines.length,pass:true}));
+
     for (const text of ["23932", "Kẽm", "Bo", "Loại cây"]) {
       if (!cardText.includes(text)) throw Error("Kebo catalog summary missing " + text);
     }
