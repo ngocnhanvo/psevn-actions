@@ -41,7 +41,19 @@ try{
  console.log("PSE_COMPLAINT_NATIVE_CF7="+JSON.stringify({routes:cf7Routes,forms}));
  const nativeForm=await get("/wp-json/contact-form-7/v1/contact-forms/49442");
  const cfg=nativeForm.data?.properties||{};
- const markup=String(cfg.form||"");
+ const rawMarkup=cfg.form;
+ const formMarkupCandidate=typeof rawMarkup==="string"?rawMarkup:
+    typeof rawMarkup?.content==="string"?rawMarkup.content:
+    typeof rawMarkup?.html==="string"?rawMarkup.html:"";
+ const markup=String(formMarkupCandidate||"");
+ const contractDiagnostic={
+    formType:typeof rawMarkup,
+    formObjectKeys:rawMarkup&&typeof rawMarkup==="object"?Object.keys(rawMarkup).slice(0,15):[],
+    htmlLength:markup.length,
+    tagNames:[...markup.matchAll(/\[(?:text|email|tel|textarea|select|checkbox|radio)(?:\*)?\s+([a-zA-Z0-9_-]+)/gi)].map(m=>m[1]),
+    hasMarkupFormControl:/\[(?:text|email|tel|textarea)/i.test(markup)
+ };
+ console.log("PSE_CF7_FORM_MARKUP_SHAPE="+JSON.stringify(contractDiagnostic));
  const mail=cfg.mail||{};
  const contactRoute=root.data.routes?.["/contact-form-7/v1/contact-forms"]||{};
  const envFields=new Map(String(process.env.ENV_FILE||"").split(/\r?\n/).map(line=>line.trim().replace(/^export\s+/,"")).map(line=>{const i=line.indexOf("=");return i>0?[line.slice(0,i),line.slice(i+1).replace(/^['"]|['"]$/g,"")]:["",""]}).filter(pair=>pair[0]));
