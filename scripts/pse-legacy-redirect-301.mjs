@@ -289,7 +289,7 @@ try{
         const canonical=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
           html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
         if(canonical&&new URL(canonical,front).pathname!==proposal.to){
-          outcomes[i]={kind:"skip",data:{...proposal,reason:"canonical mismatch"}};continue;
+          outcomes[i]={kind:"skip",data:{...proposal,reason:"canonical mismatch",canonicalPath:new URL(canonical,front).pathname}};continue;
         }
         outcomes[i]={kind:"verified",data:proposal};
       }catch(e){
@@ -353,7 +353,8 @@ try{
       if(published.status!==200||published.data?.status!=="publish")
         throw Error("WordPress 301 publish failed id "+id);
       const proof=await api("/wp-json/wp/v2/chuyen-huong-link/"+id+"?context=edit&_fields=id,status,acf");
-      if(proof.status!==200||proof.data?.acf?.from_link!==candidate.from||
+      if(proof.status!==200||Number(proof.data?.id)!==id||proof.data?.status!=="publish"||
+        proof.data?.acf?.from_link!==candidate.from||
         proof.data?.acf?.to_link!==candidate.to||String(proof.data?.acf?.type)!=="301"||
         !proof.data?.acf?.enable)throw Error("WordPress redirect readback failed id "+id);
       report.published.push({id,...candidate});
