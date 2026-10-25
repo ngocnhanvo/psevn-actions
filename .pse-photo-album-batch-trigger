@@ -1,1 +1,1 @@
-READ ONLY source check for original gallery 988 batch 1 (indices 12–23 of verified 32). Batch 0 source DRY PASS 40217841583, but NO 988 WordPress media imported yet; concurrent unrelated WordPress 301 job 40217462368 remains active. No CMS writes and no Astro build.
+READ ONLY source verification gallery 988 final batch 2 (indices 24–31 of 32 originals). Batch 0 source audit 40217841583 PASS, batch 1 source audit 40217995515 PASS; no 988 CMS media yet. Do not overlap active unrelated WordPress 301 write; no Astro build.
