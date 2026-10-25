@@ -97,6 +97,7 @@ jobs:
             'src/pages/ssr/posts/[slug]/[page].astro',
             'src/pages/ssr/posts/[slug]/detail.astro',
             'src/astro/pages/PostDetails.astro',
+            'src/astro/components/Media/PseMediaDetail.astro',
             'src/astroutils/RelatedPosts.astro',
             'src/astro/tablepress/Pse_01.astro',
             'src/astro/pages/PseComplaintPage.astro',
