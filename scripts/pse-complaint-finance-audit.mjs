@@ -32,7 +32,7 @@ try{
  const mail=cfg.mail||{};
  const contactRoute=root.data.routes?.["/contact-form-7/v1/contact-forms"]||{};
  console.log("PSE_COMPLAINT_CF7_CONTRACT="+JSON.stringify({http:nativeForm.http,id:nativeForm.data?.id,
-   title:nativeForm.data?.title,propertyNames:Object.keys(cfg),existingFormTagNames:[...markup.matchAll(/\\[(?:text|email|tel|textarea|select)(?:\\*)?\\s+([a-zA-Z0-9_-]+)/g)].map(x=>x[1]),
+   title:nativeForm.data?.title,propertyNames:Object.keys(cfg),existingFormTagNames:[...markup.matchAll(/\[(?:text|email|tel|textarea|select)(?:\*)?\s+([a-zA-Z0-9_-]+)/g)].map(x=>x[1]),
    mailConfigured:Boolean(mail.recipient&&mail.sender&&mail.subject&&mail.body),mail2Active:!!cfg.mail_2?.active,
    configErrorCount:nativeForm.data?.config_errors?.length||0,
    writeMethodSupported:contactRoute.endpoints?.some(x=>Array.isArray(x.methods)&&x.methods.includes("POST"))||false,
