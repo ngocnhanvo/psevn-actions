@@ -1,1 +1,1 @@
-PSE browser nav overlay reproduction retry: selector must be attached while hidden initially; inspect on click after running normal Header parity.
+PSE post-deploy browser verification of on-site custom WordPress Header navigation overlay. Deploy run 40238571107 commit 00ce824dedb98875e0a2d9b522ea315ac51b937e. Compare same previously failing link, read-only.
