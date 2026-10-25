@@ -109,3 +109,5 @@ Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vites
 2026-10-25 approved PSE corporate gradient header + leaf watermark for the 10 WordPress Header PVFCCo-PSE subpages. Astro github 08ffd18e00a1879bd5ffe89df68743e16dd624ad; verify Vitest + Astro component parsing, CI ONLY, no build or FTP.
 
 2026-10-25: PSE article WordPress media direct-origin regression, Astro github 5799fd7ced6cc253d73a8e7e32571844f4adffee; test legacy JPG, real srcset, no synthetic WebP /api/images links. Independent Vitest+Astro parser only, NO ASTRO BUILD / FTP / WP writes.
+
+2026-10-25: Run existing PSE Astro github offline Vitest regression for Imagick image diagnostic API (PR #58, sha 3277562d); NO BUILD, NO FTP.
