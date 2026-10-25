@@ -1,1 +1,4 @@
-PSE legacy Joomla 301 authorized normal WordPress Build Website request 2026-10-26 03:10 +07. CMS guarded batches #40222470730 (86), #40227871154 (86), #40228568002 (100) published and read back 272 root-relative redirects; 397 source-verified candidates deferred, 14 corporate/distribution canonical trailing-slash mismatch withheld. Astro master source 1640d89e2e2604ee8c1f71912893ba8c55ae3cc5 contains tested slashless Page canonical fix (not yet deployed). No concurrent CMS writer/build observed. Use only existing WordPress/PHP authenticated Build Website with nonce/pending/lock, normal mode, no force, no direct Astro workflow dispatch.
+PSE menu transition overlay release request 2026-10-26.
+Astro master source: fe8e60e8ecf18cc5e2ffcb778839c6bc4fc4c80d (PR #71, merge only 4 menu+test files).
+Development CI: https://github.com/ngocnhanvo/psevn-actions/actions/runs/40236861296 (468 tests PASS, NO BUILD).
+Use existing authenticated WordPress/PHP Build Website with nonce/pending change count and build lock. Normal build only, NO force or exception. If pending count 0 or a build is active, stop safely and report.
