@@ -87,3 +87,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25: PSE product summary compact row spacing and strong WordPress section labels in Astro github d140b0ced44750ad6cbf7fb7fc035668d60eac6f. Run existing NO BUILD Vitest/ASTRO check only; no WordPress data writes, no FTP, no production build.
 
 2026-10-25 PSE: verify SSR Product category WordPress Header active state and conditional View all link, frontend github 56b36be281ac0f946fa9fb8b7fcfe4d9ca870396, same-site custom links (legacy query + canonical), no-build Vitest/parser only.
+
+2026-10-25 PSE corrected SSR product active-menu test expectation for origin-aware public URL, github d7a6b7b040e3a2a1a45a1095b9af63a6c20c60b3. Retry exact independent no-build Vitest after previous run #40169741115 had 400/401 PASS and one obsolete static string assertion; no deployment.
