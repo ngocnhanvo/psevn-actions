@@ -168,7 +168,7 @@ def main():
                 raise RuntimeError("Signed image inventory too large")
         inventory = {"images": images}
         # The signed PHP inventory may optionally include client-only HTML,
-        # CSS, JS. Older PHP has no 'static' key: full static ZIP fallback.
+        # CSS, JS and public JSON. Older PHP has no 'static' key: full ZIP fallback.
         static = result.get("static")
         if static is not None:
             if not isinstance(static, dict) or len(static) > 5000:
@@ -176,7 +176,7 @@ def main():
             static_bytes = 0
             for name, meta in static.items():
                 if (not isinstance(name, str) or len(name) > 240 or name == "index.html"
-                    or not re.search(r"\.(?:html|css|js)$", name)):
+                    or not re.search(r"\.(?:html|css|js|json)$", name)):
                     raise RuntimeError("Invalid signed static asset name")
                 pieces = name.split("/")
                 if (not all(re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*", p)
