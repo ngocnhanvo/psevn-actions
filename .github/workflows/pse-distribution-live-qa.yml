@@ -16,6 +16,7 @@ jobs:
       options: --ipc=host
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
+      PSE_DISTRIBUTION_SHAPE_ONLY: "${{ github.event.head_commit.message == 'audit(pse): distribution CMS table shapes before rollout' }}"
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
