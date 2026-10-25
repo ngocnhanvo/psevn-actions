@@ -25,4 +25,4 @@ jobs:
         with:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - run: node --check scripts/pse-product-menu-cutover.mjs && node scripts/pse-product-menu-cutover.mjs
+      - run: node --check scripts/pse-product-menu-cutover.mjs && node --check scripts/pse-product-menu-ssr-sync.mjs && node --check scripts/pse-product-menu-task-router.mjs && node scripts/pse-product-menu-task-router.mjs
