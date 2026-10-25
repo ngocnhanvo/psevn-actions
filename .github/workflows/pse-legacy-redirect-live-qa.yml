@@ -1,0 +1,36 @@
+name: PSE public 301 parity and canonical target live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-legacy-redirect-live-qa-trigger
+permissions:
+  contents: read
+jobs:
+  redirects-live:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify every native published PSE 301 and relative Location on live Astro
+        run: |
+          node --check scripts/pse-legacy-redirect-live-qa.mjs
+          node scripts/pse-legacy-redirect-live-qa.mjs
+      - name: Save public 301 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-live-301-check
+          path: artifacts/pse-legacy-301-live/
+          retention-days: 30
+          if-no-files-found: warn
