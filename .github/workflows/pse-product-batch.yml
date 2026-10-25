@@ -26,12 +26,7 @@ jobs:
         with:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Import original product records (existing workflow)
-        if: ${{ !startsWith(github.event.head_commit.message, 'audit(pse): product content parity dry-run') && !startsWith(github.event.head_commit.message, 'cms(pse): restore verified fertilizer descriptions batch ') }}
-        run: node --check scripts/pse-product-batch.mjs && node scripts/pse-product-batch.mjs
-      - name: Restore verified product descriptions (separate from original imports)
-        if: ${{ startsWith(github.event.head_commit.message, 'audit(pse): product content parity dry-run') || startsWith(github.event.head_commit.message, 'cms(pse): restore verified fertilizer descriptions batch ') }}
-        run: node --check scripts/pse-product-description-repair.mjs && node scripts/pse-product-description-repair.mjs
+      - run: node --check scripts/pse-product-batch.mjs && node --check scripts/pse-product-description-repair.mjs && node --check scripts/pse-product-batch-router.mjs && node scripts/pse-product-batch-router.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
