@@ -122,3 +122,5 @@ Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vites
 
 2026-10-25 PSE gallery public `/api/files/wp-content/uploads` image MIME and path-safety guards, test all Astro DEV source without build or deploy.
 2026-10-25 media SEO JSON-LD origin leak fixed in Astro github 1eb4e11cbe4009f7b2a960a811e0c02c27056c2e, with pseMediaSchema.test.ts. QA #40209885940 proved private CMS hostname only in application/ld+json script, not image src/HTTP requests. Run independent existing Vitest+Astro parser NO BUILD; only this regression needs retest. No PHP/build mutation here.
+
+2026-10-25 HTML album privacy bug in live QA: private WP URL only in JSON-LD, now sanitized in Head.astro via wordpressSchemaPublicUrls; run independent Astro tests and compiler without build.
