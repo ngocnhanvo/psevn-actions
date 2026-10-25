@@ -76,7 +76,7 @@ try {
             if (response?.status() !== 200) throw Error("Selected category HTTP " + response?.status());
             const selectedTrigger = selectedPage.locator("#dropdown-trigger");
             const colors = await selectedTrigger.evaluate((button) => {
-              const readRgb = (value) => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+              const readRgb = (value) => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
               const luminance = (value) => {
                 const channels = readRgb(value).map(c => {
                   const x = c / 255;
