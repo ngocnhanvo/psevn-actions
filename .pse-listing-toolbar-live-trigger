@@ -1,0 +1,1 @@
+PSE listing toolbar live QA. Edit only after official WordPress PHP-controlled release succeeds. Checks secondary listing bars scroll out on 390/768/1440px, native filter still clicks, no writes or build.
