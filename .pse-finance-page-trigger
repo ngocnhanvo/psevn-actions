@@ -1,1 +1,2 @@
 DRY RUN: native PSE verified financial archive category links instead of legacy insecure HTTP finance iframe; no CMS change during active WP build.
+Dry-run #40145253361 PASS: original iframe insecure HTTP; 3 native WP disclosure categories 1754/1758/1753 with source-verified 67/10/171 posts, no current finance Page slug, Menu #77025 original Joomla URL. Safely create WP-owned PublicPage with links and bind menu, readback; no stock quotes or fake values.
