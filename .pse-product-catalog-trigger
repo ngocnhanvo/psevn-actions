@@ -8,3 +8,5 @@ Dry-run #40141368587 PASS: existing 14+ PSE Product CPT, genuine root ProductCat
 2026-10-25: READ-ONLY WordPress routing-manager structural route registry audit; public /san-pham and /san-pham/huu-co-phu-my HTTP404 but direct /ssr/products/san-pham/null and category SSR HTTP200 after source release #40162129405. Inspect existing system route records, statuses/conditions and explain blocker. No CMS writes/build.
 
 2026-10-25: read-only native WordPress routing manager editor preflight for four missing PSE Product SSR public rules after /san-pham HTTP404 and direct /ssr/products 200; no CMS writes.
+
+2026-10-25: Apply four WordPress-managed PSE Product URL routing records after read-only admin editor #40162807255 DRY_PASS, missing four rules, no conflict with existing Product detail rule #81047. Preserve rollback artifact and readback priority/taxonomy conditions; no Astro build in CMS workflow.
