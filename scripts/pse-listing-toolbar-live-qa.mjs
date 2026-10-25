@@ -178,13 +178,49 @@ try {
       }
     }
   }
+  // Native Product categories come from WordPress product_cat and are public SSR URLs,
+  // not client-only ?cat filters. Verify responsive card geometry and SEO canonical.
+  for (const width of [390, 768, 1440]) {
+    const categoryPage = await browser.newPage({ viewport: { width, height: 900 } });
+    try {
+      const res = await categoryPage.goto(origin + "/san-pham/huu-co-phu-my", { waitUntil: "domcontentloaded", timeout: 60000 });
+      if (res?.status() !== 200) throw Error("Product category SSR returned HTTP " + res?.status());
+      const heading = (await categoryPage.locator("main h1").first().innerText()).trim();
+      if (!heading.toLocaleLowerCase("vi").includes("hữu cơ phú mỹ"))
+        throw Error("WordPress product_cat SSR heading missing: " + heading);
+      const canonical = await categoryPage.locator('link[rel="canonical"]').first().getAttribute("href");
+      if (!canonical || !new URL(canonical).pathname.replace(/\/+$/,"").endsWith("/san-pham/huu-co-phu-my"))
+        throw Error("Canonical category URL incorrect: " + canonical);
+      const cards = categoryPage.locator("main article");
+      if (await cards.count() < 2) throw Error("Organic category missing CMS product cards");
+      const a = await cards.nth(0).boundingBox(), b = await cards.nth(1).boundingBox();
+      if (!a || !b) throw Error("Product card geometry missing");
+      const twoColumns = width >= 768;
+      if (twoColumns && (Math.abs(a.y - b.y) > 12 || b.x <= a.x + 50))
+        throw Error("SSR catalog not two columns at " + width);
+      if (!twoColumns && b.y <= a.y + a.height * 0.6)
+        throw Error("SSR catalog not stacked on small mobile");
+      const picture = await cards.first().locator("img").first().boundingBox();
+      const headingBox = await cards.first().locator("h2").first().boundingBox();
+      if (!picture || !headingBox) throw Error("Product image or title missing");
+      if (width >= 768 && picture.x >= headingBox.x)
+        throw Error("Product image should be left of text at " + width);
+      const categoryMenu = categoryPage.locator("#dropdown-menu");
+      await categoryPage.locator("#dropdown-trigger").click();
+      if (!await categoryMenu.isVisible()) throw Error("WordPress Product Category dropdown failed");
+      if (!await categoryMenu.locator('a[href*="/san-pham/"]').count())
+        throw Error("Dropdown missing public Product category links");
+      console.log("PSE_PRODUCT_CATEGORY_SSR=" + JSON.stringify({ width, heading, canonical, twoColumns, count: await cards.count(), cmsTaxonomy: true }));
+      await categoryPage.screenshot({ path: "artifacts/pse-listing-toolbar/category-organic-" + width + ".png" });
+    } finally { await categoryPage.close(); }
+  }
   // The native CPT content must match source-verified details for Joomla #1457.
   // This checks real UI rendering, not a fabricated fixture or WordPress edit.
   const productPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   try {
-    const catalog = await productPage.goto(origin + "/san-pham?limit=48", { waitUntil: "domcontentloaded", timeout: 60000 });
-    if (catalog?.status() !== 200) throw Error("PSE full catalog unavailable");
-    const keboLink = productPage.locator('#product-grid a[href*="-1457"]').first();
+    const catalog = await productPage.goto(origin + "/san-pham?q=Kebo", { waitUntil: "domcontentloaded", timeout: 60000 });
+    if (catalog?.status() !== 200) throw Error("PSE SSR catalog search unavailable");
+    const keboLink = productPage.locator('main article a[href*="-1457"]').first();
     await keboLink.waitFor({ state: "visible", timeout: 25000 });
     const card = keboLink.locator("xpath=ancestor::article");
     const cardText = (await card.innerText()).replace(/\s+/g, " ");
@@ -204,6 +240,10 @@ try {
     }
     const tables = await productPage.locator(".product-description table").count();
     if (tables < 2) throw Error("Original Kebo nutrient and crop dosage tables not shown");
+    const header = productPage.locator('#desktop-menu [data-menu-trigger]').filter({ hasText: /HOẠT ĐỘNG KINH DOANH/i }).first();
+    if (await header.count() !== 1) throw Error("Product detail lost Vietnamese header menu label");
+    if (!(await header.innerText()).includes("HOẠT ĐỘNG")) throw Error("Product header lost diacritics");
+    console.log("PSE_PRODUCT_DETAIL_MENU=" + JSON.stringify({label:(await header.innerText()).trim(),utf8:true}));
     console.log("PSE_PRODUCT_KEBO_PARITY=" + JSON.stringify({ sourceJoomlaId: 1457, wpProductId: 80940, code: 23932, tables, summary: true, details: true, verified: true }));
     await productPage.screenshot({ path: "artifacts/pse-listing-toolbar/kebo-product-detail-1440.png", fullPage: true });
   } finally {
