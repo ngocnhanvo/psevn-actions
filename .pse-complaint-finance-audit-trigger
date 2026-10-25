@@ -4,3 +4,5 @@ Retry added CF7 contract read-only audit after #40144779961 failed at node --che
 2026-10-25: Read-only validate configured complaint CF7 + Turnstile build runtime flags against native WordPress form #49442; report booleans only, no POST/email/CMS writes, and no Astro build.
 
 2026-10-25 PSE complaint CF7 public endpoint HTTP-status-only diagnostic, no form data and no mail, before choosing safe runtime fallback.
+
+2026-10-25 form field names and markup shape diagnostics to validate existing CF7 49442 before wiring the public complaint/contact Pages. No outgoing email.
