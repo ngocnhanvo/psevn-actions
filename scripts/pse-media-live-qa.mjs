@@ -27,7 +27,8 @@ try{
      {slug:"992-mau-bao-bi",count:2},
      {slug:"996-hoc-van-hoa-doanh-nghiep",count:6},
      {slug:"997-truong-sa",count:7},
-     {slug:"993-ngay-truyen-thong",count:11}
+     {slug:"993-ngay-truyen-thong",count:11},
+     {slug:"986-hoi-thao-tong-ket-vuon-thuc-nghiem-ngay-3-6-2013",count:35}
    ];
    for(const album of verifiedAlbums){
    const href=available.find(path=>path.includes(album.slug));
