@@ -18,3 +18,5 @@ Dry-run #40141368587 PASS: existing 14+ PSE Product CPT, genuine root ProductCat
 2026-10-25: Retry in-progress native ProductCategory public SSR routing ONLY after previous #40163120396 failed Classic Editor autosave/heartbeat without persisting metadata. Existing rule #81052 draft is preserved/reused; submit WordPress authenticated editpost form with native nonce, verify REST meta priority/conditions before enabling. Do not re-import Products, redo CMS cutover or trigger Astro build.
 
 2026-10-25: Resume Product public SSR rule #81052 draft after #40163664516 preflight rejected DOM form.action shadowed by input[name=action]. Use form.getAttribute('action'), then guarded WordPress native form nonce save and verify. No other WordPress writes or Astro build.
+
+2026-10-25: Resume only PSE native Product SSR route writes after #40163754564 preflight caught relative editor action post.php. Resolve URL relative to document.location.href to /wp-admin/post.php, enforce post_ID and native nonces, verify write/readback. Reuse 81052 draft; no product import/build.
