@@ -1,1 +1,1 @@
-PSE navigation overlay on custom same-origin WordPress Header links, github source 8cfe5a4426c3dd926640e7078ce80a11b3c8d607. Verify 6 new Vitest cases plus existing regression, NO BUILD.
+PSE menu per-parent View all checkbox regression: Astro github commit 49dd5d83915345c16d3a122da352c33d7a423aa8. Verify all desktop/mobile tests using existing CI only, NO BUILD.
