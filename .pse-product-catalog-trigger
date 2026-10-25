@@ -10,3 +10,5 @@ Dry-run #40141368587 PASS: existing 14+ PSE Product CPT, genuine root ProductCat
 2026-10-25: read-only native WordPress routing manager editor preflight for four missing PSE Product SSR public rules after /san-pham HTTP404 and direct /ssr/products 200; no CMS writes.
 
 2026-10-25: Apply four WordPress-managed PSE Product URL routing records after read-only admin editor #40162807255 DRY_PASS, missing four rules, no conflict with existing Product detail rule #81047. Preserve rollback artifact and readback priority/taxonomy conditions; no Astro build in CMS workflow.
+
+2026-10-25: Retry idempotent route apply with sanitized WP readback diagnostics after #40162882881 failed verifying first route's priority/conditions; earlier run may have created one draft. Reuse existing ID and preserve/verify, do not duplicate or build.
