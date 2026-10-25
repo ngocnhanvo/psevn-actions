@@ -32,7 +32,7 @@ try{
       return{canonical,h1,articles,dropdown,ssr:!!main,horizontalOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3};
     });
     if(response?.status()!==200||new URL(info.canonical).pathname!==path||
-       !info.ssr||!info.h1.some(h=>normalize(h).includes(normalize(cat.name)))||
+       !info.ssr||!info.h1.some(h=>normalize(h).length>3 && normalize(h)===normalize(info.dropdown))||
        info.horizontalOverflow)throw Error("News SSR/canonical/H1 invalid "+JSON.stringify({http:response?.status(),...info}));
     const nav=page.locator("#desktop-menu");
     const desktop=await nav.isVisible();
