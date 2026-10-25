@@ -173,7 +173,18 @@ try{
  }
  // Publishing step: tables MUST already exist from native UI and preserve exactly the source content.
  for(const spec of plan)checkTable(await getTable(spec.id),spec);
- if(oldStyle.split(oldCssMarker).length!==2||!oldStyle.trimEnd().endsWith(oldCSSFile.trimEnd()))
+ const cssTail=oldStyle.slice(oldStyle.lastIndexOf(oldCssMarker));
+ const normalizeCss=text=>String(text).replace(/\r\n/g,"\n").replace(/\s+/g," ").trim();
+ const actualCSS=normalizeCss(cssTail),expectedCSS=normalizeCss(oldCSSFile);
+ console.log("PSE_CONTACT_CSS_PREFLIGHT="+JSON.stringify({
+   markerCount:oldStyle.split(oldCssMarker).length-1,
+   actualLength:cssTail.length,expectedLength:oldCSSFile.length,
+   whitespaceNormalizedMatch:actualCSS===expectedCSS,
+   containsFinalSelector:cssTail.includes('@media(max-width:760px)'),
+   oldCssEndsWithMarkerSection:oldStyle.trimEnd().endsWith(cssTail.trimEnd()),
+   actualEnd:actualCSS.slice(-130),expectedEnd:expectedCSS.slice(-130)
+ }));
+ if(oldStyle.split(oldCssMarker).length!==2||actualCSS!==expectedCSS)
    throw Error("Cannot isolate prior CSS section without touching unrelated cssmore");
  const nextCSS=oldStyle.slice(0,oldStyle.lastIndexOf(oldCssMarker))+newCSS;
  const sectionMatch=raw.match(/<section\b[^>]*data-pse-contact-locations=["']source-2026-10-25["'][^>]*>[\s\S]*?<\/section>/i);
