@@ -32,8 +32,8 @@ try {
       if (!(await root.count())) throw Error("News menu root unavailable for " + width);
       await root.click();
       const panel = page.locator("#" + await root.getAttribute("aria-controls"));
-      const targetAnchor = panel.locator('a[href]').filter({hasText:/Xem tất cả TIN TỨC/i}).first();
-      if (!(await targetAnchor.count())) throw Error("View all News link unavailable for " + width);
+      const unexpectedSynthetic = panel.locator('a[href]').filter({hasText:/^Xem tất cả TIN TỨC/i});
+      if (await unexpectedSynthetic.count()) throw Error("Unexpected generated News View all link at " + width);
       const libraryButton = panel
         .locator(width === 1440 ? "button[data-submenu-trigger]" : "button[data-menu-toggle]")
         .filter({hasText:/^Thư viện$/i}).first();
