@@ -1,1 +1,1 @@
-Album 986 batch 1 of 3: source count 35 verified DRY PASS run 40216225239. Batch 0 Media 81139–81150 already imported PASS run 40214574607. Import only originals 12–23 through existing idempotent WordPress importer; no incomplete Post publish, no Astro build. Audit before apply, readback after.
+READ ONLY source verification album 986 batch 2 (final 11 originals indexed 24–34). Batch 0 PASS 40214574607, batch 1 PASS 40216338823 (12+12 WordPress Media saved), no WordPress writes in this audit, no Astro build. Apply only if source and existing records match.
