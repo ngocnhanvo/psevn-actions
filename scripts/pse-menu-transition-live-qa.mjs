@@ -20,7 +20,7 @@ try {
     try {
       const response = await page.goto(site + "/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my", {waitUntil:"domcontentloaded",timeout:60000});
       if (response?.status() !== 200) throw Error("Product group page HTTP " + response?.status());
-      await page.waitForSelector("#page-nav-indicator", {timeout:20000});
+      await page.waitForSelector("#page-nav-indicator", {state:"attached",timeout:20000});
       // Open the real root and nested news menus rather than testing a detached element.
       let root;
       if (width === 1440) {
