@@ -37,7 +37,17 @@ try{
    const content=page.locator("#article-content");
    const imgs=content.locator("img");
    if(await imgs.count()!==album.count)throw Error("Gallery image count mismatch "+album.slug+" width "+width);
-   await imgs.evaluateAll(async elements=>{await Promise.all(elements.map(img=>img.complete?null:new Promise(resolve=>{img.addEventListener("load",resolve,{once:true});img.addEventListener("error",resolve,{once:true});setTimeout(resolve,15000)})))});
+   // Original WordPress gallery images use native lazy loading.
+   // Scroll each real image into view before assessing loaded pixels, rather
+   // than mistaking intentional off-screen deferral for a broken upstream file.
+   for(const image of await imgs.all())await image.scrollIntoViewIfNeeded();
+   await imgs.evaluateAll(async elements=>{
+      await Promise.all(elements.map(img=>img.complete?null:new Promise(resolve=>{
+        img.addEventListener("load",resolve,{once:true});
+        img.addEventListener("error",resolve,{once:true});
+        setTimeout(resolve,20000);
+      })));
+   });
    const photos=await imgs.evaluateAll(elements=>elements.map(img=>({ok:img.complete&&img.naturalWidth>0,src:img.currentSrc||img.src})));
    if(photos.some(x=>!x.ok||!x.src.includes("/api/files/wp-content/uploads/")))throw Error("Photos not loaded from public same-origin proxy "+width);
    if(wpUrls.length)throw Error("Browser requested private WordPress hostname");
