@@ -86,6 +86,17 @@ try{
    if(photos.some(x=>!x.ok||!x.src.includes("/api/files/wp-content/uploads/")))throw Error("Photos not loaded from public same-origin proxy "+width);
    if(wpUrls.length)throw Error("Browser requested private WordPress hostname");
    const html=await page.content();
+   const seo=await page.evaluate(()=>({
+     h1:document.querySelectorAll("h1").length,
+     canonical:document.querySelector('link[rel="canonical"]')?.href||"",
+     ogUrl:document.querySelector('meta[property="og:url"]')?.content||"",
+     ogImage:document.querySelector('meta[property="og:image"]')?.content||""
+   }));
+   const canonicalUrl=seo.canonical?new URL(seo.canonical,frontend):null;
+   if(seo.h1!==1||!canonicalUrl||canonicalUrl.origin!==frontend||!canonicalUrl.pathname.includes(album.slug)||
+     (seo.ogUrl&&new URL(seo.ogUrl,frontend).origin!==frontend)||
+     (seo.ogImage&&new URL(seo.ogImage,frontend).origin!==frontend))
+     throw Error("Gallery SEO contract mismatch "+album.slug+" width="+width+" safe="+JSON.stringify(seo));
    if(html.includes(wp)){
      const evidence=await page.evaluate(origin=>{
        const attrs=[];
