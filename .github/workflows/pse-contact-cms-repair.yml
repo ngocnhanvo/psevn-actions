@@ -1,0 +1,38 @@
+name: PSE native Contact Page + ESC form authoring (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-contact-cms-repair.mjs
+      - scripts/pse-contact-cms-style.css
+      - .github/workflows/pse-contact-cms-repair.yml
+      - .pse-contact-cms-repair-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-contact-cms-repair
+  cancel-in-progress: false
+jobs:
+  editor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_CONTACT_CMS_APPLY: "${{ github.event.head_commit.message == 'cms(pse): apply native contact ESC Table and WordPress cssmore' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-contact-cms-repair.mjs && node scripts/pse-contact-cms-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-contact-wordpress-native-backup
+          path: artifacts/pse-contact-native/original.json
+          retention-days: 14
+          if-no-files-found: warn
