@@ -1,1 +1,2 @@
 Read-only validate 47 WordPress Header items, synchronize ESC menu field targets to native migrated links; unresolved complaint is excluded.
+2026-10-25: DRY #40146872113 PASS. ESC Header/vi #1687 has 32 inconsistent links across 47 menu items. WordPress native URLs already verified; sync 32 using Menu Manager Save Menu; preserve menu tree and complaint #77020, verify ESC API and menu dirty flag.\n
