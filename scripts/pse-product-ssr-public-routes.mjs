@@ -107,6 +107,7 @@ try{
   }
   await Promise.all([p.waitForLoadState("domcontentloaded"),p.locator("#publish").click()]);
   const meta=await api("/wp-json/wp/v2/chuyen-huong-link/"+record.id+"?context=edit&_fields=id,acf,status,route_priority,route_conditions");
+  console.log("PSE_PRODUCT_SSR_ROUTE_READBACK="+JSON.stringify({key:rule.key,http:meta.http,id:record.id,priority:meta.data?.route_priority,expectedPriority:rule.priority,conditions:meta.data?.route_conditions,expectedConditions:rule.conditions,acf:meta.data?.acf,status:meta.data?.status}).slice(0,2800));
   if(meta.http!==200||meta.data?.route_priority!==rule.priority||
      JSON.stringify(meta.data?.route_conditions||[])!==JSON.stringify(rule.conditions)||
      meta.data.acf?.from_link!==rule.from||meta.data.acf?.to_link!==rule.to)throw Error("WordPress routing condition readback failed "+rule.key);
