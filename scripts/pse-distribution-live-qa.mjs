@@ -48,7 +48,14 @@ try{
         const clean=el=>(el?.textContent||"").replace(/\\s+/g," ").trim();
         return{pageContent:!!content,tableCount:content?.querySelectorAll("table").length||0,
           rows:rows.map(row=>[...row.querySelectorAll("td,th")].map(cell=>({tag:cell.tagName,heading:cell.tagName==="TH",chars:clean(cell).length,sample:clean(cell).slice(0,180),rowSpan:cell.getAttribute("rowspan"),colSpan:cell.getAttribute("colspan")}))),
-          origHTMLLength:content?.innerHTML.length||0};
+          origHTMLLength:content?.innerHTML.length||0,
+          allTables:[...(content?.querySelectorAll("table")||[])].map((tb,i)=>{
+            const rr=[...tb.querySelectorAll("tr")];
+            const direct=rr.filter(row=>row.closest("table")===tb);
+            const pick=row=>[...row.children].filter(c=>["TD","TH"].includes(c.tagName)).map(c=>clean(c).slice(0,115));
+            return{index:i,totalRows:rr.length,directRows:direct.length,first:direct.slice(0,6).map(pick),last:direct.slice(-3).map(pick)};
+          })
+        };
       });
       console.log("PSE_DISTRIBUTION_ORIGINAL_TABLE_SHAPE="+JSON.stringify({width,path:item.path,http:res?.status(),schema}).slice(0,12500));
       continue;
