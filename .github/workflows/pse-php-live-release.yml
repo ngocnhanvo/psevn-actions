@@ -77,70 +77,7 @@ jobs:
           assert (base.scheme=='https' and base.hostname and not base.username and not base.password
                   and base.path in ('','/') and not base.query and not base.fragment and base.port in (None,443))
           sample=Path('.pse-missing-media-audit').read_text()
-          items=re.findall(r'^PSE_IMAGE_PROXY_DIAG=(wp-content/uploads/[A-Za-z0-9_./-]+\\.jpg)
-        shell: bash
-        env:
-          ENV_FILE: ${{ secrets.ENV_FILE }}
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import os, ssl, time
-          from urllib.parse import urlsplit
-          from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
-          class NoRedirect(HTTPRedirectHandler):
-              def redirect_request(self,*args,**kwargs):
-                  return None
-          values=[]
-          for line in os.environ['ENV_FILE'].splitlines():
-              if line.strip().startswith('WC_URL='):
-                  values.append(line.split('=',1)[1].strip().strip('"').strip("'"))
-          if len(values)!=1:
-              raise RuntimeError('Expected one WordPress WC_URL in ENV_FILE')
-          parsed=urlsplit(values[0])
-          if not (parsed.scheme=='https' and parsed.hostname
-              and not parsed.username and not parsed.password and parsed.port in (None,443)
-              and parsed.path in ('','/') and not parsed.query and not parsed.fragment):
-              raise RuntimeError('Invalid WordPress HTTPS origin in ENV_FILE')
-          client=build_opener(HTTPSHandler(context=ssl.create_default_context()),NoRedirect)
-          url=parsed.geturl().rstrip('/')+'/pse-unzip-v2.ready'
-          for attempt in range(3):
-              try:
-                  with client.open(Request(url,method='GET'),timeout=20) as response:
-                      if response.status==200 and response.read(100).strip()==b'PSE_ASTRO_UNZIP_PROTOCOL=2':
-                          print('PSE_WP_UNZIP_READY_MARKER=PASS')
-                          break
-              except Exception:
-                  pass
-              if attempt==2:
-                  raise RuntimeError('Configured WP unzip readiness endpoint unavailable')
-              time.sleep(3)
-          PY
-
-  acf-routing-readonly-qa:
-    needs: wordpress-php
-    if: github.repository == 'ngocnhanvo/psevn-actions'
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
-      options: --ipc=host
-    timeout-minutes: 9
-    env:
-      ENV_FILE: ${{ secrets.ENV_FILE }}
-      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
-      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Install pinned Chromium JS driver
-        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Verify post routing ACF defaults without changing WordPress content
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --check scripts/pse-acf-post-defaults-verify.mjs
-          node scripts/pse-acf-post-defaults-verify.mjs
-,sample,re.M)
+          items=re.findall(r'^PSE_IMAGE_PROXY_DIAG=(wp-content/uploads/[A-Za-z0-9_./-]+\.jpg)$',sample,re.M)
           assert len(items)==1 and '..' not in items[0].split('/')
           endpoint=base.scheme+'://'+base.netloc+'/esc-tool/image.php?w=2560&path='+quote(items[0][:-4]+'.webp',safe='')
           req=urllib.request.Request(endpoint,headers={'User-Agent':'PSE-Image-Contract-Smoketest'})
