@@ -89,3 +89,11 @@
 - For all future PSE menu adjustments, verify BOTH native WordPress item API **and** ESC Menu API output plus frontend after PHP/WordPress build. Never infer WordPress Menu Manager's `URL` equals ESC Menu `Liên kết`.
 
 **Code mode: auto-build**
+
+## ESC Header live build and parity QA PASS (25/10/2026)
+
+- WP Menu Manager Save Menu synchronized 32 previously stale ESC Menu items, #40146970539 PASS (source of truth `/wp-json/esc-api/v1/menus`, 47 total; 29 old-site hyperlinks repaired; 3 missing link modes repaired). WordPress native menu field alone is insufficient.
+- WordPress/PHP Build Website [#40147072126](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40147072126) PASS, signed Astro release [#40147145969](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40147145969) PASS. Earlier QA #40147143119 ran **before** deploy completed, so its stale-link result was transient and was not a source-code issue.
+- **Final actual frontend parity QA [#40147261183](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40147261183) PASS**: mobile 390px and desktop 1440px both checked 42 actionable Header destinations, 44 rendered nav anchors each, **0 missing**, **0 old Joomla targets except #77020 complaint**, no WordPress/FTP mutation. Do not trigger redundant build or audit. User screenshot field `Liên kết` for Product subcategory #77006 is now the new frontend ProductCategory URL with matching saved ESC Menu API.
+- **Exception**: Complaints/customer feedback menu id #77020 intentionally remains on source `www.pse.vn` because native PSE form/handler has not been migrated; do not silently redirect to an empty/fake form. Preserve tree, targets and homepage logic.
+- Future menu updates: read BOTH native `/wp/v2/menu-items` and ESC `/esc-api/v1/menus`, update through WordPress Menu Manager official editor, read back ESC, then official PHP build (if menu logs dirty), final desktop/mobile live QA.
