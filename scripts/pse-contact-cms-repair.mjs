@@ -123,7 +123,7 @@ try{
     return text.includes("[table id=contact_00_vi /]")?text:(rich&&!rich.isHidden()?rich.getContent():text);
   });
   console.log("PSE_CONTACT_NATIVE_INSERT_DIAGNOSTICS="+JSON.stringify({
-    shortcodeInEditor:(edited.match(/\\[table\\s+id=contact_00_vi\\s*\\/\\]/g)||[]).length,
+    shortcodeInEditor:(edited.match(/\[table\s+id=contact_00_vi\s*\/\]/g)||[]).length,
     editorLength:edited.length,sourceLength:raw.length,
     sourcePrefixPreserved:edited.includes(raw.slice(0,150)),
     sectionIdentifierPresent:edited.includes('data-pse-contact-locations="source-2026-10-25"'),
@@ -131,7 +131,7 @@ try{
     warehousesPresent:warehouses.every(w=>edited.includes(w)),
     locationCards:(edited.match(/pse-location-card/g)||[]).length
   }));
-  if((edited.match(/\\[table\\s+id=contact_00_vi\\s*\\/\\]/g)||[]).length!==1||
+  if((edited.match(/\[table\s+id=contact_00_vi\s*\/\]/g)||[]).length!==1||
      !edited.includes('data-pse-contact-locations="source-2026-10-25"')||
      !edited.includes("pse-contact-locations__office")||
      warehouses.some(w=>!edited.includes(w)))throw Error("Native Insert Code did not preserve location structure");
