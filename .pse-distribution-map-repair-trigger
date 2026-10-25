@@ -1,1 +1,0 @@
-DRY RUN: verify source map JPEG SHA from audit #40144699558; avoid Astro image 404 by storing native WordPress Media with original integrity. Do not build.
