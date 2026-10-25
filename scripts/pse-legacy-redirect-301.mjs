@@ -200,32 +200,53 @@ try{
       String(r.acf?.type)==="301"&&String(r.acf?.match_type)==="Exact";
   });
   const notMatched=[...helmetSources].filter(from=>!retire.some(r=>r.acf?.from_link===from));
-  const checked=[];
-  for(const proposal of proposals.values()){
-    const records=existingByFrom.get(proposal.from)||[];
-    if(records.length>1){report.skipped.push({...proposal,reason:"duplicate WP rules"});continue}
-    if(records.length===1){
-      const r=records[0];
-      if(r.status==="publish"&&String(r.acf?.to_link)===proposal.to&&
-        String(r.acf?.type)==="301"&&r.acf?.enable)
-        {report.unchanged.push({from:proposal.from,to:proposal.to,id:r.id});continue}
-      report.skipped.push({...proposal,reason:"existing WordPress rule needs review",id:r.id});continue;
+  // Verify destinations with bounded concurrency; sequential 14-second probes
+  // of hundreds of migrated posts can outlive the Actions runner deadline.
+  const candidates=[...proposals.values()];
+  const outcomes=new Array(candidates.length);
+  let cursor=0;
+  const verify=async()=>{
+    for(;;){
+      const i=cursor++;
+      if(i>=candidates.length)return;
+      const proposal=candidates[i];
+      const records=existingByFrom.get(proposal.from)||[];
+      if(records.length>1){
+        outcomes[i]={kind:"skip",data:{...proposal,reason:"duplicate WP rules"}};continue;
+      }
+      if(records.length===1){
+        const r=records[0];
+        if(r.status==="publish"&&String(r.acf?.to_link)===proposal.to&&
+          String(r.acf?.type)==="301"&&r.acf?.enable){
+          outcomes[i]={kind:"unchanged",data:{from:proposal.from,to:proposal.to,id:r.id}};continue;
+        }
+        outcomes[i]={kind:"skip",data:{...proposal,reason:"existing WordPress rule needs review",id:r.id}};
+        continue;
+      }
+      try{
+        const u=new URL(proposal.to,front);
+        const res=await fetch(u,{redirect:"manual",signal:AbortSignal.timeout(14000)});
+        if(res.status!==200){
+          outcomes[i]={kind:"skip",data:{...proposal,reason:"target HTTP "+res.status}};continue;
+        }
+        const html=await res.text();
+        const canonical=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+          html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+        if(canonical&&new URL(canonical,front).pathname!==proposal.to){
+          outcomes[i]={kind:"skip",data:{...proposal,reason:"canonical mismatch"}};continue;
+        }
+        outcomes[i]={kind:"verified",data:proposal};
+      }catch(e){
+        outcomes[i]={kind:"skip",data:{...proposal,reason:"target unavailable",error:String(e).slice(0,80)}};
+      }
     }
-    // One-hop canonical is mandatory, not merely an Astro 200 fallback.
-    try{
-      const u=new URL(proposal.to,front);
-      const res=await fetch(u,{redirect:"manual",signal:AbortSignal.timeout(14000)});
-      if(res.status!==200){
-        report.skipped.push({...proposal,reason:"target HTTP "+res.status});continue;
-      }
-      const html=await res.text();
-      const canonical=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
-        html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
-      if(canonical&&new URL(canonical,front).pathname!==proposal.to){
-        report.skipped.push({...proposal,reason:"canonical mismatch"});continue;
-      }
-      checked.push(proposal);
-    }catch(e){report.skipped.push({...proposal,reason:"target unavailable",error:String(e).slice(0,80)})}
+  };
+  await Promise.all(Array.from({length:Math.min(4,candidates.length)},()=>verify()));
+  const checked=[];
+  for(const outcome of outcomes){
+    if(outcome.kind==="verified")checked.push(outcome.data);
+    else if(outcome.kind==="unchanged")report.unchanged.push(outcome.data);
+    else report.skipped.push(outcome.data);
   }
   report.proposed=checked;
   await writeFile(artifact+"/backup.json",JSON.stringify({
