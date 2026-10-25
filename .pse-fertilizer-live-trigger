@@ -1,3 +1,5 @@
 Run PSE public Product listing/detail/manual QA only AFTER native WP PHP-triggered Astro release PASS.
 Signed Astro production release #40143412040 PASS. Re-run 9 target live Product/7-PDF cases after earlier #40143165486 was 9/9 HTTP404 before release.
 2026-10-25: signed frontend #40143412040 PASS; #40143909540 had 6/9 PASS, only Product list false negative because QA expected 20 initial cards but UI deliberately paginates 16. Test 16 → 32 → 44 via Load More, image srcset, 390/768/1440; no CMS change or build.
+
+2026-10-25: PSE WordPress native ESC six Product category links PASS #40170200951, Astro active-menu PR #49 master 2f84ebbbb0c89e0481fc5dc7604198a6f9cac6d4, normal WP Build #40170309847 PASS pending=1 and signed FTPS deploy #40170363210 SUCCESS. READ-ONLY Playwright inspect Product Header active links at 390/768/1440 and two Product groups plus all catalog, no build.
