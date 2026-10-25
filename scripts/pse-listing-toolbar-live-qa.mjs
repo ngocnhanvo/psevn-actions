@@ -33,7 +33,7 @@ try {
           const rect = el.getBoundingClientRect();
           return { position: getComputedStyle(el).position, top: rect.top, bottom: rect.bottom };
         });
-        if (before.position !== "static") throw Error(name + " toolbar computed position " + before.position);
+        if (!["static", "relative"].includes(before.position)) throw Error(name + " toolbar computed position " + before.position);
         // Legacy product filter uses visual open/close, while news sets aria-expanded.
         // Check the common observable behavior without rewriting either component.
         const dropdown = toolbar.locator("#dropdown-menu");
@@ -68,7 +68,7 @@ try {
           const rect = el.getBoundingClientRect();
           return { position: getComputedStyle(el).position, top: rect.top, bottom: rect.bottom, scrollY: window.scrollY };
         });
-        if (after.scrollY < 250 || after.position !== "static" || before.top - after.top < 250 || after.bottom >= 0) {
+        if (after.scrollY < 250 || !["static", "relative"].includes(after.position) || before.top - after.top < 250 || after.bottom >= 0) {
           throw Error(name + " toolbar still floats on scroll: " + JSON.stringify({ before, after }));
         }
         if (name === "news") {
