@@ -87,6 +87,20 @@ try{
   },html);
   const summary={id:81043,base,type:data.type,status:data.status,slug:data.slug,title:data.title?.raw||data.title?.rendered,
     link:data.link,acf:data.acf||{},rawLength:html.length,rawSha256:sha(html),shape};
+  const strictShape=await page.evaluate(html=>{
+    const root=document.createElement("div");root.innerHTML=html;
+    const norm=x=>(x?.textContent||"").replace(/[\\s\\u00a0]+/g," ").trim();
+    const tables=[...root.querySelectorAll(".pse-distribution-body table")];
+    const ownRows=t=>[...t.querySelectorAll("tr")].filter(r=>r.closest("table")===t);
+    const cells=r=>[...r.children].filter(x=>x.tagName==="TD"||x.tagName==="TH");
+    const branch=tables.find(t=>t.querySelector("table"))?.querySelector("table");
+    const net=tables.find(t=>{const c=cells(ownRows(t)[0]||document.createElement("tr")).map(norm);return c.length===5&&c[0]==="STT"&&c[1]?.includes("TỈNH")});
+    const br=branch?ownRows(branch).map((r,i)=>({i,cols:cells(r).map(norm)})):[];
+    const rows=net?ownRows(net).map((r,i)=>({i,cols:cells(r).map(norm)})):[];
+    const counts=rows.slice(1,-1).reduce((a,r)=>{for(let i=2;i<5;i++)a[i-2]+=Number(r.cols[i]||0);return a},[0,0,0]);
+    return {totalTables:tables.length,branch:br,network:rows,counts};
+  },html);
+  console.log("PSE_81043_STRICT_SOURCE="+JSON.stringify(strictShape).slice(0,21000));
   console.log("PSE_81043_SOURCE_LAYOUT="+JSON.stringify(summary).slice(0,27000));
   await mkdir("artifacts/pse-page-81043",{recursive:true});
   await writeFile("artifacts/pse-page-81043/source-backup.json",JSON.stringify({
