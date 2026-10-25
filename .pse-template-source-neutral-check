@@ -95,3 +95,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25 PSE news taxonomy SSR: test WordPress categories > numeric post filter > canonical category /tin-tuc-su-kien/<slug>, pagination, active Header on category/posts, SEO and legacy ?cat 301. Astro DEV b6220ab4c88409cefb9564da7bd8523839194c18. Independent no-build full Vitest; no production build/FTP.
 
 2026-10-25: PSE native WordPress news taxonomy SSR source 0ddf5e1eb7e754a7f4d11d7c0e2d3535b689e340; independent NO BUILD Vitest rerun after #40172395646 found 403/405 PASS and two stale static string assertions, now revised. Do not build/deploy in this CI.
+
+2026-10-25: Independent Vitest and Astro syntax for Product detail responsive WordPress specification tables and category-aware Header SSR, Astro github 8256ec6814fb84152e2f923d6a1ad7e54eba3423. NO BUILD, no FTP, no WordPress write.
