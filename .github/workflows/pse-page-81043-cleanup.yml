@@ -1,0 +1,36 @@
+name: PSE 81043 CMS whitespace cleanup (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-page-81043-cleanup-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-page-81043-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_81043_APPLY: "${{ github.event.head_commit.message == 'cms(pse): remove empty spacer paragraphs from page 81043' && '1' || '0' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-page-81043-cleanup.mjs && node scripts/pse-page-81043-cleanup.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-page-81043-source-backup
+          path: artifacts/pse-page-81043-cleanup/
+          if-no-files-found: ignore
+          retention-days: 30
