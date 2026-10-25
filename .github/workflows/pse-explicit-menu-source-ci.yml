@@ -1,0 +1,55 @@
+name: PSE explicit Header menu source regression (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-explicit-menu-source-ci-request]
+permissions:
+  contents: read
+jobs:
+  menu-tests:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    strategy:
+      fail-fast: false
+      matrix:
+        source_ref:
+          - fix/pse-explicit-menu-items-dev-20261026
+          - fix/pse-explicit-menu-items-prod-20261026
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: ${{ matrix.source_ref }}
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Run all PSE Astro unit contract tests without building
+        working-directory: source
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run
+          echo 'PSE_EXPLICIT_NATIVE_MENU_CODE=PASS; NO_BUILD=PASS'
+      - name: Parse all three rendered menu components with Astro compiler
+        working-directory: source
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { createRequire } from 'node:module';
+          const require=createRequire(import.meta.url);
+          const compiler=require('@astrojs/compiler');
+          for(const f of ['Desktop.astro','DesktopBranch.astro','MobileBranch.astro']){
+            const file='src/astro/components/Menu/'+f;
+            await compiler.transform(readFileSync(file,'utf8'),{filename:file});
+            console.log('PSE_MENU_ASTRO_PARSE=PASS '+f);
+          }
+          NODE
