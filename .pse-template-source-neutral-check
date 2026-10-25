@@ -126,3 +126,4 @@ Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vites
 2026-10-25 HTML album privacy bug in live QA: private WP URL only in JSON-LD, now sanitized in Head.astro via wordpressSchemaPublicUrls; run independent Astro tests and compiler without build.
 
 2026-10-25 PSE Astro Contact/Complaint CF7 fallback to WordPress unique public ID via trusted server-to-server REST; test dev Vitest and Astro parser without build or FTP. PSE PHP plugin release separate. Keep admin host confidential in browser and do not send test mail.
+2026-10-25 PSE original Joomla complaint required contact address/product parity UI + inline asterisk label, Astro github 985f7c62c026ca6d8898b1edc43b7be84422065d. Validate PseComplaintPage.parity.test and all Vitest/Astro parser, no build, no emails.
