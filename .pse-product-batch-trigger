@@ -7,3 +7,5 @@ Batch 4/6 #40142109093 PASS 8/8 with native Media SHA/readback, now 32 verified 
 Batch 5/6 #40142585924 PASS 8/8 WordPress Product+verified Media SHA. 40 source IDs imported (including Organic 80 pilot); apply final batch 6 only (4 items, pilot idempotent).
 
 Read-only full product content parity check against original detail pages before any WordPress restoration.
+
+Read-only dry-run following restoration of workflow parser compatibility.
