@@ -27,6 +27,7 @@ FILES = (
     "wp-content/mu-plugins/pse-legacy-article-seo-rest.php",
     "wp-content/mu-plugins/pse-post-routing-defaults.php",
     "wp-content/mu-plugins/pse-published-post-search.php",
+    "wp-content/mu-plugins/pse-public-contact-form-id.php",
     "wp-content/plugins/github-trigger/vcs-build-trigger.php",
     "wp-content/plugins/github-trigger/vcs-hook.php",
     "wp-content/plugins/github-trigger/vcs-build-trigger.js",
