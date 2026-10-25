@@ -58,7 +58,7 @@ try{
        const link=matches.first();
        selected={name:sample.name,href:await link.getAttribute("href"),active:await link.getAttribute("aria-current")==="page"};
        const target=new URL(selected.href,url.origin);
-       if(target.pathname!==sample.path||!selected.active||allActive)throw Error("Wrong category active state/href");
+       if(target.pathname!==sample.path||!selected.active||allActive)throw Error("Wrong category active state/href "+JSON.stringify({selected,allActive,expected:sample.path,actual:target.pathname,pageUrl:page.url(),canonical:await page.locator('link[rel="canonical"]').getAttribute('href').catch(()=>null)}));
      }else{
        if(!allActive)throw Error("View all not active on catalog root");
        const active=await links.evaluateAll(nodes=>nodes.filter(n=>n.getAttribute("aria-current")==="page").map(n=>n.textContent?.trim()));
