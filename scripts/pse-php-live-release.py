@@ -32,6 +32,7 @@ FILES = (
     "wp-content/plugins/github-trigger/vcs-build-trigger.php",
     "wp-content/plugins/github-trigger/vcs-hook.php",
     "wp-content/plugins/github-trigger/vcs-build-trigger.js",
+    "wp-content/themes/vibe-code-theme/inc/tools/menu.php",
 )
 raw = os.environ.get("FTP_SERVER", "").strip()
 if "://" not in raw:
