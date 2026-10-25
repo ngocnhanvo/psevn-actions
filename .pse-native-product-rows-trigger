@@ -1,1 +1,3 @@
 Original fertilizer Product records row-by-row source verification and native REST taxonomy read, no writes.
+
+2026-10-25: Read-only source-versus-native Product audit for Kebo/Drone excerpts and original detailed usage-table integrity; existing CMS untouched, no build.
