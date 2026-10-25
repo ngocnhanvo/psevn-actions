@@ -6,3 +6,5 @@ Signed Astro release #40150677056 SUCCESS after WordPress PHP Build Website #401
 2026-10-25: Recheck news category selection after signed release 40152791739. Check color contrast and category options across three widths. Read-only QA.
 
 2026-10-25: Retry read-only selected category test after fixing Playwright context-only page creation in run 40152937269. No source change or build; keep original deployment.
+
+2026-10-25 PSE Product final read-only live QA after WordPress PHP #40156652559 and signed Astro #40156716981 successful; verify Product toolbar/card stacking 390/768/1440, nonsticky scroll, verified Product Kebo short excerpt code 23932 and original nutrient/usage tables (WP #80940), no CMS writes/builds.
