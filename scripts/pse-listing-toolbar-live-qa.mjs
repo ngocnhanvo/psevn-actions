@@ -178,6 +178,34 @@ try {
       }
     }
   }
+  // The native CPT content must match source-verified details for Joomla #1457.
+  // This checks real UI rendering, not a fabricated fixture or WordPress edit.
+  const productPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    const catalog = await productPage.goto(origin + "/san-pham?limit=48", { waitUntil: "domcontentloaded", timeout: 60000 });
+    if (catalog?.status() !== 200) throw Error("PSE full catalog unavailable");
+    const keboLink = productPage.locator('#product-grid a[href*="-1457"]').first();
+    await keboLink.waitFor({ state: "visible", timeout: 25000 });
+    const card = keboLink.locator("xpath=ancestor::article");
+    const cardText = (await card.innerText()).replace(/\s+/g, " ");
+    for (const text of ["23932", "Kẽm", "Bo", "Loại cây"]) {
+      if (!cardText.includes(text)) throw Error("Kebo catalog summary missing " + text);
+    }
+    const target = await keboLink.getAttribute("href");
+    if (!target) throw Error("Kebo linked product missing URL");
+    const detail = await productPage.goto(new URL(target, origin).toString(), { waitUntil: "domcontentloaded", timeout: 60000 });
+    if (detail?.status() !== 200) throw Error("Kebo native product detail HTTP " + detail?.status());
+    const body = (await productPage.locator(".product-description").innerText()).replace(/\s+/g, " ");
+    for (const text of ["23932", "Hướng dẫn sử dụng", "36 tháng", "50 - 200 kg/ha", "500 ppm"]) {
+      if (!body.includes(text)) throw Error("Kebo verified original detailed usage missing " + text);
+    }
+    const tables = await productPage.locator(".product-description table").count();
+    if (tables < 2) throw Error("Original Kebo nutrient and crop dosage tables not shown");
+    console.log("PSE_PRODUCT_KEBO_PARITY=" + JSON.stringify({ sourceJoomlaId: 1457, wpProductId: 80940, code: 23932, tables, summary: true, details: true, verified: true }));
+    await productPage.screenshot({ path: "artifacts/pse-listing-toolbar/kebo-product-detail-1440.png", fullPage: true });
+  } finally {
+    await productPage.close();
+  }
   console.log("PSE_LISTING_TOOLBAR_SUMMARY=" + JSON.stringify({ checked: results.length, passed: results.filter(x => x.pass).length, readOnly: true, noCmsWrite: true }));
 } finally {
   await browser.close();
