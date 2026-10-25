@@ -9,6 +9,8 @@ const sourceOrigin=new URL(baseVars[0].slice(7).replace(/^['"]|['"]$/g,""));
 if(sourceOrigin.protocol!=="https:"||sourceOrigin.username||sourceOrigin.password||sourceOrigin.search||sourceOrigin.hash||!["","/"].includes(sourceOrigin.pathname))throw Error("Invalid WP origin");
 const origin=sourceOrigin.origin;
 const apply=process.env.PSE_CONTACT_APPLY==="true";
+const removeEditorNote=process.env.PSE_CONTACT_REMOVE_NOTE==="true";
+const editorNote="Nội dung sẽ được cập nhật khi cấu hình website mới.";
 const data=[
  {name:"Kho Đồng Nai",address:"Ấp Hoà Hợp, Xã Xuân Định, Tỉnh Đồng Nai",phone:"(0251) 3 715 777",fax:"(0251) 3 715 999"},
  {name:"Kho Long An",address:"Ấp 8, Xã Long Cang, Tỉnh Tây Ninh",phone:"(0272) 3638373",fax:"(0272) 3638474"},
@@ -60,9 +62,28 @@ try{
  const shortcodes=[...raw.matchAll(/\[table id=([^\]\s]+)\s*\/\]/gi)].map(x=>x[0]);
  // Static business addresses belong in WordPress Editor; no ESC Table is required unless a structured Visual Builder section already exists.\n console.log("PSE_CONTACT_EXISTING_ESC_SHORTCODES="+shortcodes.length);
  const hasLocation=raw.includes('data-pse-contact-locations="source-2026-10-25"');
+ const editorNoteMatches=raw.split(editorNote).length-1;
  await mkdir("artifacts/pse-contact-warehouse",{recursive:true});
  await writeFile("artifacts/pse-contact-warehouse/backup.json",JSON.stringify({id:v.id,slug:v.slug,acf:{action:v.acf?.action,key:v.acf?.key},content:raw,wasUpdated:hasLocation},null,2));
- console.log("PSE_CONTACT_PREFLIGHT=PASS existing_length="+raw.length+" existing_shortcodes="+shortcodes.length+" location_imported="+hasLocation+" apply="+apply);
+ console.log("PSE_CONTACT_PREFLIGHT=PASS existing_length="+raw.length+" existing_shortcodes="+shortcodes.length+" location_imported="+hasLocation+" apply="+apply+" editor_notes="+editorNoteMatches+" remove_editor_note="+removeEditorNote);
+ if(removeEditorNote){
+   if(!hasLocation)throw Error("Contact warehouse section disappeared from verified WordPress Page");
+   if(editorNoteMatches===0){console.log("PSE_CONTACT_EDITOR_NOTE=ALREADY_ABSENT; no_writes=true");process.exit(0)}
+   if(editorNoteMatches!==1)throw Error("Unexpected multiple editorial notes in WordPress Contact Page");
+   const escapedNote=editorNote.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g,"\\\\ console.log("PSE_CONTACT_PREFLIGHT=PASS existing_length="+raw.length+" existing_shortcodes="+shortcodes.length+" location_imported="+hasLocation+" apply="+apply);");
+   const paragraph=new RegExp("<p(?:\\\\s[^>]*)?>\\\\s*"+escapedNote+"\\\\s*<\\\\/p>","giu");
+   const nextContent=raw.replace(paragraph,"");
+   if(nextContent===raw||nextContent.includes(editorNote))throw Error("Contact editorial note is not isolated in a paragraph");
+   const saved=await api("/wp-json/wp/v2/pages/47222","POST",{content:nextContent});
+   if(saved.http!==200||Number(saved.data?.id)!==47222)throw Error("Contact Page editorial note cleanup rejected");
+   const verified=await api(path);
+   if(verified.http!==200||String(verified.data?.content?.raw||"")!==nextContent)
+     throw Error("Contact Page editorial note cleanup readback failed");
+   if(shortcodes.some(x=>!nextContent.includes(x))||!nextContent.includes('data-pse-contact-locations="source-2026-10-25"'))
+     throw Error("Contact warehouse or original ESC Table shortcode changed unexpectedly");
+   console.log("PSE_CONTACT_EDITOR_NOTE=PASS removed=1 preserved_warehouses=5 preserved_esc_table="+shortcodes.length+" no_astro_build=true");
+   process.exit(0);
+ }
  if(hasLocation){console.log("PSE_CONTACT_LOCATIONS=ALREADY_DONE no_writes=true");process.exit(0)}
  if(!apply){console.log("PSE_CONTACT_LOCATIONS=DRY_RUN_PASS old_page_preserved=true source_warehouses="+data.length);process.exit(0)}
  const nextContent=html+raw;
