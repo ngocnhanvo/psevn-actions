@@ -1,1 +1,1 @@
-PSE legacy gallery 989, source-only audit batch 2 (original indices 24–35 of 98), after DRY PASS batch0 #40230382371 and batch1 #40230943917. No WordPress CMS writes, no frontend media copy, no Astro build. 2026-10-26 03:30 ICT.
+Read-only original-source verification PSE gallery 989 batch 3, source indices 36–47/98. Batches 0–2 source DRY PASS #40230382371, #40230943917, #40231052368. No CMS writes, no frontend image copy, no Astro build, no emails. Independent 11-gallery Playwright read-only QA may run in parallel. 2026-10-26 03:32 ICT.
