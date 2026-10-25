@@ -65,7 +65,10 @@ try {
     const checkbox=page.locator('.esc-menu-item-fields[data-item-id="'+Number(library.id)+'"] input[type="checkbox"][name="esc-menu-item-show-view-all['+Number(library.id)+']"]');
     if(await checkbox.count()!==1)throw Error("WordPress item checkbox not deployed; avoid unsafe save");
     if(!await checkbox.isChecked())throw Error("Unexpected persisted View all state; abort");
-    await checkbox.uncheck({force:true});
+    // Native Menu Manager starts with subtrees collapsed. Setting a hidden
+    // form input's checked state is safe; the actual persistence still uses
+    // the official WordPress Save Menu button, nonce and validation.
+    await checkbox.evaluate(el => { el.checked=false; el.dispatchEvent(new Event("change",{bubbles:true})); });
     if(await checkbox.isChecked())throw Error("Checkbox could not be changed");
     const save=page.locator('input[name="save_menu"]:visible').first();
     if(!await save.count())throw Error("Native WordPress Save Menu control unavailable");
