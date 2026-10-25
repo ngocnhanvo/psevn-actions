@@ -34,6 +34,18 @@ try {
       const panel = page.locator("#" + await root.getAttribute("aria-controls"));
       const targetAnchor = panel.locator('a[href]').filter({hasText:/Xem tất cả TIN TỨC/i}).first();
       if (!(await targetAnchor.count())) throw Error("View all News link unavailable for " + width);
+      const libraryButton = panel
+        .locator(width === 1440 ? "button[data-submenu-trigger]" : "button[data-menu-toggle]")
+        .filter({hasText:/^Thư viện$/i}).first();
+      if (await libraryButton.count() !== 1) throw Error("Native Library parent missing in News menu on " + width);
+      await libraryButton.click();
+      const libraryPanel = page.locator("#" + await libraryButton.getAttribute("aria-controls"));
+      const libraryTexts = (await libraryPanel.locator("a[href]").allTextContents()).map(x=>x.trim());
+      if (libraryTexts.some(x=>/xem tất cả/i.test(x)) ||
+          !libraryTexts.some(x=>x==="Ảnh") || !libraryTexts.some(x=>x==="Video"))
+        throw Error("Per-parent View all setting ignored on " + width + ": " + JSON.stringify(libraryTexts));
+      console.log("PSE_LIBRARY_VIEW_ALL_BROWSER=" + JSON.stringify({width,viewAll:false,images:true,videos:true}));
+
       const scope = width === 1440 ? "#desktop-menu" : "#mobile-menu-container";
       const result = await page.evaluate(({scope}) => {
         const links = [...document.querySelectorAll(scope + " a[href]")];
