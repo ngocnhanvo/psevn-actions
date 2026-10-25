@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/pse-news-archive-release.mjs
       - .pse-news-category-ssr-trigger
+      - .pse-news-category-menu-trigger
       - .github/workflows/pse-news-archive-release.yml
 permissions:
   contents: read
@@ -29,4 +30,4 @@ jobs:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Validate WordPress-owned SSR news archive and apply only on authorized commit
-        run: node --check scripts/pse-news-category-ssr-routes.mjs && node --check scripts/pse-news-archive-task-router.mjs && node scripts/pse-news-archive-task-router.mjs
+        run: node --check scripts/pse-news-category-ssr-routes.mjs && node --check scripts/pse-news-category-menu-sync.mjs && node --check scripts/pse-news-archive-task-router.mjs && node scripts/pse-news-archive-task-router.mjs
