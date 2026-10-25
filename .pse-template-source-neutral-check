@@ -113,3 +113,5 @@ Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vites
 2026-10-25: Run existing PSE Astro github offline Vitest regression for Imagick image diagnostic API (PR #58, sha 3277562d); NO BUILD, NO FTP.
 
 2026-10-25 PSE media gallery/video SSR detail/list, contact/complaint safe validation; verify newest psevn-astro/github with full Vitest and Astro parser, NO BUILD or FTP.
+
+2026-10-25 PSE WordPress media gallery same-origin /api/files image routing: Astro github c92cea24b467dddfc52f238c35a3edada8da2610. Verify mediaAssetUrls Vitest, Astro media listing/detail parser, contact validation. NO BUILD/FTP.
