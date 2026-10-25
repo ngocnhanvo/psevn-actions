@@ -103,6 +103,7 @@ try{
   const pages=await all("/wp-json/wp/v2/pages?context=edit&status=publish&_fields=id,slug,status,acf");
   const posts=await all("/wp-json/wp/v2/posts?context=edit&status=publish&_fields=id,slug,status,acf");
   const categories=await all("/wp-json/wp/v2/categories?hide_empty=false&_fields=id,slug,parent,count");
+  const productCategories=await all("/wp-json/wp/v2/product_cat?hide_empty=false&_fields=id,slug,parent,count");
   const menuResult=await api("/wp-json/wp/v2/menu-items?context=edit&per_page=100&_fields=id,url,type");
   if(menuResult.status!==200||!Array.isArray(menuResult.data))
     throw Error("Cannot read native WordPress menu URLs");
@@ -156,6 +157,52 @@ try{
         add(source,"/tin-tuc-su-kien/"+slug,"source-inventory+native-wp-category");
     }
   }
+  // Exact legacy Page URLs were checked during the ten-item corporate
+  // Joomla -> native WordPress migration. Require its project-owned ACF key
+  // and a published PublicPage; do not generate aliases for unrelated Pages.
+  const corporateSourceSlugs=[
+    "thong-diep","hoi-dong-quan-tri","ban-kiem-soat","ban-giam-doc",
+    "so-do-to-chuc","qua-trinh-hinh-thanh-phat-trien","tam-nhin-su-menh",
+    "dinh-huong-phat-trien","nganh-nghe-kinh-doanh","thanh-tuu"
+  ];
+  for(const slug of corporateSourceSlugs){
+    const page=byPageSlug.get(slug);
+    if(page?.acf?.key==="pse-company-"+slug&&page.acf?.action==="PublicPage")
+      add("/pvfcco-pse/"+slug+".html","/"+slug,"verified-company-source+published-wp-page");
+  }
+
+  // Six original Joomla fertilizer family URLs were verified in the native
+  // Product importer. Verify the *current* native WP ProductCategory and the
+  // public SSR canonical before ever publishing the corresponding 301.
+  const verifiedFertilizerFamilies=[
+    "nhom-phan-don-va-phan-phuc-hop-phu-my",
+    "nhom-phan-hon-hop-npk-phu-my",
+    "huu-co-phu-my","phan-bon-sinh-hoc",
+    "nhom-san-pham-ure-nguyen-lieu-cho-san-xuat-cong-nghiep",
+    "dam-phu-my"
+  ];
+  const nativeProductSlugs=new Set(productCategories.map(c=>String(c.slug||"")));
+  for(const slug of verifiedFertilizerFamilies){
+    if(nativeProductSlugs.has(slug))
+      add("/hoat-dong-kinh-doanh/san-pham/"+slug+".html",
+        "/san-pham/"+slug,"verified-product-family-source+native-wp-taxonomy");
+  }
+
+  // Previously imported original Kênh phân phối content includes one parent
+  // and three precise Joomla source article IDs. Never redirect guessed IDs.
+  const verifiedDistributionPaths=[
+    ["/hoat-dong-kinh-doanh/kenh-phan-phoi.html","kenh-phan-phoi"],
+    ["/hoat-dong-kinh-doanh/kenh-phan-phoi/1568-quy-che-nha-phan-phoi.html","quy-che-nha-phan-phoi"],
+    ["/hoat-dong-kinh-doanh/kenh-phan-phoi/1031-he-thong-kho.html","he-thong-kho"],
+    ["/hoat-dong-kinh-doanh/kenh-phan-phoi/30-he-thong-phan-phoi-san-pham-tai-cac-tinh-mien-dong-nam-bo.html",
+      "he-thong-phan-phoi-san-pham-tai-cac-tinh-mien-dong-nam-bo"]
+  ];
+  for(const [source,slug] of verifiedDistributionPaths){
+    const page=byPageSlug.get(slug);
+    if(page?.acf?.action==="PublicPage")
+      add(source,"/"+slug,"verified-distribution-source+published-wp-page");
+  }
+
   // Owner-supplied explicit parity example.
   if(byPageSlug.has("thong-diep"))
     add("/pvfcco-pse/thong-diep.html","/thong-diep","owner-example+published-wp-page");
@@ -186,7 +233,7 @@ try{
   }
   // No blanket regex that would turn invalid articles/assets into false 301s.
   report.counts={routes:routes.length,pages:pages.length,posts:posts.length,
-    menuUrls:menuResult.data.length,categories:categories.length,proposals:proposals.size};
+    menuUrls:menuResult.data.length,categories:categories.length,productCategories:productCategories.length,proposals:proposals.size};
   const existingByFrom=new Map();
   for(const r of routes){
     const from=String(r.acf?.from_link||"");
