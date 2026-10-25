@@ -137,16 +137,18 @@ try{
    if(present.length!==5)throw Error("Verified five warehouse cards missing: "+present.join(","));
    if(body.includes("nội dung sẽ được cập nhật khi cấu hình website mới"))
      throw Error("Internal CMS editor note leaked to public Contact page");
-   const geometry=await page.locator("[data-pse-contact-two-column]").evaluate(root=>{
-     const office=root.querySelector(".pse-contact-layout__office");
-     const form=root.querySelector(".pse-contact-layout__form");
-     const warehouses=root.querySelector(".pse-contact-layout__warehouses");
-     if(!office||!form||!warehouses)throw Error("Contact layout regions missing");
+   const geometry=await page.locator("main#main-content:has(.pse-contact-locations)").evaluate(root=>{
+     const office=root.querySelector(".pse-contact-locations__office");
+     const form=root.querySelector('[data-tablepress-preview="contact_00_vi"]');
+     const warehouses=root.querySelector(".pse-contact-locations__grid");
+     if(!office||!form||!warehouses)throw Error("CMS office / ESC form / warehouses missing");
      const a=office.getBoundingClientRect(),b=form.getBoundingClientRect(),c=warehouses.getBoundingClientRect();
-     return {office:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},
+     return {display:getComputedStyle(root).display,
+       office:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},
        form:{left:b.left,top:b.top,bottom:b.bottom},
        warehousesTop:c.top};
    });
+   if(geometry.display!=="grid")throw Error("Contact WordPress cssmore not applied to CMS layout");
    if(width>900){
      if(Math.abs(geometry.office.top-geometry.form.top)>8 ||
        geometry.form.left<geometry.office.right-4)
