@@ -118,7 +118,18 @@ try {
       const root = document.querySelector(".item-page [itemprop=articleBody]");
       if (!root) return null;
       const tables = [...root.querySelectorAll("table")];
-      if (tables.length < 2) return { diagnostic: "fewer than two tables", count: tables.length, title: document.title, sample: (root.innerText || "").replace(/\s+/g, " ").trim().slice(0, 1400) };
+      if (tables.length < 2) {
+        // Organic, biological and industrial legacy articles often use simple
+        // paragraphs instead of the two-table crop-dose layout.
+        const full = (root.innerText || "").replace(/\s+/g, " ").trim().split(/Các bài viết khác/i)[0].trim();
+        const first = full.search(/Mã số\s*:/i), instruction = full.search(/Hướng dẫn sử dụng/i);
+        const overview = first >= 0 && instruction > first ? full.slice(first, instruction).trim() : "";
+        const usage = instruction >= 0 ? full.slice(instruction + "Hướng dẫn sử dụng".length).trim() : "";
+        if (overview.length > 100 && /Hàm lượng dinh dưỡng/i.test(overview) && /Thời hạn sử dụng/i.test(overview) && instruction > first) {
+          return { single: true, overview, usage, tables: [], lengths: [], text: full.slice(0, 750), title: document.title, guidance: true };
+        }
+        return { diagnostic: "Original one-table/text content lacks required verified fields", count: tables.length, title: document.title, sample: full.slice(0, 1200) };
+      }
       const originalText = (root.innerText || "").replace(/\s+/g, " ").trim();
       // Preserve the original data tables, but strip all scripts, external links,
       // legacy images and inline styles. Product gallery comes from native Media.
@@ -142,14 +153,19 @@ try {
       return { tables: tables.slice(0, 2).map(clean), lengths: tables.slice(0, 2).map(t => (t.innerText || "").trim().length),
         text: originalText.slice(0, 750), title: document.title, guidance: normalized.includes("thời hạn sử dụng") };
     });
-    if (!detail || !detail.guidance || detail.lengths.some(n => n < 70) || detail.tables.join("").length < 300) {
+    if (!detail || !detail.guidance || (detail.single ? detail.overview.length < 100 : (detail.lengths.some(n => n < 70) || detail.tables.join("").length < 300))) {
       report.errors.push({ originId, nativeId: product.id, reason: "Incomplete structured legacy usage/details table", diagnostic: detail?.diagnostic || "", tableLengths: detail?.lengths || [], articleSample: detail?.sample || detail?.text || "" });
       report.skippedUnverified++; continue;
     }
     const shortSpec = row.full.slice(row.name.length).trim().replace(/\s+(Mã số\s*:|Thành phần\s*:|Loại cây\s*:)/gi, "\n$1");
     const shortText = normalize(shortSpec.replace(/\n/g, "<br>")).split(" ").join(" "); // stable whitespace except trusted explicit separators
     const excerpt = "<p>" + escaped(shortText).replace(/Mã số\s*:/i, "Mã số:").replace(/\s+(Thành phần\s*:|Loại cây\s*:)/gi, "<br>$1") + "</p>";
-    const description = "<h2>Thông tin chi tiết</h2>" + detail.tables[0] + "<h2>Hướng dẫn sử dụng</h2>" + detail.tables[1];
+    const description = detail.single
+      ? "<h2>Thông tin chi tiết</h2><p>" + escaped(detail.overview)
+        .replace(/(Loại phân:|Hàm lượng dinh dưỡng:|Phương thức sử dụng:|Thời hạn sử dụng:)/gi, "<br><strong>$1</strong>")
+        + "</p><h2>Hướng dẫn sử dụng</h2>"
+        + (detail.usage ? "<p>" + escaped(detail.usage).replace(/\s+(-\s+(?:Cây|Lần|\*Cách))/g, "<br>$1") + "</p>" : "")
+      : "<h2>Thông tin chi tiết</h2>" + detail.tables[0] + "<h2>Hướng dẫn sử dụng</h2>" + detail.tables[1];
     const currentExcerpt = product.excerpt?.raw || product.excerpt?.rendered || "";
     const currentDescription = product.content?.raw || product.content?.rendered || "";
     const already = normalize(currentExcerpt).includes("Mã số") && normalize(currentExcerpt).includes("Thành phần") && normalize(currentExcerpt).includes("Loại cây") && /Hướng dẫn sử dụng/i.test(currentDescription) && /Thời hạn sử dụng/i.test(currentDescription) && currentDescription.length >= description.length * 0.55;
