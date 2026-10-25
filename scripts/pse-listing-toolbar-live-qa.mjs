@@ -196,8 +196,11 @@ try {
     const detail = await productPage.goto(new URL(target, origin).toString(), { waitUntil: "domcontentloaded", timeout: 60000 });
     if (detail?.status() !== 200) throw Error("Kebo native product detail HTTP " + detail?.status());
     const body = (await productPage.locator(".product-description").innerText()).replace(/\s+/g, " ");
-    for (const text of ["23932", "Hướng dẫn sử dụng", "36 tháng", "50 - 200 kg/ha", "500 ppm"]) {
-      if (!body.includes(text)) throw Error("Kebo verified original detailed usage missing " + text);
+    for (const text of ["23932", "Hướng dẫn sử dụng", "36 tháng", "500 ppm"]) {
+      if (!body.includes(text)) throw Error("Kebo verified original detailed usage missing " + text + "; body sample=" + body.slice(0, 1900));
+    }
+    if (!/50\s*[-–—]\s*200\s*kg\s*\/\s*ha/i.test(body)) {
+      throw Error("Kebo verified original 50–200 kg/ha dosage missing; rendered detail excerpt=" + body.slice(0, 2600));
     }
     const tables = await productPage.locator(".product-description table").count();
     if (tables < 2) throw Error("Original Kebo nutrient and crop dosage tables not shown");
