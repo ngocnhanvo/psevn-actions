@@ -6,7 +6,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
 const subject = String(event.head_commit?.message || "").split("\n")[0];
 const batchMatch = subject.match(/^cms\(pse\): restore verified fertilizer descriptions batch ([1-9][0-9]*)$/);
-const dry = subject === "audit(pse): product content parity dry-run";
+const exceptionOnly = subject === "audit(pse): product content exceptional dry-run";
+const dry = subject === "audit(pse): product content parity dry-run" || exceptionOnly;
 if (!batchMatch && !dry) throw Error("Explicit content-repair audit/batch commit identity required");
 const batch = batchMatch ? Number(batchMatch[1]) : 0;
 const batchSize = 8;
@@ -98,7 +99,7 @@ try {
     }
   }
   const ordered = [...bySourceId.entries()].sort((a, b) => Number(a[0]) - Number(b[0]));
-  const selected = batch ? ordered.slice((batch - 1) * batchSize, batch * batchSize) : ordered;
+  const selected = batch ? ordered.slice((batch - 1) * batchSize, batch * batchSize) : exceptionOnly ? ordered.filter(([id]) => new Set(["1707","1718","1719","1720","1721","1722"]).has(id)) : ordered;
   if (!selected.length) throw Error("No native Product matches selected batch");
   console.log("PSE_PRODUCT_RESTORE_PREFLIGHT=" + JSON.stringify({ mode: report.mode, batch, native: products.length, originalIds: candidates.size, selected: selected.length, totalBatches: Math.ceil(ordered.length / batchSize) }));
   const plans = [];
@@ -117,7 +118,7 @@ try {
       const root = document.querySelector(".item-page [itemprop=articleBody]");
       if (!root) return null;
       const tables = [...root.querySelectorAll("table")];
-      if (tables.length < 2) return { diagnostic: "fewer than two tables", count: tables.length, title: document.title, sample: (root.innerText || "").slice(0, 380) };
+      if (tables.length < 2) return { diagnostic: "fewer than two tables", count: tables.length, title: document.title, sample: (root.innerText || "").replace(/\s+/g, " ").trim().slice(0, 1400) };
       const originalText = (root.innerText || "").replace(/\s+/g, " ").trim();
       // Preserve the original data tables, but strip all scripts, external links,
       // legacy images and inline styles. Product gallery comes from native Media.
