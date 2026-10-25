@@ -36,27 +36,33 @@ try{
        info.horizontalOverflow)throw Error("News SSR/canonical/H1 invalid "+JSON.stringify({http:response?.status(),...info}));
     const nav=page.locator("#desktop-menu");
     const desktop=await nav.isVisible();
+    const rootLabel = cat.slug === "kien-thuc-nong-nghiep" ? "HOẠT ĐỘNG KINH DOANH" : "TIN TỨC";
     let root,rootPanel,selection;
     if(desktop){
-      root=nav.locator('button[data-menu-trigger][aria-label*="TIN TỨC"]').first();
+      root=nav.locator('button[data-menu-trigger]').filter({hasText:rootLabel}).first();
       await root.click();
       rootPanel=page.locator("#"+await root.getAttribute("aria-controls"));
     }else{
       await page.locator("#hamburger-btn").click();
       const mobile=page.locator("#mobile-menu-container");
-      root=mobile.locator('button[data-menu-toggle][aria-label*="TIN TỨC"]').first();
+      root=mobile.locator('button[data-menu-toggle]').filter({hasText:rootLabel}).first();
       await root.click();
       rootPanel=page.locator("#"+await root.getAttribute("aria-controls"));
     }
-    const selectedLabel=cat.name;
-    // Nested category menus require explicit click, never hover.
-    if(cat.slug==="tin-tong-hop"){
-      const company=rootPanel.locator(desktop?'button[data-submenu-trigger][aria-label*="Tin Công ty"]':'button[data-menu-toggle][aria-label*="Tin Công ty"]').first();
-      await company.click();
-      rootPanel=page.locator("#"+await company.getAttribute("aria-controls"));
+    // A category with descendants is a button in WordPress Menu Manager.
+    // Its own navigation is the separate "Xem tất cả" anchor in its panel.
+    const isParent = cat.slug === "tin-cong-ty" || cat.slug === "kien-thuc-nong-nghiep";
+    if(cat.slug==="tin-tong-hop" || isParent){
+      const owner = cat.slug==="tin-tong-hop" ? "Tin Công ty" : cat.name;
+      const trigger = rootPanel.locator(desktop?'button[data-submenu-trigger]':'button[data-menu-toggle]').filter({hasText:owner}).first();
+      if(await trigger.count()!==1)throw Error("Missing WordPress category branch "+owner);
+      await trigger.click();
+      rootPanel=page.locator("#"+await trigger.getAttribute("aria-controls"));
     }
-    selection=rootPanel.locator("a[href]").filter({hasText:selectedLabel}).first();
-    if(await selection.count()!==1)throw Error("Missing matching WordPress category Header label "+selectedLabel);
+    selection=isParent
+      ? rootPanel.locator('a[aria-current="page"]').first()
+      : rootPanel.locator('a[href]').filter({hasText:cat.name}).first();
+    if(await selection.count()!==1)throw Error("Missing active WordPress category link "+cat.name);
     const link=await selection.getAttribute("href");
     if(new URL(link,site).pathname!==path||
        await selection.getAttribute("aria-current")!=="page")
