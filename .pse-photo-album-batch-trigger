@@ -1,5 +1,1 @@
-PSE approved WordPress native photo album 995 / Phụ nữ Việt Nam / batch 0, verified audit #40210288090 11 JPEG links. Idempotent source and WordPress checks.
-
-2026-10-25 PSE gallery 991 (Ngày Hội Truyền Thống 2011), source inventory 10 images. Read-only dry-run before importer apply; do not duplicate completed albums 994/995.
-
-2026-10-25 album 991 batch 0 source verification dry-run #40211003290 PASS, exactly 10 source files, not yet imported; import one complete idempotent batch to native WP Post and Media. No Astro build or email. Albums 994 and 995 already complete, don't repeat.
+PSE owner-authorized WordPress native photo album 991 (Ngày Hội Truyền Thống 2011) batch 0, dry #40211003290 confirmed 10 original gallery assets, no duplicate imported source.
