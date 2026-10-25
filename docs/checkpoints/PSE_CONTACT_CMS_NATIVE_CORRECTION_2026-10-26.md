@@ -26,3 +26,12 @@ WordPress Page [#47222] displayed all office/warehouse content in the classic ed
 4. Keep git source ↔ production distinct; no repeat CMS writes/import or already-successful native ESC Table creation.
 
 Chế độ code: auto-build.
+
+## Final production acceptance — 2026-10-26
+
+- Astro signed WordPress-triggered deployment [#40242078822](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40242078822): **SUCCESS**, commit `ec71e59e21d19c85da37c408e9a5bb42bc344e82` verified in builder logs, signed PHP activation and smoke PASS. Trigger was **normal** WordPress Build Website [#40242015072](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40242015072) with `pending_count=60`, no force or bypass.
+- Source-of-truth WP/ESC audit [#40241849466](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40241849466) **PASS**: Page #47222 `PrivatePage/contact` contains native `contact_00_vi` shortcode x1, ESC fields `key,label,required`, 6 editable items, CSS in ACF `cssmore`, native 5 warehouses, no placeholder.
+- Live Chromium [#40242234252](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40242234252) **SUCCESS**: `PSE_CONTACT_TWO_COLUMN=PASS` at 390, 768, 1440; desktop office left and ESC form right; smaller widths stack; all 5 warehouses below; no internal note. `PSE_MEDIA_CONTACT_FORM=PASS` at all 3: exactly one form, five required inputs, Turnstile structure and native HTML5 empty invalidity, **no real submission/email sent**. No horizontal overflow, private WordPress hostname hidden.
+- Final status: `CMS_OWNED_LAYOUT=PASS`; `CMS_ESC_FORM_AUTHORING=PASS`; `ASTRO_NO_HARDCODED_CONTACT_LAYOUT=PASS`; `SIGNED_PRODUCTION_DEPLOY=PASS`; `RESPONSIVE_BROWSER_QA=PASS`; `EMAIL_DELIVERY=NOT_TESTED` (intentional). This corrects earlier UI-only compliance report.
+
+Chế độ code: auto-build.
