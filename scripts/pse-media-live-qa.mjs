@@ -23,7 +23,8 @@ try{
      {slug:"987-khai-truong-cua-hang-ngay-3-6",count:10},
      {slug:"992-mau-bao-bi",count:2},
      {slug:"996-hoc-van-hoa-doanh-nghiep",count:6},
-     {slug:"997-truong-sa",count:7}
+     {slug:"997-truong-sa",count:7},
+     {slug:"993-ngay-truyen-thong",count:11}
    ];
    for(const album of verifiedAlbums){
    const href=available.find(path=>path.includes(album.slug));
