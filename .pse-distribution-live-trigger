@@ -1,1 +1,3 @@
 Run once only after WordPress/PHP official build+signed Astro deploy includes native distribution Page #81037–81045 and menu 77013.
+
+2026-10-25: Signed WordPress-triggered Astro deploy #40145105926 PASS after original Joomla distribution image sha256 restored to WordPress Media #81048 on Page #81043 (#40144903609 PASS). Recheck ONLY 4 new source-verified distribution URLs at responsive 390/768/1440; former #40144414863 12x404 was before distribution release, no build in this QA.
