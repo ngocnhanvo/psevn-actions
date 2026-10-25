@@ -1,1 +1,1 @@
-2026-10-26 WordPress native shortcode dialog had wrong active editor at #40240950960; native ESC Table exists and Page untouched. Set wpActiveEditor=content, re-apply Insert Code with documented modal, preserve Page and cssmore; no Astro build.
+2026-10-26 preserve native TablePress modal Insert Shortcode selection but use WordPress Quicktags.insertContent API to correct multiple Classic editors; ESC table already source-verified, Page untouched in earlier failed runs, no Astro build.
