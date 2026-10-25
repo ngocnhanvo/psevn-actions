@@ -117,7 +117,7 @@ try{
   // connection (observed in #40163120396). Submit the existing authenticated
   // WordPress post form with its native save_post nonce, never a custom REST bypass.
   const formBefore=await p.locator("form#post").evaluate(form=>({
-    action:new URL(form.action,location.origin).pathname,
+    action:new URL(form.getAttribute("action")||"",location.origin).pathname,
     method:form.method.toLowerCase(),
     postId:form.querySelector('input[name="post_ID"]')?.value,
     wpNonce:Boolean(form.querySelector('input[name="_wpnonce"]')?.value),
