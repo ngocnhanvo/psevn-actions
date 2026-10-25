@@ -1,1 +1,2 @@
 PSE listing toolbar live QA. Edit only after official WordPress PHP-controlled release succeeds. Checks secondary listing bars scroll out on 390/768/1440px, native filter still clicks, no writes or build.
+Signed Astro release #40150677056 SUCCESS after WordPress PHP Build Website #40150622466 (normal pending_count=1); source master 9d10c03c4ebf46d3d1b4d9a8a5ba168d5e4570be. Run targeted 390/768/1440 viewport normal-scroll filter test now against newly deployed site. Read-only/no build.
