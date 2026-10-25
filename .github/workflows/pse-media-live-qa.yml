@@ -15,7 +15,8 @@ jobs:
       options: --ipc=host
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
-      PSE_CONTACT_ONLY: "${{ github.event.head_commit.message == 'test(pse): read-only Contact two-column QA only' }}"
+      PSE_CONTACT_ONLY: "${{ github.event.head_commit.message == 'test(pse): read-only Contact two-column QA only' || github.event.head_commit.message == 'test(pse): verify live structured Contact ESC table ownership' }}"
+      PSE_CONTACT_ESC_EXPECTED: "${{ github.event.head_commit.message == 'test(pse): verify live structured Contact ESC table ownership' }}"
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
