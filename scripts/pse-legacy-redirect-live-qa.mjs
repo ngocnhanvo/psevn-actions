@@ -96,8 +96,8 @@ try{
         const location=first.headers()["location"]||"";
         const second=await page.request.get(target,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
         const html=second.status()===200?await second.text():"";
-        const c=html.match(/<link\\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
-          html.match(/<link\\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+        const c=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+          html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
         const canonicalOkay=!c||new URL(c,front).pathname===x.to;
         const item={...x,sourceStatus:first.status(),location,targetStatus:second.status(),canonicalOkay};
         checks[i]={pass:first.status()===301&&location===x.to&&second.status()===200&&canonicalOkay,item};
