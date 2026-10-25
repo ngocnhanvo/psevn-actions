@@ -34,7 +34,7 @@ const toNativeUrl=node=>{
  return "/"+href.replace(/^\/+/, "");
 };
 try {
- await page.goto(site+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
+ if(marker==="MODE=APPLY") await page.goto(site+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
  if(marker==="MODE=APPLY" && await page.locator("#user_login").count()){
   await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
   await page.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD||"");
@@ -57,11 +57,12 @@ try {
  });
  const api=async(path,method="GET",body)=>{
   return await page.evaluate(async({path,nonce,method,body})=>{
-   const r=await fetch(path,{method,credentials:"same-origin",headers:{"X-WP-Nonce":nonce,"Cache-Control":"no-cache","Accept":"application/json",...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
+   const r=await fetch(path,{method,credentials:nonce?"same-origin":"omit",headers:{...(nonce?{"X-WP-Nonce":nonce}:{}),"Cache-Control":"no-cache","Accept":"application/json",...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
    return {http:r.status,data:await r.json().catch(()=>({}))};
   },{path,nonce,method,body});
  };
  const readMenus=async()=>{
+  if(marker==="MODE=AUDIT") await page.context().clearCookies();
   const r=await api("/wp-json/esc-api/v1/menus?_pse_nonce="+Date.now());
   if(r.http!==200||r.data?.success!==true||typeof r.data.menus!=="object")throw Error("ESC menu REST source missing HTTP "+r.http+" code="+String(r.data?.code||"none")+" json="+typeof r.data);
   return r.data.menus;
