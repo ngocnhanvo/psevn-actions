@@ -1,1 +1,1 @@
-2026-10-26 source-backed WordPress native two-table authoring: office x1 and warehouse items x5. Preflight read-only #40245873001 PASS; no Page mutation, no build. Only create new native tables using ESC UI, verify REST.
+2026-10-26 native tables office x1 warehouses x5 verified from source WordPress in #40245978028 PASS; replace original source-owned Contact HTML with CMS intro + Office ESC + existing Form ESC + Warehouses ESC via native TablePress Insert Code; update ACF cssmore only; guard data parity, backup, read-back; NO ASTRO BUILD.
