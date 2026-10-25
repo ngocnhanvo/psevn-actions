@@ -75,3 +75,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25 PSE Product catalog content-and-overlay isolated Vitest: Astro DEV includes relative z-30 for both filter bars, productSummaryText and short description cards, added product summary tests. No build/CMS mutation; existing CI only.
 
 2026-10-25 PSE product catalog full source final CI: validated Product detail table styles, overlay on Product/SSR, productSummaryText and 2 dedicated Vitest files. Check latest Astro github SHA and run no-build CI only; no WP changes.
+
+2026-10-25 Recheck final PSE Product UI Vitest after removing table overrides that contradicted existing ProductDetailsPage.justify contract; no CMS writes/build.
