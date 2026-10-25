@@ -1,4 +1,1 @@
-One-time shared Playwright public smoke test. No WordPress login, secret passing, FTP, build or production deploy.
-Second smoke run to verify npm download-cache reuse, without browser installation or admin login.
-2026-10-22: Template portability smoke with site URLs resolved from ENV_FILE (read only, no build or FTP).
-2026-10-23: read-only Chromium smoke after PHP-authorized PSE Astro production deployment #39936199056 success; no WordPress writes, FTP, build or dispatch.
+Read-only PSE public smoke after menu overlay release. Astro production commit fe8e60e8ecf18cc5e2ffcb778839c6bc4fc4c80d, WordPress-controlled deploy run https://github.com/ngocnhanvo/psevn-actions/actions/runs/40237098997. Assert site from ENV_FILE only, no writes.
