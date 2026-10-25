@@ -1,0 +1,25 @@
+name: PSE contact native CMS+ESC authoring audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-contact-cms-authoring-audit.mjs
+      - .github/workflows/pse-contact-cms-authoring-audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-contact-cms-authoring-audit.mjs && node scripts/pse-contact-cms-authoring-audit.mjs
