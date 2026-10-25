@@ -77,10 +77,14 @@ try {
  if(headers.length===0)throw Error("No authoritative Header menus");
  const original=new Map();
  let candidates=[];
+ const branchDiagnostics=[];
  for(const menu of headers){
   const items=flatten(menu.items);
   original.set(menu.id,new Map(items.map(x=>[Number(x.id),x])));
   for(const node of items){
+   if((node.children||[]).length){
+    branchDiagnostics.push({lang:menu.lang,id:node.id,label:node.label,linkType:node.linkType,href:node.href||"",showViewAll:node.showViewAll,childCount:node.children.length,duplicate:node.children.some(child=>comparable(child.href||child.slug)===comparable(node.href||node.slug))});
+   }
    if(node.showViewAll===false||!Array.isArray(node.children)||node.children.length===0||
       node.linkType==="none"||!String(node.href||node.slug||"").trim())continue;
    const target=toNativeUrl(node);
@@ -95,7 +99,7 @@ try {
  if(candidates.length>35)throw Error("Unexpected menu migration size "+candidates.length);
  console.log("PSE_NATIVE_ALL_AUDIT="+JSON.stringify({
   mode:marker,menuCount:headers.length,existingMenuItems:headers.map(m=>({lang:m.lang,count:flatten(m.items).length})),
-  candidates,readOnly:marker==="MODE=AUDIT"}));
+  candidates,branchDiagnostics,readOnly:marker==="MODE=AUDIT"}));
  if(marker==="MODE=AUDIT")process.exitCode=0;
  else {
   let created=[];
