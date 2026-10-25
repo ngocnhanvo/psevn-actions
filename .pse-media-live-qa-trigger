@@ -2,3 +2,4 @@ PSE native photo Post 81064 (3 verified JPEG), WordPress Page Contact with 5 war
 
 2026-10-25 source-safe DOM attribute/script classifier after album QA detects WordPress origin string; no site writes.
 2026-10-25 verify only previously FAILED live album security QA after WordPress/PHP signed deploy #40210503293 PASS, PR #64 schema public URL repair 62951f5c on master; recheck photo album 994 image proxy, JSON-LD, lightbox, category, Contact 5 warehouses, Video empty state, 390/768/1440. No email/WordPress edits and no Astro build.
+2026-10-25 retest only QA selector failure #40210660218 after security mobile 390 PASS, Video empty state PASS; fixed Contact `main#main-content` first selector to avoid two nested CMS main elements. No code website changes/build/email.
