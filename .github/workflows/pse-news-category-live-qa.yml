@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .pse-news-category-live-qa-trigger
+      - .github/workflows/pse-news-category-live-qa.yml
 permissions:
   contents: read
 jobs:
