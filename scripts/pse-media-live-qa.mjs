@@ -25,7 +25,7 @@ try{
    const listingQueue=[page.url()],visitedListing=new Set();
    while(listingQueue.length){
      const next=new URL(listingQueue.shift(),frontend);
-     if(next.origin!==frontend||!/^\\/tin-tuc-su-kien\\/anh(?:\\/\\d+)?\\/?$/.test(next.pathname)||next.search)
+     if(next.origin!==frontend||!new RegExp("^/tin-tuc-su-kien/anh(?:/[0-9]+)?/?$").test(next.pathname)||next.search)
        throw Error("Unexpected gallery pagination destination");
      if(visitedListing.has(next.href))continue;
      if(visitedListing.size>=20)throw Error("Gallery SSR pagination exceeded safety bound");
@@ -43,7 +43,7 @@ try{
      const pagination=await page.locator('nav[aria-label="Phân trang"] a[href]').evaluateAll(elements=>elements.map(a=>a.href));
      for(const href of pagination){
        const target=new URL(href,frontend);
-       if(target.origin!==frontend||!/^\\/tin-tuc-su-kien\\/anh(?:\\/\\d+)?\\/?$/.test(target.pathname)||target.search)
+       if(target.origin!==frontend||!new RegExp("^/tin-tuc-su-kien/anh(?:/[0-9]+)?/?$").test(target.pathname)||target.search)
          throw Error("Unexpected gallery pagination link");
        if(!visitedListing.has(target.href))listingQueue.push(target.href);
      }
