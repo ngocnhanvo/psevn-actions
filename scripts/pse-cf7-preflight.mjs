@@ -29,5 +29,17 @@ try{
  const contentTypeBlocked=wrong.status()===415;
  console.log("PSE_CONTACT_CONTENT_TYPE="+JSON.stringify({status:wrong.status(),rejected:contentTypeBlocked}));
  if(!contentTypeBlocked)throw Error("Contact endpoint did not reject unsupported media type");
+ // A fully shaped synthetic request without a Turnstile token must stop
+ // before any CF7 call. This also checks the effective Astro runtime secret
+ // without reading or printing it. This path CANNOT send email.
+ const noToken=await browser.post(front+"/api/contact",{
+  data:{name:"PSE Test",phone:"0900000000",email:"test@example.invalid",
+   subject:"Runtime preflight only",message:"Synthetic no-send validation probe",turnstileToken:""},
+  headers:{"Content-Type":"application/json"},timeout:30000
+ });
+ const noTokenBody=await noToken.json().catch(()=>null);
+ const runtimeReady=noToken.status()===403 && noTokenBody?.ok===false;
+ console.log("PSE_CONTACT_TURNSTILE_RUNTIME="+JSON.stringify({http:noToken.status(),runtimeReady,noEmail:true}));
+ if(!runtimeReady)throw Error("Effective Astro Turnstile runtime is not ready or fails to reject missing token");
  console.log("PSE_CF7_SAFE_PREFLIGHT=PASS; noEmail=true; noPrivateOriginLogged=true; noAstroBuild=true");
 }finally{await browser.dispose()}
