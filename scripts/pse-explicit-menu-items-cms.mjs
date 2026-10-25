@@ -62,8 +62,13 @@ try {
   },{path,nonce,method,body});
  };
  const readMenus=async()=>{
-  if(marker==="MODE=AUDIT") await page.context().clearCookies();
-  const r=await api("/wp-json/esc-api/v1/menus?_pse_nonce="+Date.now());
+  let r;
+  if(marker==="MODE=AUDIT"){
+   const response=await page.request.get(site+"/wp-json/esc-api/v1/menus?_pse_nonce="+Date.now(),{timeout:30000});
+   r={http:response.status(),data:await response.json().catch(()=>({}))};
+  } else {
+   r=await api("/wp-json/esc-api/v1/menus?_pse_nonce="+Date.now());
+  }
   if(r.http!==200||r.data?.success!==true||typeof r.data.menus!=="object")throw Error("ESC menu REST source missing HTTP "+r.http+" code="+String(r.data?.code||"none")+" json="+typeof r.data);
   return r.data.menus;
  };
