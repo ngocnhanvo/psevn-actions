@@ -1,0 +1,43 @@
+name: PSE legacy URL 301 native WordPress audit and guarded apply (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-legacy-redirect-301-trigger
+      - .github/workflows/pse-legacy-redirect-301.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-redirect-native-wordpress
+  cancel-in-progress: false
+jobs:
+  redirects:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 55
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Checkout PSE Actions manifest and source-verification
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Chromium driver
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: WordPress CPT audit and owner-authorized verified 301 updates
+        run: |
+          node --check scripts/pse-legacy-redirect-301.mjs
+          node scripts/pse-legacy-redirect-301.mjs
+      - name: Save reversible WordPress redirect inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-legacy-redirect-audit
+          path: artifacts/pse-legacy-redirect/
+          retention-days: 30
+          if-no-files-found: warn
