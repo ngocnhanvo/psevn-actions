@@ -9,6 +9,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const msg=String(event.head_commit?.message||"").split("\n")[0];
 const apply=msg==="cms(pse): apply source-verified legacy 301 redirects";
+const identityOnly=msg==="audit(pse): verify exact legacy 301 source identity";
 const vars=String(process.env.ENV_FILE||"").split(/\r?\n/)
   .map(s=>s.trim().replace(/^export\s+/,""));
 function envOrigin(key){
@@ -264,6 +265,18 @@ try{
     unsafePublished:unsafePublished.length,
     mismatchedPublishedSlugs:mismatchedPublishedSlugs.length};
   report.identityUnsafePublished=unsafePublished;
+  if(identityOnly){
+    await writeFile(artifact+"/backup.json",JSON.stringify({
+      mode:"identity-audit",at:new Date().toISOString(),
+      routesBefore:routes,unsafePublished,
+      manifestTracked:manifestIdentity.size,
+      mismatchedPublishedSlugs:mismatchedPublishedSlugs.length
+    },null,2)+"\n");
+    console.log("PSE_LEGACY_REDIRECT_IDENTITY_ONLY="+JSON.stringify({
+      unsafePublished:unsafePublished.length,manifestTracked:manifestIdentity.size,
+      mismatchedPublishedSlugs:mismatchedPublishedSlugs.length,noBuild:true,noCMSWrites:true
+    }));
+  }else{
   // No blanket regex that would turn invalid articles/assets into false 301s.
   report.counts={routes:routes.length,pages:pages.length,posts:posts.length,
     menuUrls:menuResult.data.length,categories:categories.length,productCategories:productCategories.length,proposals:proposals.size};
@@ -405,6 +418,7 @@ try{
     targetSkipped:report.skipped.length,deferred:report.deferred.length,
     issues:report.issues.length,noBuild:true
   }));
+  }
 }finally{
   await writeFile(artifact+"/result.json",JSON.stringify(report,null,2)+"\n");
   await browser.close();
