@@ -301,7 +301,15 @@ try{
   const notMatched=[...helmetSources].filter(from=>!retire.some(r=>r.acf?.from_link===from));
   // Verify destinations with bounded concurrency; sequential 14-second probes
   // of hundreds of migrated posts can outlive the Actions runner deadline.
-  const candidates=[...proposals.values()];
+  // Source-backed corporate/distribution Pages currently expose a trailing-
+  // slash canonical while the requested target has no trailing slash. Keep
+  // their strict canonical preflight, but verify other safe Post/Product
+  // mappings first so known skipped Pages do not consume every 100-item
+  // guarded apply budget on each idempotent pass.
+  const canonicalPageBasis=/^(owner-example|verified-company-source|verified-distribution-source)/;
+  const candidates=[...proposals.values()].sort((a,b)=>
+    Number(canonicalPageBasis.test(a.basis))-
+    Number(canonicalPageBasis.test(b.basis)));
   const outcomes=new Array(candidates.length);
   // Audits can verify every target. Writes use resumable batches to stay well
   // below the Actions 55-minute limit and retain per-run rollback inventory.
