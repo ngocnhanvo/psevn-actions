@@ -9,3 +9,5 @@ Batch 5/6 #40142585924 PASS 8/8 WordPress Product+verified Media SHA. 40 source 
 Read-only full product content parity check against original detail pages before any WordPress restoration.
 
 Read-only dry-run following restoration of workflow parser compatibility.
+
+Second read-only verification of original nested fertilizer tables (after parser correction); no CMS writes. Original dry-run used top-level table selector and cannot validate nested HDSD tables.
