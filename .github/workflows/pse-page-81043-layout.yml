@@ -1,0 +1,37 @@
+name: PSE Page 81043 layout audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-page-81043-layout.mjs
+      - .github/workflows/pse-page-81043-layout.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-page-81043-layout
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-page-81043-layout.mjs && node scripts/pse-page-81043-layout.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-page-81043-layout-audit
+          path: artifacts/pse-page-81043/
+          if-no-files-found: ignore
+          retention-days: 14
