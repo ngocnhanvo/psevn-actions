@@ -69,8 +69,14 @@ try{
    if(!intro||!office||warehouses.length!==5)throw Error("Contact source sections/cards unexpected");
    const extract=card=>{
      const field=label=>{
-       const pair=[...card.querySelectorAll("dl > div")].find(d=>(d.querySelector("dt")?.textContent||"").trim()===label);
-       return(pair?.querySelector("dd")?.textContent||"").trim();
+       const structured=[...card.querySelectorAll("dl > div")].find(d=>(d.querySelector("dt")?.textContent||"").trim()===label);
+       if(structured)return(structured.querySelector("dd")?.textContent||"").trim();
+       // Classic WordPress editor strips DL/DT/DD and preserves plain label+value in a div.
+       const flattened=[...card.children].find(d=>d.tagName==="DIV"&&
+         (d.textContent||"").trim().startsWith(label));
+       if(!flattened)return"";
+       const full=(flattened.textContent||"").trim();
+       return full.slice(label.length).trim();
      };
      const map=(card.querySelector(".pse-location-card__map")?.getAttribute("href")||"").trim();
      return{name:(card.querySelector("h3")?.textContent||"").trim(),
