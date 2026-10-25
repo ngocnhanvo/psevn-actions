@@ -96,7 +96,18 @@ try {
   report.preflight=true;
   console.log("PSE_PRODUCT_CUSTOM_MENU_PREFLIGHT="+JSON.stringify({menuId:report.menuId,changed:report.changes.filter(x=>x.changed).length,validated:report.changes.length}));
   if(report.changes.some(x=>x.changed)) {
-    for(const row of report.changes.filter(x=>x.changed)) await page.locator('input[name="esc-menu-item-custom-url['+row.id+']"]').fill(row.after);
+    for(const row of report.changes.filter(x=>x.changed)) {
+      // Native WP nav-menus.php keeps each menu item's settings hidden until
+      // the editor expands it. Use the actual editor toggle, not a forced
+      // hidden DOM mutation that could bypass WordPress change handlers.
+      const item = page.locator("#menu-item-"+row.id);
+      const field = item.locator('input[name="esc-menu-item-custom-url['+row.id+']"]');
+      if (!await field.isVisible()) {
+        await item.locator(".item-edit").first().click();
+      }
+      if (!await field.isVisible()) throw Error("ESC custom URL field still hidden id="+row.id);
+      await field.fill(row.after);
+    }
     const save=page.locator("#save_menu_header");
     if(await save.count()!==1)throw Error("Native Save Menu button unavailable");
     await Promise.all([page.waitForLoadState("domcontentloaded"), save.click()]);
