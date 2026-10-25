@@ -96,21 +96,28 @@ try {
   report.preflight=true;
   console.log("PSE_PRODUCT_CUSTOM_MENU_PREFLIGHT="+JSON.stringify({menuId:report.menuId,changed:report.changes.filter(x=>x.changed).length,validated:report.changes.length}));
   if(report.changes.some(x=>x.changed)) {
-    for(const row of report.changes.filter(x=>x.changed)) {
-      // Native WP nav-menus.php keeps each menu item's settings hidden until
-      // the editor expands it. Use the actual editor toggle, not a forced
-      // hidden DOM mutation that could bypass WordPress change handlers.
-      const item = page.locator("#menu-item-"+row.id);
-      const field = item.locator('input[name="esc-menu-item-custom-url['+row.id+']"]');
-      if (!await field.isVisible()) {
-        await item.locator(".item-edit").first().click();
-      }
-      if (!await field.isVisible()) throw Error("ESC custom URL field still hidden id="+row.id);
-      await field.fill(row.after);
-    }
-    const save=page.locator("#save_menu_header");
-    if(await save.count()!==1)throw Error("Native Save Menu button unavailable");
-    await Promise.all([page.waitForLoadState("domcontentloaded"), save.click()]);
+    // These controls are part of WordPress' native nav-menus.php form even
+    // when the menu-item settings accordion is collapsed. Update those exact
+    // form controls, fire native change events and submit the real form with
+    // WordPress nonce/actions, rather than forcing a hidden Playwright click.
+    const rows = report.changes.filter(x=>x.changed);
+    await Promise.all([
+      page.waitForNavigation({waitUntil:"domcontentloaded",timeout:60000}),
+      page.evaluate(rows => {
+        const form=document.querySelector("form#update-nav-menu");
+        if(!(form instanceof HTMLFormElement)) throw Error("No native WordPress menu form");
+        for(const row of rows) {
+          const input=form.querySelector('input[name="esc-menu-item-custom-url['+row.id+']"]');
+          if(!(input instanceof HTMLInputElement)||input.value!==row.before) throw Error("WordPress source changed before native save id="+row.id);
+          input.value=row.after;
+          input.dispatchEvent(new Event("input",{bubbles:true}));
+          input.dispatchEvent(new Event("change",{bubbles:true}));
+        }
+        const save=form.querySelector("#save_menu_header");
+        if(!(save instanceof HTMLElement)) throw Error("Missing native WordPress Save Menu submit control");
+        form.requestSubmit(save);
+      }, rows),
+    ]);
     report.written=true;
   }
   await page.goto(editor,{waitUntil:"domcontentloaded",timeout:60000});
