@@ -1,0 +1,25 @@
+name: PSE CF7 server registry and contact API safe preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-cf7-preflight.mjs
+      - .github/workflows/pse-cf7-preflight.yml
+      - .pse-cf7-preflight-trigger
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-cf7-preflight.mjs && node scripts/pse-cf7-preflight.mjs
