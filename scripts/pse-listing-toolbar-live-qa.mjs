@@ -115,6 +115,24 @@ try {
           }
 
         }
+        if (name === "products") {
+          const stack = await page.evaluate(() => {
+            const toolbar = document.querySelector("[data-listing-toolbar]");
+            const menu = document.querySelector("#dropdown-menu");
+            const card = document.querySelector("#product-grid article") || document.querySelector("main article");
+            if (!toolbar || !menu || !card) return { z: -1, above: false, noOverlap: false };
+            const z = Number(getComputedStyle(toolbar).zIndex);
+            const a = menu.getBoundingClientRect(), b = card.getBoundingClientRect();
+            const left = Math.max(a.left, b.left, 0), right = Math.min(a.right, b.right, innerWidth);
+            const top = Math.max(a.top, b.top, 0), bottom = Math.min(a.bottom, b.bottom, innerHeight);
+            const noOverlap = right <= left || bottom <= top;
+            if (noOverlap) return { z, above: true, noOverlap };
+            const hit = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+            return { z, above: Boolean(hit && menu.contains(hit)), noOverlap };
+          });
+          if (stack.z < 1 || !stack.above) throw Error("Product category filter behind cards: " + JSON.stringify(stack));
+          console.log("PSE_PRODUCT_FILTER_STACK=" + JSON.stringify({ width, ...stack }));
+        }
         await trigger.click();
         if (await dropdown.isVisible()) throw Error(name + " filter failed to close");
         await page.evaluate(() => window.scrollTo({ top: 1100, behavior: "instant" }));
