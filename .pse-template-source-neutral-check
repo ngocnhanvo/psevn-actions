@@ -79,3 +79,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25 Recheck final PSE Product UI Vitest after removing table overrides that contradicted existing ProductDetailsPage.justify contract; no CMS writes/build.
 
 2026-10-25 PSE SSR WordPress-managed category archive: verify ProductSSR two-column horizontal image-left/spec-right, taxonomy canonical, SEO title/description, 404 unknown taxonomy, retained branded Header and public-URL nav marker. No frontend build/WordPress mutation.
+
+2026-10-25 PSE Product SSR taxonomy UI follow-up targeted no-build full Vitest/parser after updating legacy Builder category heading and 1-column mobile/2-column desktop responsive contract. No CMS writes.
