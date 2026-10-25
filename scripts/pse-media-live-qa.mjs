@@ -132,6 +132,28 @@ try{
    const warehouses=["đồng nai","long an","lâm đồng","bình phước","đắk nông"];
    const present=warehouses.filter(x=>body.includes(x));
    if(present.length!==5)throw Error("Verified five warehouse cards missing: "+present.join(","));
+   if(body.includes("nội dung sẽ được cập nhật khi cấu hình website mới"))
+     throw Error("Internal CMS editor note leaked to public Contact page");
+   const geometry=await page.locator("[data-pse-contact-two-column]").evaluate(root=>{
+     const office=root.querySelector(".pse-contact-layout__office");
+     const form=root.querySelector(".pse-contact-layout__form");
+     const warehouses=root.querySelector(".pse-contact-layout__warehouses");
+     if(!office||!form||!warehouses)throw Error("Contact layout regions missing");
+     const a=office.getBoundingClientRect(),b=form.getBoundingClientRect(),c=warehouses.getBoundingClientRect();
+     return {office:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},
+       form:{left:b.left,top:b.top,bottom:b.bottom},
+       warehousesTop:c.top};
+   });
+   if(width>900){
+     if(Math.abs(geometry.office.top-geometry.form.top)>8 ||
+       geometry.form.left<geometry.office.right-4)
+       throw Error("Desktop contact information and form are not side by side");
+   }else if(geometry.form.top<geometry.office.bottom-8)
+     throw Error("Mobile/tablet contact form should stack below office information");
+   if(geometry.warehousesTop<Math.max(geometry.office.bottom,geometry.form.bottom)-8)
+     throw Error("Five contact warehouses must remain below office and form");
+   console.log("PSE_CONTACT_TWO_COLUMN=PASS width="+width+" warehouse_below=true internal_note_absent=true");
+
    // Validate the live Contact form without submitting personal data or sending mail.
    // checkValidity() only evaluates native constraints; it never fires submit.
    const contactForms=page.locator("form#contact-form");
