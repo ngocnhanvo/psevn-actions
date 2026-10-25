@@ -58,6 +58,62 @@ try {
           });
           if (stack.z < 1 || !stack.menuAboveCard) throw Error("News category menu hidden behind cards: " + JSON.stringify(stack));
           console.log("PSE_NEWS_FILTER_STACK=" + JSON.stringify({ width, ...stack }));
+          // Verify a real CMS category after navigation. The selected label and
+          // chevrons must contrast against their fill at all responsive widths.
+          if (await dropdown.locator('a[data-cat="uncategorized"]').count() ||
+              await dropdown.locator("a.dropdown-option").filter({ hasText: /^Uncategorized$/i }).count())
+            throw Error("WordPress Uncategorized is visible in the PSE news filter");
+          const agriculture = dropdown.locator("a[data-cat]").filter({ hasText: "Kiến thức nông nghiệp" }).first();
+          if (await agriculture.count() !== 1)
+            throw Error("Known PSE agricultural category absent from CMS dropdown");
+          const selectedHref = await agriculture.getAttribute("href");
+          if (!selectedHref) throw Error("Selected category href missing");
+          const selectedPage = await page.context().newPage();
+          try {
+            const response = await selectedPage.goto(new URL(selectedHref, origin).toString(), {
+              waitUntil: "domcontentloaded", timeout: 60000
+            });
+            if (response?.status() !== 200) throw Error("Selected category HTTP " + response?.status());
+            const selectedTrigger = selectedPage.locator("#dropdown-trigger");
+            const colors = await selectedTrigger.evaluate((button) => {
+              const readRgb = (value) => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+              const luminance = (value) => {
+                const channels = readRgb(value).map(c => {
+                  const x = c / 255;
+                  return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+                });
+                return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+              };
+              const bg = getComputedStyle(button).backgroundColor;
+              const text = getComputedStyle(button.querySelector("span")).color;
+              const icon = getComputedStyle(button.querySelector("svg")).color;
+              const ratio = (a, b) => {
+                const [light, dark] = [luminance(a), luminance(b)].sort((a, b) => b - a);
+                return (light + 0.05) / (dark + 0.05);
+              };
+              return { active: button.dataset.categorySelected, bg, text, icon,
+                textContrast: ratio(text, bg), iconContrast: ratio(icon, bg) };
+            });
+            if (colors.active !== "true" || colors.textContrast < 4.5 ||
+                colors.iconContrast < 3)
+              throw Error("Selected news filter unreadable: " + JSON.stringify(colors));
+            const selectedMenu = selectedPage.locator("#dropdown-menu");
+            await selectedTrigger.click();
+            if (!await selectedMenu.isVisible()) throw Error("Selected category dropdown won't open");
+            if (await selectedMenu.locator('a[data-cat="uncategorized"]').count() ||
+                await selectedMenu.locator("a.dropdown-option").filter({ hasText: /^Uncategorized$/i }).count())
+              throw Error("Uncategorized still appears on selected category route");
+            console.log("PSE_NEWS_SELECTED_FILTER=" + JSON.stringify({ width,
+              textContrast: Number(colors.textContrast.toFixed(2)),
+              iconContrast: Number(colors.iconContrast.toFixed(2)),
+              hiddenUncategorized: true, categoryNavigation: "PASS" }));
+            await selectedPage.screenshot({
+              path: `artifacts/pse-listing-toolbar/selected-category-${width}.png`
+            });
+          } finally {
+            await selectedPage.close();
+          }
+
         }
         await trigger.click();
         if (await dropdown.isVisible()) throw Error(name + " filter failed to close");
