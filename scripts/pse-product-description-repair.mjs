@@ -116,13 +116,16 @@ try {
     const detail = await source.evaluate(() => {
       const root = document.querySelector(".item-page [itemprop=articleBody]");
       if (!root) return null;
-      const tables = [...root.querySelectorAll("table")].filter(t => t.parentElement?.closest("table") === null);
+      const tables = [...root.querySelectorAll("table")];
       if (tables.length < 2) return null;
       const originalText = (root.innerText || "").replace(/\s+/g, " ").trim();
       // Preserve the original data tables, but strip all scripts, external links,
       // legacy images and inline styles. Product gallery comes from native Media.
       const clean = table => {
         const clone = table.cloneNode(true);
+        // Source usage table may be nested inside the original layout table.
+        // Strip nested tables from overview, then render the usage table once.
+        if (table === tables[0]) clone.querySelectorAll("table").forEach(inner => inner.remove());
         clone.querySelectorAll("td,th").forEach(cell => {
           if (cell.querySelector("img") && (cell.textContent || "").trim().length < 15) cell.remove();
         });
