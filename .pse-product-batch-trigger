@@ -17,3 +17,5 @@ Verified fertilizer description restoration batch 1, 8 original Joomla IDs with 
 Read-only diagnostics for six original product detail variants (1707, 1718-1722), after verified batch one. No CMS writes.
 
 Verified fertilizer Product descriptions batch 2 (8 source-matched published Products), readback and backups required.
+
+Read-only inspect six Joomla product pages with exceptional single-table layouts. No WordPress changes.
