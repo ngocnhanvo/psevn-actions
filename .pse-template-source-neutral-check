@@ -105,3 +105,5 @@ Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vites
 2026-10-25 follow-up: slider regression corrected to assert button CSS class only, not SVG aria-hidden; Astro github bb36901154252d58cb71881ccdd3bfb7d2432fdf. Prior CI #40195562120 had 2 independent pseDistributionPresentation tests failing; verify banner test no longer fails. NO BUILD.
 
 2026-10-25: follow-up Astro source real CMS contract — five warehouses use 3-row rowspan, distributor page four branch offices and eleven province counts summing 4/26/711. Astro github bd488e191bf6da38ef2a94cd034a8d146fc46cbf. Full no-build Vitest + Astro parser, no FTP/WordPress edits. Source Chrome audit #40195267840 PASS for actual nested WordPress tables.
+
+2026-10-25 approved PSE corporate gradient header + leaf watermark for the 10 WordPress Header PVFCCo-PSE subpages. Astro github 08ffd18e00a1879bd5ffe89df68743e16dd624ad; verify Vitest + Astro component parsing, CI ONLY, no build or FTP.
