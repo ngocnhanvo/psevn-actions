@@ -70,7 +70,7 @@ try{
    if(!hasLocation)throw Error("Contact warehouse section disappeared from verified WordPress Page");
    if(editorNoteMatches===0){console.log("PSE_CONTACT_EDITOR_NOTE=ALREADY_ABSENT; no_writes=true");process.exit(0)}
    if(editorNoteMatches!==1)throw Error("Unexpected multiple editorial notes in WordPress Contact Page");
-   const nextContent=raw.replace(/<p(?:\\s[^>]*)?>\\s*Nội dung sẽ được cập nhật khi cấu hình website mới\\.\\s*<\\/p>/gu,"");
+   const nextContent=raw.replace(/<p(?:\s[^>]*)?>\s*Nội dung sẽ được cập nhật khi cấu hình website mới\.\s*<\/p>/gu,"");
    if(nextContent===raw||nextContent.includes(editorNote))throw Error("Contact editorial note is not isolated in a paragraph");
    const saved=await api("/wp-json/wp/v2/pages/47222","POST",{content:nextContent});
    if(saved.http!==200||Number(saved.data?.id)!==47222)throw Error("Contact Page editorial note cleanup rejected");
