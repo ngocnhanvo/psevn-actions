@@ -24,7 +24,7 @@ jobs:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
-      PSE_CONTACT_STRUCTURED_MODE: ${{ github.event.head_commit.message == 'cms(pse): create native structured Contact ESC tables' && 'tables' || (github.event.head_commit.message == 'cms(pse): apply native structured Contact ESC Page' && 'page' || 'dry') }}
+      PSE_CONTACT_STRUCTURED_MODE: "${{ github.event.head_commit.message == 'cms(pse): create native structured Contact ESC tables' && 'tables' || github.event.head_commit.message == 'cms(pse): apply native structured Contact ESC Page' && 'page' || 'dry' }}"
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
