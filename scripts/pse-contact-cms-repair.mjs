@@ -116,7 +116,17 @@ try{
   const match=page.frameLocator("#TB_iframeContent").locator('.insert-shortcode[title*="contact_00_vi"]');
   await match.waitFor({state:"visible",timeout:25000});
   const title=await match.getAttribute("title");if(!title?.includes(sc))throw Error("Wrong native Insert Code table");
+  await page.evaluate(()=>{window.wpActiveEditor="content";const ed=window.tinymce?.get("content");if(ed&&!ed.isHidden()){ed.focus();ed.selection.select(ed.getBody(),true);ed.selection.collapse(false)}});
   await match.click();await page.waitForTimeout(400);
+  const insertTarget=await page.evaluate(()=>{
+   const rich=window.tinymce?.get("content");
+   const acf=window.tinymce?.get("acf_content");
+   return {active:window.wpActiveEditor,
+     textareaHasShortcode:(document.getElementById("content")?.value||"").includes("[table id=contact_00_vi /]"),
+     richHasShortcode:(rich?.getContent()||"").includes("[table id=contact_00_vi /]"),
+     acfHasShortcode:(acf?.getContent()||"").includes("[table id=contact_00_vi /]")};
+  });
+  console.log("PSE_CONTACT_INSERT_TARGET="+JSON.stringify(insertTarget));
   const edited=await page.evaluate(()=>{
     const text=document.querySelector("#content")?.value||"";
     const rich=window.tinymce?.get("content");
