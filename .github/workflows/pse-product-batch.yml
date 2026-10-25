@@ -33,6 +33,7 @@ jobs:
           name: pse-product-batch-manifest
           path: |
             artifacts/pse-product-batch/manifest.json
-            artifacts/pse-product-batch/product-description-repair.json\n            artifacts/pse-product-batch/product-excerpt-format.json
+            artifacts/pse-product-batch/product-description-repair.json
+            artifacts/pse-product-batch/product-excerpt-format.json
           retention-days: 14
           if-no-files-found: warn
