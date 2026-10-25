@@ -29,3 +29,5 @@ Verified product description restoration batch 4 after special six-source dry au
 Verified product description restoration batch 5 after batch 4 PASS #40156065326; retain original source/backup/readback constraints.
 
 Verified final fertilizer product description restoration batch 6 (four source-matched products) after batch 5 PASS #40156249368.
+
+2026-10-25 format Product short descriptions: no-write dry-run of all 44 native WordPress products; preserve every original field and existing Product/media/category.
