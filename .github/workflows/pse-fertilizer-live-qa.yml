@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - run: node --check scripts/pse-fertilizer-live-qa.mjs && node scripts/pse-fertilizer-live-qa.mjs
+      - run: node --check scripts/pse-fertilizer-live-qa.mjs && node --check scripts/pse-product-menu-active-live-qa.mjs && node --check scripts/pse-fertilizer-live-router.mjs && node scripts/pse-fertilizer-live-router.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
