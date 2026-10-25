@@ -105,7 +105,21 @@ try{
    await row.locator('input[name="esc_route_condition_capture[]"]').fill(String(condition.capture));
    await row.locator('input[name="esc_route_condition_value[]"]').fill(condition.value);
   }
+  const formState=await p.evaluate(()=>({ hasPostForm:!!document.querySelector("form#post"),
+    priorityInsidePost:!!document.querySelector('form#post input[name="esc_route_priority"]'),
+    routeNonceInsidePost:!!document.querySelector('form#post input[name="esc_url_routing_conditions_nonce"]'),
+    publishInsidePost:!!document.querySelector("form#post #publish"),
+    publishValue:document.querySelector("#publish")?.value || "",
+    documentTitle:document.title.slice(0,120)
+  }));
+  console.log("PSE_PRODUCT_SSR_EDITOR_FORM="+JSON.stringify({key:rule.key,...formState}));
   await Promise.all([p.waitForLoadState("domcontentloaded"),p.locator("#publish").click()]);
+  const afterSave=await p.evaluate(()=>({url:location.pathname+location.search,
+    notices:[...document.querySelectorAll(".notice-error,.error,.notice-warning")].map(n=>(n.innerText||"").slice(0,160)).slice(0,4),
+    priority:document.querySelector('input[name="esc_route_priority"]')?.value||"",
+    postStatus:document.querySelector("#post_status")?.value||""
+  }));
+  console.log("PSE_PRODUCT_SSR_EDITOR_AFTER_SAVE="+JSON.stringify({key:rule.key,...afterSave}));
   const meta=await api("/wp-json/wp/v2/chuyen-huong-link/"+record.id+"?context=edit&_fields=id,acf,status,route_priority,route_conditions");
   console.log("PSE_PRODUCT_SSR_ROUTE_READBACK="+JSON.stringify({key:rule.key,http:meta.http,id:record.id,priority:meta.data?.route_priority,expectedPriority:rule.priority,conditions:meta.data?.route_conditions,expectedConditions:rule.conditions,acf:meta.data?.acf,status:meta.data?.status}).slice(0,2800));
   if(meta.http!==200||meta.data?.route_priority!==rule.priority||
