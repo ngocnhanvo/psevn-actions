@@ -84,7 +84,7 @@ try{
    const u=new URL(item.detailUrl);if(u.hostname!=="www.pse.vn"&&u.hostname!=="pse.vn")throw Error("Untrusted Joomla article link");
    const got=await source.goto(u.href,{waitUntil:"domcontentloaded",timeout:55000});detailStatus=got?.status();
    if(detailStatus===200){
-    const d=await source.evaluate(()=>{const el=document.querySelector(".item-page [itemprop=articleBody]");return{text:(el?.innerText||"").replace(/\\s+/g," ").slice(0,2200),tables:el?.querySelectorAll("table").length||0,title:document.title}});
+    const d=await source.evaluate(()=>{const el=document.querySelector(".item-page [itemprop=articleBody]");return{text:(el?.innerText||"").replace(/\s+/g," ").slice(0,2200),tables:el?.querySelectorAll("table").length||0,title:document.title}});
     detailText=d.text;detailTables=d.tables;sourceTitle=d.title;
    }
   }
