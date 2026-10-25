@@ -216,8 +216,11 @@ try{
     const tail=decodeURIComponent(from.split("/").at(-1)||"").replace(/\.html$/i,"");
     if(byPageSlug.has(tail))add(from,"/"+tail,"native-menu+published-wp-page");
   }
-  // Reuse the already collected Joomla article migration manifest, rather than
-  // recrawling hundreds of URLs or inventing their Joomla numeric IDs.
+  // Joomla article identity is the imported WP ID, not a slug alone:
+  // draft/quarantined records can share slugs with unrelated published posts.
+  const publishedById=new Map(posts.map(p=>[Number(p.id),p]));
+  const manifestIdentity=new Map();
+  const mismatchedPublishedSlugs=[];
   if(legacyInventory){
     for(const entry of Object.values(legacyInventory.articles||{})){
       const raw=String(entry?.source_url||"");
@@ -227,10 +230,40 @@ try{
       const match=last.match(/^\d{3,6}-(.+)\.html$/i);
       if(!match)continue;
       const slug=match[1];
-      if(byPostSlug.get(slug))
-        add(from,"/"+slug,"joomla-id+exact-published-wordpress-post-slug");
+      const wpId=Number(entry.wp_id||0);
+      const status=String(entry.status||"");
+      const exactPublished=Number.isSafeInteger(wpId)&&wpId>0&&
+        publishedById.get(wpId)?.slug===slug;
+      const approvedState=status==="imported"||status==="existing";
+      manifestIdentity.set(from,{status,wpId,exactPublished,approvedState,slug});
+      const sameSlug=byPostSlug.get(slug);
+      if(approvedState&&exactPublished)
+        add(from,"/"+slug,"joomla-id+verified-wp-id+published-status");
+      else if(sameSlug)
+        mismatchedPublishedSlugs.push({from,status,wpId,
+          sameSlugPublishedId:Number(sameSlug.id),
+          exactPublished,approvedState});
     }
   }
+  const unsafePublished=routes.filter(r=>{
+    const from=String(r.acf?.from_link||"");
+    const identity=manifestIdentity.get(from);
+    const title=String(r.title?.raw||r.title?.rendered||"").replace(/<[^>]*>/g,"");
+    return identity&&r.status==="publish"&&title==="PSE 301 - "+from&&
+      String(r.acf?.type)==="301"&&String(r.acf?.match_type)==="Exact"&&
+      (!identity.exactPublished||!identity.approvedState);
+  }).map(r=>({id:r.id,from:String(r.acf?.from_link||""),
+    to:String(r.acf?.to_link||""),...manifestIdentity.get(String(r.acf?.from_link||""))}));
+  console.log("PSE_LEGACY_REDIRECT_IDENTITY="+JSON.stringify({
+    manifestTracked:manifestIdentity.size,unsafePublished:unsafePublished.length,
+    mismatchedPublishedSlugs:mismatchedPublishedSlugs.length,
+    unsafeSamples:unsafePublished.slice(0,25),
+    mismatchedSamples:mismatchedPublishedSlugs.slice(0,25)
+  }));
+  report.counts.identity={manifestTracked:manifestIdentity.size,
+    unsafePublished:unsafePublished.length,
+    mismatchedPublishedSlugs:mismatchedPublishedSlugs.length};
+  report.identityUnsafePublished=unsafePublished;
   // No blanket regex that would turn invalid articles/assets into false 301s.
   report.counts={routes:routes.length,pages:pages.length,posts:posts.length,
     menuUrls:menuResult.data.length,categories:categories.length,productCategories:productCategories.length,proposals:proposals.size};
@@ -315,6 +348,11 @@ try{
     targetVerified:checked.length,alreadyCorrect:report.unchanged.length,
     skipped:report.skipped.length,deferred:report.deferred.length,maxApplyTargetChecks,apply
   }));
+  if(apply&&unsafePublished.length){
+    throw Error("Refusing CMS writes: "+unsafePublished.length+
+      " existing PSE 301 rules lack verified published source identity; "+
+      "inspect identityUnsafePublished in result artifact before reversible cleanup");
+  }
   if(apply){
     // Source record identity, source URL, type and published status are all
     // rechecked before trashing. DELETE without force = WordPress Trash.
