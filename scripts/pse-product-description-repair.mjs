@@ -117,7 +117,7 @@ try {
       const root = document.querySelector(".item-page [itemprop=articleBody]");
       if (!root) return null;
       const tables = [...root.querySelectorAll("table")];
-      if (tables.length < 2) return null;
+      if (tables.length < 2) return { diagnostic: "fewer than two tables", count: tables.length, title: document.title, sample: (root.innerText || "").slice(0, 380) };
       const originalText = (root.innerText || "").replace(/\s+/g, " ").trim();
       // Preserve the original data tables, but strip all scripts, external links,
       // legacy images and inline styles. Product gallery comes from native Media.
@@ -137,12 +137,12 @@ try {
         return clone.outerHTML;
       };
       const normalized = originalText.toLowerCase();
-      if (!normalized.includes("mã số") || !normalized.includes("hàm lượng dinh dưỡng") || !normalized.includes("hướng dẫn sử dụng")) return null;
+      if (!normalized.includes("mã số") || !normalized.includes("hàm lượng dinh dưỡng") || !normalized.includes("hướng dẫn sử dụng")) return { diagnostic: "source field names differ", title: document.title, count: tables.length, sample: originalText.slice(0, 500) };
       return { tables: tables.slice(0, 2).map(clean), lengths: tables.slice(0, 2).map(t => (t.innerText || "").trim().length),
         text: originalText.slice(0, 750), title: document.title, guidance: normalized.includes("thời hạn sử dụng") };
     });
     if (!detail || !detail.guidance || detail.lengths.some(n => n < 70) || detail.tables.join("").length < 300) {
-      report.errors.push({ originId, nativeId: product.id, reason: "Incomplete structured legacy usage/details table" });
+      report.errors.push({ originId, nativeId: product.id, reason: "Incomplete structured legacy usage/details table", diagnostic: detail?.diagnostic || "", tableLengths: detail?.lengths || [], articleSample: detail?.sample || detail?.text || "" });
       report.skippedUnverified++; continue;
     }
     const shortSpec = row.full.slice(row.name.length).trim().replace(/\s+(Mã số\s*:|Thành phần\s*:|Loại cây\s*:)/gi, "\n$1");
