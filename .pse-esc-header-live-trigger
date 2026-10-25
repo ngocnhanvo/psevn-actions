@@ -1,1 +1,1 @@
-PSE Header overlay live baseline read-only browser check after user reports no blur on menu links; assert click target activates #page-nav-indicator. No Astro build, no WP writes.
+PSE browser nav overlay reproduction retry: selector must be attached while hidden initially; inspect on click after running normal Header parity.
