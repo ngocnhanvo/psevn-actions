@@ -1,1 +1,3 @@
 2026-10-25: read-only WordPress ESC Header menu current native+custom URL parity and native Category registry; verify which ?cat links can become SSR canonical; no mutation/build.
+
+2026-10-25: News SSR routes 81056/81057 saved/readback PASS #40172868035; WordPress Menu 18 native custom taxonomy URLs audit #40172920635 DRY_PASS. Synchronize only those 18 source-verified Header links, preserving taxonomy hierarchy/items. Native WP Menu form save + readback, NO BUILD.
