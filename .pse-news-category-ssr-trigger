@@ -1,1 +1,3 @@
 2026-10-25: READ ONLY preflight of existing WordPress Page ssr-posts, native categories, Routing Manager rule conflicts, priority and native editor; do not write, build or upload.
+
+2026-10-25: preflight WordPress Routing Manager #40172709072 DRY_PASS (Page 77030, 19 WordPress categories, two missing guarded routes, no collisions). Create two category SSR category/page records with page_key=ssr-posts priority390 via validated native WordPress Classic Editor + readback; NO BUILD/FTP.
