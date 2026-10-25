@@ -51,7 +51,7 @@ if(helmetSources.size!==22)throw Error("Retirement set must contain exactly 22 k
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900}});
 const report={mode:apply?"apply":"audit",retired:[],alreadyRetired:[],proposed:[],
-  published:[],unchanged:[],skipped:[],issues:[],counts:{}};
+  published:[],unchanged:[],skipped:[],deferred:[],issues:[],counts:{}};
 const artifact="artifacts/pse-legacy-redirect";
 await mkdir(artifact,{recursive:true});
 try{
@@ -251,6 +251,10 @@ try{
   // of hundreds of migrated posts can outlive the Actions runner deadline.
   const candidates=[...proposals.values()];
   const outcomes=new Array(candidates.length);
+  // Audits can verify every target. Writes use resumable batches to stay well
+  // below the Actions 55-minute limit and retain per-run rollback inventory.
+  const maxApplyTargetChecks=100;
+  let applyTargetChecks=0;
   let cursor=0;
   const verify=async()=>{
     for(;;){
@@ -270,6 +274,11 @@ try{
         outcomes[i]={kind:"skip",data:{...proposal,reason:"existing WordPress rule needs review",id:r.id}};
         continue;
       }
+      if(apply&&applyTargetChecks>=maxApplyTargetChecks){
+        outcomes[i]={kind:"deferred",data:{...proposal,reason:"next-guarded-apply-batch"}};
+        continue;
+      }
+      if(apply)applyTargetChecks++;
       try{
         const u=new URL(proposal.to,front);
         const res=await fetch(u,{redirect:"manual",signal:AbortSignal.timeout(14000)});
@@ -293,6 +302,7 @@ try{
   for(const outcome of outcomes){
     if(outcome.kind==="verified")checked.push(outcome.data);
     else if(outcome.kind==="unchanged")report.unchanged.push(outcome.data);
+    else if(outcome.kind==="deferred")report.deferred.push(outcome.data);
     else report.skipped.push(outcome.data);
   }
   report.proposed=checked;
@@ -303,7 +313,7 @@ try{
   console.log("PSE_LEGACY_REDIRECT_PREFLIGHT="+JSON.stringify({
     ...report.counts,helmetMatched:retire.length,helmetNotMatched:notMatched.length,
     targetVerified:checked.length,alreadyCorrect:report.unchanged.length,
-    skipped:report.skipped.length,apply
+    skipped:report.skipped.length,deferred:report.deferred.length,maxApplyTargetChecks,apply
   }));
   if(apply){
     // Source record identity, source URL, type and published status are all
@@ -353,7 +363,8 @@ try{
   console.log("PSE_LEGACY_REDIRECT_RESULT="+JSON.stringify({
     mode:report.mode,retired:report.retired.length,published:report.published.length,
     alreadyCorrect:report.unchanged.length,sourceUnmatched:notMatched.length,
-    targetSkipped:report.skipped.length,issues:report.issues.length,noBuild:true
+    targetSkipped:report.skipped.length,deferred:report.deferred.length,
+    issues:report.issues.length,noBuild:true
   }));
 }finally{
   await writeFile(artifact+"/result.json",JSON.stringify(report,null,2)+"\n");
