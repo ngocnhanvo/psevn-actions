@@ -18,7 +18,38 @@ try{
    const initialCards=await cards.count();
    if(initialCards<1)throw Error("Native WordPress photo album missing from SSR listing "+width);
    await page.screenshot({path:`artifacts/pse-media-visual/photos-${width}.png`,fullPage:true});
-   const available=await cards.locator("a[href]").evaluateAll(elements=>[...new Set(elements.map(a=>a.getAttribute("href")||"").filter(Boolean))]);
+   // Once the archive exceeds one SSR page, verify albums across every
+   // native pagination page. Never assume the first twelve cards are the
+   // complete WordPress category or silently skip older published albums.
+   const availableSet=new Set();
+   const listingQueue=[page.url()],visitedListing=new Set();
+   while(listingQueue.length){
+     const next=new URL(listingQueue.shift(),frontend);
+     if(next.origin!==frontend||!/^\\/tin-tuc-su-kien\\/anh(?:\\/\\d+)?\\/?$/.test(next.pathname)||next.search)
+       throw Error("Unexpected gallery pagination destination");
+     if(visitedListing.has(next.href))continue;
+     if(visitedListing.size>=20)throw Error("Gallery SSR pagination exceeded safety bound");
+     if(visitedListing.size){
+       const response=await page.goto(next.href,{waitUntil:"domcontentloaded",timeout:65000});
+       if(response?.status()!==200)throw Error("Gallery SSR pagination failed width "+width+" HTTP "+response?.status());
+     }
+     visitedListing.add(next.href);
+     const pageCards=page.locator("#posts-grid .pse-media-card");
+     if(await pageCards.count()===0)throw Error("Empty gallery pagination page "+visitedListing.size);
+     const links=await pageCards.locator("a[href]").evaluateAll(elements=>[...new Set(elements.map(a=>a.getAttribute("href")||"").filter(Boolean))]);
+     for(const link of links)availableSet.add(link);
+     const html=await page.content();
+     if(html.includes(wp)||wpUrls.length)throw Error("Private WordPress origin exposed in SSR gallery listing");
+     const pagination=await page.locator('nav[aria-label="Phân trang"] a[href]').evaluateAll(elements=>elements.map(a=>a.href));
+     for(const href of pagination){
+       const target=new URL(href,frontend);
+       if(target.origin!==frontend||!/^\\/tin-tuc-su-kien\\/anh(?:\\/\\d+)?\\/?$/.test(target.pathname)||target.search)
+         throw Error("Unexpected gallery pagination link");
+       if(!visitedListing.has(target.href))listingQueue.push(target.href);
+     }
+   }
+   const available=[...availableSet];
+   console.log("PSE_MEDIA_LISTING=PASS width="+width+" pages="+visitedListing.size+" uniqueCards="+available.length);
    const verifiedAlbums=[
      {slug:"994-nha-dai-doan-ket",count:3},
      {slug:"995-phu-nu-viet-nam",count:11},
