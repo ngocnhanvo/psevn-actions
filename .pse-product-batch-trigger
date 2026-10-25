@@ -32,3 +32,4 @@ Verified final fertilizer product description restoration batch 6 (four source-m
 
 2026-10-25 format Product short descriptions: no-write dry-run of all 44 native WordPress products; preserve every original field and existing Product/media/category.
 2026-10-25 Product short-description exact text and unit parity; rerun dry after discovering inconsistent original separators (no WordPress writes).
+2026-10-25: format original Product excerpt lines batch 1/6; dry audit #40165232994 PASS 44/44; restorable original excerpts in artifact.
