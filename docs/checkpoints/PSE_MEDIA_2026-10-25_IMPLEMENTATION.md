@@ -27,3 +27,8 @@
 5. Record actual Code/CMS/QA/Deploy states and run links, not inferred statuses; never rewrite Knowledge or core pipeline.
 
 **Final state here:** 2 source-backed albums public in WordPress, 1 independent gallery batch in progress; 5 warehouse contact UI passed real browser; WordPress-host secrecy/SEO bug fixed and deployed; video empty truthful; complaint activation outstanding. **Not all tasks complete**.
+
+## Verified 16:23Z continuation
+- Gallery `991-ngay-hoi-truyen-thong-2011` import [#40211123421](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40211123421) **COMPLETE PASS**: 10 source JPEGs 10 native WP Media IDs `81079–81086`, `81088–81089` (CMS assigned #81087 to independent complaint Page while batches ran), Post **#81090**, all readback/bytes checks. Do not rerun. This supersedes preceding IN_PROGRESS note.
+- Separate complaint WordPress Page draft [#40211258511](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40211258511) **DRAFT PASS**: Page **#81087**, `action=PseComplaintPage`, `key=pse-complaint`; **menu unchanged, formIdConfigured=false, no sends, not published or built**. Do not recreate Page. This supersedes preceding IN_PROGRESS note, and does NOT unblock form/runtime activation.
+- A further independent photo workflow [#40211309041](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40211309041) was **PENDING** during this read: inspect its exact commit message, album ID and eventual result before starting any additional gallery batch. Workflow serialization concurrency is already configured.
