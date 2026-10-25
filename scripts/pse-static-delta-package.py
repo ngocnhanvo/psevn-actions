@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Omit only unchanged Astro public HTML/CSS/JS, verified later by signed PHP.
+"""Omit only unchanged Astro public HTML/CSS/JS/JSON, verified later by signed PHP.
 
 Never reuse server/ SSR, metadata, or mandatory client/index.html. If this
 server does not advertise static hashes, keep the complete static ZIP.
@@ -12,7 +12,7 @@ import re
 
 SEGMENT = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9_.-]*$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
-EXTENSION = re.compile(r"\.(?:html|css|js)$")
+EXTENSION = re.compile(r"\.(?:html|css|js|json)$")
 MAX_FILES = 5000
 MAX_TOTAL = 104857600
 MAX_SINGLE = 26214400
@@ -95,7 +95,7 @@ def main():
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with open(summary, "a", encoding="utf-8") as handle:
-            handle.write("- PSE static delta: %d/%d unchanged HTML/CSS/JS, "
+            handle.write("- PSE static delta: %d/%d unchanged HTML/CSS/JS/JSON, "
                          "%d bytes omitted; PHP verifies restored staging.\n" %
                          (len(reuse), len(local), saved))
 
