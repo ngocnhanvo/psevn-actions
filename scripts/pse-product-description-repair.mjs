@@ -66,7 +66,7 @@ try {
   const products = cmsResponse.data;
   const bySourceId = new Map();
   for (const product of products) {
-    const id = String(product.acf?.origin_product_id || "");
+    const id = String(product.acf?.origin_product_id || String(product.slug || "").match(/-([0-9]{3,5})$/)?.[1] || "");
     if (!/^\d{3,5}$/.test(id)) throw Error("Invalid migrated native Product origin id " + product.id);
     if (bySourceId.has(id)) throw Error("Duplicate native original Product ID " + id);
     bySourceId.set(id, product);
@@ -116,7 +116,7 @@ try {
     const detail = await source.evaluate(() => {
       const root = document.querySelector(".item-page [itemprop=articleBody]");
       if (!root) return null;
-      const tables = [...root.querySelectorAll("table")].filter(t => t.closest("table") === null);
+      const tables = [...root.querySelectorAll("table")].filter(t => t.parentElement?.closest("table") === null);
       if (tables.length < 2) return null;
       const originalText = (root.innerText || "").replace(/\s+/g, " ").trim();
       // Preserve the original data tables, but strip all scripts, external links,
@@ -157,6 +157,7 @@ try {
       originalSample: detail.text.slice(0, 280), already });
   }
   report.eligible = plans.length;
+  if (!dry) report.backups = plans.filter(item => !item.already).map(item => ({ originId: item.originId, productId: item.productId, before: item.before }));
   if (dry) {
     console.log("PSE_PRODUCT_DESCRIPTION_DRY=" + JSON.stringify({ native: products.length, matched: plans.length, unverified: report.errors, samples: report.products.filter(x => /Kebo|Drone/i.test(x.title)), previews: report.products.slice(0, 4) }).slice(0, 14000));
     preflightComplete = true;
