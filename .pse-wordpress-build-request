@@ -1,4 +1,1 @@
-PSE menu transition overlay release request 2026-10-26.
-Astro master source: fe8e60e8ecf18cc5e2ffcb778839c6bc4fc4c80d (PR #71, merge only 4 menu+test files).
-Development CI: https://github.com/ngocnhanvo/psevn-actions/actions/runs/40236861296 (468 tests PASS, NO BUILD).
-Use existing authenticated WordPress/PHP Build Website with nonce/pending change count and build lock. Normal build only, NO force or exception. If pending count 0 or a build is active, stop safely and report.
+2026-10-26 PSE Contact Page 47222: WordPress editor-note cleanup run 40238085923 PASS; Astro contact office/form two-column PR #72 merged master a88714b13e27eb35af3402dce9bda3810b6303c9; normal PHP Build Website with verified CMS pending (NO EXCEPTION, NO DIRECT DISPATCH).
