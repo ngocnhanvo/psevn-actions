@@ -238,7 +238,11 @@ try{
       // public /slug destination would otherwise have ambiguous identity.
       const exactPublished=Number.isSafeInteger(wpId)&&wpId>0&&
         publishedById.get(wpId)?.slug===slug&&Number(sameSlug?.id)===wpId;
-      const approvedState=status==="imported"||status==="existing";
+      // Manifest draft_needs_date is a historical migration label, NOT a
+      // live WordPress status. A post may since have been published. The
+      // authoritative gate remains its exact current WP ID+slug in the
+      // status=publish REST response, plus destination 200/canonical.
+      const approvedState=["imported","existing","draft_needs_date"].includes(status);
       manifestIdentity.set(from,{status,wpId,exactPublished,approvedState,slug});
       if(approvedState&&exactPublished)
         add(from,"/"+slug,"joomla-id+verified-wp-id+published-status");
