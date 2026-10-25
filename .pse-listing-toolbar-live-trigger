@@ -14,3 +14,5 @@ Signed Astro release #40150677056 SUCCESS after WordPress PHP Build Website #401
 2026-10-25: ONE read-only live recheck after dual QA failures #40157009354/#40157013148 found Kebo dose literal-text mismatch; updated check accepts dash/spacing variants and includes observed source excerpt on actual content failure. Source/CMS/WordPress build remain unchanged. No build or write.
 
 2026-10-25 final PSE WordPress product_cat SSR live QA after native Page/menu change #40161904050 and WordPress PHP signed Astro deploy #40162129405 SUCCESS of source c2e32919d1429f9153013b508f1a754ace42c9c6. Read-only Chrome 390/768/1440 route /san-pham/huu-co-phu-my canonical + 2 horizontal cards and image left/text right, category dropdown scroll, Kebo detail/header Vietnamese and 2 dosage tables; no CMS writes/build.
+
+2026-10-25: Read-only production route probe after QA #40162257845 found /san-pham/ HTTP404 following native Product SSR switch. Probe public/no-trailing-slash/category/direct internal SSR paths in existing Chromium script. No CMS writes/astro builds; diagnose cause before release retry.
