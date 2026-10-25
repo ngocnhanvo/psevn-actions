@@ -1,1 +1,1 @@
-2026-10-26 resume exact contact ESC Table form created and validated in run #40240442130; use native WordPress shortcode Insert Code; original editor content backed up, no duplicate ESC table, no direct Astro build. Guarded idempotent reapply.
+2026-10-26 resume native Contact page Insert Code after #40240706172 did not preserve byte-identical raw prefix; ESC table verified and no Page write. Semantic HTML verification and backup before CMS Save; no duplicate ESC, no build.
