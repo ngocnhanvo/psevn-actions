@@ -5,7 +5,7 @@ import {chromium,request} from "playwright";
 import {createHash} from "node:crypto";
 import {readFile} from "node:fs/promises";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
-const importCommand=String(event.head_commit?.message||"").match(/^cms\\(pse\\): import verified photo album (\\d+)$/);
+const importCommand=String(event.head_commit?.message||"").match(/^cms\(pse\): import verified photo album (\d+)$/);
 const albumId=importCommand?.[1]||"994";
 const catalog={
   "994":{slug:"nha-dai-doan-ket",title:"Nhà đại đoàn kết",folder:"Nha_Dai_Doan_Ket",count:3},
@@ -30,9 +30,9 @@ try{
   const original=await context.newPage();
   const r=await original.goto(source,{waitUntil:"domcontentloaded",timeout:60000});
   if(r?.status()!==200)throw Error("Legacy gallery HTTP not 200");
-  const links=await original.evaluate(folder=>[...document.querySelectorAll("a[href]")].map(x=>x.href).filter(x=>x.startsWith(folder)&&/\\.jpe?g$/i.test(x)),directory);
+  const links=await original.evaluate(folder=>[...document.querySelectorAll("a[href]")].map(x=>x.href).filter(x=>x.startsWith(folder)&&/\.jpe?g$/i.test(x)),directory);
   const names=[...new Set(links)].map(url=>new URL(url).pathname.split("/").pop());
-  if(names.length!==selected.count||names.some(name=>!/^[-_.a-zA-Z0-9]+\\.jpe?g$/i.test(name)))throw Error("Gallery source count differs from verified inventory");
+  if(names.length!==selected.count||names.some(name=>!/^[-_.a-zA-Z0-9]+\.jpe?g$/i.test(name)))throw Error("Gallery source count differs from verified inventory");
   const photos=[];
   for(const name of names){
     const image=await outside.get(directory+name,{timeout:60000});
