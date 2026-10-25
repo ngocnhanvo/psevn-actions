@@ -26,13 +26,13 @@ jobs:
         with:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - run: node --check scripts/pse-product-batch.mjs && node --check scripts/pse-product-description-repair.mjs && node --check scripts/pse-product-batch-router.mjs && node scripts/pse-product-batch-router.mjs
+      - run: node --check scripts/pse-product-batch.mjs && node --check scripts/pse-product-description-repair.mjs && node --check scripts/pse-product-excerpt-format.mjs && node --check scripts/pse-product-batch-router.mjs && node scripts/pse-product-batch-router.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pse-product-batch-manifest
           path: |
             artifacts/pse-product-batch/manifest.json
-            artifacts/pse-product-batch/product-description-repair.json
+            artifacts/pse-product-batch/product-description-repair.json\n            artifacts/pse-product-batch/product-excerpt-format.json
           retention-days: 14
           if-no-files-found: warn
