@@ -101,6 +101,9 @@ jobs:
             'src/astroutils/RelatedPosts.astro',
             'src/astro/tablepress/Pse_01.astro',
             'src/astro/pages/PseComplaintPage.astro',
+            'src/astro/pages/PrivatePage.astro',
+            'src/astro/tablepress/Contact_00.astro',
+            'src/astro/components/Layout/Head.astro',
           ];
           for (const file of paths) {
             await compiler.transform(await readFile(file, 'utf8'), {filename:file});
