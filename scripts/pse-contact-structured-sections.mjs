@@ -166,10 +166,10 @@ try{
  if(oldStyle.split(oldCssMarker).length!==2||!oldStyle.trimEnd().endsWith(oldCSSFile.trimEnd()))
    throw Error("Cannot isolate prior CSS section without touching unrelated cssmore");
  const nextCSS=oldStyle.slice(0,oldStyle.lastIndexOf(oldCssMarker))+newCSS;
- const index=raw.indexOf(parsed.sectionOuter);
- if(index<0||raw.indexOf(parsed.sectionOuter,index+1)>=0)throw Error("Contact section not uniquely replaceable");
+ const sectionMatch=raw.match(/<section\b[^>]*data-pse-contact-locations=["']source-2026-10-25["'][^>]*>[\s\S]*?<\/section>/i);
+ if(!sectionMatch||raw.indexOf(sectionMatch[0],sectionMatch.index+1)!==-1)throw Error("Source CMS section not uniquely replaceable");
  const hero='<section class="pse-contact-hero" aria-label="Thông tin liên hệ">'+parsed.intro+"</section>";
- const replacement=raw.slice(0,index)+hero+raw.slice(index+parsed.sectionOuter.length);
+ const replacement=raw.slice(0,sectionMatch.index)+hero+raw.slice(sectionMatch.index+sectionMatch[0].length);
  if(!replacement.includes("[table id="+formId+" /]")||replacement.includes('class="pse-contact-locations"')||
     replacement.includes("Kho Đồng Nai")||replacement.includes("pse-location-card"))
    throw Error("Proposed Page content still contains legacy location cards");
