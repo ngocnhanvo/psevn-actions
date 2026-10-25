@@ -58,6 +58,10 @@ try{
  const oldStyle=String(p.data.acf?.cssmore||"");
  if(raw.includes("Nội dung sẽ được cập nhật khi cấu hình website mới."))throw Error("Old public editorial placeholder");
  const alreadyMigrated=raw.includes("[table id="+officeId+" /]")&&raw.includes("[table id="+warehouseId+" /]");
+ console.log("PSE_CONTACT_WP_CURRENT="+JSON.stringify({bodyLength:raw.length,hasOriginalHTML:raw.includes('data-pse-contact-locations="source-2026-10-25"'),
+   hasNewHero:raw.includes("pse-contact-hero"),oldCssMarker:oldStyle.includes(oldCssMarker),
+   newCssMarker:oldStyle.includes(newCssMarker),
+   shortcodes:[...raw.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1])}));
  const parsed=await page.evaluate(({raw,alreadyMigrated})=>{
    const holder=document.createElement("div");holder.innerHTML=raw;
    if(alreadyMigrated)return{done:true};
@@ -270,6 +274,11 @@ try{
  }
  if(!saved)throw Error("CMS editor save did not stabilize");
  const content=String(saved.data?.content?.raw||""),style=String(saved.data?.acf?.cssmore||"");
+ console.log("PSE_CONTACT_WP_READBACK="+JSON.stringify({http:saved.http,status:saved.data?.status,key:saved.data?.acf?.key,
+   htmlLength:content.length,hasHero:content.includes("pse-contact-hero"),
+   oldCards:content.includes("pse-location-card"),
+   shortcodes:[...content.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1]),
+   cssmoreLength:style.length,oldCssMarker:style.includes(oldCssMarker),newCssMarker:style.includes(newCssMarker)}));
  if(saved.http!==200||saved.data.status!=="publish"||saved.data.acf?.key!=="contact"||
     !style.includes(newCssMarker)||style.includes(oldCssMarker)||
     (content.match(/\[table\s+id=/gi)||[]).length!==3||
