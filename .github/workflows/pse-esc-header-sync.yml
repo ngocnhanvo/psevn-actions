@@ -2,7 +2,7 @@ name: PSE synchronize ESC Header menu fields to verified WordPress URLs (NO BUIL
 on:
   push:
     branches: [main]
-    paths: [.pse-esc-header-sync-trigger]
+    paths: [.pse-esc-header-sync-trigger, .pse-menu-view-all-trigger]
 permissions:
   contents: read
 concurrency:
@@ -24,7 +24,19 @@ jobs:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - run: node --check scripts/pse-esc-header-sync.mjs && node scripts/pse-esc-header-sync.mjs
+      - name: Route original ESC sync or one guarded View all menu edit
+        env:
+          PSE_MENU_EDIT_MARKER: ${{ github.event.head_commit.message }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$PSE_MENU_EDIT_MARKER" = 'cms(pse): disable Library View all in Menu Manager' ]; then
+            node --check scripts/pse-menu-view-all-admin.mjs
+            node scripts/pse-menu-view-all-admin.mjs
+          else
+            node --check scripts/pse-esc-header-sync.mjs
+            node scripts/pse-esc-header-sync.mjs
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with: {name: pse-header-menu-source-sync-manifest, path: artifacts/pse-header-sync/manifest.json, retention-days: 14, if-no-files-found: warn}
