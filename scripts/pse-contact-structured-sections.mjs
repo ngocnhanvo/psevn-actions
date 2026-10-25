@@ -196,8 +196,21 @@ try{
    throw Error("Proposed Page content still contains legacy location cards");
  await page.goto(origin+"/wp-admin/post.php?post="+pageId+"&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
  await page.locator("#content-html").click();
- const editor=page.locator("#content");await editor.waitFor({state:"visible",timeout:20000});
- await editor.fill(replacement);
+ const editor=page.locator("#content");await editor.waitFor({state:"attached",timeout:20000});
+ // WordPress Classic/ACF may hide the underlying textarea even when the Mã tab is selected.
+ // Use the native WordPress Code editor API rather than treating hidden textarea as absent.
+ const editorState=await page.evaluate(replacement=>{
+   if(typeof window.switchEditors?.go!=="function")throw Error("WordPress Code editor API missing");
+   window.switchEditors.go("content","html");
+   const area=document.querySelector("#content");
+   if(!(area instanceof HTMLTextAreaElement))throw Error("WordPress content textarea missing");
+   area.value=replacement;area.dispatchEvent(new Event("input",{bubbles:true}));
+   window.wpActiveEditor="content";
+   return {length:area.value.length,hasHero:area.value.includes("pse-contact-hero"),
+     containsOldCards:area.value.includes("pse-location-card"),isVisible:area.getClientRects().length>0};
+ },replacement);
+ if(!editorState.hasHero||editorState.containsOldCards)throw Error("WordPress Code edit not applied");
+ console.log("PSE_CONTACT_NATIVE_CODE_EDITOR="+JSON.stringify(editorState));
  for(const entry of [{id:officeId,beforeForm:true},{id:warehouseId,beforeForm:false}]){
    const target="[table id="+entry.id+" /]";
    const seen=await editor.inputValue();
