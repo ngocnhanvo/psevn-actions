@@ -94,6 +94,18 @@ try{
   item.id=found[0]?.id||null;
   item.nativeMedia=found[0]||null;
  }
+ // A second agent/session may enqueue the same marker before the first
+ // import finishes. Published, source-complete galleries are immutable for
+ // this run; do not repeat media HEAD requests or POST write/readback.
+ if(post?.status==="publish" && items.every(item=>
+   Boolean(item.id) && String(post.content?.raw||"").includes(item.filename))
+   && Number(post.featured_media)===Number(items[0].id)){
+   console.log("PSE_GALLERY_BATCH=ALREADY_DONE id="+id+" post="+post.id+
+     " photos="+items.length+" duplicateRunSkipped=true noCmsWrites=true");
+   await network.dispose();
+   await browser.close();
+   process.exit(0);
+ }
  const subset=items.slice(offset,offset+size);
  let created=0;
  for(const item of subset){
