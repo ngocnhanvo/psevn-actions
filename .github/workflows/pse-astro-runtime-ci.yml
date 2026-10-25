@@ -94,6 +94,7 @@ jobs:
             'src/astro/pages/PublicPage.astro',
             'src/astro/pages/PostsPage.astro',
             'src/astro/pages/PostDetails.astro',
+            'src/astro/pages/PseComplaintPage.astro',
           ];
           for (const file of paths) {
             await compiler.transform(await readFile(file, 'utf8'), {filename:file});
