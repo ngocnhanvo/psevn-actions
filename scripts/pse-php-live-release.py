@@ -24,6 +24,7 @@ FILES = (
     "pse-unzip-v2.ready",
     "wp-content/mu-plugins/esc-github-trigger-config.php",
     "wp-content/mu-plugins/esc-seo-files.php",
+    "wp-content/mu-plugins/esc-url-routing-manager.php",
     "wp-content/mu-plugins/pse-legacy-article-seo-rest.php",
     "wp-content/mu-plugins/pse-post-routing-defaults.php",
     "wp-content/mu-plugins/pse-published-post-search.php",
