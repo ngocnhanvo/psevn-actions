@@ -1,4 +1,1 @@
-PSE authorized WordPress/PHP Build Website request for production fix 81043.
-Astro production master squash SHA: 9bc8bd9aa77195bf035dc9c5842d4da8191cb8ed.
-GitHub source PR #69 only changes distribution card presentation and its tests.
-Trigger authenticated WP Build Website (not Actions build), after the signed FTP preflight; do not force when PHP reports no pending changes.
+PSE normal WordPress Build Website request after WordPress page 81043 was saved with five empty spacer paragraphs removed. WP readback sha256 eb0023c6956c408a1ab82b144d3cbb80cfd13ec76bcd5176d07e355738cc3a6e; Astro master fix 9bc8bd9aa77195bf035dc9c5842d4da8191cb8ed. Only WordPress/PHP trigger, no exceptional or force build. Do not bypass pending change/lock protections.
