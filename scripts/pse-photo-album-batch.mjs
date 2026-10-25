@@ -45,8 +45,23 @@ const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1280,height:800}}),admin=await ctx.newPage();
 const network=await request.newContext({timeout:65000});
 try{
- const source=await ctx.newPage(),response=await source.goto(legacy,{waitUntil:"domcontentloaded",timeout:70000});
- if(response?.status()!==200)throw Error("Source gallery unavailable HTTP "+response?.status());
+ const source=await ctx.newPage();
+ // Seven older SIGPro album pages timed out in a full browser, but a separate
+ // read-only HTML inventory verified each URL and exact original gallery hrefs.
+ // For only these verified IDs, render inert fetched markup with no subresources.
+ const staticHtmlAlbums=new Set([986,997,993,989,985,996,992]);
+ if(staticHtmlAlbums.has(id)){
+   const raw=await network.get(legacy,{timeout:110000,maxRedirects:3});
+   if(!raw.ok())throw Error("Source gallery HTML unavailable HTTP "+raw.status());
+   const html=await raw.text();
+   if(html.length<200||html.length>8000000)throw Error("Untrusted gallery source HTML size");
+   await source.route("**/*",route=>route.abort());
+   const inert=html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi,"");
+   await source.setContent('<base href="'+legacy+'">'+inert,{waitUntil:"domcontentloaded",timeout:25000});
+ }else{
+   const response=await source.goto(legacy,{waitUntil:"domcontentloaded",timeout:70000});
+   if(response?.status()!==200)throw Error("Source gallery unavailable HTTP "+response?.status());
+ }
  const info=await source.evaluate(()=>{
   const block=document.querySelector(".item-page [itemprop=articleBody],.item-page,article,.blog")||document.body;
   return {name:(document.querySelector("h1,h2")?.textContent||"").trim(),
