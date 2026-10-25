@@ -26,7 +26,21 @@ try{
    if(photos.some(x=>!x.ok||!x.src.includes("/api/files/wp-content/uploads/")))throw Error("Photos not loaded from public same-origin proxy "+width);
    if(wpUrls.length)throw Error("Browser requested private WordPress hostname");
    const html=await page.content();
-   if(html.includes(wp))throw Error("WordPress admin origin leaked in public album HTML");
+   if(html.includes(wp)){
+     const evidence=await page.evaluate(origin=>{
+       const attrs=[];
+       for(const el of document.querySelectorAll("*")){
+         for(const attr of el.attributes)if(attr.value.includes(origin))
+           attrs.push({tag:el.tagName.toLowerCase(),name:attr.name,elementId:el.id||null});
+       }
+       const scripts=[...document.scripts].filter(x=>x.textContent?.includes(origin))
+           .map(x=>({tag:"script",type:x.type||"js",id:x.id||null,chars:x.textContent.length}));
+       const styles=[...document.querySelectorAll("style")].filter(x=>x.textContent?.includes(origin))
+           .map(x=>({tag:"style",id:x.id||null}));
+       return{attrs:attrs.slice(0,15),scripts:scripts.slice(0,10),styles:styles.slice(0,10),all:attrs.length+scripts.length+styles.length};
+     },wp);
+     throw Error("WordPress admin origin leaked in public album HTML, safe DOM evidence="+JSON.stringify(evidence));
+   }
    await imgs.first().click();
    const dialog=page.locator("[data-pse-gallery-dialog]");
    await dialog.waitFor({state:"visible",timeout:6000});
