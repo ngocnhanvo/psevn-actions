@@ -19,7 +19,8 @@ try{
    const verifiedAlbums=[
      {slug:"994-nha-dai-doan-ket",count:3},
      {slug:"995-phu-nu-viet-nam",count:11},
-     {slug:"991-ngay-hoi-truyen-thong-2011",count:10}
+     {slug:"991-ngay-hoi-truyen-thong-2011",count:10},
+     {slug:"987-khai-truong-cua-hang-ngay-3-6",count:10}
    ];
    for(const album of verifiedAlbums){
    const href=available.find(path=>path.includes(album.slug));
