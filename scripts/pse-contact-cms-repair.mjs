@@ -94,12 +94,34 @@ try{
   await textarea.evaluate(el=>{el.focus();el.selectionStart=el.value.length;el.selectionEnd=el.value.length});
   const insert=page.locator("#qt_content_tablepress_quicktags_button");
   if(!await insert.count())throw Error("Native TablePress Insert Code Quicktags tool unavailable");
-  await insert.click();
+  const state=await page.evaluate(()=>({
+   visibleTextArea:document.querySelector("#content")?.getClientRects().length>0,
+   visibleInsert:document.querySelector("#qt_content_tablepress_quicktags_button")?.getClientRects().length>0,
+   hasNativeInsert:typeof window.tablepress_open_shortcode_thickbox==="function"
+  }));
+  if(state.visibleInsert)await insert.click();
+  else{
+   if(!state.hasNativeInsert)throw Error("ESC Table native Insert Code handler missing");
+   if(!state.visibleTextArea){
+    await page.locator("#content-tmce").click();
+    await page.waitForTimeout(450);
+    await page.evaluate(()=>{
+     const editor=window.tinymce?.get("content");
+     if(!editor||editor.isHidden())throw Error("Native WordPress Visual Editor unavailable");
+     editor.focus();editor.selection.select(editor.getBody(),true);editor.selection.collapse(false);
+    });
+   }
+   await page.evaluate(()=>window.tablepress_open_shortcode_thickbox());
+  }
   const match=page.frameLocator("#TB_iframeContent").locator('.insert-shortcode[title*="contact_00_vi"]');
   await match.waitFor({state:"visible",timeout:25000});
   const title=await match.getAttribute("title");if(!title?.includes(sc))throw Error("Wrong native Insert Code table");
   await match.click();await page.waitForTimeout(400);
-  const edited=await textarea.inputValue();
+  const edited=await page.evaluate(()=>{
+    const text=document.querySelector("#content")?.value||"";
+    const rich=window.tinymce?.get("content");
+    return text.includes("[table id=contact_00_vi /]")?text:(rich&&!rich.isHidden()?rich.getContent():text);
+  });
   if((edited.match(/\[table\s+id=contact_00_vi\s*\/\]/g)||[]).length!==1||!edited.includes(raw.slice(0,150)))throw Error("Native Insert Code did not preserve content");
   console.log("PSE_CONTACT_ESC_INSERT=PASS native_quicktags=true");
  }
