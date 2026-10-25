@@ -1,1 +1,1 @@
-READ ONLY source verification album 986 batch 2 (final 11 originals indexed 24–34). Batch 0 PASS 40214574607, batch 1 PASS 40216338823 (12+12 WordPress Media saved), no WordPress writes in this audit, no Astro build. Apply only if source and existing records match.
+Album 986 final bounded batch 2: 35 original verified source links, DRY PASS run 40216755118. Batch 0 PASS run 40214574607 (12 Media); batch 1 PASS run 40216338823 (12 Media); upload final 11 only, idempotent CMS readback then publish single complete WP Post. No Astro build, no duplicate previous batches.
