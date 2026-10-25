@@ -1,0 +1,32 @@
+name: PSE WordPress News taxonomy SSR and Header active QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-news-category-live-qa-trigger
+permissions:
+  contents: read
+jobs:
+  news:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Use existing Chromium container
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read-only Playwright SSR taxonomy, category menu and WordPress Post details
+        run: node --check scripts/pse-news-category-live-qa.mjs && node scripts/pse-news-category-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-news-category-ssr-qa
+          path: artifacts/pse-news-taxonomy/
+          retention-days: 14
+          if-no-files-found: warn
