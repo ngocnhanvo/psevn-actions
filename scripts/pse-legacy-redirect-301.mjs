@@ -313,9 +313,16 @@ try{
       if(!["publish","draft","private"].includes(r.status)){
         report.issues.push({id:r.id,reason:"unexpected template route status"});continue;
       }
+      // WordPress REST with force=false returns the trashed post object,
+      // NOT {deleted:true} (the latter is permanent force=true deletion).
       const result=await api("/wp-json/wp/v2/chuyen-huong-link/"+r.id,"DELETE");
-      if(result.status!==200||result.data?.deleted!==true)
+      if(result.status!==200||Number(result.data?.id)!==r.id||
+        result.data?.status!=="trash")
         throw Error("Native WordPress trash failed for inherited ID "+r.id+" HTTP "+result.status);
+      const readback=await api("/wp-json/wp/v2/chuyen-huong-link/"+r.id+"?context=edit&_fields=id,status");
+      if(readback.status!==200||Number(readback.data?.id)!==r.id||
+        readback.data?.status!=="trash")
+        throw Error("WordPress trash readback failed for inherited ID "+r.id);
       report.retired.push(r.id);
     }
     for(const candidate of checked){
