@@ -98,8 +98,12 @@ try{
         const html=second.status()===200?await second.text():"";
         const c=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
           html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
-        const canonicalOkay=!c||new URL(c,front).pathname===x.to;
-        const item={...x,sourceStatus:first.status(),location,targetStatus:second.status(),canonicalOkay};
+        // Missing, off-origin, or mismatched canonical is a real QA failure.
+        // Never treat an absent canonical as PASS or accept the hidden WP host.
+        const canonicalUrl=c?new URL(c,front):null;
+        const canonicalOkay=Boolean(canonicalUrl)&&canonicalUrl.origin===front&&
+          canonicalUrl.pathname===x.to&&!canonicalUrl.search&&!canonicalUrl.hash;
+        const item={...x,sourceStatus:first.status(),location,targetStatus:second.status(),canonical:c||null,canonicalOkay};
         checks[i]={pass:first.status()===301&&location===x.to&&second.status()===200&&canonicalOkay,item};
       }catch(e){checks[i]={pass:false,item:{...x,error:String(e).slice(0,160)}}}
     }
