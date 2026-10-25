@@ -48,3 +48,16 @@
 - **Tiếp tục sau khi gate thật mở:** thay đổi WordPress thuộc phạm vi nhiệm vụ đã được xác minh và pending>0, hoặc chủ dự án phê duyệt rõ **một lần Build ngoại lệ cho chính release Kênh phân phối** qua PHP/WordPress. Trước build: recheck SHA/runs/lock/pending; tuyệt đối không direct dispatch Astro. Sau release signed FTPS PASS, chạy một full 4-page Playwright responsive QA tại 390/768/1440, gồm 3 liên kết, PDF, 5 kho, 4 chi nhánh, 11 tỉnh, KPI 4/26/711, filter, no-scroll. Chưa được quyền ngoại lệ nên không kích hoạt.
 
 Chế độ code: auto-build
+
+
+## 2026-10-25 — Đã sửa chốt signed JSON sau lần PHP-trigger mới
+
+- Source Distribution vẫn giữ nguyên: 4 native WordPress Pages, PDF, toàn bộ liên hệ và số liệu CMS; Astro UI PR #55 đã ở `master=5d9518456697c40ede8fc6d073123a18fe6cbdd4`, no-build tests #40195770679 PASS. Không import hoặc commit lại các phần này.
+- Sau checkpoint cũ xuất hiện WordPress-triggered production build [#40198158837](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40198158837), kết thúc **FAIL trước Astro compiler và trước FTPS deploy** ở bước signed read-only static/image inventory: `Invalid signed static asset name`. Sitemap revision FTPS read-only PASS. Không xem build này là đã release.
+- Root cause đã xác minh: PHP `pse_static_eligible` và Actions `pse-static-delta-package.py` đều cho `client/**/*.json` (PR #3 PHP, #13 Actions), nhưng `scripts/pse-remote-unzip.py` signed manifest validator vẫn chỉ có allowlist `html|css|js`.
+- **Đã khắc phục**, không nới lỏng validation paths/digests/size/host/HMAC: Actions [PR #14](https://github.com/ngocnhanvo/psevn-actions/pull/14) merged `main=bca7d08c3b08dccc392337eefea95b55f3500f45` cập nhật allowlist thêm `json` và thêm test signed JSON/unsafe names. No-build contract [#40198876864](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40198876864) PASS; release architecture [#40198929512](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40198929512) PASS. Đây là **source/CI PASS**, không phải bằng chứng Astro deploy.
+- Đã kiểm tra Actions không có build đang chạy sau merge; chưa có build PHP mới chạy qua validator đã sửa. Trước đó normal PHP Build Website #40197310542 trả `pending_count=0`; không tự force-build, không tạo CMS change giả hay retry build cũ ngoài gate PHP.
+- **Trạng thái đúng:** `DISTRIBUTION_CMS=PASS`, `DISTRIBUTION_CODE_MERGED=PASS`, `DISTRIBUTION_SOURCE_TEST=PASS`, `SIGNED_JSON_PREFLIGHT_SOURCE_FIXED=PASS`, `NEW_ASTRO_DEPLOY=NOT_DONE`, `DISTRIBUTION_LIVE_VISUAL_QA=NOT_RUN`.
+- **Bước kế tiếp có điều kiện:** khi PHP/WordPress phát hiện thay đổi CMS hợp lệ hoặc có phê duyệt cụ thể Build ngoại lệ cho release Distribution, kiểm tra lock/active runs, dùng duy nhất PHP Build Website (không direct Actions dispatch); đọc signed manifest -> Astro build -> signed FTPS -> smoke. Sau deploy PASS mới chạy existing `.pse-distribution-live-trigger` với full QA 4 trang x 390/768/1440, PDF, 5 kho, 4 chi nhánh, 11 tỉnh, 4/26/711, filter và không inner scroll. Không lặp shape/source imports.
+
+Chế độ code: auto-build
