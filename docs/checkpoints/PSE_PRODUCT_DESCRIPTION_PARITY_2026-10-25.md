@@ -24,3 +24,21 @@
 5. Do not claim Production or all-44 content parity success until each relevant actual WordPress CMS readback, signed build and Playwright acceptance have completed.
 
 STATUS AT WRITING: PRODUCT_OVERLAY_SOURCE=PARTIAL/NOT MERGED; SOURCE_DATA_PARSER=PARTIAL; REPAIR_DRY_RUN=IN_PROGRESS; CMS_RESTORATION=NOT_STARTED; PRODUCTION_DEPLOY=NOT_STARTED.
+
+## Updated execution state (same day; replaces stale pre-release statuses above)
+
+**Already completed — do not rerun:**
+- Joomla original Product source/detail audit [#40154190824](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40154190824): 49 family rows; 44 native mapped Product IDs.
+- Initial strict dry-run [#40155132109](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40155132109): 38/44 two-table details verified. Exceptional separate paragraph-format dry-run [#40155906701](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40155906701): remaining six source products verified, no fabricated usage tables.
+- Six native Product content restoration batches **SUCCESS** with WordPress REST verification preserving category and media IDs:
+  - Batch 1: [#40155291224](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40155291224), 8/8;
+  - Batch 2: [#40155624173](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40155624173), 8/8;
+  - Batch 3: [#40155794986](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40155794986), 8/8;
+  - Batch 4: [#40156065326](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156065326), 8/8;
+  - Batch 5: [#40156249368](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156249368), 8/8;
+  - Batch 6: [#40156508708](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156508708), 4/4.
+- Total **44/44 CMS Products restored** (excerpts + detail content). Native WordPress Product #80940 Kebo (Joomla id=1457, fertilizer registration 23932) REST readback contains 1,812-character full description including original fertilizer tables/usage, excerpt 182 characters, unchanged featured_media and category assignment. The other products were individually read back as well.
+- Astro source regression full Vitest + parser [#40155062204](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40155062204) **PASS**; source PR [#46](https://github.com/ngocnhanvo/psevn-astro/pull/46) merged. Astro `github` and `master` both at `39d69bd23255dca7c3e81a85f6e1d9ce711546c4`.
+- Page layout now has nonsticky `relative z-30` toolbar for both Product and ProductSSR listing variants, and renders verified WordPress short excerpts in cards. Previous typography contract of ProductDetails remains intact (no extra CSS overriding it).
+
+**Still pending at this checkpoint update:** one PHP-controlled signed WordPress Build Website trigger and release to `pse.webnvn.com`; then real-browser Chromium responsive overlay/short excerpt + Kebo detail usage acceptance. Do not claim website live QA PASS before deployed. No independent Astro dispatch.
