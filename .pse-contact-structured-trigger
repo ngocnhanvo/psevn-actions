@@ -1,1 +1,1 @@
-2026-10-26 after #40246258811 CSS parity PASS and Page write refused because Classic Code textarea hidden; run native WordPress switchEditors and Insert Code with source data tables verified, backup/readback, no duplicate and NO BUILD.
+2026-10-26 previous native Page attempt #40246531844 stopped before inserting/saving because detached TinyMCE raised getSelection; native tables exist and source Page unchanged. New attempt uses WordPress Classic Quicktags and Insert Code with exact preflight/readback, no PHP Build or FTP.
