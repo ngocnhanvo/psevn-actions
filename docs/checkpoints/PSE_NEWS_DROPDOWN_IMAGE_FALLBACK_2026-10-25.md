@@ -22,3 +22,9 @@
 - Declare independently `CODE_READY`, `SIGNED_DEPLOYED` and `LIVE_QA_PASS`; the latter two are **NOT yet confirmed at checkpoint writing**.
 
 **Code mode:** auto-build.
+
+## Final release and acceptance — completed
+- WordPress/PHP authenticated Build Website [#40151637840](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40151637840) **SUCCESS**, signed preflight PASS; CMS `pending_count=0`, mode `owner-approved-exception` per PSE checkpoint's previously approved one-time subpage build policy.
+- Signed Astro production build, FTPS and release [#40151707639](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40151707639) **SUCCESS** from Astro `master` SHA `d2e22fae0ae698f07f8374ddbb03bf9fadd5589a`. Homepage utilities regression [#40151802207](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40151802207) SUCCESS.
+- Final targeted Chromium/Playwright [#40151813266](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40151813266) **6/6 SUCCESS**: news `/tin-tuc-su-kien/` and product `/san-pham/` at widths 390/768/1440px. News dropdown computed toolbar `z-index=30`; actual element-from-point overlap above card **PASS** at 390px and 768px (desktop 1440 had no overlapping hit region inside viewport), remains `position=relative` and scrolls offscreen. News local SVG GET HTTP200, page handled twice-dispatched synthetic error once (srcset removed) at all three sizes; no repeated fallback error. Product page regression checks remained PASS; no production writes during live QA.
+- `CODE_READY=PASS`, `UNIT_CI=PASS`, `DEPLOYED_PRODUCTION=PASS`, `LIVE_SCROLL/OVERLAY/IMAGE_QA=PASS`. Preserve code, avoid repeated saves, builds, or tests already successful.
