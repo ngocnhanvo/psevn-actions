@@ -17,7 +17,9 @@ const url = new URL(entry[0].replace(/^export\s+/,"").slice(7).replace(/^['"]|['
 if(url.protocol!=="https:"||url.username||url.password||url.search||url.hash||!["","/"].includes(url.pathname))throw Error("Unexpected WP URL");
 const origin=url.origin,esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const clean=s=>String(s||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
-const labelRe=/(?:^|\s)(?=(?:Hữu\s+cơ|Đạm(?:\s+tổng\s+số)?|Lân(?:\s+hữu\s+hiệu)?|Kali(?:\s+hữu\s+hiệu)?|Cadimi|Cadmium|Độ\s+ẩm|pH|PH|Canxi|Magiê|Magie|Lưu\s+huỳnh|Kẽm|Bo|Boron|Natri|Silic|Sắt|Mangan|Đồng|Mn|Zn|CaO|MgO|P2O5|K2O|NPK|Nts|Chất\s+hữu\s+cơ|Axít\s+humic|Acid\s+humic|Axit\s+humic|Fulvic|Humic|Vi\s+sinh|Vi\s+sinh\s+vật|Tỷ\s+lệ\s+C\/N)(?:\s*\([^)]{1,40}\))?\s*:)/giu;
+// Only whitespace may change; every letter, numerical value, unit, and punctuation is preserved.
+const parity=s=>clean(s).replace(/\s+/gu,"");
+const labelRe=/(?=(?:Hữu\s+cơ|Đạm(?:\s+tổng\s+số)?|Lân(?:\s+hữu\s+hiệu)?|Kali(?:\s+hữu\s+hiệu)?|Cadimi|Cadmium|Độ\s+ẩm|pH|PH|Canxi|Magiê|Magie|Lưu\s+huỳnh|Biuret|Axit\s+tự\s+do\s+quy\s+về\s+H2SO4|Tỷ\s+trọng|Vi\s+sinh\s+vật\s+giải\s+(?:xenlulo|phốt\s+pho)|Kẽm|Bo|Boron|Natri|Silic|Sắt|Mangan|Đồng|Mn|Zn|CaO|MgO|P2O5|K2O|NPK|Nts|Chất\s+hữu\s+cơ|Axít\s+humic|Acid\s+humic|Axit\s+humic|Fulvic|Humic|Vi\s+sinh|Vi\s+sinh\s+vật|Tỷ\s+lệ\s+C\/N)(?:\s*\([^)]{1,40}\))?\s*:|TE\s*\(|Vi\s+sinh\s+vật\s+có\s+ích\s*\()/giu;
 function format(text){
  const source=clean(text);
  const m=source.match(/^Mã\s*số\s*:\s*([\s\S]*?)\s+Thành\s*phần\s*:\s*([\s\S]*?)\s+Loại\s*cây\s*:\s*([\s\S]+)$/iu);
@@ -29,7 +31,7 @@ function format(text){
  const parts=starts.map((pos,i)=>comp.slice(pos,starts[i+1]??comp.length).trim()).filter(Boolean);
  const html="<p>Mã số: "+esc(code)+"</p><p><strong>Thành phần:</strong></p>"+parts.map(t=>"<p>"+esc(t)+"</p>").join("")+"<p><strong>Loại cây:</strong></p><p>"+esc(crops)+"</p>";
  const textAfter="Mã số: "+code+" Thành phần: "+parts.join(" ")+" Loại cây: "+crops;
- if(source!==clean(textAfter))throw Error("Text parity guard failed");
+ if(parity(source)!==parity(textAfter))throw Error("Text parity guard failed");
  return{html,code,parts,crops,source};
 }
 const browser=await chromium.launch({headless:true}); const ctx=await browser.newContext({viewport:{width:1366,height:820}});
@@ -83,7 +85,7 @@ try{
    const actual=String(read.data?.excerpt?.raw||"");
    const plain=await page.evaluate(html=>{const el=document.createElement("div");el.innerHTML=html.replace(/<br\s*\/?>/gi," ").replace(/<\/(?:p|div|li)>/gi," ");return el.textContent||""},actual);
    const canonical=clean(plain);
-   if(read.http!==200||read.data?.status!=="publish"||read.data.slug!==p.slug||canonical!==plan.source||
+   if(read.http!==200||read.data?.status!=="publish"||read.data.slug!==p.slug||parity(canonical)!==parity(plan.source)||
       Number(read.data.featured_media)!==Number(p.featured_media)||JSON.stringify(read.data.product_cat)!==JSON.stringify(p.product_cat)||
       String(read.data?.content?.raw||"")!==String(p.content?.raw||"")||!actual.includes("<strong>Thành phần:</strong>"))
       throw Error("Readback parity mismatch ID "+p.id);
