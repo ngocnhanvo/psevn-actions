@@ -31,3 +31,4 @@ Verified product description restoration batch 5 after batch 4 PASS #40156065326
 Verified final fertilizer product description restoration batch 6 (four source-matched products) after batch 5 PASS #40156249368.
 
 2026-10-25 format Product short descriptions: no-write dry-run of all 44 native WordPress products; preserve every original field and existing Product/media/category.
+2026-10-25 Product short-description exact text and unit parity; rerun dry after discovering inconsistent original separators (no WordPress writes).
