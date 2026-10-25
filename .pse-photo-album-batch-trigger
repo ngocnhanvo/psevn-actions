@@ -1,1 +1,1 @@
-Read-only original-source audit of PSE legacy gallery 989, batch 1 (source indices 12–23 of 98). Batch0 source DRY PASS #40230382371. No WordPress write, no Astro build, no media copy to frontend, no form submissions. PHP FTP release active independently; this audit uses source-only mode and cannot mutate CMS. 2026-10-26 03:29 ICT.
+PSE legacy gallery 989, source-only audit batch 2 (original indices 24–35 of 98), after DRY PASS batch0 #40230382371 and batch1 #40230943917. No WordPress CMS writes, no frontend media copy, no Astro build. 2026-10-26 03:30 ICT.
