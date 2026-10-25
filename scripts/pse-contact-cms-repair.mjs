@@ -116,12 +116,31 @@ try{
   const match=page.frameLocator("#TB_iframeContent").locator('.insert-shortcode[title*="contact_00_vi"]');
   await match.waitFor({state:"visible",timeout:25000});
   const title=await match.getAttribute("title");if(!title?.includes(sc))throw Error("Wrong native Insert Code table");
-  await page.evaluate(()=>{window.wpActiveEditor="content";const ed=window.tinymce?.get("content");if(ed&&!ed.isHidden()){ed.focus();ed.selection.select(ed.getBody(),true);ed.selection.collapse(false)}});
+  await page.evaluate(()=>{
+    window.wpActiveEditor="content";
+    const original=window.send_to_editor;
+    window.__pseNativeEditorInsert=false;
+    window.send_to_editor=function(snippet){
+      if(snippet!=="[table id=contact_00_vi /]")return original?.call(window,snippet);
+      if(typeof window.switchEditors?.go!=="function"||typeof window.QTags?.insertContent!=="function")
+        throw Error("Native WordPress Quicktags API unavailable");
+      window.switchEditors.go("content","html");
+      const area=document.querySelector("#content");
+      if(!(area instanceof HTMLTextAreaElement))throw Error("Native content textarea unavailable");
+      area.focus();
+      area.setSelectionRange(area.value.length,area.value.length);
+      window.wpActiveEditor="content";
+      window.QTags.insertContent(snippet);
+      window.__pseNativeEditorInsert=true;
+      window.tb_remove?.();
+    };
+  });
   await match.click();await page.waitForTimeout(400);
   const insertTarget=await page.evaluate(()=>{
+   const used=window.__pseNativeEditorInsert===true;
    const rich=window.tinymce?.get("content");
    const acf=window.tinymce?.get("acf_content");
-   return {active:window.wpActiveEditor,
+   return {nativeInsertUsed:used,active:window.wpActiveEditor,
      textareaHasShortcode:(document.getElementById("content")?.value||"").includes("[table id=contact_00_vi /]"),
      richHasShortcode:(rich?.getContent()||"").includes("[table id=contact_00_vi /]"),
      acfHasShortcode:(acf?.getContent()||"").includes("[table id=contact_00_vi /]")};
