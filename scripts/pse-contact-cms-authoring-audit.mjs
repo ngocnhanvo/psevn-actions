@@ -33,6 +33,12 @@ try{
  for(const id of tableIds){const t=await read("/wp-json/tablepress/v1/table/"+id);
   tables.push({id,http:t.status,title:t.data?.title,fields:t.data?.fields?.map(f=>f.key),items:t.data?.items?.length,keys:t.data?.items?.[0]?Object.keys(t.data.items[0]):[]});
  }
+ const nativeTable=tables.find(x=>x.id==="contact_00_vi");
+ const shortcodeMatches=[...raw.matchAll(/\[table\s+id=contact_00_vi\s*\/\]/gi)];
+ if(nativeTable?.http!==200||JSON.stringify(nativeTable.fields)!==JSON.stringify(["key","label","required"])||
+  nativeTable.items!==6||shortcodeMatches.length!==1||
+  !String(contact.data.acf?.cssmore||"").includes("PSE_CONTACT_WORDPRESS_OWNED_LAYOUT_V1"))
+  throw Error("PSE Contact is not fully editable in native Editor + ESC Table + cssmore");
  console.log("PSE_CONTACT_CMS_AUDIT="+JSON.stringify({
   page:contact.data.id,action:contact.data.acf?.action,key:contact.data.acf?.key,
   cssmoreLength:String(contact.data.acf?.cssmore||"").length,bodyLength:raw.length,
