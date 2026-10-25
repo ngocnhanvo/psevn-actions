@@ -3,3 +3,5 @@ Read-only audit of cloned page media with 404 in PSE WordPress, before fixing mi
 
 PSE_IMAGE_PROXY_DIAG=wp-content/uploads/2026/10/pse-legacy-002f8f414ad7015f.jpg
 2026-10-25: Compare exact user-reported JPEG, existing PHP /esc-tool/image.php, and Astro /api/images path; READ ONLY, no CMS changes, no builds, no FTP.
+
+2026-10-25: Re-run corrected read-only PHP/Astro/original media probe workflow. No build or deploy.
