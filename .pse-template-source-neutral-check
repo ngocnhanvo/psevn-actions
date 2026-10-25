@@ -1,1 +1,1 @@
-PSE Astro DEV cms-owned contact remediation: remove PrivatePage contact hardcoded CSS/data/HTML slicing, expect Contact_00 via ESC Table native shortcode. Validate Vitest + Astro parser; NO BUILD.
+2026-10-26 DEV native Contact ESC location table renderer and data-only components: Pse_contact_office + Pse_contact_warehouses + shared PseContactLocationCard. Vitest and Astro compiler syntax NO BUILD. Does not mutate CMS.
