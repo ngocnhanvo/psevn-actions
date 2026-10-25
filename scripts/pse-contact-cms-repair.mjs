@@ -171,7 +171,19 @@ try{
   await f.fill(oldCSS+"\n"+css);
  }
  await page.locator("#publish").click();await page.waitForTimeout(2300);
- const saved=await read("/wp-json/wp/v2/pages/"+pageId+"?context=edit&_fields=id,slug,status,acf,content");
+ let saved;
+ for(let retry=0;retry<5;retry++){
+  try{
+    await page.waitForLoadState("domcontentloaded",{timeout:14000});
+    saved=await read("/wp-json/wp/v2/pages/"+pageId+"?context=edit&_fields=id,slug,status,acf,content");
+    break;
+  }catch(error){
+    if(!String(error).includes("Execution context was destroyed")&&
+       !String(error).includes("navigation"))throw error;
+    await page.waitForTimeout(900);
+  }
+ }
+ if(!saved)throw Error("WP Page Save never stabilized for read-after-write");
  const content=String(saved.data?.content?.raw||""),c=String(saved.data?.acf?.cssmore||"");
  if(saved.http!==200||saved.data?.status!=="publish"||saved.data?.acf?.key!=="contact"||
    (content.match(/\[table\s+id=contact_00_vi\s*\/\]/g)||[]).length!==1||
