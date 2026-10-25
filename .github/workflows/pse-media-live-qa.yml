@@ -15,6 +15,7 @@ jobs:
       options: --ipc=host
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
+      PSE_CONTACT_ONLY: "${{ github.event.head_commit.message == 'test(pse): read-only Contact two-column QA only' }}"
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
