@@ -280,7 +280,7 @@ try{
     }));
   }else{
   // No blanket regex that would turn invalid articles/assets into false 301s.
-  report.counts={routes:routes.length,pages:pages.length,posts:posts.length,
+  report.counts={...report.counts,routes:routes.length,pages:pages.length,posts:posts.length,
     menuUrls:menuResult.data.length,categories:categories.length,productCategories:productCategories.length,proposals:proposals.size};
   const existingByFrom=new Map();
   for(const r of routes){
