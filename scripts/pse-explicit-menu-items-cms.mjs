@@ -35,7 +35,7 @@ const toNativeUrl=node=>{
 };
 try {
  await page.goto(site+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
- if(await page.locator("#user_login").count()){
+ if(marker==="MODE=APPLY" && await page.locator("#user_login").count()){
   await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
   await page.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD||"");
   const t=await page.locator("body").innerText();
@@ -48,8 +48,8 @@ try {
   }
   await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
  }
- if(page.url().includes("wp-login"))throw Error("WordPress login unsuccessful");
- const nonce=await page.evaluate(async()=>{
+ if(marker==="MODE=APPLY" && page.url().includes("wp-login"))throw Error("WordPress login unsuccessful");
+ const nonce=marker==="MODE=AUDIT"?"":await page.evaluate(async()=>{
   if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
   const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
   if(!r.ok)throw Error("WordPress REST nonce unavailable");
