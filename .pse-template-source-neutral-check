@@ -65,3 +65,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25: verify PSE branded ProductDetailsPage shared header/footer, single product breadcrumb, media responsive image and native Product catalog category membership filtering; no build.
 
 2026-10-25: rerun ProductDetails gallery regression after restoring main markup contract using externally branded wrapper while keeping source ProductPage style; NO BUILD.
+
+2026-10-25: new PseComplaintPage Astro action using established Turnstile-protected /api/contact → native CF7 mail_sent handler, eight original complaint field mappings and semantic accessible PSE layout. New route branding unit; independent Astro syntax/unit regressions, no build until CMS page + acceptance.
