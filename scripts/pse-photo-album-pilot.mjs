@@ -5,13 +5,24 @@ import {chromium,request} from "playwright";
 import {createHash} from "node:crypto";
 import {readFile} from "node:fs/promises";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
-const apply=event.head_commit?.message==="cms(pse): import verified three-photo album pilot";
+const importCommand=String(event.head_commit?.message||"").match(/^cms\\(pse\\): import verified photo album (\\d+)$/);
+const albumId=importCommand?.[1]||"994";
+const catalog={
+  "994":{slug:"nha-dai-doan-ket",title:"Nhà đại đoàn kết",folder:"Nha_Dai_Doan_Ket",count:3},
+  "995":{slug:"phu-nu-viet-nam",title:"Phụ nữ Việt Nam",folder:"PHU_NU_VN",count:11},
+  "991":{slug:"ngay-hoi-truyen-thong-2011",title:"Ngày Hội Truyền Thống 2011",folder:"NGAY_HOI_TRUYEN_THONG",count:10},
+  "987":{slug:"khai-truong-cua-hang-ngay-3-6",title:"Khai trương cửa hàng ngày 3/6",folder:"KHAI_TRUONG_CUA_HANG_NGAY_3_6",count:10},
+  "988":{slug:"doan-thanh-nien-2011",title:"Đoàn thanh niên 2011",folder:"DOAN_THANH_NIEN_2011",count:32}
+};
+const selected=catalog[albumId];
+if(!selected)throw Error("Unverified gallery import request");
+const apply=Boolean(importCommand);
 const lines=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
 const origin=key=>{const a=lines.filter(s=>s.startsWith(key+"="));if(a.length!==1)throw Error("PSE origin missing "+key);const u=new URL(a[0].slice(key.length+1).replace(/^['"]|['"]$/g,""));if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash||!["","/"].includes(u.pathname))throw Error("Invalid origin");return u.origin};
 const wp=origin("WC_URL"),front=origin("WC_URL_CLIENT");if(wp===front)throw Error("CMS origin not isolated");
-const source="https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/994-nha-dai-doan-ket.html";
-const directory="https://www.pse.vn/images/gallery/Nha_Dai_Doan_Ket/";
-const names=["img_0035.jpg","img_0037.jpg","img_0038.jpg"],slug="994-nha-dai-doan-ket",title="Nhà đại đoàn kết";
+const source="https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/"+albumId+"-"+selected.slug+".html";
+const directory="https://www.pse.vn/images/gallery/"+selected.folder+"/";
+const slug=albumId+"-"+selected.slug,title=selected.title;
 const sha=bytes=>createHash("sha256").update(bytes).digest("hex");
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const browser=await chromium.launch({headless:true}),context=await browser.newContext(),admin=await context.newPage(),outside=await request.newContext({timeout:60000});
@@ -19,16 +30,16 @@ try{
   const original=await context.newPage();
   const r=await original.goto(source,{waitUntil:"domcontentloaded",timeout:60000});
   if(r?.status()!==200)throw Error("Legacy gallery HTTP not 200");
-  const links=await original.evaluate(()=>[...document.querySelectorAll("a[href]")].map(x=>x.href).filter(x=>x.startsWith("https://www.pse.vn/images/gallery/Nha_Dai_Doan_Ket/")&&/\.jpe?g$/i.test(x)));
-  const actual=[...new Set(links)].map(url=>new URL(url).pathname.split("/").pop());
-  if(JSON.stringify(actual)!==JSON.stringify(names))throw Error("Gallery source changed, refusing migration");
+  const links=await original.evaluate(folder=>[...document.querySelectorAll("a[href]")].map(x=>x.href).filter(x=>x.startsWith(folder)&&/\\.jpe?g$/i.test(x)),directory);
+  const names=[...new Set(links)].map(url=>new URL(url).pathname.split("/").pop());
+  if(names.length!==selected.count||names.some(name=>!/^[-_.a-zA-Z0-9]+\\.jpe?g$/i.test(name)))throw Error("Gallery source count differs from verified inventory");
   const photos=[];
   for(const name of names){
     const image=await outside.get(directory+name,{timeout:60000});
     if(!image.ok())throw Error("Joomla JPEG unavailable "+name);
     const bytes=await image.body();
     if(bytes.length<1024||bytes.length>18000000||bytes[0]!==255||bytes[1]!==216)throw Error("Joomla file is not validated JPEG "+name);
-    const digest=sha(bytes),filename="pse-album-994-"+digest.slice(0,16)+".jpg";
+    const digest=sha(bytes),filename="pse-album-"+albumId+"-"+digest.slice(0,16)+".jpg";
     photos.push({name,bytes,digest,filename,marker:filename.slice(0,-4)});
   }
   await admin.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
@@ -99,7 +110,7 @@ try{
   ).join("")+"</div>";
   let id=post?.id;
   if(!id){
-    const result=await api("/wp-json/wp/v2/posts","POST",{title,slug,status:"draft",content,categories:[category.id],featured_media:photos[0].id,acf:{action:"PostDetails",key:"ssr-post",origin_page_id:"994"}});
+    const result=await api("/wp-json/wp/v2/posts","POST",{title,slug,status:"draft",content,categories:[category.id],featured_media:photos[0].id,acf:{action:"PostDetails",key:"ssr-post",origin_page_id:albumId}});
     if(result.status!==201||!Number.isSafeInteger(Number(result.data?.id)))throw Error("WordPress gallery draft failed");
     id=Number(result.data.id);
   }
@@ -113,5 +124,5 @@ try{
   }else if(item.data.status!=="publish")throw Error("Unexpected post state");
   item=await read();
   if(item.status!==200||item.data.status!=="publish")throw Error("WordPress published Post readback failed");
-  console.log("PSE_ALBUM_PILOT=PASS; photos=3; post="+id+"; nativeWP=true; noAstroBuild=true");
+  console.log("PSE_ALBUM_PILOT=PASS; photos="+photos.length+"; post="+id+"; nativeWP=true; noAstroBuild=true");
 }finally{await outside.dispose();await browser.close();}
