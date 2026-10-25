@@ -14,6 +14,25 @@ const browser = await chromium.launch({ headless: true });
 const results = [];
 try {
   await mkdir("artifacts/pse-listing-toolbar", { recursive: true });
+  // Route-probe only while diagnosing native WordPress Product SSR 404.
+  const browserProbe = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  try {
+    const paths = [
+      "/san-pham", "/san-pham/", "/san-pham/huu-co-phu-my",
+      "/san-pham/huu-co-phu-my/", "/ssr/products/san-pham/null",
+      "/ssr/products/san-pham/null?catSlug=huu-co-phu-my",
+      "/ssr/products/huu-co-phu-my-organic-80-1720/detail"
+    ];
+    for (const path of paths) {
+      try {
+        const res = await browserProbe.request.get(origin + path, { timeout: 35000 });
+        console.log("PSE_PRODUCT_ROUTE_PROBE=" + JSON.stringify({ path, status: res.status(), finalUrl: res.url(),
+          contentType: res.headers()["content-type"] || "" }));
+      } catch (e) {
+        console.log("PSE_PRODUCT_ROUTE_PROBE=" + JSON.stringify({ path, error: String(e).slice(0, 250) }));
+      }
+    }
+  } finally { await browserProbe.close(); }
   for (const { name, path } of [
     { name: "news", path: "/tin-tuc-su-kien/" },
     { name: "products", path: "/san-pham/" },
