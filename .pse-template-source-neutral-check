@@ -99,3 +99,6 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25: Independent Vitest and Astro syntax for Product detail responsive WordPress specification tables and category-aware Header SSR, Astro github 8256ec6814fb84152e2f923d6a1ad7e54eba3423. NO BUILD, no FTP, no WordPress write.
 
 2026-10-25 PSE distribution redesign: Astro github 5fc46f6855a184b838bea411c5c322ee7c6b8f5e. Run existing Vitest + Astro parser NO BUILD; legacy WordPress 4 published Pages unchanged, no media migration or FTP.
+
+2026-10-25 PSE homepage banner arrow controls: test visible desktop/mobile prev/next, preserve dots, autoplay, keyboard, responsive and WP-managed slides.
+Astro github source SHA: 14732e1b5dbd281d2d3aaf935b2db819ce161f46. CI-only Vitest and Astro parse; NO BUILD, NO FTP.
