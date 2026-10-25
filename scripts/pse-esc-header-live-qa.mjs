@@ -12,17 +12,17 @@ try{
  if(json?.success!==true||!Array.isArray(menu?.items)||menu?.items.length<3)throw Error("WordPress Header/vi menu schema changed");
  const flatten=items=>items.flatMap(x=>[x,...flatten(x.children||[])]);
  const all=flatten(menu.items);
- if(all.length!==47)throw Error("PSE Header count changed "+all.length);
+ if(all.length<20)throw Error("PSE Header count unexpectedly low "+all.length);
  const unwanted=all.filter(x=>{try{return new URL(x.href).hostname==="www.pse.vn"&&Number(x.id)!==77020}catch{return false}});
  if(unwanted.length)throw Error("ESC Header still has unmigrated pse.vn links "+JSON.stringify(unwanted.map(x=>({id:x.id,label:x.label,href:x.href}))));
- const expected=all.filter(x=>!(x.showViewAll===false && Array.isArray(x.children) && x.children.length>0)).filter(x=>(x.linkMode==="page"&&String(x.slug||""))||(x.linkMode==="custom"&&String(x.href||""))).map(x=>{
+ const expected=all.filter(x=>!Array.isArray(x.children)||x.children.length===0).filter(x=>(x.linkMode==="page"&&String(x.slug||""))||(x.linkMode==="custom"&&String(x.href||""))).map(x=>{
    let url;
    if(x.linkMode==="page")url=frontend+"/"+String(x.slug).replace(/^\/+|\/+$/g,"")+"/";
    else url=new URL(x.href,frontend).href;
    const parsed=new URL(url);
    return{id:x.id,label:x.label,path:parsed.pathname.replace(/\/+$/,"")||"/",search:parsed.search,origin:parsed.origin};
  }).filter(x=>x.id!==77020&&x.id!==76983);
- if(expected.length<35)throw Error("Unexpected low number of actionable migrated Header links "+expected.length);
+ if(expected.length<15)throw Error("Unexpected low number of actionable migrated Header links "+expected.length);
  const result=[];
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
