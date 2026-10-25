@@ -1,1 +1,1 @@
-2026-10-26 resume native Contact page Insert Code after #40240706172 did not preserve byte-identical raw prefix; ESC table verified and no Page write. Semantic HTML verification and backup before CMS Save; no duplicate ESC, no build.
+2026-10-26 WordPress native shortcode dialog had wrong active editor at #40240950960; native ESC Table exists and Page untouched. Set wpActiveEditor=content, re-apply Insert Code with documented modal, preserve Page and cssmore; no Astro build.
