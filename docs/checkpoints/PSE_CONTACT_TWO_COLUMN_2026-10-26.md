@@ -20,3 +20,18 @@
 4. If deployment fails, inspect exact log and repair before retry through WordPress/PHP tool. No forced build by default; owner-approved exception was **one-time** and used.
 
 Code mode: auto-build.
+
+
+## Final production acceptance — PASS
+
+- Signed Astro build/deploy [#40238571107](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40238571107) **SUCCESS**. WordPress PHP one-time approved exception [#40238497921](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40238497921) **SUCCESS**, not a direct Astro dispatch. Source master PR #72 contains the exact three contact files.
+- **Production Chromium browser test** [#40238727533](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40238727533) **SUCCESS** across 390px, 768px and 1440px:
+  - `PSE_CONTACT_TWO_COLUMN=PASS` x3: side-by-side office/form at desktop, stack for narrower widths; five warehouse cards always below; no internal editor note.
+  - `PSE_MEDIA_CONTACT_FORM=PASS` x3: one native contact form, five required fields, HTML5 invalid-empty check, Turnstile + submit DOM; **no real form submit and no email**.
+  - `PSE_MEDIA_LIVE_CONTACT=PASS` x3: all 5 source-backed warehouses retained; no horizontal overflow and WP admin origin not exposed.
+  - `PSE_MEDIA_LIVE_QA=PASS` overall includes unaffected photo/video read-only QA.
+- A second isolated contact-only read-only run [#40239007765](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40239007765) was separately queued before the original all-media QA succeeded; it has no CMS writes or build and is **not required** to declare the first production visual QA PASS. Do not repeat or use it to trigger deployment.
+
+**Final status:** CODE_READY=PASS, KNOWLEDGE_RULE=MERGED, CMS_NOTE_CLEANUP=PASS, PRODUCTION_SIGNED_DEPLOY=PASS, LIVE_CONTACT_LAYOUT=PASS (390/768/1440), DATA_WAREHOUSE_PARITY=PASS, FORM_DOM_VALIDATION=PASS, FORM_REAL_EMAIL_SEND=NOT_TESTED (intentionally).
+
+Code mode: auto-build.
