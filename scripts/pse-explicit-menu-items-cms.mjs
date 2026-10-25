@@ -48,7 +48,7 @@ try {
   }
   await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
  }
- if(marker==="MODE=APPLY" && page.url().includes("wp-login"))throw Error("WordPress login unsuccessful");
+ if(marker==="MODE=APPLY" && page.url().includes("wp-login"))throw Error("WordPress login unsuccessful; hasError="+(await page.locator("#login_error").count())+" hasMath="+(await page.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i]').count()));
  const nonce=marker==="MODE=AUDIT"?"":await page.evaluate(async()=>{
   if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
   const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
@@ -63,7 +63,7 @@ try {
  };
  const readMenus=async()=>{
   const r=await api("/wp-json/esc-api/v1/menus?_pse_nonce="+Date.now());
-  if(r.http!==200||r.data?.success!==true||typeof r.data.menus!=="object")throw Error("ESC menu REST source missing");
+  if(r.http!==200||r.data?.success!==true||typeof r.data.menus!=="object")throw Error("ESC menu REST source missing HTTP "+r.http+" code="+String(r.data?.code||"none")+" json="+typeof r.data);
   return r.data.menus;
  };
  const menus=await readMenus();
