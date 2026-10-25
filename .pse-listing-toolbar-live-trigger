@@ -10,3 +10,5 @@ Signed Astro release #40150677056 SUCCESS after WordPress PHP Build Website #401
 2026-10-25 PSE Product final read-only live QA after WordPress PHP #40156652559 and signed Astro #40156716981 successful; verify Product toolbar/card stacking 390/768/1440, nonsticky scroll, verified Product Kebo short excerpt code 23932 and original nutrient/usage tables (WP #80940), no CMS writes/builds.
 
 2026-10-25 Signed PSE 44-Product content restored and nonsticky product filter overlay source PR46 (39d69bd2) deployed through official WP PHP 40156652559 and Astro signed 40156716981 SUCCESS. Run ONE read-only final QA: product /san-pham?limit=48 menu layering, Kebo short specs 23932 and detail tables and 36 months, plus existing 390/768/1440 news/products regression. No CMS writes or build.
+
+2026-10-25: ONE read-only live recheck after dual QA failures #40157009354/#40157013148 found Kebo dose literal-text mismatch; updated check accepts dash/spacing variants and includes observed source excerpt on actual content failure. Source/CMS/WordPress build remain unchanged. No build or write.
