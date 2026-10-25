@@ -16,184 +16,46 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Compare original upload, WordPress PHP image API and Astro image proxy (READ ONLY)
+      - name: Compare WordPress original PHP resize and Astro image responses
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import os,re,urllib.request,urllib.error
           from pathlib import Path
-          from urllib.parse import urlsplit,urlunsplit,quote
-
-          def origin(key):
-              matches=[]
-              for line in os.environ.get('ENV_FILE','').splitlines():
-                  line=line.strip()
+          from urllib.parse import urlsplit,quote
+          values={}
+          for line in os.environ.get('ENV_FILE','').splitlines():
+              line=line.strip()
+              for key in ('WC_URL','WC_URL_CLIENT'):
                   if line.startswith(key+'='):
-                      matches.append(line.split('=',1)[1].strip().strip('"').strip("'"))
-              if len(matches)!=1:raise RuntimeError('Expected exactly one '+key)
-              u=urlsplit(matches[0])
-              if u.scheme!='https' or not u.hostname or u.username or u.password or u.port not in (None,443) or u.path not in ('','/') or u.query or u.fragment:
-                  raise RuntimeError('Invalid configured media origin')
-              return urlunsplit((u.scheme,u.netloc,'','',''))
-          marker=Path('.pse-missing-media-audit').read_text(encoding='utf8')
-          paths=re.findall(r'^PSE_IMAGE_PROXY_DIAG=(wp-content/uploads/[a-zA-Z0-9_./-]+\.jpe?g)
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json,os,re,urllib.request,urllib.error,concurrent.futures
-          from urllib.parse import urlsplit
-          raw=os.environ.get('ENV_FILE','')
-          origins=[s.strip().split('=',1)[1].strip().strip('"').strip("'")
-                  for s in raw.splitlines() if s.strip().startswith('WC_URL=')]
-          assert len(origins)==1
-          base=origins[0].rstrip('/')
-          parsed=urlsplit(base)
-          assert (parsed.scheme=='https' and parsed.hostname
-                  and not parsed.username and not parsed.password
-                  and parsed.port in (None,443) and parsed.path in ('','/')
-                  and not parsed.query and not parsed.fragment)
-          def get(link):
-              req=urllib.request.Request(link,headers={'User-Agent':'PSE-ReadOnly-Media-Audit/1.0'})
-              with urllib.request.urlopen(req,timeout=25) as r:
-                  return r.read(12000000),r.headers
-          pages=[]
-          for page in range(1,16):
-              data,h=get(base+f'/wp-json/wp/v2/pages?status=publish&per_page=50&page={page}')
-              rows=json.loads(data)
-              pages+=rows
-              if page>=int(h.get('X-WP-TotalPages','1')):break
-          print('PSE_MEDIA_AUDIT page_count='+str(len(pages)))
-          refs=set()
-          dynamic_asset_refs=set()
-          whois_page_mentions={'whois_memberall.php':0,'whois_qte_price.php':0}
-          for row in pages:
-              combined=json.dumps({k:row.get(k) for k in ('content','acf','yoast_head_json')},ensure_ascii=False)
-              for m in re.finditer(r'/(home-first|logo-first|tool)/([A-Za-z0-9._/-]+\.(?:jpe?g|png|webp|gif|svg))',combined,re.I):
-                  dynamic_asset_refs.add('/'+m.group(1).lower()+'/'+m.group(2))
-              for target in whois_page_mentions:
-                  if target in combined:whois_page_mentions[target]+=1
-              if 'Banner-Page-PC.jpg' in combined:
-                  spots=[k for k in ('content','acf','yoast_head_json') if 'Banner-Page-PC.jpg' in json.dumps(row.get(k),ensure_ascii=False)]
-                  print('PSE_MEDIA_AUDIT target_reference id='+str(row.get('id'))+' slug='+str(row.get('slug'))+' fields='+','.join(spots))
-              for match in re.finditer(r'/wp-content/uploads/(?:20[0-9]{2})/[0-9]{2}/[^\s"\\<>?]+?\.(?:jpg|jpeg|png|webp|gif)',combined,re.I):
-                  refs.add(match.group(0))
-          print('PSE_MEDIA_AUDIT referenced_upload_count='+str(len(refs)))
-          for prefix in ('home-first','logo-first','tool'):
-              count=sum(1 for ref in dynamic_asset_refs if ref.startswith('/'+prefix+'/'))
-              print('PSE_SOURCE_ASSET public_pages_'+prefix.replace('-','_')+'_refs='+str(count))
-          for target,count in whois_page_mentions.items():
-              print('PSE_WHOIS_PUBLIC_PAGE_REF '+target+'='+str(count))
-          print('PSE_SOURCE_REF_SCOPE=PUBLISHED_PUBLIC_PAGES_ONLY')
-          print('PSE_SOURCE_REF_SAFE_TO_DELETE=NOT_DETERMINED')
-          def inspect(p):
+                      values[key]=line.split('=',1)[1].strip().strip(chr(34)+chr(39))
+          for key in ('WC_URL','WC_URL_CLIENT'):
+              u=urlsplit(values[key])
+              if u.scheme!='https' or not u.hostname or u.username or u.password or u.path not in ('','/'):
+                  raise RuntimeError('Invalid media origin')
+              values[key]=u.scheme+'://'+u.netloc
+          marker=Path('.pse-missing-media-audit').read_text()
+          files=re.findall(r'^PSE_IMAGE_PROXY_DIAG=(wp-content/uploads/[A-Za-z0-9_./-]+\.jpg)$',marker,re.M)
+          if len(files)!=1 or '..' in files[0].split('/'):raise RuntimeError('Invalid media fixture')
+          src=files[0]
+          webp=src[:-4]+'.webp'
+          def check(label,url):
+              req=urllib.request.Request(url,headers={'User-Agent':'PSE-Image-ReadOnly'})
               try:
-                  req=urllib.request.Request(base+p,method='HEAD',headers={'User-Agent':'PSE-ReadOnly-Media-Audit/1.0'})
-                  with urllib.request.urlopen(req,timeout=8) as r:return (p,r.status)
-              except urllib.error.HTTPError as e:
-                  return (p,e.code)
-              except Exception:return(p,0)
-          checked=list(sorted(refs))[:160]
-          with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
-              result=list(pool.map(inspect,checked))
-          missing=[p for p,status in result if status==404]
-          errors=sum(1 for p,status in result if status==0)
-          print('PSE_MEDIA_AUDIT checked='+str(len(result))+' missing_404='+str(len(missing))+' network_unverified='+str(errors))
-          for p in missing[:45]:print('PSE_MEDIA_AUDIT missing='+p)
-          print('PSE_MEDIA_AUDIT changes=NONE')
-          PY
-,marker,re.M)
-          if len(paths)!=1:raise RuntimeError('Exactly one safe media diagnostic file required')
-          rel=paths[0]
-          if any(segment in ('.','..') for segment in rel.split('/')):raise RuntimeError('Unsafe relative path')
-          wp=origin('WC_URL')
-          front=origin('WC_URL_CLIENT')
-          image_webp=re.sub(r'\.jpe?g
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json,os,re,urllib.request,urllib.error,concurrent.futures
-          from urllib.parse import urlsplit
-          raw=os.environ.get('ENV_FILE','')
-          origins=[s.strip().split('=',1)[1].strip().strip('"').strip("'")
-                  for s in raw.splitlines() if s.strip().startswith('WC_URL=')]
-          assert len(origins)==1
-          base=origins[0].rstrip('/')
-          parsed=urlsplit(base)
-          assert (parsed.scheme=='https' and parsed.hostname
-                  and not parsed.username and not parsed.password
-                  and parsed.port in (None,443) and parsed.path in ('','/')
-                  and not parsed.query and not parsed.fragment)
-          def get(link):
-              req=urllib.request.Request(link,headers={'User-Agent':'PSE-ReadOnly-Media-Audit/1.0'})
-              with urllib.request.urlopen(req,timeout=25) as r:
-                  return r.read(12000000),r.headers
-          pages=[]
-          for page in range(1,16):
-              data,h=get(base+f'/wp-json/wp/v2/pages?status=publish&per_page=50&page={page}')
-              rows=json.loads(data)
-              pages+=rows
-              if page>=int(h.get('X-WP-TotalPages','1')):break
-          print('PSE_MEDIA_AUDIT page_count='+str(len(pages)))
-          refs=set()
-          dynamic_asset_refs=set()
-          whois_page_mentions={'whois_memberall.php':0,'whois_qte_price.php':0}
-          for row in pages:
-              combined=json.dumps({k:row.get(k) for k in ('content','acf','yoast_head_json')},ensure_ascii=False)
-              for m in re.finditer(r'/(home-first|logo-first|tool)/([A-Za-z0-9._/-]+\.(?:jpe?g|png|webp|gif|svg))',combined,re.I):
-                  dynamic_asset_refs.add('/'+m.group(1).lower()+'/'+m.group(2))
-              for target in whois_page_mentions:
-                  if target in combined:whois_page_mentions[target]+=1
-              if 'Banner-Page-PC.jpg' in combined:
-                  spots=[k for k in ('content','acf','yoast_head_json') if 'Banner-Page-PC.jpg' in json.dumps(row.get(k),ensure_ascii=False)]
-                  print('PSE_MEDIA_AUDIT target_reference id='+str(row.get('id'))+' slug='+str(row.get('slug'))+' fields='+','.join(spots))
-              for match in re.finditer(r'/wp-content/uploads/(?:20[0-9]{2})/[0-9]{2}/[^\s"\\<>?]+?\.(?:jpg|jpeg|png|webp|gif)',combined,re.I):
-                  refs.add(match.group(0))
-          print('PSE_MEDIA_AUDIT referenced_upload_count='+str(len(refs)))
-          for prefix in ('home-first','logo-first','tool'):
-              count=sum(1 for ref in dynamic_asset_refs if ref.startswith('/'+prefix+'/'))
-              print('PSE_SOURCE_ASSET public_pages_'+prefix.replace('-','_')+'_refs='+str(count))
-          for target,count in whois_page_mentions.items():
-              print('PSE_WHOIS_PUBLIC_PAGE_REF '+target+'='+str(count))
-          print('PSE_SOURCE_REF_SCOPE=PUBLISHED_PUBLIC_PAGES_ONLY')
-          print('PSE_SOURCE_REF_SAFE_TO_DELETE=NOT_DETERMINED')
-          def inspect(p):
-              try:
-                  req=urllib.request.Request(base+p,method='HEAD',headers={'User-Agent':'PSE-ReadOnly-Media-Audit/1.0'})
-                  with urllib.request.urlopen(req,timeout=8) as r:return (p,r.status)
-              except urllib.error.HTTPError as e:
-                  return (p,e.code)
-              except Exception:return(p,0)
-          checked=list(sorted(refs))[:160]
-          with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
-              result=list(pool.map(inspect,checked))
-          missing=[p for p,status in result if status==404]
-          errors=sum(1 for p,status in result if status==0)
-          print('PSE_MEDIA_AUDIT checked='+str(len(result))+' missing_404='+str(len(missing))+' network_unverified='+str(errors))
-          for p in missing[:45]:print('PSE_MEDIA_AUDIT missing='+p)
-          print('PSE_MEDIA_AUDIT changes=NONE')
-          PY
-,'.webp',rel,flags=re.I)
-          def probe(label,url):
-              req=urllib.request.Request(url,headers={'User-Agent':'PSE-Image-API-ReadOnly/1.0'})
-              try:
-                  with urllib.request.urlopen(req,timeout=42) as response:
-                      response.read(128)
-                      result=(response.status,response.headers.get('Content-Type',''),response.headers.get('X-Exec-Time',''))
-              except urllib.error.HTTPError as e:
-                  result=(e.code,e.headers.get('Content-Type',''),e.headers.get('X-Exec-Time',''))
+                  with urllib.request.urlopen(req,timeout=42) as r:
+                      result=(r.status,r.headers.get('Content-Type',''));r.read(64)
+              except urllib.error.HTTPError as e: result=(e.code,e.headers.get('Content-Type',''))
               except Exception as e:
-                  print('PSE_IMAGE_API_DIAG '+label+'=NETWORK_ERROR '+type(e).__name__)
+                  print('PSE_IMAGE_DIAG '+label+'=NETWORK_ERROR '+type(e).__name__)
                   return 0
-              print('PSE_IMAGE_API_DIAG '+label+'=HTTP_'+str(result[0])+' type='+result[1].split(';')[0]+' exec_ms='+result[2][:20])
+              print('PSE_IMAGE_DIAG '+label+'=HTTP_'+str(result[0])+' content_type='+result[1].split(';')[0])
               return result[0]
-          original=probe('ORIGINAL',wp+'/'+rel)
-          php=probe('PHP_RESIZE',wp+'/esc-tool/image.php?w=2560&path='+quote(image_webp,safe=''))
-          astro=probe('ASTRO_PROXY',front+'/api/images/2560/jpg/'+image_webp)
-          print('PSE_IMAGE_API_DIAG_SUMMARY original='+str(original)+' php='+str(php)+' astro='+str(astro)+' writes=NONE build=NONE')
-          if original!=200:raise RuntimeError('Original image is not publicly available')
+          a=check('ORIGINAL',values['WC_URL']+'/'+src)
+          b=check('PHP',values['WC_URL']+'/esc-tool/image.php?w=2560&path='+quote(webp,safe=''))
+          c=check('ASTRO',values['WC_URL_CLIENT']+'/api/images/2560/jpg/'+webp)
+          print('PSE_IMAGE_DIAG_SUMMARY original='+str(a)+' php='+str(b)+' astro='+str(c)+' READ_ONLY=PASS')
+          if a!=200:raise RuntimeError('WordPress original is missing')
           PY
       - name: Diagnose missing page media references in PSE WordPress only
         shell: bash
