@@ -6,3 +6,5 @@ Verified WordPress 44 Products native catalog and 6 categories #40143728271 DRY_
 2026-10-25: Live WordPress dual-field audit #40169445270 verified Product category WordPress native hrefs 77006-77011 canonical SSR, while 6 ESC custom URL fields remained legacy query. Perform guarded native WP Menu Save for exactly those six custom links, readback and no Astro build in this workflow.
 
 2026-10-25: Retry six ESC Header canonical Product URLs only after first #40169881936 failed before WordPress save: first hidden WordPress nav-menus.php custom input not visible, zero write. Automation now expands native menu item before filling; original preflight/readback guards preserved.
+
+2026-10-25: Retry official native WordPress menu Save after #40170041100 failed before any write: WordPress menu-item accordions and edit toggles are not visible in headless admin layout; validated six form inputs exist. Use native form.requestSubmit(save_menu_header) with WP nonce and six exact guarded ESC custom URL inputs, then REST+editor readback.
