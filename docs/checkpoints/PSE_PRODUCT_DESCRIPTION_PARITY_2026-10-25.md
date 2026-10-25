@@ -42,3 +42,16 @@ STATUS AT WRITING: PRODUCT_OVERLAY_SOURCE=PARTIAL/NOT MERGED; SOURCE_DATA_PARSER
 - Page layout now has nonsticky `relative z-30` toolbar for both Product and ProductSSR listing variants, and renders verified WordPress short excerpts in cards. Previous typography contract of ProductDetails remains intact (no extra CSS overriding it).
 
 **Still pending at this checkpoint update:** one PHP-controlled signed WordPress Build Website trigger and release to `pse.webnvn.com`; then real-browser Chromium responsive overlay/short excerpt + Kebo detail usage acceptance. Do not claim website live QA PASS before deployed. No independent Astro dispatch.
+
+## Final signed release and independent live acceptance
+
+- Official authenticated WordPress/PHP Build Website [#40156652559](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156652559) **SUCCESS**, observed `PSE_WP_PENDING_CHANGE_COUNT=44` and mode `normal`; this dispatch generated exactly one valid signed Astro release.
+- Concurrent redundant PHP request [#40156690650](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156690650) rejected by native WordPress active-build lock with `PSE_WP_BUILD_STATUS_CHECK=loading`. This run is technically marked FAILURE but **guard passed / no second Astro deploy initiated**; do not retry it.
+- Signed Astro production build, FTP-TLS upload, verified signed PHP activation and smoke [#40156716981](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156716981) **SUCCESS** from Astro `master` `39d69bd23255dca7c3e81a85f6e1d9ce711546c4`; homepage live QA [#40156980044](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40156980044) SUCCESS.
+- Browser QA first two runs [#40157009354](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40157009354) and [#40157013148](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40157013148) showed product filter dropdown layering **PASS** at widths 390, 768, 1440 with `z-index=30`, but used an overexact string assertion for Kebo dose (`50 - 200 kg/ha`).
+- Updated **only the read-only Playwright string matcher** to tolerate equivalent spaces/dash glyphs while preserving exact numerical dose and checking actual two detail tables. No frontend/CMS/build changes.
+- Final read-only live Chromium [#40157167154](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40157167154) **SUCCESS 6/6** (news/products × 390/768/1440), no sticky toolbar, Product dropdown `z-index=30`, true overlap check above product card at 390 and 768, no overlap at 1440, all pass. `PSE_PRODUCT_KEBO_PARITY` confirmed source Joomla ID `1457`, native WP ID `80940`, fertilizer code `23932`, **2 rendered tables**, real WordPress short description, HDSD, 36-month shelf life, nutrient 500 ppm and 50–200 kg/ha dosage.
+- Data status: **44/44 verified native Product descriptions successfully restored** across 6 batches with backup artifacts and image/category preserved. The original paragraph-only pages intentionally have no fabricated dosage tables.
+- FINAL `CMS_CONTENT_PARITY=PASS`, `ASTRO_SOURCE_AND_UNIT_TESTS=PASS`, `SIGNED_PRODUCTION_DEPLOY=PASS`, `PRODUCT_DROPDOWN_LIVE_QA=PASS`, `KEBO_SHORT_AND_DETAIL_LIVE_QA=PASS`. No more builds, imports or QA necessary for this request unless a new relevant source change occurs.
+
+**Code mode: auto-build.**
