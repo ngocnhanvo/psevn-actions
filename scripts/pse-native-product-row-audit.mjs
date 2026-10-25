@@ -56,8 +56,9 @@ try{
      const title=nameRaw.length>=5&&nameRaw.length<=135?nameRaw:full.split(/Mã số\s*:/i)[0].trim().slice(0,130);
      const match=cells[0].querySelector("a[href*='id=']");
      const id=(()=>{try{return new URL(match.href).searchParams.get("id")||""}catch{return""}})();
+     const detailUrl=match?.href || "";
      const spec=(cells[1].innerHTML||"").replace(/<script[\s\S]*?<\/script>/ig,"").slice(0,8000);
-     output.push({legacyId:id,title,specification:full.slice(0,1900),html:spec,images:imgs});
+     output.push({legacyId:id,title,specification:full.slice(0,1900),html:spec,images:imgs,detailUrl});
     }
    }
    return output;
@@ -73,7 +74,28 @@ try{
   if(p)collisions.push({id:item.legacyId,firstGroup:p.group,otherGroup:group.family,firstTitle:p.title,otherTitle:item.title});
   else ids.set(item.legacyId,{group:group.family,title:item.title});
  }
+ const wpProducts=await wp("/wp-json/wp/v2/product?context=edit&status=publish&per_page=100&_fields=id,slug,title,excerpt,content,acf,featured_media");
+ if(wpProducts.http!==200||!Array.isArray(wpProducts.data))throw Error("Cannot audit existing native products");
+ const samples=all.flatMap(g=>g.products.map(p=>({...p,group:g.family}))).filter(p=>/kebo|drone/i.test(p.title)).slice(0,4);
+ const detailPreviews=[];
+ for(const item of samples){
+  let detailStatus=null,detailText="",detailTables=0,sourceTitle="";
+  if(item.detailUrl){
+   const u=new URL(item.detailUrl);if(u.hostname!=="www.pse.vn"&&u.hostname!=="pse.vn")throw Error("Untrusted Joomla article link");
+   const got=await source.goto(u.href,{waitUntil:"domcontentloaded",timeout:55000});detailStatus=got?.status();
+   if(detailStatus===200){
+    const d=await source.evaluate(()=>{const el=document.querySelector(".item-page [itemprop=articleBody]");return{text:(el?.innerText||"").replace(/\\s+/g," ").slice(0,2200),tables:el?.querySelectorAll("table").length||0,title:document.title}});
+    detailText=d.text;detailTables=d.tables;sourceTitle=d.title;
+   }
+  }
+  const matches=wpProducts.data.filter(p=>String(p.slug).endsWith("-"+item.legacyId));
+  detailPreviews.push({id:item.legacyId,group:item.group,legacyTitle:item.title,detailUrl:item.detailUrl,
+   detailStatus,detailTables,sourceTitle,detailText,matches:matches.map(p=>({id:p.id,title:p.title?.raw||p.title?.rendered,
+    excerpt:(p.excerpt?.raw||p.excerpt?.rendered||"").slice(0,700),
+    content:(p.content?.raw||p.content?.rendered||"").slice(0,1200),acfKeys:Object.keys(p.acf||{})}))});
+ }
+ console.log("PSE_PRODUCT_DETAIL_PARITY="+JSON.stringify({wpCount:wpProducts.data.length,samples:detailPreviews}).slice(0,12500));
  await mkdir("artifacts/pse-native-products",{recursive:true});
- await writeFile("artifacts/pse-native-products/verified-rows.json",JSON.stringify({routes,categoryEndpoints:responses,families:all,duplicateSourceIds:collisions},null,2)+"\n");
+ await writeFile("artifacts/pse-native-products/verified-rows.json",JSON.stringify({routes,categoryEndpoints:responses,families:all,duplicateSourceIds:collisions,detailPreviews},null,2)+"\n");
  console.log("PSE_NATIVE_PRODUCT_ROWS=PASS; originalRows="+all.reduce((n,g)=>n+g.products.length,0)+"; uniqueOriginIds="+ids.size+"; duplicateOriginIds="+collisions.length+"; no_product_created=true; no_build=true");
 }finally{await browser.close()}
