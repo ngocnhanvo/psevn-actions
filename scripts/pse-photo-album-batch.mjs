@@ -56,7 +56,7 @@ try{
    const html=await raw.text();
    if(html.length<200||html.length>8000000)throw Error("Untrusted gallery source HTML size");
    await source.route("**/*",route=>route.abort());
-   const inert=html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi,"");
+   const inert=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,"");
    await source.setContent('<base href="'+legacy+'">'+inert,{waitUntil:"domcontentloaded",timeout:25000});
  }else{
    const response=await source.goto(legacy,{waitUntil:"domcontentloaded",timeout:70000});
