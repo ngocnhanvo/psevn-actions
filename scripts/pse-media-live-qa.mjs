@@ -121,6 +121,23 @@ try{
    const warehouses=["đồng nai","long an","lâm đồng","bình phước","đắk nông"];
    const present=warehouses.filter(x=>body.includes(x));
    if(present.length!==5)throw Error("Verified five warehouse cards missing: "+present.join(","));
+   // Validate the live Contact form without submitting personal data or sending mail.
+   // checkValidity() only evaluates native constraints; it never fires submit.
+   const contactForms=page.locator("form#contact-form");
+   if(await contactForms.count()!==1)throw Error("Contact form missing or duplicated at "+width);
+   const formState=await contactForms.evaluate(form=>({
+     fields:["name","phone","email","subject","message"].map(name=>{
+       const el=form.elements.namedItem(name);
+       return {name,exists:el instanceof HTMLElement,required:el instanceof HTMLElement&&el.hasAttribute("required"),type:el instanceof HTMLInputElement?el.type:null};
+     }),
+     invalidEmpty:!form.checkValidity(),
+     captcha:!!form.querySelector("#cf-turnstile-container"),
+     submit:!!form.querySelector('button[type="submit"]')
+   }));
+   if(formState.fields.some(x=>!x.exists||!x.required)||formState.fields.find(x=>x.name==="email")?.type!=="email"||!formState.invalidEmpty||!formState.captcha||!formState.submit)
+     throw Error("Contact form structure/HTML5 validation failed at "+width+" safe="+JSON.stringify(formState));
+   if((await page.content()).includes(wp)||wpUrls.length)throw Error("Private WordPress origin exposed on Contact page");
+   console.log("PSE_MEDIA_CONTACT_FORM=PASS width="+width+" required=5 html5EmptyInvalid=true noSubmit=true noEmail=true");
    if(await page.evaluate(()=>document.body.scrollWidth>window.innerWidth+1))throw Error("Contact horizontal overflow "+width);
    await page.screenshot({path:`artifacts/pse-media-visual/contact-${width}.png`,fullPage:true});
    console.log("PSE_MEDIA_LIVE_CONTACT=PASS width="+width+" warehouses=5");
