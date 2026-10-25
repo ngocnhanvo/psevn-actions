@@ -71,3 +71,5 @@ Retry 2026-10-25 real selected WP category title SEO after updating exact pre-ex
 2026-10-25 PSE listing subheader no-sticky regression: Astro github four commits through a24dae0b2c0012542c222b21b1e45b45489dd811 remove sticky/top positioning from PostsPage, ProductsPage and ProductsSSRPage toolbar, with three explicit Vitest template checks. Run independent regression only: NO ASTRO BUILD, NO FTP, NO WordPress CMS mutation.
 
 2026-10-25 PSE News category filter selected color and Uncategorized UI hide: Astro github db6fe108be3d0881582f0539f0b0876df0d214e0. Test existing no-build full Vitest + parser, including new PSE news filter CSS contract. Preserve CMS taxonomy and article assignments, do not FTP or build in this test.
+
+2026-10-25 PSE Product catalog content-and-overlay isolated Vitest: Astro DEV includes relative z-30 for both filter bars, productSummaryText and short description cards, added product summary tests. No build/CMS mutation; existing CI only.
