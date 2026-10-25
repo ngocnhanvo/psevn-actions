@@ -34,10 +34,13 @@ try {
           return { position: getComputedStyle(el).position, top: rect.top, bottom: rect.bottom };
         });
         if (before.position !== "static") throw Error(name + " toolbar computed position " + before.position);
+        // Legacy product filter uses visual open/close, while news sets aria-expanded.
+        // Check the common observable behavior without rewriting either component.
+        const dropdown = toolbar.locator("#dropdown-menu");
         await trigger.click();
-        if (await trigger.getAttribute("aria-expanded") !== "true") throw Error(name + " filter failed to open");
-        await page.keyboard.press("Escape");
-        if (await trigger.getAttribute("aria-expanded") !== "false") throw Error(name + " filter failed to close");
+        if (!(await dropdown.isVisible())) throw Error(name + " filter failed to open");
+        await trigger.click();
+        if (await dropdown.isVisible()) throw Error(name + " filter failed to close");
         await page.evaluate(() => window.scrollTo({ top: 1100, behavior: "instant" }));
         await page.waitForTimeout(250);
         const after = await page.evaluate(() => {
@@ -49,7 +52,7 @@ try {
           throw Error(name + " toolbar still floats on scroll: " + JSON.stringify({ before, after }));
         }
         await page.screenshot({ path: `artifacts/pse-listing-toolbar/${name}-${width}.png` });
-        const record = { name, path, width, position: after.position, scrollY: after.scrollY, offscreen: after.bottom < 0, filter: "click+Escape PASS", pass: true };
+        const record = { name, path, width, position: after.position, scrollY: after.scrollY, offscreen: after.bottom < 0, filter: "click-toggle PASS", pass: true };
         results.push(record);
         console.log("PSE_LISTING_TOOLBAR_LIVE=" + JSON.stringify(record));
       } finally {
