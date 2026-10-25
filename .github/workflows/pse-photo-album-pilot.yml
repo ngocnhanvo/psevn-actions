@@ -31,8 +31,11 @@ jobs:
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - run: node --check scripts/pse-photo-album-pilot.mjs && node --check scripts/pse-photo-album-batch.mjs
       - name: Bounded original photo album pilot only when requested
-        if: github.event.head_commit.message == 'cms(pse): import verified three-photo album pilot'
+        if: >-
+          github.event.head_commit.message == 'cms(pse): import verified three-photo album pilot'
         run: node scripts/pse-photo-album-pilot.mjs
       - name: Resumable verified legacy album batch
-        if: startsWith(github.event.head_commit.message, 'cms(pse): gallery ') || startsWith(github.event.head_commit.message, 'audit(pse): gallery ')
+        if: >-
+          startsWith(github.event.head_commit.message, 'cms(pse): gallery ') ||
+          startsWith(github.event.head_commit.message, 'audit(pse): gallery ')
         run: node scripts/pse-photo-album-batch.mjs
