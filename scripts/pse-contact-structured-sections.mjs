@@ -79,11 +79,12 @@ try{
    const records=[extract(office),...warehouses.map(extract)];
    if(records.some(r=>!r.name||!r.address||!r.phone||!r.fax||!r.mapUrl))
      return {error:"Published Contact field missing",diagnostics:records.map(r=>({name:r.name,hasAddress:!!r.address,
-       hasPhone:!!r.phone,hasFax:!!r.fax,hasEmail:!!r.email,hasMap:!!r.mapUrl}))};
+       hasPhone:!!r.phone,hasFax:!!r.fax,hasEmail:!!r.email,hasMap:!!r.mapUrl})),
+       sourceShape:office.outerHTML.slice(0,2100)};
    if(new Set(records.map(r=>r.name)).size!==6)throw Error("Duplicate location name");
    return{done:false,records,intro:intro.outerHTML,sectionOuter:section.outerHTML};
  },{raw,alreadyMigrated});
- if(parsed.error){console.log("PSE_CONTACT_CMS_FIELD_DIAGNOSTIC="+JSON.stringify(parsed.diagnostics));throw Error(parsed.error)}
+ if(parsed.error){console.log("PSE_CONTACT_CMS_FIELD_DIAGNOSTIC="+JSON.stringify(parsed.diagnostics));console.log("PSE_CONTACT_CMS_SOURCE_SHAPE="+String(parsed.sourceShape||"").slice(0,2100));throw Error(parsed.error)}
  const getTable=async id=>read("/wp-json/tablepress/v1/table/"+id);
  const form=await getTable(formId);
  if(form.http!==200||form.data?.items?.length!==6)throw Error("Existing ESC Contact form not preserved");
