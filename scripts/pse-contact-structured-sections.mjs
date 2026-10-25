@@ -200,8 +200,9 @@ try{
  // WordPress Classic/ACF may hide the underlying textarea even when the Mã tab is selected.
  // Use the native WordPress Code editor API rather than treating hidden textarea as absent.
  const editorState=await page.evaluate(replacement=>{
-   if(typeof window.switchEditors?.go!=="function")throw Error("WordPress Code editor API missing");
-   window.switchEditors.go("content","html");
+   // WP's TinyMCE can be detached while its Classic content textarea is hidden.
+   // The native Quicktags/editor field remains the canonical form input; do not force
+   // switchEditors.go(), which raises getSelection errors on detached TinyMCE.
    const area=document.querySelector("#content");
    if(!(area instanceof HTMLTextAreaElement))throw Error("WordPress content textarea missing");
    area.value=replacement;area.dispatchEvent(new Event("input",{bubbles:true}));
@@ -234,9 +235,8 @@ try{
      window.__pseStructuredNative=false;
      window.send_to_editor=function(snippet){
        if(snippet!==target)return original?.call(window,snippet);
-       if(typeof window.switchEditors?.go!=="function"||typeof window.QTags?.insertContent!=="function")
+       if(typeof window.QTags?.insertContent!=="function")
          throw Error("Native Quicktags insertion API missing");
-       window.switchEditors.go("content","html");
        const area=document.querySelector("#content");
        if(!(area instanceof HTMLTextAreaElement))throw Error("WordPress content textarea missing");
        area.focus();area.setSelectionRange(pos,pos);window.wpActiveEditor="content";
