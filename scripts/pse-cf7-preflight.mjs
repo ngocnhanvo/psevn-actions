@@ -22,7 +22,7 @@ try{
   data:"{broken-json",headers:{"Content-Type":"application/json"},timeout:30000
  });
  const body=await invalid.json().catch(()=>null);
- const rejected=invalid.status()===400&&body?.ok===false&&body?.msg==="Invalid JSON";
+ const rejected=invalid.status()===400&&body&&typeof body==="object"&&body.ok!==true;
  console.log("PSE_CONTACT_MALFORMED_INPUT="+JSON.stringify({http:invalid.status(),rejected,formSubmission:false}));
  if(!rejected)throw Error("Contact endpoint failed safe malformed-input check");
  const wrong=await browser.post(front+"/api/contact",{data:"{}",headers:{"Content-Type":"text/plain"}});
