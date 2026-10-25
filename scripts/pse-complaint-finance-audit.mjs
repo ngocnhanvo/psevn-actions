@@ -31,6 +31,14 @@ try{
  const markup=String(cfg.form||"");
  const mail=cfg.mail||{};
  const contactRoute=root.data.routes?.["/contact-form-7/v1/contact-forms"]||{};
+ const envFields=new Map(String(process.env.ENV_FILE||"").split(/\r?\n/).map(line=>line.trim().replace(/^export\s+/,"")).map(line=>{const i=line.indexOf("=");return i>0?[line.slice(0,i),line.slice(i+1).replace(/^['"]|['"]$/g,"")]:["",""]}).filter(pair=>pair[0]));
+ const cf7Id=envFields.get("CONTACT_FORM_7_ID")||"";
+ const config={cf7IdPresent:/^\d+$/.test(cf7Id),cf7MatchesWordPress:cf7Id===String(nativeForm.data?.id||""),
+   turnstilePublicSiteKeyPresent:Boolean(envFields.get("PUBLIC_CLOUDFLARE_TURNSTILE_SITE_KEY")),
+   turnstileServerSecretPresent:Boolean(envFields.get("CLOUDFLARE_TURNSTILE_SECRET_KEY")),
+   realWordPressForm:nativeForm.http===200&&Boolean(mail.recipient&&mail.sender&&mail.subject&&mail.body)&&!nativeForm.data?.config_errors?.length};
+ config.ready=Object.values(config).every(Boolean);
+ console.log("PSE_COMPLAINT_RUNTIME_PREFLIGHT="+JSON.stringify(config));
  console.log("PSE_COMPLAINT_CF7_CONTRACT="+JSON.stringify({http:nativeForm.http,id:nativeForm.data?.id,
    title:nativeForm.data?.title,propertyNames:Object.keys(cfg),existingFormTagNames:[...markup.matchAll(/\[(?:text|email|tel|textarea|select)(?:\*)?\s+([a-zA-Z0-9_-]+)/g)].map(x=>x[1]),
    mailConfigured:Boolean(mail.recipient&&mail.sender&&mail.subject&&mail.body),mail2Active:!!cfg.mail_2?.active,
