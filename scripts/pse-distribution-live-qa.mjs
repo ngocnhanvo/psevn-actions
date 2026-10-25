@@ -40,6 +40,19 @@ try{
        internalScrolling:[...(root?.querySelectorAll("*")||[])].filter(el=>{const s=getComputedStyle(el);return /auto|scroll/.test(s.overflowY)&&el.scrollHeight>el.clientHeight+4}).slice(0,4).map(el=>el.tagName),
        overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3};
      });
+     if(process.env.PSE_DISTRIBUTION_SHAPE_ONLY==="true"){
+      const schema=await page.evaluate(()=>{
+        const content=document.querySelector(".pse-distribution-body");
+        const table=content?.querySelector("table");
+        const rows=[...(table?.querySelectorAll("tr")||[])].slice(0,5);
+        const clean=el=>(el?.textContent||"").replace(/\\s+/g," ").trim();
+        return{pageContent:!!content,tableCount:content?.querySelectorAll("table").length||0,
+          rows:rows.map(row=>[...row.querySelectorAll("td,th")].map(cell=>({tag:cell.tagName,heading:cell.tagName==="TH",chars:clean(cell).length,sample:clean(cell).slice(0,180),rowSpan:cell.getAttribute("rowspan"),colSpan:cell.getAttribute("colspan")}))),
+          origHTMLLength:content?.innerHTML.length||0};
+      });
+      console.log("PSE_DISTRIBUTION_ORIGINAL_TABLE_SHAPE="+JSON.stringify({width,path:item.path,http:res?.status(),schema}).slice(0,12500));
+      continue;
+     }
      let ok=res?.status()===200&&data.main&&data.header&&data.footer&&!data.overflow&&data.heading.length===1&&data.heading[0]===item.name&&!data.internalScrolling.length;
      if(item.type==="landing")ok=ok&&cases.slice(1).every(other=>data.links.some(link=>new URL(link).pathname===other.path));
      if(item.type==="pdf")ok=ok&&data.docs.length>=item.minDocs&&data.docs.every(x=>new URL(x).origin===wpOrigin);
