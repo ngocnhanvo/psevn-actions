@@ -1,1 +1,1 @@
-2026-10-26 verify PrivatePage contact two-column and no public editorial note; Astro github source only; NO BUILD.
+PSE navigation overlay on custom same-origin WordPress Header links, github source 8cfe5a4426c3dd926640e7078ce80a11b3c8d607. Verify 6 new Vitest cases plus existing regression, NO BUILD.
