@@ -49,9 +49,11 @@ try {
             const a = menu.getBoundingClientRect(), b = card.getBoundingClientRect();
             const left = Math.max(a.left, b.left), right = Math.min(a.right, b.right);
             const top = Math.max(a.top, b.top), bottom = Math.min(a.bottom, b.bottom);
-            const noOverlap = right <= left || bottom <= top;
+            const visibleTop = Math.max(top, 0), visibleBottom = Math.min(bottom, innerHeight);
+            const visibleLeft = Math.max(left, 0), visibleRight = Math.min(right, innerWidth);
+            const noOverlap = visibleRight <= visibleLeft || visibleBottom <= visibleTop;
             if (noOverlap) return { z, menuAboveCard: true, noOverlap };
-            const hit = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+            const hit = document.elementFromPoint((visibleLeft + visibleRight) / 2, (visibleTop + visibleBottom) / 2);
             return { z, menuAboveCard: Boolean(hit && menu.contains(hit)), noOverlap };
           });
           if (stack.z < 1 || !stack.menuAboveCard) throw Error("News category menu hidden behind cards: " + JSON.stringify(stack));
