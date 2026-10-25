@@ -68,7 +68,7 @@ try {
             throw Error("Known PSE agricultural category absent from CMS dropdown");
           const selectedHref = await agriculture.getAttribute("href");
           if (!selectedHref) throw Error("Selected category href missing");
-          const selectedPage = await page.context().newPage();
+          const selectedPage = await browser.newPage({ viewport: { width, height: 850 } });
           try {
             const response = await selectedPage.goto(new URL(selectedHref, origin).toString(), {
               waitUntil: "domcontentloaded", timeout: 60000
