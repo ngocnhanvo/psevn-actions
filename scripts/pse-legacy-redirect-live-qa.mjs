@@ -49,7 +49,24 @@ try{
     all.push(...r.data);if(p>=r.pages)break;
   }
   const core=all.filter(r=>r.status==="publish"&&String(r.acf?.type).toLowerCase()==="rewrite");
-  if(core.length<12)throw Error("Core WordPress Rewrite registry unexpectedly small");
+  // Compare the exact live pre-apply WordPress baseline (audit #40217473093),
+  // not a historical estimate of 14 Rewrite routes. Paths stay domain-neutral.
+  const baseline=[
+    ["^/([^/]+)/([a-z][a-z0-9-]+)/([0-9]+)/?$","/ssr/posts/$1/$3?catSlug=$2"],
+    ["^/([^/]+)/([a-z][a-z0-9-]+)/?$","/ssr/posts/$1/null?catSlug=$2"],
+    ["^/san-pham/([0-9]+)/?$","/ssr/products/san-pham/$1"],
+    ["^/san-pham/([a-z0-9-]+)/([0-9]+)/?$","/ssr/products/san-pham/$2?catSlug=$1"],
+    ["^/san-pham/([a-z0-9-]+)/?$","/ssr/products/san-pham/null?catSlug=$1"],
+    ["^/san-pham/?$","/ssr/products/san-pham/null"],
+    ["^/san-pham/([a-z0-9-]+-[0-9]{3,5})$","/ssr/products/$1/detail"],
+    ["^/([^/.]+)$","/ssr/posts/$1/detail"],
+    ["^/tin-tuc-su-kien/([1-9][0-9]*)$","/ssr/posts/tin-tuc-su-kien/$1"],
+    ["/tin-tuc-su-kien","/ssr/posts/tin-tuc-su-kien/1"]
+  ];
+  for(const [from,to] of baseline){
+    if(!core.some(r=>r.acf?.from_link===from&&r.acf?.to_link===to&&r.acf?.enable))
+      throw Error("Structural WordPress Rewrite missing or modified: "+from);
+  }
   const sourceRules=all.filter(r=>r.status==="publish"&&
     String(r.title?.raw||r.title?.rendered||"").includes("PSE 301 - ")&&
     String(r.acf?.type)==="301"&&r.acf?.enable===true);
@@ -65,21 +82,31 @@ try{
     seen.add(from);eligible.push({id:r.id,from,to});
   }
   report.count=eligible.length;
-  for(const x of eligible){
-    const start=front+x.from,target=front+x.to;
-    try{
-      const first=await page.request.get(start,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
-      const location=first.headers()["location"]||"";
-      const second=await page.request.get(target,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
-      const html=second.status()===200?await second.text():"";
-      const c=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
-        html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
-      const canonicalOkay=!c||new URL(c,front).pathname===x.to;
-      const item={...x,sourceStatus:first.status(),location,targetStatus:second.status(),canonicalOkay};
-      if(first.status()!==301||location!==x.to||second.status()!==200||!canonicalOkay)
-        report.failed.push(item);
-      else report.checked.push(item);
-    }catch(e){report.failed.push({...x,error:String(e).slice(0,160)})}
+  // Six bounded read-only workers avoid exceeding the Actions timeout for
+  // hundreds of legacy sources; preserve deterministic report ordering.
+  const checks=new Array(eligible.length);
+  let cursor=0;
+  await Promise.all(Array.from({length:Math.min(6,eligible.length)},async()=>{
+    for(;;){
+      const i=cursor++;
+      if(i>=eligible.length)return;
+      const x=eligible[i],start=front+x.from,target=front+x.to;
+      try{
+        const first=await page.request.get(start,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
+        const location=first.headers()["location"]||"";
+        const second=await page.request.get(target,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
+        const html=second.status()===200?await second.text():"";
+        const c=html.match(/<link\\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+          html.match(/<link\\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+        const canonicalOkay=!c||new URL(c,front).pathname===x.to;
+        const item={...x,sourceStatus:first.status(),location,targetStatus:second.status(),canonicalOkay};
+        checks[i]={pass:first.status()===301&&location===x.to&&second.status()===200&&canonicalOkay,item};
+      }catch(e){checks[i]={pass:false,item:{...x,error:String(e).slice(0,160)}}}
+    }
+  }));
+  for(const result of checks){
+    if(result.pass)report.checked.push(result.item);
+    else report.failed.push(result.item);
   }
   console.log("PSE_LEGACY_301_LIVE_QA="+JSON.stringify({
     rules:eligible.length,pass:report.checked.length,fail:report.failed.length,
