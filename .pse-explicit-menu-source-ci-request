@@ -1,1 +1,1 @@
-Test isolated dev/prod PSE Astro menu PR branches; no build. Retry tests after contract update.
+Test PSE menu PR dev/prod with resolved Astro compiler (no build).
