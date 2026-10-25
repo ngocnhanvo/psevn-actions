@@ -5,6 +5,7 @@ const rows=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().repla
 const origin=key=>{const r=rows.filter(s=>s.startsWith(key+"="));if(r.length!==1)throw Error("Missing origin "+key);const u=new URL(r[0].slice(key.length+1).replace(/^['"]|['"]$/g,""));if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash||!["","/"].includes(u.pathname))throw Error("Invalid origin");return u.origin};
 const frontend=origin("WC_URL_CLIENT"),wp=origin("WC_URL");
 if(frontend===wp)throw Error("CMS/public origin overlap");
+const contactOnly=process.env.PSE_CONTACT_ONLY==="true";
 const browser=await chromium.launch({headless:true});let passed=0;
 await mkdir("artifacts/pse-media-visual",{recursive:true});
 try{
@@ -12,6 +13,7 @@ try{
    const page=await browser.newPage({viewport:{width,height:width===390?844:900}});
    const wpUrls=[];
    page.on("request",req=>{try{if(new URL(req.url()).origin===wp)wpUrls.push(req.url())}catch{}});
+   if(!contactOnly){
    const list=await page.goto(frontend+"/tin-tuc-su-kien/anh",{waitUntil:"domcontentloaded",timeout:65000});
    if(list?.status()!==200)throw Error("Photo archive not available "+width+" HTTP "+list?.status());
    const cards=page.locator("#posts-grid .pse-media-card");
@@ -126,6 +128,7 @@ try{
    await page.goto(frontend+"/tin-tuc-su-kien/video",{waitUntil:"domcontentloaded",timeout:50000});
    if(await page.locator("#posts-grid .pse-media-card").count()!==0)console.log("PSE_MEDIA_VIDEO: native new content discovered; verify source");
    else console.log("PSE_MEDIA_LIVE_VIDEO=EMPTY_TRUE width="+width);
+   }
    const contact=await page.goto(frontend+"/lien-he",{waitUntil:"domcontentloaded",timeout:50000});
    if(contact?.status()!==200)throw Error("Contact Page HTTP "+contact?.status());
    const body=(await page.locator("main#main-content").first().innerText()).toLowerCase();
@@ -180,5 +183,5 @@ try{
  const res=await check.goto(frontend+"/hoat-dong-kinh-doanh/xu-ly-khieu-nai-y-kien-khach-hang",{waitUntil:"domcontentloaded",timeout:50000});
  console.log("PSE_COMPLAINT_LIVE_STATUS="+res?.status()+" (known CMS/config activation tracked separately; no emails sent)");
  await check.close();
- console.log("PSE_MEDIA_LIVE_QA=PASS; viewports="+passed+"; photoAndContactOnly=true; complaintActivationIndependent=true");
+ console.log("PSE_MEDIA_LIVE_QA=PASS; viewports="+passed+"; contactOnly="+contactOnly+"; noSubmit=true; complaintActivationIndependent=true");
 }finally{await browser.close()}
