@@ -11,3 +11,5 @@ Read-only full product content parity check against original detail pages before
 Read-only dry-run following restoration of workflow parser compatibility.
 
 Second read-only verification of original nested fertilizer tables (after parser correction); no CMS writes. Original dry-run used top-level table selector and cannot validate nested HDSD tables.
+
+Verified fertilizer description restoration batch 1, 8 original Joomla IDs with dry audit parity 40155132109; preserves backup and native media/categories.
