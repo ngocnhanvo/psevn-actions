@@ -1,2 +1,4 @@
 Product Page WordPress source-backed preflight; no WP mutation or build.
 Dry-run #40141368587 PASS: existing 14+ PSE Product CPT, genuine root ProductCategory #1760, no san-pham slug conflict, parent menu item 77005. Publish native Product landing Page only; keep menu until site deployment QA.
+
+2026-10-25: READ-ONLY PSE native Product Page (#80968), WordPress product_cat taxonomy, Menu Manager and original Product detail rewrite SSR-cutover preflight. No WP mutation or Astro build.
