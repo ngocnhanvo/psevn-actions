@@ -1,2 +1,3 @@
 Audit only PSE Joomla complaint field names/finance iframe and native WP Contact Form 7 resource capability; no write/build.
 2026-10-25: follow up read-only existing Contact Form 7 ID49442 mail capability and REST creation contract, no recipient data in logs; earlier #40144583520 PASS basic inventory.
+Retry added CF7 contract read-only audit after #40144779961 failed at node --check due regex escaping, before any WP mutation. Prior original form/finance inventory #40144583520 PASS unchanged.
