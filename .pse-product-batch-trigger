@@ -37,3 +37,4 @@ Verified final fertilizer product description restoration batch 6 (four source-m
 2026-10-25: format Product excerpt lines batch 3/6, batch 2 #40165453730 PASS 8/8; preserve all non-excerpt fields.
 2026-10-25: format Product excerpt lines batch 4/6, after batch 3 #40165572367 PASS 8/8.
 2026-10-25: format Product excerpt lines batch 5/6, after batch 4 #40165678539 PASS 8/8.
+2026-10-25: format Product excerpt lines final batch 6/6 after batch 5 #40165786781 PASS 8/8; four products remaining.
