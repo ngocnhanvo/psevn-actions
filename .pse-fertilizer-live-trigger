@@ -7,3 +7,5 @@ Signed Astro production release #40143412040 PASS. Re-run 9 target live Product/
 2026-10-25: Repeat read-only active menu QA solely to log actual category selected href/aria-current after signed build #40170363210. Previous #40170478154 3/9 passed, 6 category tests failed Wrong category active state/href. Diagnostic extends assertion values, no new WordPress or frontend changes.
 
 2026-10-25: User reported Product NPK 15-15-15 imported detail broken rich table layout, menu not active corresponding WordPress Product category. Run read-only DOM measurements at 390/768/1440 before scoped FE fix; no build, no CMS write.
+
+2026-10-25: Live QA only after genuine NPK native WordPress Product 81014 CSS layout source repair PASS #40192146942, WordPress normal Build Website #40192247140 pending_count=1, signed deploy #40192313507 PASS Astro master 1785a65d13b05a744bfe8f3818e409929285094f. Verify actual 390/768/1440 detail imported table and Header assigned category, screenshots; READ ONLY no build.
