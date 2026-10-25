@@ -6,6 +6,7 @@ const origin=key=>{const r=rows.filter(s=>s.startsWith(key+"="));if(r.length!==1
 const frontend=origin("WC_URL_CLIENT"),wp=origin("WC_URL");
 if(frontend===wp)throw Error("CMS/public origin overlap");
 const contactOnly=process.env.PSE_CONTACT_ONLY==="true";
+const expectStructuredESC=process.env.PSE_CONTACT_ESC_EXPECTED==="true";
 const browser=await chromium.launch({headless:true});let passed=0;
 await mkdir("artifacts/pse-media-visual",{recursive:true});
 try{
@@ -137,17 +138,24 @@ try{
    if(present.length!==5)throw Error("Verified five warehouse cards missing: "+present.join(","));
    if(body.includes("nội dung sẽ được cập nhật khi cấu hình website mới"))
      throw Error("Internal CMS editor note leaked to public Contact page");
-   const geometry=await page.locator("main#main-content:has(.pse-contact-locations)").evaluate(root=>{
-     const office=root.querySelector(".pse-contact-locations__office");
+   const useESC=await page.locator('[data-tablepress-preview="pse_contact_office_vi"]').count()===1;
+   if(expectStructuredESC&&!useESC)throw Error("New contact ESC office shortcode missing in production");
+   const geometry=await page.locator("main#main-content").evaluate((root,useESC)=>{
+     const office=root.querySelector(useESC?'[data-tablepress-preview="pse_contact_office_vi"]':'.pse-contact-locations__office');
      const form=root.querySelector('[data-tablepress-preview="contact_00_vi"]');
-     const warehouses=root.querySelector(".pse-contact-locations__grid");
+     const warehouses=root.querySelector(useESC?'[data-tablepress-preview="pse_contact_warehouses_vi"]':'.pse-contact-locations__grid');
      if(!office||!form||!warehouses)throw Error("CMS office / ESC form / warehouses missing");
+     if(useESC){
+       if(root.querySelectorAll('[data-tablepress-preview="pse_contact_office_vi"] .pse-location-card').length!==1||
+          root.querySelectorAll('[data-tablepress-preview="pse_contact_warehouses_vi"] .pse-location-card').length!==5)
+          throw Error("Structured ESC Contact item cards missing or duplicated");
+       if(root.querySelector('.pse-contact-locations'))throw Error("Old Contact HTML still rendered outside ESC");
+     }
      const a=office.getBoundingClientRect(),b=form.getBoundingClientRect(),c=warehouses.getBoundingClientRect();
-     return {display:getComputedStyle(root).display,
+     return {display:getComputedStyle(root).display,escapedOffice:!!useESC,
        office:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},
-       form:{left:b.left,top:b.top,bottom:b.bottom},
-       warehousesTop:c.top};
-   });
+       form:{left:b.left,top:b.top,bottom:b.bottom},warehousesTop:c.top};
+   },useESC);
    if(geometry.display!=="grid")throw Error("Contact WordPress cssmore not applied to CMS layout");
    if(width>900){
      if(Math.abs(geometry.office.top-geometry.form.top)>8 ||
@@ -157,7 +165,7 @@ try{
      throw Error("Mobile/tablet contact form should stack below office information");
    if(geometry.warehousesTop<Math.max(geometry.office.bottom,geometry.form.bottom)-8)
      throw Error("Five contact warehouses must remain below office and form");
-   console.log("PSE_CONTACT_TWO_COLUMN=PASS width="+width+" warehouse_below=true internal_note_absent=true");
+   console.log("PSE_CONTACT_TWO_COLUMN=PASS width="+width+" warehouse_below=true esc_owned="+geometry.escapedOffice+" internal_note_absent=true");
 
    // Validate the live Contact form without submitting personal data or sending mail.
    // checkValidity() only evaluates native constraints; it never fires submit.
