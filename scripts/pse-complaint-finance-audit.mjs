@@ -4,6 +4,19 @@ const vals=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().repla
 if(vals.length!==1)throw Error("PSE WP admin origin missing");
 const u=new URL(vals[0].slice(7).replace(/^['"]|['"]$/g,""));if(u.protocol!=="https:"||u.username||u.password||u.search||u.hash||!["","/"].includes(u.pathname))throw Error("Invalid WP origin");
 const browser=await chromium.launch({headless:true});const p=await browser.newPage();
+const publicFormEndpoints=[
+ "/wp-json/contact-form-7/v1/contact-forms",
+ "/wp-json/wp/v2/wpcf7_contact_form?per_page=1",
+ "/wp-json/contact-form-7/v1/contact-forms/49442"
+];
+for(const endpoint of publicFormEndpoints){
+ try{
+  const res=await p.request.get(u.origin+endpoint,{timeout:24000});
+  const status=res.status();
+  // Only log public endpoint status, never form settings or private host.
+  console.log("PSE_CF7_UNAUTH_DISCOVERY="+JSON.stringify({route:endpoint.split("?")[0].replace(/49442$/,"FORM_ID"),status}));
+ }catch(e){console.log("PSE_CF7_UNAUTH_DISCOVERY=NETWORK_ERROR; route="+endpoint.split("?")[0].replace(/49442$/,"FORM_ID"))}
+}
 try{
  await p.goto(u.origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
  if(await p.locator("#user_login").count()){
