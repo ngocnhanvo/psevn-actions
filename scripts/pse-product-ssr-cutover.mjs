@@ -92,6 +92,14 @@ try {
   backup.menus=changes;
   backup.rewrites=[{id:route.id,status:route.status,from:route.acf.from_link,to:route.acf.to_link}];
   backup.categoryCount=children.length;
+  const structural = r.data.filter(x =>
+    /product-(?:list|category|category-page|pagination|detail)/.test(String(x.title || ""))
+    || String(x.acf?.from_link || "").includes("([^/]+)")
+    || String(x.acf?.to_link || "").includes("/ssr/products/")
+  ).map(x => ({ id:x.id,title:x.title?.raw || x.title?.rendered || "",status:x.status,
+    enabled:x.acf?.enable,from:x.acf?.from_link,to:x.acf?.to_link,priority:x.acf?.priority,
+    matchType:x.acf?.match_type,conditions:x.acf?.conditions }));
+  console.log("PSE_PRODUCT_SSR_ROUTE_REGISTRY="+JSON.stringify({total:r.data.length,structural}).slice(0,23000));
   const preflight={mode:dry?"dry":"apply",page:cmsPage.id,old,newMode,categories:children.length,menuUpdates:changes.length,routeId:route.id,routeChange};
   console.log("PSE_PRODUCT_SSR_PREFLIGHT="+JSON.stringify(preflight));
   if(apply && (old || routeChange || changes.length)) {
