@@ -1,1 +1,1 @@
-PSE Astro github DEV final canonical helper + unit tests at commit fe8a347996e39dea6b1401247565e46edc1b791f. Re-run independent NO BUILD CI to verify src/lib/seo/psePageCanonicalPath.test.ts, Page route import, and all Vitest contracts; previous run 40228629652 checked out earlier be67a895 (before helper).
+PSE Astro github DEV commit 202c18a5c3d7b8eeab357a48175b3307b825bc7b: verify internal menu View all navigation overlay and regression contract. Execute existing isolated NO BUILD Vitest + Astro parser CI; no Astro build or FTP deploy.
