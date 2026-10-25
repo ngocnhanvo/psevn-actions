@@ -25,11 +25,13 @@ jobs:
         with:
           persist-credentials: false
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - run: node --check scripts/pse-product-catalog-page.mjs && node --check scripts/pse-product-ssr-cutover.mjs && node --check scripts/pse-product-catalog-router.mjs && node scripts/pse-product-catalog-router.mjs
+      - run: node --check scripts/pse-product-catalog-page.mjs && node --check scripts/pse-product-ssr-cutover.mjs && node --check scripts/pse-product-ssr-public-routes.mjs && node --check scripts/pse-product-catalog-router.mjs && node scripts/pse-product-catalog-router.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pse-product-ssr-cutover-backup
-          path: artifacts/pse-product-ssr-cutover/rollback.json
+          path: |
+            artifacts/pse-product-ssr-cutover/rollback.json
+            artifacts/pse-product-ssr-cutover/public-rules-rollback.json
           if-no-files-found: ignore
           retention-days: 14
