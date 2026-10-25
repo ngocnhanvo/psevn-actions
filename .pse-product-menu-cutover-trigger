@@ -4,3 +4,5 @@ Read-only product WP Catalog native categories and source Header menu audit; DO 
 Verified WordPress 44 Products native catalog and 6 categories #40143728271 DRY_PASS; signed Astro deploy #40143412040 PASS; public 390/768/1440 Product listing/detail and guide QA #40144257858 9/9 PASS. Activate existing source-verified Menu 77005-77011 and Product detail rewrite via native WordPress REST with read-after-write; no Astro build.
 
 2026-10-25: Live WordPress dual-field audit #40169445270 verified Product category WordPress native hrefs 77006-77011 canonical SSR, while 6 ESC custom URL fields remained legacy query. Perform guarded native WP Menu Save for exactly those six custom links, readback and no Astro build in this workflow.
+
+2026-10-25: Retry six ESC Header canonical Product URLs only after first #40169881936 failed before WordPress save: first hidden WordPress nav-menus.php custom input not visible, zero write. Automation now expands native menu item before filling; original preflight/readback guards preserved.
