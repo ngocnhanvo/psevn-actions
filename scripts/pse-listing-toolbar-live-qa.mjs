@@ -39,6 +39,24 @@ try {
         const dropdown = toolbar.locator("#dropdown-menu");
         await trigger.click();
         if (!(await dropdown.isVisible())) throw Error(name + " filter failed to open");
+        if (name === "news") {
+          const stack = await page.evaluate(() => {
+            const toolbar = document.querySelector("[data-listing-toolbar]");
+            const menu = document.querySelector("#dropdown-menu");
+            const card = document.querySelector("#posts-grid .grid > div");
+            if (!toolbar || !menu || !card) return { z: -1, menuAboveCard: false, noOverlap: true };
+            const z = Number(getComputedStyle(toolbar).zIndex);
+            const a = menu.getBoundingClientRect(), b = card.getBoundingClientRect();
+            const left = Math.max(a.left, b.left), right = Math.min(a.right, b.right);
+            const top = Math.max(a.top, b.top), bottom = Math.min(a.bottom, b.bottom);
+            const noOverlap = right <= left || bottom <= top;
+            if (noOverlap) return { z, menuAboveCard: true, noOverlap };
+            const hit = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+            return { z, menuAboveCard: Boolean(hit && menu.contains(hit)), noOverlap };
+          });
+          if (stack.z < 1 || !stack.menuAboveCard) throw Error("News category menu hidden behind cards: " + JSON.stringify(stack));
+          console.log("PSE_NEWS_FILTER_STACK=" + JSON.stringify({ width, ...stack }));
+        }
         await trigger.click();
         if (await dropdown.isVisible()) throw Error(name + " filter failed to close");
         await page.evaluate(() => window.scrollTo({ top: 1100, behavior: "instant" }));
@@ -50,6 +68,30 @@ try {
         });
         if (after.scrollY < 250 || after.position !== "static" || before.top - after.top < 250 || after.bottom >= 0) {
           throw Error(name + " toolbar still floats on scroll: " + JSON.stringify({ before, after }));
+        }
+        if (name === "news") {
+          const fallback = await page.request.get(origin + "/images/posts/no-image.svg");
+          if (!fallback.ok() || !String(fallback.headers()["content-type"] || "").includes("image/svg+xml"))
+            throw Error("Missing news default image HTTP " + fallback.status());
+          const image = page.locator(".post-card-img").first();
+          if (await image.count()) {
+            await image.evaluate((img) => {
+              // Synthetic image error, browser-only. Verify the real card handler
+              // switches once and no second event can start a retry loop.
+              img.dispatchEvent(new Event("error"));
+              img.dispatchEvent(new Event("error"));
+            });
+            const details = await image.evaluate(img => ({
+              src: img.getAttribute("src"),
+              srcset: img.getAttribute("srcset"),
+              fallbackApplied: img.dataset.fallbackApplied
+            }));
+            if (!details.src?.endsWith("/images/posts/no-image.svg") ||
+              details.srcset !== null || details.fallbackApplied !== "true")
+              throw Error("News default image fallback contract broken: " + JSON.stringify(details));
+            await image.evaluate(img => img.decode());
+          }
+          console.log("PSE_NEWS_FALLBACK=" + JSON.stringify({ width, asset: 200, syntheticErrorOnce: true }));
         }
         await page.screenshot({ path: `artifacts/pse-listing-toolbar/${name}-${width}.png` });
         const record = { name, path, width, position: after.position, scrollY: after.scrollY, offscreen: after.bottom < 0, filter: "click-toggle PASS", pass: true };
