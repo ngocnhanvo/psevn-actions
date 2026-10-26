@@ -1,0 +1,35 @@
+name: PSE delete unreferenced empty TablePress footer draft 136
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-footer-delete-empty-136.yml
+      - .pse-footer-delete-empty-136-trigger
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read-only WordPress TablePress footer ID inventory
+        run: node --check scripts/pse-footer-delete-empty-136.mjs && node scripts/pse-footer-delete-empty-136.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-footer-table136-backup
+          path: artifacts/pse-footer-delete-136/table136-before.json
+          retention-days: 14
+          if-no-files-found: ignore
