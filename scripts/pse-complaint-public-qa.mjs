@@ -9,6 +9,19 @@ const url=base.origin+"/xu-ly-khieu-nai-y-kien-khach-hang";
 const wpLine=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,"")).find(x=>x.startsWith("WC_URL="));
 if(!wpLine)throw Error("Missing private WordPress origin");
 const privateHost=new URL(wpLine.slice(7).replace(/^['"]|['"]$/g,"")).hostname;
+const wpOrigin=new URL(wpLine.slice(7).replace(/^['"]|['"]$/g,"")).origin;
+const auditContext=await chromium.launch({headless:true});
+try {
+ const probe=await auditContext.newPage();
+ const result=await probe.request.get(wpOrigin+"/wp-json/esc-api/v1/menus",{timeout:30000});
+ const d=await result.json().catch(()=>({}));
+ const all=d?.menus?.Header?.vi?.items||[];
+ const flatten=a=>a.flatMap(x=>[x,...flatten(x.children||[])]);
+ const item=flatten(all).find(x=>Number(x.id)===77020);
+ const pathOf=v=>{try{const u=new URL(String(v||""),wpOrigin);return{path:u.pathname,site:u.hostname===privateHost?"wordpress":"other"}}catch{return{path:"",site:"invalid"}}};
+ console.log("PSE_COMPLAINT_MENU_API_DIAG="+JSON.stringify({http:result.status(),nodeFound:!!item,menuItem:item?{id:item.id,label:item.label,slug:item.slug,linkType:item.linkType,href:pathOf(item.href),actualUrl:pathOf(item.url),type:item.type}:null}));
+ await probe.close();
+} finally {await auditContext.close()}
 await mkdir("artifacts/pse-complaint-live",{recursive:true});
 const browser=await chromium.launch({headless:true});
 const failures=[];
