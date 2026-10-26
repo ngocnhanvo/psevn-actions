@@ -1,0 +1,32 @@
+name: PSE Lighthouse WordPress robots native Save (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-lighthouse-robots-save-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-wordpress-seo-files-robots-save
+  cancel-in-progress: false
+jobs:
+  wordpress-robots:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message == 'fix(pse): enable WordPress crawlers for Lighthouse SEO (owner request)'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright browser wrapper (not Astro)
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Save minimal robots change using authenticated WordPress Admin only
+        run: node --check scripts/pse-lighthouse-robots-wordpress-save.mjs && node scripts/pse-lighthouse-robots-wordpress-save.mjs
+      - name: Confirm no independent Astro build, dispatch or PHP FTP
+        run: echo 'PSE_ROBOTS_WORDPRESS_SAVE_ONLY=PASS NO_ASTRO_BUILD NO_FTP'
