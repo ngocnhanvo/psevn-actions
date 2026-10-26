@@ -1,1 +1,2 @@
 2026-10-26 PSE footer after signed WordPress PHP production deploy 40351500598; check home/contact 1440/768/390; only READ ONLY.
+2026-10-26: BCT media 82061 linked WP Info62, 3-cert responsive grid master 063e1da1, WordPress PHP normal build #40362651441 and signed FTPS production #40362822872 PASS. New Playwright QA must assert 3 certs one row plus 1 visible BCT badge, all images load, no overflow at desktop/tablet/mobile on home and contact.
