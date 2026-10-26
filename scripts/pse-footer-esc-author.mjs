@@ -29,7 +29,7 @@ try {
    await captcha.fill(String(n));
   }
   await p.locator("#wp-submit").click({noWaitAfter:true,timeout:25000});
-  await p.waitForURL(url=>!url.pathname.includes("wp-login"),{timeout:45000});
+  await p.waitForFunction(()=>location.pathname.startsWith("/wp-admin") && !document.querySelector("#loginform"),null,{timeout:45000});
  }
  if(p.url().includes("wp-login"))throw Error("WP login failed");
  const nonce=await p.evaluate(async()=>{
