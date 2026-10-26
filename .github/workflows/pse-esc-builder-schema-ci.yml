@@ -33,6 +33,7 @@ jobs:
           php php/wp-content/plugins/esc-visual-builder/tests/auto-discovery.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
+          php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-media-source.test.php
       - name: Checkout Astro development source (source only)
         uses: actions/checkout@v4
         with:
@@ -59,7 +60,8 @@ jobs:
           import {readFileSync} from 'node:fs';
           for(const file of [
             'php/wp-content/plugins/esc-visual-builder/includes/shared-menu-ui.php',
-            'php/wp-content/plugins/esc-visual-builder/includes/shared-footer-ui.php'
+            'php/wp-content/plugins/esc-visual-builder/includes/shared-footer-ui.php',
+            'php/wp-content/plugins/esc-visual-builder/includes/shared-footer-media-ui.php'
           ]){
             const content=readFileSync(file,'utf8');
             const scripts=[...content.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
