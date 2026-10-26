@@ -17,6 +17,8 @@ try{
     const response=await p.goto(u.origin+path,{waitUntil:"domcontentloaded",timeout:65000});
     if(!response||response.status()>=400)throw Error("Public request failed: "+path+" HTTP "+response?.status());
     await p.locator("#footer-contact").waitFor({state:"visible",timeout:45000});
+    await p.evaluate(()=>document.querySelectorAll("#footer-contact img").forEach(img=>{img.loading="eager"}));
+    await p.waitForFunction(()=>[...document.querySelectorAll("#footer-contact img")].every(img=>img.complete && img.naturalWidth>0),null,{timeout:35000});
     const state=await p.evaluate(()=>{
      const f=document.querySelector("#footer-contact"),s=getComputedStyle(f);
      const x=f.querySelector("h2#footer-company-title");
@@ -28,16 +30,18 @@ try{
       faxLabels:[...f.querySelectorAll("dt")].filter(x=>/Fax/i.test(x.textContent||"")).length,
       certificationImages:[...f.querySelectorAll("#footer-cert-title ~ div img")].length,
       badgeImages:[...f.querySelectorAll('img[alt*="Bộ Công Thương"]')].length,
+      certOneRow:(()=>{const tops=[...f.querySelectorAll("#footer-cert-title + div > div")].map(x=>x.getBoundingClientRect().top);return tops.length===3 && Math.max(...tops)-Math.min(...tops)<4})(),
       invalidLinks:[...f.querySelectorAll("a[href]")].map(x=>x.getAttribute("href")).filter(x=>!x||/^javascript:/i.test(x)),
       imageNoAlt:[...f.querySelectorAll("img")].filter(x=>!x.hasAttribute("alt")).length,
       overflow:document.documentElement.scrollWidth-window.innerWidth
      };
     });
     if(state.count!==1||!state.company||!state.hasDefinitionList||state.topBorder==="0px"||
+       state.certificationImages!==3||state.badgeImages!==1||!state.certOneRow||
        state.invalidLinks.length||state.imageNoAlt||state.overflow>2)throw Error("Footer visual contract failed "+JSON.stringify({path,viewport,state}));
     await p.screenshot({path:"artifacts/pse-footer-postdeploy/"+(path==="/"?"home":"contact")+"-"+viewport.width+".png",fullPage:true});
     results.push({path,viewport:viewport.width,...state});
-    console.log("PSE_FOOTER_PUBLIC_QA=PASS "+JSON.stringify({path,width:viewport.width,images:state.certificationImages,overflow:state.overflow}));
+    console.log("PSE_FOOTER_PUBLIC_QA=PASS "+JSON.stringify({path,width:viewport.width,images:state.certificationImages,bct:state.badgeImages,oneRow:state.certOneRow,overflow:state.overflow}));
    }finally{await p.close()}
   }
  }
