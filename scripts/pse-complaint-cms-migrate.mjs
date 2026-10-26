@@ -60,8 +60,24 @@ try {
    const ok=expectedNames.every(n=>before.includes('name="'+n+'"'))&&priorCSS.includes(".pse-complaint__grid");
    if(!ok)throw Error("Partially migrated CMS; stop instead of overwrite");
    await p.goto(url.origin+"/wp-admin/post.php?post=81087&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+   const editorPageErrors=[];
+   p.on("pageerror",error=>editorPageErrors.push(String(error?.message||error).slice(0,160)));
    await p.locator("#content-tmce").click();
-   await p.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:25000});
+   try {
+     await p.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:25000});
+   } catch(error) {
+     // Diagnostic only: never log credentials, content, cookies or nonce.
+     const diag=await p.evaluate(()=>{
+       const ed=window.tinymce?.get("content");
+       return {tinymcePresent:!!window.tinymce,editorPresent:!!ed,
+         editorInitialized:!!ed?.initialized,editorHidden:ed?.isHidden?.()??null,
+         editorBodyExists:!!ed?.getBody?.(),selectedMode:document.querySelector("#wp-content-wrap")?.className||"",
+         editorIframePresent:!!document.querySelector("#content_ifr"),
+         currentPath:location.pathname,loginFormPresent:!!document.querySelector("#loginform")};
+     }).catch(()=>({diagnosticUnavailable:true}));
+     console.log("PSE_COMPLAINT_TINYMCE_BOOT_DIAG="+JSON.stringify({...diag,pageErrors:editorPageErrors.slice(0,4)}));
+     throw error;
+   }
    const visual=await p.evaluate(()=>{
      const ed=window.tinymce.get("content"),body=ed.getBody(),grid=body.querySelector(".pse-complaint__grid");
      const view=ed.getDoc()?.defaultView;
