@@ -44,8 +44,9 @@ try{
   if(selected!=="62")throw Error("Native editor not targeting post ID 62");
   const status=await page.locator("#post_status").inputValue().catch(()=>null);
   if(status!=="publish")throw Error("Info post is not published");
-  await publish.click({noWaitAfter:true,timeout:25000});
-  await page.waitForLoadState("domcontentloaded",{timeout:60000});
+  const [saveResponse]=await Promise.all([page.waitForNavigation({waitUntil:"domcontentloaded",timeout:60000}),publish.click({timeout:25000})]);
+  if(!saveResponse||saveResponse.status()>=400||!/post=62(?:&|$)/.test(page.url()))throw Error("Native Info Save did not complete an HTTP POST/redirect to record 62");
+  console.log("PSE_BCT_NATIVE_HTTP_SAVE=PASS; status="+saveResponse.status());
   const after=await get(infoPath);
   if(after.status!==200||after.body?.id!==62||after.body.status!=="publish"||
      after.body.acf?.bocongthuong?.id!==82061||
