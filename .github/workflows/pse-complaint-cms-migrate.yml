@@ -1,0 +1,30 @@
+name: PSE complaint native CMS layout migration (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-complaint-cms-migrate.mjs
+      - .github/workflows/pse-complaint-cms-migrate.yml
+      - .pse-complaint-cms-migrate-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-complaint-cms-edit
+  cancel-in-progress: false
+jobs:
+  native-editor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_COMPLAINT_CMS_APPLY: ${{ github.event.head_commit.message == 'cms(pse): author complaint Page with native WordPress editor' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-complaint-cms-migrate.mjs && node scripts/pse-complaint-cms-migrate.mjs
