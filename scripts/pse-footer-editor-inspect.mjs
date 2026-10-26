@@ -57,6 +57,21 @@ try {
   panelText:document.body.innerText.slice(-1400),
  }));
  console.log('PSE_FOOTER_NATIVE_EDITOR_INSPECT='+JSON.stringify(editor));
+ const rowFns=await page.evaluate(()=>({
+  insertRow: String(window.tp?.editor?.insertRow||'').slice(0,1500),
+  selectedCell:String(window.tp?.editor?.updateSelectionFromCoords||'').slice(0,600),
+  layoutButtons:[...document.querySelectorAll('#tablepress_edit-table button, #tablepress-edit-table button, .tablepress_edit-table button')].map(el=>({text:(el.textContent||'').trim().slice(0,55),title:el.getAttribute('title')})).slice(0,40)
+ }));
+ console.log('PSE_FOOTER_ROW_NATIVE_FNS='+JSON.stringify(rowFns));
+ await page.evaluate(()=>{window.tp.editor.updateSelectionFromCoords(2,2);});
+ await page.getByRole('button',{name:'Insert Image',exact:true}).click({timeout:12000});
+ await page.waitForTimeout(900);
+ const modal=await page.evaluate(()=>({
+  modalText:[...document.querySelectorAll('.media-modal, [role="dialog"], .components-modal__frame')].filter(el=>getComputedStyle(el).display!=='none').map(el=>(el.innerText||'').slice(0,1100)),
+  modalButtons:[...document.querySelectorAll('.media-modal button, [role="dialog"] button')].filter(el=>getComputedStyle(el).display!=='none').map(el=>({text:(el.textContent||'').trim().slice(0,70),cls:(el.className||'').toString().slice(0,110)})).slice(0,28)
+ }));
+ console.log('PSE_FOOTER_NATIVE_IMAGE_MODAL='+JSON.stringify(modal));
+
 
  if(output.inventoryStatus!==200)throw Error('TablePress inventory unavailable');
 } finally {await browser.close();}
