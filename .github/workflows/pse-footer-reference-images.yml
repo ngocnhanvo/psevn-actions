@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pse-footer-reference-images.yml
+      - scripts/pse-footer-reference-images.mjs
 permissions:
   contents: read
 jobs:
