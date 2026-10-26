@@ -93,7 +93,10 @@ try {
  const del=row.getByRole('link',{name:'Delete',exact:true});
  if(await del.count()!==1)throw Error('TablePress native delete action missing');
  page.on('dialog', async dialog=>{if(dialog.type()==='confirm')await dialog.accept();else await dialog.dismiss()});
- await del.click({noWaitAfter:true,timeout:25000});
+ const href=await del.getAttribute('href');
+ const nativeUrl=new URL(href,u.origin);
+ if(nativeUrl.origin!==u.origin||nativeUrl.pathname!=='/wp-admin/admin-post.php'||nativeUrl.searchParams.get('action')!=='tablepress_delete_table'||nativeUrl.searchParams.get('item')!=='136'||!nativeUrl.searchParams.get('_wpnonce'))throw Error('Unexpected native delete action');
+ await del.evaluate(el=>el.click());
  await page.waitForTimeout(1300);
  const dialogs=page.locator('.ui-dialog:visible, [role="alertdialog"]:visible');
  if(await dialogs.count()){
