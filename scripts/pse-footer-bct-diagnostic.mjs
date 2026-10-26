@@ -20,14 +20,14 @@ try{
  const data=await p.evaluate(async()=>{
   const nonce=window.wpApiSettings?.nonce||await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"}).then(r=>r.text()).then(s=>s.trim());
   async function get(path){const r=await fetch(path,{credentials:"same-origin",cache:"no-store",headers:{"X-WP-Nonce":nonce}});return {http:r.status,data:await r.json().catch(()=>({}))}}
-  const inf=await get("/wp-json/wp/v2/thong-tin-chung/62?context=edit&_fields=id,status,acf");
+  const inf=await get("/wp-json/wp/v2/thong-tin-chung/62?context=edit&_fields=id,type,status,acf");
   const acf=inf.data?.acf||{},v=acf.bocongthuong;
   const media=[];
   for(const term of ["bocongthuong","bo-cong-thuong","thong-bao","dathongbao","bct"]){
    const x=await get("/wp-json/wp/v2/media?context=edit&search="+encodeURIComponent(term)+"&per_page=50");
    media.push({term,http:x.http,items:Array.isArray(x.data)?x.data.map(q=>({id:q.id,slug:q.slug,mime:q.mime_type,alt:q.alt_text,file:q.media_details?.file,source:q.source_url})).slice(0,20):[]});
   }
-  return {info:{http:inf.http,id:inf.data?.id,status:inf.data?.status,acfHasField:Object.hasOwn(acf,"bocongthuong"),acfKeys:Object.keys(acf).filter(x=>/bocong|link.bocong|logo/i.test(x)),bctKind:Array.isArray(v)?"array":typeof v,bctValue:typeof v==="object"?{id:v?.ID||v?.id,url:v?.url,alt:v?.alt}:String(v||"").slice(0,150),bctLink:acf.link_bocongthuong||""},media};
+  return {info:{http:inf.http,id:inf.data?.id,type:inf.data?.type,status:inf.data?.status,acfHasField:Object.hasOwn(acf,"bocongthuong"),acfKeys:Object.keys(acf).filter(x=>/bocong|link.bocong|logo/i.test(x)),bctKind:Array.isArray(v)?"array":typeof v,bctValue:typeof v==="object"?{id:v?.ID||v?.id,url:v?.url,alt:v?.alt}:String(v||"").slice(0,150),bctLink:acf.link_bocongthuong||""},media};
  });
  console.log("PSE_FOOTER_BCT_WP_INSPECT="+JSON.stringify(data));
  await p.goto(frontend+"/",{waitUntil:"domcontentloaded",timeout:65000});
