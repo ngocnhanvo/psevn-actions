@@ -63,7 +63,15 @@ try{
  if(await expand.count())await expand.click();
  await item.scrollIntoViewIfNeeded();
  const details=item.locator(".menu-item-settings");
- if(!(await details.isVisible()))await item.locator(".item-edit").click();
+ if(!(await details.isVisible())){
+   // In wp-admin/nav-menus.php the native .item-edit control is visually
+   // hidden while its menu item is collapsed; Playwright's locator.click()
+   // waits for visibility forever. Trigger its native DOM click once.
+   const editor=item.locator(".item-edit");
+   if(await editor.count()!==1)throw Error("Native menu edit toggle not unique");
+   await editor.evaluate(anchor=>anchor.click());
+   await details.waitFor({state:"visible",timeout:12000});
+ }
  await select.selectOption("page");
  const pageSelect=item.locator('select[name="esc-menu-item-page-id['+itemId+']"]');
  await p.waitForFunction(id=>{
