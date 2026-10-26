@@ -16,6 +16,10 @@
 7. Authenticated read-only post-Save reload [#40254673453](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40254673453) PASS: exactly 3 native WordPress saved visual wrappers, one ESC ID/shortcode/image per wrapper, correct order, custom panel absent, NO second CMS write.
 8. **Final image-loading QA** [#40254970202](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40254970202) PASS: all three native images complete with `naturalWidth=300`; includes authenticated Editor screenshot artifact; `PSE_CONTACT_NATIVE_EDITOR=ALREADY_DONE`, `no_cms_write=true`, `no_build=true`.
 
+## Follow-up QA runs
+- Legacy iframe-specific QA script was rewritten to invoke the guarded **read-only native editor check**, and its workflow renamed. [#40255107278](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40255107278) **SUCCESS**. No CMS writes.
+- A near-simultaneous duplicate verification [#40255120773](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40255120773) failed due to **WordPress admin navigation timeout (60 seconds)** while other unrelated PHP work was in progress. It did not change CMS content and does not invalidate the earlier authenticated image-loading PASS [#40254970202](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40254970202). If repeating, wait for Admin availability; do not re-author Page content.
+
 ## Maintained safeguards
 - No new Astro source, no independent Astro Actions build, no new ESC tables, no form submission.
 - CMS controls section content and layout. Native visual editor shows image-based section order. Public Astro uses `stripEscTableEditorPreviews.ts` on the editor-only wrappers, preserving the shortcode order with generic ESC rendering.
