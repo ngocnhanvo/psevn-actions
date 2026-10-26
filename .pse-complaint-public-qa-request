@@ -1,3 +1,5 @@
 Run read-only 390/768/1440 Playwright QA of published complaint form after signed WordPress build #40273927585 (PASS), before native Header menu cutover. No mail submission.
 
 Final post-menu QA: native WP Header 77020 -> Page 81087 successfully bound #40274216821, normal WordPress build #40274370112, signed site deploy #40274448392 PASS. Verify header link now points to new page at 390/768/1440; no email.
+
+Diagnostic READ ONLY: public Header anchors and labels after WP menu binding, do not reconfigure CMS or build. Inspect actual menu URL identity, not generic status.
