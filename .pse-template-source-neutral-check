@@ -7,3 +7,4 @@
 PSE DEV support pages final CSS-ownership test regression correction: run 486+ Vitest assertions on current github branch (NO BUILD).
 
 2026-10-26 Contact ESC stylesheet ownership moved into Astro DEV renderer (all original display/grid/mobile rules preserved); compile and Vitest only. No Build Website.
+2026-10-26 Complaint CMS ownership refactor: verify Astro page reads WordPress body/cssmore and keeps secure Turnstile client behavior. Test only; do not build Astro.
