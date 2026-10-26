@@ -1,0 +1,34 @@
+name: PSE hotline FAQ authenticated Admin preview QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-support-editor-preview-live-qa.mjs
+      - .github/workflows/pse-support-editor-preview-live-qa.yml
+      - .pse-support-editor-preview-qa
+permissions:
+  contents: read
+jobs:
+  browser:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-support-editor-preview-live-qa.mjs && node scripts/pse-support-editor-preview-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-support-editor-preview-screenshots
+          path: artifacts/pse-support-admin-preview/*.png
+          if-no-files-found: ignore
+          retention-days: 14
