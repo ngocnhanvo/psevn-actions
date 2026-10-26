@@ -1,1 +1,1 @@
-2026-10-26 PSE footer standard WordPress build reattempt after transient HTTPS TLS preflight timeout. Astro master a910e6d. No bypass of signed unzip, no force.
+2026-10-26 PSE footer WP Build Website normal request: signed unzip readiness TLS-only bounded retries; do not bypass v2 HMAC/FTP target checks. Astro master a910e6d.
