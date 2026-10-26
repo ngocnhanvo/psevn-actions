@@ -6,6 +6,7 @@ on:
       - .github/workflows/pse-esc-builder-schema-ci.yml
       - .pse-esc-builder-schema-test-request
       - scripts/pse-esc-builder-menu-inspector.test.mjs
+      - scripts/pse-esc-builder-footer-assets-inspector.test.mjs
   workflow_dispatch:
 permissions:
   contents: read
@@ -87,6 +88,7 @@ jobs:
           set -euo pipefail
           pnpm install --frozen-lockfile --prefer-offline
           node ../scripts/pse-esc-builder-menu-inspector.test.mjs
+          node ../scripts/pse-esc-builder-footer-assets-inspector.test.mjs
           pnpm exec vitest run src/lib/wordpress/builderHeaderNavLock.test.ts src/lib/wordpress/builderEditabilityCues.test.ts src/lib/wordpress/builderFooterSelection.test.ts src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderCustomerSlider.test.mjs src/astro/tablepress/Home_00.mobile.test.ts src/astro/tablepress/Pse_support.cssOwnership.test.ts
           node --input-type=module <<'NODE'
           import {readFile} from 'node:fs/promises';
