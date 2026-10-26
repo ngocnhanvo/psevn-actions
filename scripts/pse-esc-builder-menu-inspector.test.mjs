@@ -23,11 +23,14 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 const read = {
   item_id: 103, menu_name: 'Header VI', lang: 'vi', label: 'Giới thiệu',
   description: '', custom_url: '', target: '', menu_type: 'dropdown',
-  link_mode: 'page', reference_id: 301, reference_label: 'Giới thiệu PSE',
+  link_mode: 'page', parent_id: 0,
+  parent_options: [{ id: 0, label: '— Cấp cao nhất —' }, { id: 104, label: 'Tin công ty' }],
+  allowed_fields: ['label','description','target','reference_id','parent_id'],
+  reference_id: 301, reference_label: 'Giới thiệu PSE',
   reference_href: '/gioi-thieu', mega_position: 0, version: 'a'.repeat(64)
 };
 const updated = {
-  ...read, reference_id: 303, reference_label: 'Giới thiệu doanh nghiệp',
+  ...read, parent_id: 104, reference_id: 303, reference_label: 'Giới thiệu doanh nghiệp',
   reference_href: '/gioi-thieu-doanh-nghiep', version: 'b'.repeat(64),
   saved: true
 };
@@ -72,6 +75,9 @@ function setup(canEdit = true) {
   const panel = doc.getElementById('esc-vb-menu-editor');
   assert.equal(panel.hidden, false, 'inspector opens');
   const reference = doc.querySelector('select[aria-label="Chọn Trang/Bài viết"]');
+  const parent = doc.getElementById('esc-vb-menu-parent');
+  assert.equal(parent.value, '0', 'initial native parent is root');
+  assert.ok([...parent.options].some(o=>o.value==='104'),'scoped parent choices are visible');
   const search = doc.querySelector('input[type="search"]');
   const find = [...panel.querySelectorAll('button')].find(b => b.textContent === 'Tìm Trang/Bài viết');
   const save = [...panel.querySelectorAll('button')].find(b => b.textContent === 'Lưu WordPress');
@@ -89,11 +95,15 @@ function setup(canEdit = true) {
   assert.equal(save.disabled, true, 'cancel clears draft');
   reference.value = '303';
   reference.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  parent.value = '104';
+  parent.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
   save.click(); await tick(); await tick();
   const write = calls.find(c => c.url === config.saveUrl);
   assert.equal(write?.body.reference_id, 303, 'save submits validated numeric Page ID');
+  assert.equal(write?.body.parent_id, 104, 'save submits canonical native parent ID');
   assert.equal(write?.body.expected_version, read.version, 'save includes optimistic version');
   assert.equal(reference.value, '303', 'readback becomes selected source');
+  assert.equal(parent.value, '104', 'parent readback becomes selected source');
   assert.equal(save.disabled, true, 'successful save clears dirty state');
   assert.ok(sent.some(m => m.type === 'esc-vb-menu-label-saved' &&
     m.newHref === '/gioi-thieu-doanh-nghiep' && m.descriptionChanged === true),
@@ -108,4 +118,26 @@ function setup(canEdit = true) {
     /không có quyền/i, 'readonly feedback immediate');
   dom.window.close();
 }
-console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS page_search=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
+// Invalid Page selection must not lock the Save button forever. Validation
+// must run before entering the asynchronous saving state.
+{
+  const { dom, doc, calls, select } = setup();
+  select(); await tick(); await tick();
+  const panel=doc.getElementById('esc-vb-menu-editor');
+  const reference=doc.querySelector('select[aria-label="Chọn Trang/Bài viết"]');
+  const save=[...panel.querySelectorAll('button')].find(b=>b.textContent==='Lưu WordPress');
+  const label=doc.getElementById('esc-vb-menu-label');
+  label.value='Giới thiệu mới';
+  label.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  const invalid=doc.createElement('option');
+  invalid.value='0';invalid.textContent='— Chọn nguồn —';reference.append(invalid);
+  reference.value='0';reference.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+  save.click();await tick();
+  assert.equal(calls.filter(c=>c.url===config.saveUrl).length,0,'invalid Page cannot be saved');
+  assert.equal(save.disabled,false,'validation failure must not lock Save button');
+  assert.match(panel.querySelector('[role="status"]').textContent,/hợp lệ/i);
+  reference.value='301';reference.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+  assert.equal(save.disabled,false,'draft remains editable after validation error');
+  dom.window.close();
+}
+console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS page_search=PASS parent=PASS invalid_draft=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
