@@ -87,6 +87,23 @@ try{
    });
    console.log("PSE_COMPLAINT_NATIVE_MENU_UI="+JSON.stringify(ui));
    if(!ui.active)throw Error("WordPress native item editor refused to expand");
+   const diag=await item.evaluate(el=>{
+     const ancestors=[];
+     for(let node=el;node&&ancestors.length<10;node=node.parentElement){
+       const st=getComputedStyle(node);
+       ancestors.push({tag:node.tagName,id:node.id||"",cls:String(node.className||"").slice(0,140),
+          display:st.display,visibility:st.visibility,rects:node.getClientRects().length});
+     }
+     const types=el.querySelector('select[name^="esc-menu-item-link-type"]');
+     const pages=el.querySelector('select[name^="esc-menu-item-page-id"]');
+     const form=el.closest("form");
+     return {ancestors,modeOptions:[...(types?.options||[])].map(o=>o.value),
+       selectedMode:types?.value,pageSelectDisabled:pages?.disabled,
+       pageOptionCount:pages?.options.length||0,hasTargetPage:[...(pages?.options||[])].some(o=>o.value==="81087"),
+       formId:form?.id||"",isMenuToEdit:!!el.closest("#menu-to-edit"),menuController:!!window.wpNavMenu};
+   });
+   console.log("PSE_COMPLAINT_ESC_HIDDEN_DIAG="+JSON.stringify(diag));
+   if(ui.hiddenParent)throw Error("ESC native item rendered in hidden ancestor; inspect CSS/DOM before Save");
    await details.waitFor({state:"visible",timeout:10000});
  }
  await select.selectOption("page");
