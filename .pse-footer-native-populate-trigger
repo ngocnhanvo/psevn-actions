@@ -1,0 +1,1 @@
+2026-10-26 Retry native WordPress Insert Image on verified footer CMS and Media IDs; previous attempt only prepared in-memory rows and saved nothing. Native helper callback fallback.
