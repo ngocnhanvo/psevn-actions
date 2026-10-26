@@ -1,1 +1,1 @@
-2026-10-26 PSE shared footer release: WordPress global ESC table pub_footer_assets_vi native saved, Astro master a910e6d6471c44c4728990ff05a80def90e3666e. Standard Build Website only, no exception/force. Check pending and build lock first.
+2026-10-26 PSE footer standard WordPress build reattempt after transient HTTPS TLS preflight timeout. Astro master a910e6d. No bypass of signed unzip, no force.
