@@ -1,0 +1,1 @@
+2026-10-26 native WordPress Page 81087 authoring: move only complaint form markup and stylesheet from Astro into published Page after idempotent empty-editor preflight; preserve identity, menu, CF7 and security. No Astro build or live email.
