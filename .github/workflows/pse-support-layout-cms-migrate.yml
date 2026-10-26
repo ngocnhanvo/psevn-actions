@@ -1,0 +1,35 @@
+name: PSE support page layout to WordPress ACF (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-support-layout-cms-migrate.mjs
+      - scripts/pse-support-layout-hotline.css
+      - scripts/pse-support-layout-faq.css
+      - .github/workflows/pse-support-layout-cms-migrate.yml
+      - .pse-support-layout-cms-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-support-native-layout-writer
+  cancel-in-progress: false
+jobs:
+  verify-and-publish:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_SUPPORT_LAYOUT_MODE: "${{ github.event.head_commit.message == 'cms(pse): publish support layout in WordPress' && 'publish' || 'dry' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install pinned Playwright driver
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Guard source, table and WordPress Page then migrate only approved CSS
+        run: node --check scripts/pse-support-layout-cms-migrate.mjs && node scripts/pse-support-layout-cms-migrate.mjs
