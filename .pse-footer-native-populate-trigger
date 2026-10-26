@@ -1,1 +1,1 @@
-2026-10-26 Retry native WordPress Insert Image on verified footer CMS and Media IDs; previous attempt only prepared in-memory rows and saved nothing. Native helper callback fallback.
+Retry WordPress ESC Table Insert Image via native wp.media.string.image and editor helper, previous attempts saved zero CMS rows.
