@@ -1,1 +1,2 @@
 Read-only production QA after PSE WordPress native menu release: Astro master 4e6da586108c9989cbb1288aa3938dcf91b4a321 deployed by WordPress Build Website #40246981687 SUCCESS; PHP master 75e1c421b83dd03ea5c0df2e9f57a1794914eb2b via FTPS #40246790023 SUCCESS. Confirm desktop/mobile Header links are exactly editable WordPress leaf items, no generated View all, Library keeps Ảnh + Video, and overlay activates on internal navigation. No CMS writes, no build.
+Final PHP REST contract check: legacy showViewAll field must be absent. No CMS writes.
