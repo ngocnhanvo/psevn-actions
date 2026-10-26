@@ -1,0 +1,44 @@
+name: PSE isolated footer release branch regression (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-footer-release-ci.yml
+      - .pse-footer-release-test-trigger
+permissions:
+  contents: read
+jobs:
+  footer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: feature/pse-footer-cms-20261026
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm exec vitest run src/lib/wordpress/tablepress/pseFooterAssets.test.ts src/astro/components/Layout/Footer.poweredby.test.ts
+      - name: Parse Footer Astro without website build
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {createRequire} from 'node:module';
+          import {pathToFileURL} from 'node:url';
+          const require=createRequire(import.meta.url);
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
+          const path='src/astro/components/Layout/Footer.astro';
+          await compiler.transform(await readFile(path,'utf8'),{filename:path});
+          console.log('PSE_FOOTER_RELEASE_ASTRO_PARSE=PASS; NO_BUILD=PASS');
+          NODE
