@@ -3,3 +3,5 @@ One-time owner-authorized WordPress/PHP Build Website exception, PSE subpages ho
 2026-10-26 Contact ESC Table CSS now in Astro production source after PR #81 (2f36599db017e2b0ccd3a8470fe8d305c933b05f). Request normal WordPress/PHP Build Website (NO force), deploy through signed approved path, then verify visual parity before retiring legacy cssmore table styles.
 
 2026-10-26 Contact ESC cssmore tail removed only after signed Astro CSS deployed; WordPress native Save #40268708232 PASS: cssmore 10355→4878, 3 native ESC blocks intact, heading inline intact. Request NORMAL WordPress Build Website to refresh SSR/cache representation of CMS content; no force.
+
+2026-10-26 Four banners matching Thông điệp: WordPress cssmore opt-in PASS for hoi-dap, duong-day-nong, kenh-phan-phoi, thong-tin-tai-chinh (run #40271256749), Astro PR #82 merged master d6a230a749eebd2ae0e59d2202052cbed99ec3c5. Request NORMAL WordPress PHP Build Website, never forced, for approved visual change. Verify four public banners across responsive viewports after signed deploy.
