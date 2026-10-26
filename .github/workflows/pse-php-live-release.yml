@@ -37,6 +37,10 @@ jobs:
           php -l source-php/pse-unzip.php
           php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
           node --check source-php/wp-content/plugins/github-trigger/vcs-build-trigger.js
+          php -l source-php/wp-content/plugins/esc-visual-builder/includes/site-config.php
+          php -l source-php/wp-content/plugins/esc-visual-builder/includes/text-editor.php
+          php -l source-php/wp-content/plugins/esc-visual-builder/includes/text-editor-ui.php
+          php -l source-php/wp-content/plugins/esc-visual-builder/includes/image-editor.php
           php -l source-php/wp-content/plugins/github-trigger/vcs-hook.php
           php -l source-php/wp-content/themes/vibe-code-theme/inc/tools/menu.php
           grep -Fq "'product', 'post', 'page'" source-php/wp-content/plugins/github-trigger/vcs-hook.php
