@@ -7,3 +7,5 @@ Diagnostic READ ONLY: public Header anchors and labels after WP menu binding, do
 Scoped API/HTML difference diagnostic: read only REST esc-api Header item 77020 against actual compiled anchors; identify stale data layer without changing WordPress or building.
 
 2026-10-26 FINAL post-release QA: signed WordPress/PHP build #40277718959 and Astro deploy #40277799427 PASS after native ESC Menu Page/internal verified #40277535579 (menu 77020 -> Page 81087). Check actual compiled Header anchor, form, no admin host, no horizontal overflow at 390/768/1440. READ ONLY; no form submission.
+
+2026-10-26 CMS-owned complaint post-release: WP native form+CSS Save/Reload PASS #40291344225, isolated Astro master PR #85, normal WP trigger #40291666781 and signed deploy #40291772312 PASS. Recheck that live layout uses WordPress CMS markup marker, cssmore grid, Turnstile and all required fields across 390/768/1440; read only, no mail.
