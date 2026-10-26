@@ -1,0 +1,1 @@
+Native WordPress Menu Manager repair for existing Header item 77020: REST item now points to published Page 81087, but ESC-specific linkMode remained custom and API still emits external Joomla URL (diagnostic #40275080144). Select Page in ESC editor, Save, then readback; do not change other menus or trigger Astro build here.
