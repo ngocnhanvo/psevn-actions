@@ -1,3 +1,4 @@
-PSE ESC Visual Builder G3 WordPress Info company and BCT link incremental source verification, 2026-10-27.
-Check current PHP master and Astro github with existing source-only PHP lint, JS parse, Astro parser, Vitest.
+PSE ESC Visual Builder G2 native Page/Post reference picker source verification, 2026-10-27.
+PHP master 836e908319b7016d126ed42518266f3fd0d4526c; Astro github 9eafedf91f4023d05d71ac4051fae0586bd713e1.
+Validate PHP source contract, inspector JavaScript, Astro parser, Vitest and Tailwind via existing NO BUILD workflow.
 NO WEBSITE BUILD. NO FTP. NO CMS WRITE.
