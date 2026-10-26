@@ -55,20 +55,38 @@ try {
   process.exit(0);
  }
  if(first.http!==404)throw Error("ESC Table preflight failed HTTP "+first.http);
- await p.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:65000});
- await p.locator('input[name="table[name]"]').fill("Footer PSE - Thông tin bổ sung");
- await p.locator('textarea[name="table[description]"]').fill("Bảng toàn cục cho footer. Các hàng: certification (chứng nhận dùng Insert Image có alt), responsible (thông tin người phụ trách), credit (ghi công); visible=0 để ẩn. Thông tin công ty, fax, BCT lấy từ WordPress Thông tin chung.");
- const sizes=p.locator('input[type="number"]');
- if(await sizes.count()<2)throw Error("Native TablePress create controls missing");
- await sizes.nth(0).fill("3");
- await sizes.nth(1).fill(String(keys.length));
- await p.getByRole("button",{name:"Add Table"}).click();
- await p.locator("#table-id").waitFor({state:"visible",timeout:30000});
+ // The first Add Table request can finish server-side even when Playwright
+ // times out waiting for the editor navigation. Recover its unique empty row.
+ const list=await get("/wp-json/tablepress/v1/tables/prefix/all?per_page=100&page=1");
+ if(list.http!==200||!Array.isArray(list.data))throw Error("ESC Table inventory unavailable after preflight");
+ const candidates=list.data.filter(x=>x?.name==="Footer PSE - Thông tin bổ sung");
+ if(candidates.length>1)throw Error("Multiple footer draft tables; do not create another");
+ const draftId=candidates[0]?.id;
+ if(candidates.length===1 && (!draftId||!/^[a-zA-Z0-9_-]+$/.test(String(draftId))))
+  throw Error("Footer draft has no safe native TablePress ID");
+ if(draftId){
+  console.log("PSE_FOOTER_RECOVER_EXISTING_DRAFT=true");
+  await p.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+draftId,{waitUntil:"domcontentloaded",timeout:65000});
+  await p.waitForFunction(()=>Array.isArray(window.tp?.table?.data),null,{timeout:25000});
+  const draft=await p.evaluate(()=>({id:window.tp.table.id,grid:window.tp.table.data}));
+  if(draft.id!==String(draftId)||draft.grid.length!==3||draft.grid.some(r=>r.length!==keys.length||r.some(x=>String(x||"").trim())))
+   throw Error("Existing draft not blank; stop before overwriting content");
+ }else{
+  await p.goto(origin+"/wp-admin/admin.php?page=tablepress_add",{waitUntil:"domcontentloaded",timeout:65000});
+  await p.locator('input[name="table[name]"]').fill("Footer PSE - Thông tin bổ sung");
+  await p.locator('textarea[name="table[description]"]').fill("Bảng toàn cục cho footer. Các hàng: certification (chứng nhận dùng Insert Image có alt), responsible (thông tin người phụ trách), credit (ghi công); visible=0 để ẩn. Thông tin công ty, fax, BCT lấy từ WordPress Thông tin chung.");
+  const sizes=p.locator('input[type="number"]');
+  if(await sizes.count()<2)throw Error("Native TablePress create controls missing");
+  await sizes.nth(0).fill("3");
+  await sizes.nth(1).fill(String(keys.length));
+  await p.getByRole("button",{name:"Add Table"}).click({noWaitAfter:true,timeout:25000});
+  await p.locator("#table-id").waitFor({state:"visible",timeout:45000});
+ }
  if(await p.locator("#table-id").getAttribute("readonly")!==null)throw Error("ESC Table ID is immutable");
  await p.locator("#table-id").fill(tableId);
  await p.locator("#table-name").focus();
- await p.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click();
- await p.waitForTimeout(1500);
+ await p.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click({noWaitAfter:true});
+ await p.waitForTimeout(1600);
  await p.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
  await p.waitForFunction(()=>Array.isArray(window.tp?.table?.data)&&typeof window.tp?.editor?.setValueFromCoords==="function",null,{timeout:25000});
  const state=await p.evaluate(()=>({id:window.tp.table.id,grid:window.tp.table.data}));
