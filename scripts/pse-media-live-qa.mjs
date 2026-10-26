@@ -183,7 +183,18 @@ try{
        office:{left:a.left,right:a.right,top:a.top,bottom:a.bottom},
        form:{left:b.left,top:b.top,bottom:b.bottom},warehousesTop:c.top};
    },useESC);
-   if(geometry.display!=="grid")throw Error("Contact WordPress cssmore not applied to CMS layout");
+   if(geometry.display!=="grid")throw Error("Contact native ESC Table layout CSS not applied");
+   const hero=await page.locator(".pse-contact-hero .pse-contact-locations__intro").evaluate(el=>{
+     const heading=el.querySelector("h2");
+     const description=el.querySelector("p");
+     if(!heading||!description)throw Error("CMS-authored heading/description missing");
+     const titleStyle=getComputedStyle(heading),introStyle=getComputedStyle(el);
+     return {title:heading.textContent?.trim(),color:titleStyle.color,fontSize:parseFloat(titleStyle.fontSize),textAlign:introStyle.textAlign,
+       headingInline:!!heading.getAttribute("style"),descriptionInline:!!description.getAttribute("style")};
+   });
+   if(hero.title!=="Thông tin liên hệ"||hero.color!=="rgb(23, 82, 56)"||hero.fontSize<28||hero.fontSize>50||hero.textAlign!=="center"||!hero.headingInline||!hero.descriptionInline)
+     throw Error("WordPress-native heading CSS parity failed at "+width+" "+JSON.stringify(hero));
+   console.log("PSE_CONTACT_EDITOR_ASTRO_HEADING_PARITY=PASS width="+width+" title_css_owned_in_wp=true");
    if(width>900){
      if(Math.abs(geometry.office.top-geometry.form.top)>8 ||
        geometry.form.left<geometry.office.right-4)
