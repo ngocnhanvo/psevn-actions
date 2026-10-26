@@ -1,2 +1,3 @@
 2026-10-26 native WordPress Page 81087 authoring: move only complaint form markup and stylesheet from Astro into published Page after idempotent empty-editor preflight; preserve identity, menu, CF7 and security. No Astro build or live email.
 2026-10-26 TinyMCE readiness + native Text editor guard passed in read-only run #40291199690; apply once, verify Save/Reload.
+2026-10-26 READ-ONLY TinyMCE parity verification after PHP FTPS CSS JS-escape fix psevn-php/master 5df222e5fe73: ensure Page 81087 native Visual Editor initializes, original 9 fields, two section headings, desktop CSS grid 2 columns, no WP content mutation, no email and NO ASTRO BUILD.
