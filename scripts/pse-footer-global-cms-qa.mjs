@@ -58,7 +58,7 @@ try {
    return {
      status:resp.status,
      rows:table?.items?.length||0,
-     groups,certifications:certs.map(r=>({label:r.label,containsImage:typeof r.image==='string'&&r.image.includes('<img '),hasAlt:typeof r.image==='string'&&r.image.includes('alt='),visible:r.visible,hasMediaId:/wp-image-\\d+/.test(r.image||'')})),
+     groups,certifications:certs.map(r=>({label:r.label,containsImage:typeof r.image==='string'&&r.image.includes('<img '),hasAlt:typeof r.image==='string'&&r.image.includes('alt='),visible:r.visible,hasMediaId:/wp-image-\d+/.test(r.image||'')})),
      responsible:responsible.map(r=>({label:r.label,value:r.value,href:r.href})),
      credits:credits.map(r=>r.value),
    };
