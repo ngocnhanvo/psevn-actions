@@ -1,4 +1,4 @@
-name: PSE WordPress native Contact editor visual parity (READ ONLY)
+name: PSE WordPress native ESC Insert Code image-block QA (READ ONLY)
 on:
   push:
     branches: [main]
