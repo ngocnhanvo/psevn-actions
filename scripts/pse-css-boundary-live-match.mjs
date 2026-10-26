@@ -44,7 +44,7 @@ try{
    let scanned=0,matched=0,unmatched=0,esc=0,html=0,outside=0,matchSamples=[],escSamples=[],bad=0;
    const seen=new Set();
    const walk=rules=>{for(const rule of rules){
-     if(rule.cssRules){walk(rule.cssRules);continue}
+     if(!rule.selectorText && rule.cssRules?.length){walk(rule.cssRules);continue}
      if(!rule.selectorText)continue;
      for(const sel of rule.selectorText.split(/,(?![^()]*\))/)){
        const selector=sel.trim();if(!selector||seen.has(selector))continue;seen.add(selector);scanned++;
