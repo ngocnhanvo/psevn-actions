@@ -64,7 +64,7 @@ try {
  }));
  console.log('PSE_FOOTER_ROW_NATIVE_FNS='+JSON.stringify(rowFns));
  await page.evaluate(()=>{window.tp.editor.updateSelectionFromCoords(2,2);});
- await page.getByRole('button',{name:'Insert Image',exact:true}).click({timeout:12000});
+ await page.getByRole('button',{name:'Insert Image',exact:true}).evaluate(el=>el.click());
  await page.waitForTimeout(900);
  const modal=await page.evaluate(()=>({
   modalText:[...document.querySelectorAll('.media-modal, [role="dialog"], .components-modal__frame')].filter(el=>getComputedStyle(el).display!=='none').map(el=>(el.innerText||'').slice(0,1100)),
