@@ -184,6 +184,17 @@ try {
      throw Error("Native ESC Table image editor preview invalid "+spec.slug);
    await page.locator("#wp-content-wrap").screenshot({
      path:"artifacts/pse-support-native-blocks/"+spec.slug+"-visual-editor.png"});
+   // Classic Editor's canonical serialization must be inspected before
+   // publish. The image is a visual authoring affordance, not a data source.
+   const serialized=await page.evaluate(()=>{
+     const editor=window.tinymce.get("content");
+     editor.save();
+     return String(document.querySelector("#content")?.value||"");
+   });
+   console.log("PSE_NATIVE_EDITOR_SERIALIZATION="+JSON.stringify({
+     slug:spec.slug,rawLength:serialized.length,previewBlocks:wrappers(serialized).length,
+     nativeIds:tokens(serialized),valueSha256:sha(serialized)
+   }));
    if(existing.length){
      console.log("PSE_SUPPORT_NATIVE=ALREADY_DONE "+JSON.stringify({page:spec.id,table:spec.table,
        imageWidth:state.imageWidth,tableRows:spec.count,sidePanel:false}));
