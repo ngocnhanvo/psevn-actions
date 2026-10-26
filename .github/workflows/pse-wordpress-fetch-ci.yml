@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-astro
-          ref: feature/pse-wp-fetch-reliability-20261026
+          ref: fix/pse-undici-fetch-client-20261026
           token: ${{ secrets.SOURCE_REPO_PAT }}
           persist-credentials: false
       - uses: pnpm/action-setup@v4
