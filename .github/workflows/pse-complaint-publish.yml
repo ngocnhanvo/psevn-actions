@@ -1,0 +1,27 @@
+name: PSE publish verified complaint Page (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-complaint-publish-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-complaint-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-complaint-publish.mjs && node scripts/pse-complaint-publish.mjs
