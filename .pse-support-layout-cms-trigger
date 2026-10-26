@@ -1,0 +1,4 @@
+PSE_SUPPORT_LAYOUT_ACF_CSSMORE=APPROVED
+Pages: 80932,80930
+Tables: pse_hotline_vi,pse_faq_vi
+Operation: CSS-only, guarded by exact page identity/shortcode/schema; no Astro build.
