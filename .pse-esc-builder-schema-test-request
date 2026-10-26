@@ -1,4 +1,4 @@
-PSE ESC Visual Builder G2 native Page/Post reference picker source verification, 2026-10-27.
-PHP master 836e908319b7016d126ed42518266f3fd0d4526c; Astro github 9eafedf91f4023d05d71ac4051fae0586bd713e1.
-Validate PHP source contract, inspector JavaScript, Astro parser, Vitest and Tailwind via existing NO BUILD workflow.
+PSE ESC Visual Builder G2 Page/Post picker final source verification after draft cancel and root-relative href fixes, 2026-10-27.
+PHP master eea0b72919a46583a422da48ab49e89d40cc0c67; Astro github 9eafedf91f4023d05d71ac4051fae0586bd713e1.
+Existing source-only contract: PHP lint/mock auth/readback, inspector JS parse, Astro compiler, Vitest, Tailwind.
 NO WEBSITE BUILD. NO FTP. NO CMS WRITE.
