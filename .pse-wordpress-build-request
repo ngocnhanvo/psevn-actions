@@ -1,1 +1,1 @@
-2026-10-26 PSE footer WP Build Website normal request: signed unzip readiness TLS-only bounded retries; do not bypass v2 HMAC/FTP target checks. Astro master a910e6d.
+2026-10-26 PSE footer normal WordPress Build Website after Astro master 770fc6955cc07f7cb794fa193026f8465a7cad8b (Undici slow-TLS WordPress REST timeout fix). Signed checks retained, no force.
