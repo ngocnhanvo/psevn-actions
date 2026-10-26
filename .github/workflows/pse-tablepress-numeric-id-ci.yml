@@ -1,0 +1,38 @@
+name: PSE TablePress numeric-ID regression (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-tablepress-numeric-id-ci.yml
+      - .pse-tablepress-numeric-id-ci-trigger
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: fix/pse-tablepress-numeric-id-20261026
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Test all PSE contracts (NO BUILD)
+        run: pnpm exec vitest run
+      - name: Verify numeric ID transform and reject unknown schema (NO BUILD)
+        shell: bash
+        run: |
+          grep -F 'const shortcode = String(rawId)' src/lib/wordpress/tablepress/getData.ts
+          grep -F 'Invalid TablePress table id type:' src/lib/wordpress/tablepress/getData.ts
+          echo 'PSE_TABLEPRESS_NUMERIC_ID_CI=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS'
