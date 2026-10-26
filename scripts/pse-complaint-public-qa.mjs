@@ -6,6 +6,9 @@ if(entries.length!==1)throw Error("Frontend origin missing or duplicate");
 const base=new URL(entries[0].slice(14).replace(/^['"]|['"]$/g,""));
 if(base.protocol!=="https:"||!base.hostname||base.username||base.password||base.search||base.hash||!["","/"].includes(base.pathname))throw Error("Unsafe frontend origin");
 const url=base.origin+"/xu-ly-khieu-nai-y-kien-khach-hang";
+const wpLine=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,"")).find(x=>x.startsWith("WC_URL="));
+if(!wpLine)throw Error("Missing private WordPress origin");
+const privateHost=new URL(wpLine.slice(7).replace(/^['"]|['"]$/g,"")).hostname;
 await mkdir("artifacts/pse-complaint-live",{recursive:true});
 const browser=await chromium.launch({headless:true});
 const failures=[];
@@ -16,7 +19,7 @@ try {
   page.on("pageerror",e=>errors.push(String(e).slice(0,140)));
   try{
    const res=await page.goto(url,{waitUntil:"domcontentloaded",timeout:60000});
-   const out=await page.evaluate(()=>{
+   const out=await page.evaluate((privateHost)=>{
     const main=document.querySelector("#main-content");
     const form=main?.querySelector("#pse-complaint-form");
     const fields=["name","email","phone","address","product","subject","complaints"];
@@ -28,9 +31,9 @@ try {
     const footer=document.querySelector(".pse-footer");
     return {h1,main:!!main,form:!!form,fieldsRequired:required,submitDisabled:submit?.disabled===true,security:!!security,
      header:!!header,footer:!!footer,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
-     adminHostLeak:document.documentElement.outerHTML.includes("admin-pse.webnvn.com"),
+     adminHostLeak:document.documentElement.outerHTML.includes(privateHost),
      hasContent:(main?.textContent||"").length>200};
-   });
+   },privateHost);
    const ok=res?.status()===200&&out.main&&out.form&&out.fieldsRequired&&out.h1.length===1&&out.security&&out.header&&out.footer
     &&!out.overflow&&!out.adminHostLeak&&out.hasContent&&errors.length===0;
    console.log("PSE_COMPLAINT_PUBLIC_QA="+JSON.stringify({width,http:res?.status()||0,...out,pageErrors:errors,pass:ok}));
