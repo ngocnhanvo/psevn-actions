@@ -1,0 +1,57 @@
+name: PSE four CMS-selected soft heroes (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-soft-hero-cms-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-soft-hero-cms
+  cancel-in-progress: false
+jobs:
+  source-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout isolated PSE Astro hero fix
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: fix/pse-soft-hero-four-pages-20261026
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Test selected CMS hero, existing corporate layout and distribution
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run src/lib/seo/pseSoftHero.test.ts src/lib/seo/pseCorporateBanner.test.ts src/lib/seo/pseDistributionPresentation.test.ts
+  cms:
+    needs: source-tests
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 16
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_HERO_APPLY: "${{ github.event.head_commit.message == 'cms(pse): opt in approved four page heroes' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Guarded WordPress-only ACF banner selection
+        run: node --check scripts/pse-soft-hero-cms.mjs && node scripts/pse-soft-hero-cms.mjs
