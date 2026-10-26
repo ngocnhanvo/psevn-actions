@@ -101,7 +101,7 @@ try {
    console.log("PSE_SUPPORT_PAGE_READBACK="+JSON.stringify({
      slug:spec.slug,rawLength:raw.length,rawSha256:sha(raw),
      nativeIds:tokens(raw),previewBlocks:existing.length,
-     previewImages:(raw.match(/<img\\b/gi)||[]).length,
+     previewImages:(raw.match(/<img\b/gi)||[]).length,
      cssLength:css.length,cssSha256:sha(css),layoutMarkerPresent:css.includes(spec.css),
      contentStartsWith:raw.slice(0,130)
    }));
