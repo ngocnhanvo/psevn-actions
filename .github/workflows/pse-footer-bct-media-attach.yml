@@ -1,0 +1,45 @@
+name: PSE WordPress BCT badge restoration (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-footer-bct-media-attach.yml
+      - .pse-footer-bct-media-attach-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-shared-footer-author
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read existing PSE badge file from production source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: pse-source
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-footer-bct-media-attach.mjs && node scripts/pse-footer-bct-media-attach.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-bct-wp-info-prewrite
+          path: artifacts/pse-footer-bct/wp-info-before.json
+          retention-days: 14
+          if-no-files-found: ignore
