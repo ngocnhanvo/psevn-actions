@@ -29,6 +29,7 @@ FILES = (
     "wp-content/mu-plugins/pse-post-routing-defaults.php",
     "wp-content/mu-plugins/pse-published-post-search.php",
     "wp-content/mu-plugins/pse-public-contact-form-id.php",
+    "wp-content/mu-plugins/esc-native-page-cssmore-editor.php",
     "wp-content/mu-plugins/pse-contact-editor-preview.php",
     "wp-content/mu-plugins/pse-contact-editor-preview.js",
     "wp-content/mu-plugins/pse-contact-editor-preview.css",
