@@ -1,12 +1,14 @@
 /**
- * Move only existing approved hotline/FAQ layout declarations to WordPress ACF cssmore.
- * Do not alter Page content, TablePress cells, title, action/key or publish state.
- * Write only when a guarded, explicit owner-request marker is present.
+ * Retired legacy hotline/FAQ CSSMore migration. READ-ONLY inventory only.
+ * Owner policy: CSSMore is for native WordPress Editor HTML, and native ESC
+ * Table component styles belong to Astro Tailwind. Never reintroduce the old
+ * ESC Table CSS into ACF cssmore by invoking this historical workflow.
  */
 import { chromium } from "playwright";
 import { readFile } from "node:fs/promises";
 const mode=process.env.PSE_SUPPORT_LAYOUT_MODE||"dry";
 if(!["dry","publish"].includes(mode))throw Error("Unexpected execution mode");
+if(mode!=="dry")throw Error("Legacy ESC Table cssmore publish disabled: edit Astro Tailwind component instead.");
 const cfg=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,"")).filter(s=>s.startsWith("WC_URL="));
 if(cfg.length!==1)throw Error("Expected exactly one WP origin");
 const u=new URL(cfg[0].split("=").slice(1).join("=").replace(/^['"]|['"]$/g,""));
@@ -60,16 +62,7 @@ try {
    const saved=String(pageState.data.acf?.cssmore||"").trim();
    if(saved && saved!==css)throw Error("Refusing overwrite of nonmatching WordPress CMS layout "+spec.slug);
    console.log("PSE_SUPPORT_LAYOUT_PREFLIGHT="+JSON.stringify({slug:spec.slug,table:spec.table,rows:spec.rows,existing:saved===css?"MATCH":saved?"CHANGED":"EMPTY",cssBytes:Buffer.byteLength(css),mode}));
-   if(mode==="dry"||saved===css)continue;
-   const current=await readPage(spec);
-   if(current.http!==200||current.data.modified!==pageState.data.modified||String(current.data.content?.raw||"").trim()!==raw||
-      String(current.data.acf?.cssmore||"").trim()!==saved)throw Error("Concurrent WordPress update detected "+spec.slug);
-   const wrote=await query("/wp-json/wp/v2/pages/"+spec.id,{acf:{cssmore:css}});
-   if(wrote.http!==200)throw Error("WordPress ACF update rejected "+spec.slug+" HTTP "+wrote.http+" CODE "+String(wrote.data?.code||"unknown"));
-   const after=await readPage(spec);
-   if(after.http!==200||String(after.data.acf?.cssmore||"").trim()!==css||
-      String(after.data.content?.raw||"").trim()!==raw||after.data.acf?.key!==spec.key)throw Error("WordPress CSS read-after-write failed "+spec.slug);
-   console.log("PSE_SUPPORT_LAYOUT_PUBLISHED="+JSON.stringify({slug:spec.slug,marker:spec.marker,editorUnchanged:true,source:"wordpress_acf_cssmore"}));
+   // Historical CSS is retained as reference; never write to WordPress.
  }
- console.log("PSE_SUPPORT_LAYOUT_CMS="+(mode==="dry"?"DRY_PASS":"PASS")+"; page_count=2; esc_tables_unchanged=true; no_astro_build=true");
+ console.log("PSE_SUPPORT_LAYOUT_CMS=DRY_PASS; page_count=2; no_write=true; esc_tables_unchanged=true; no_astro_build=true");
 }finally{await browser.close()}
