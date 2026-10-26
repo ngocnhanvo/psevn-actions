@@ -111,8 +111,25 @@ try {
      JSON.stringify({id:spec.id,slug:spec.slug,raw,sha256:sha(raw),
        cssSha256:sha(css),table:spec.table,itemCount:table.data.items.length},null,2));
    await visitEditor(spec.id);
-   await page.locator("#content-tmce").click();
-   await page.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:20000});
+   let editorReady=false;
+   for(let attempt=0;attempt<3&&!editorReady;attempt++){
+     await page.locator("#content-tmce").click({timeout:15000});
+     try{
+       await page.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:18000});
+       editorReady=true;
+     }catch(error){
+       if(!/Timeout/i.test(String(error)))throw error;
+       const diagnostic=await page.evaluate(()=>({
+         iframe:!!document.querySelector("#content_ifr"),
+         tinymceLoaded:typeof window.tinymce!=="undefined",
+         editorFound:!!window.tinymce?.get("content"),
+         visualVisible:!!document.querySelector("#content-tmce"),
+       }));
+       console.log("PSE_NATIVE_EDITOR_INIT_RETRY="+JSON.stringify({pageId:spec.id,attempt:attempt+1,...diagnostic}));
+       if(attempt===2)throw Error("Native WordPress TinyMCE editor failed to initialize after 3 verified attempts");
+       await visitEditor(spec.id);
+     }
+   }
    if(await page.locator("#pse-support-editor-preview").count())
      throw Error("Duplicate custom support iframe must be retired before native editor QA");
    if(!existing.length){
