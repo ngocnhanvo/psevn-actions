@@ -121,6 +121,8 @@ try {
       current.html.includes('PSE_NATIVE_SLOT_'+i))
       throw Error('Native Insert Code failed or corrupted other ESC section at '+id);
  }
+ await page.locator('#title').click(); // commit the last native TinyMCE image insertion before inspecting serialized HTML
+ await page.waitForTimeout(900);
  const state=await page.evaluate(()=>{
    const editor=window.tinymce.get('content');
    return {html:editor.getContent(),previewImages:[...editor.getBody().querySelectorAll('.tablepress-preview-wrap img')].map(img=>({
@@ -133,8 +135,10 @@ try {
  const ordered=tokens(state.html).map(t=>t.id);
  if(JSON.stringify(ordered)!==JSON.stringify(ids))throw Error('Native visual ESC insertion order mismatch');
  const wrappers=[...state.html.matchAll(/<div\b(?=[^>]*class=["'][^"']*tablepress-preview-wrap[^"']*["'])[^>]*>[\s\S]*?<\/div>/gi)];
+ console.log('PSE_CONTACT_NATIVE_SERIALIZED_HTML='+JSON.stringify(state.html.slice(-3000)));
  const wrapperIds=wrappers.map(w=>(w[0].match(/data-table-id=["']([^"']+)["']/i)||[])[1]);
- if(JSON.stringify(wrapperIds)!==JSON.stringify(ids)||state.previewImages.length!==3)
+ if(JSON.stringify(wrapperIds)!==JSON.stringify(ids)||wrappers.length!==3||
+    wrappers.some(w=>(w[0].match(/<img\b/gi)||[]).length!==1))
    throw Error('Native editor did not generate three separate ESC image preview blocks; do not publish plain shortcode text');
  for(let i=0;i<3;i++)if(tokens(wrappers[i][0]).length!==1||tokens(wrappers[i][0])[0].id!==ids[i])
    throw Error('More than one shortcode inside a native image preview block');
