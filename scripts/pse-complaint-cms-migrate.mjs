@@ -69,10 +69,15 @@ try {
        inputCount:body.querySelectorAll("#pse-complaint-form input,#pse-complaint-form textarea").length,
        sectionCount:body.querySelectorAll(".pse-complaint__section-heading").length,
        gridDisplay:grid&&view?.getComputedStyle(grid)?.display||null,
+       gridColumns:grid&&view?.getComputedStyle(grid)?.gridTemplateColumns||null,
        h1FontSize:body.querySelector("h1")&&view?.getComputedStyle(body.querySelector("h1"))?.fontSize||null};
    });
    console.log("PSE_COMPLAINT_CMS_EDITOR_PARITY="+JSON.stringify(visual));
    if(!visual.form||visual.inputCount!==9||visual.sectionCount!==2||!visual.h1)throw Error("WordPress Visual Editor lost CMS form content");
+   // Read-only live proof that the native TinyMCE iframe uses the same ACF
+   // cssmore as Astro; source-level PHP tests alone cannot certify parity.
+   if(visual.gridDisplay!=="grid"||String(visual.gridColumns||"").trim().split(/\\s+/).length!==2)
+     throw Error("WordPress native Visual Editor failed CMS cssmore two-column layout parity");
    console.log("PSE_COMPLAINT_CMS=ALREADY_DONE; no_write=true");process.exit(0);
  }
  // This Page was intentionally created with an empty editor. Never overwrite an
