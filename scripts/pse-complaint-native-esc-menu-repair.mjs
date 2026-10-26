@@ -54,14 +54,17 @@ try{
  const menuId=Number(m.menus);
  if(!Number.isSafeInteger(menuId)||menuId<1)throw Error("WordPress menu term absent");
  console.log("PSE_COMPLAINT_ESC_MENU_PREFLIGHT="+JSON.stringify({itemId,pageId,term:menuId,mode:b.linkMode,linkType:b.linkType}));
- await p.goto(o.origin+"/wp-admin/nav-menus.php?menu="+menuId,{waitUntil:"domcontentloaded",timeout:90000});
+ await p.goto(o.origin+"/wp-admin/nav-menus.php?menu="+menuId,{waitUntil:"load",timeout:90000});
  const item=p.locator("#menu-item-"+itemId);
  await item.waitFor({state:"attached",timeout:45000});
  const select=item.locator('select[name="esc-menu-item-link-type['+itemId+']"]');
  if(!await select.count())throw Error("Native ESC Menu link mode missing");
  const expand=p.locator(".esc-menu-bulk-toggle button").filter({hasText:"Mở rộng"}).first();
  if(await expand.count())await expand.click();
- await item.scrollIntoViewIfNeeded();
+ // Native menus have animated/fixed overlays which can leave Playwright's
+ // stability-based scroll action waiting forever. Scroll directly without
+ // synthesizing a click, then open only the one verified menu item.
+ await item.evaluate(el=>el.scrollIntoView({block:"center",behavior:"instant"}));
  const details=item.locator(".menu-item-settings");
  if(!(await details.isVisible())){
    // In wp-admin/nav-menus.php the native .item-edit control is visually
