@@ -43,5 +43,19 @@ try {
  const phoneValue=await page.locator('#esc-vb-edit-title').inputValue();
  if(!phoneValue.trim()||phoneValue===addressValue)throw Error('Phone click did not select its distinct source cell');
  if(!await page.locator('#esc-vb-image-editor').isHidden())throw Error('Image editor incorrectly opened for a text cell');
- console.log('PSE_ESC_BUILDER_LIVE=PASS source=ESC_Table native_row=0 fields=address,phone different_editors=PASS READ_ONLY=PASS NO_BUILD=PASS');
+ // Verify the independent Media workflow: clicking an actual ESC Table image
+ // opens the image picker panel, never the text editor. No Save is performed.
+ const home=options.find(o=>/^(Trang chủ|Home)$/i.test(o.label));
+ if(!home)throw Error('Homepage is not available in Visual Builder for image QA');
+ await page.locator('#esc-vb-page').selectOption(home.value);
+ await Promise.all([page.waitForLoadState('domcontentloaded'),page.getByRole('button',{name:'Mở trang'}).click()]);
+ const homeFrame=page.frameLocator('#esc-vb-frame');
+ const images=homeFrame.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]');
+ await images.first().waitFor({state:'visible',timeout:90000});
+ await images.first().click({force:true});
+ await page.locator('#esc-vb-image-editor').waitFor({state:'visible',timeout:30000});
+ if(!await page.locator('#esc-vb-text-editor').isHidden())throw Error('Text editor incorrectly opened for an ESC image cell');
+ if(!(await page.locator('#esc-vb-image-caption').innerText()).trim())
+   throw Error('Image editor did not identify its canonical ESC source');
+ console.log('PSE_ESC_BUILDER_LIVE=PASS source=ESC_Table native_row=0 fields=address,phone text_click=PASS image_click=PASS distinct_editors=PASS READ_ONLY=PASS NO_BUILD=PASS');
 } finally { await browser.close(); }
