@@ -1,0 +1,37 @@
+name: PSE WordPress fetch reliability branch CI (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-wordpress-fetch-ci.yml
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: feature/pse-wp-fetch-reliability-20261026
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm exec vitest run
+      - name: Parse shared WordPress fetch module in Node target
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import {build} from 'esbuild';
+          await build({entryPoints:['src/lib/utils/fetchWithDiagnostics.ts'],bundle:true,write:false,platform:'node',format:'esm',external:['undici']});
+          console.log('PSE_WORDPRESS_FETCH_PARSE=PASS; NO_BUILD=PASS');
+          NODE
