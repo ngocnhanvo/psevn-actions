@@ -32,9 +32,14 @@ try {
     return {h1,main:!!main,form:!!form,fieldsRequired:required,submitDisabled:submit?.disabled===true,security:!!security,
      header:!!header,footer:!!footer,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
      adminHostLeak:document.documentElement.outerHTML.includes(privateHost),
+     menuLinked:[...document.querySelectorAll(".pse-header a[href]")].some(a=>{
+       if(!/xử lý khiếu nại/i.test(a.textContent||""))return false;
+       try{return new URL(a.href).pathname.replace(/\/+$/,"")==="/xu-ly-khieu-nai-y-kien-khach-hang"}
+       catch{return false}
+     }),
      hasContent:(main?.textContent||"").length>200};
    },privateHost);
-   const ok=res?.status()===200&&out.main&&out.form&&out.fieldsRequired&&out.h1.length===1&&out.security&&out.header&&out.footer
+   const ok=res?.status()===200&&out.main&&out.form&&out.fieldsRequired&&out.h1.length===1&&out.security&&out.header&&out.footer&&out.menuLinked
     &&!out.overflow&&!out.adminHostLeak&&out.hasContent&&errors.length===0;
    console.log("PSE_COMPLAINT_PUBLIC_QA="+JSON.stringify({width,http:res?.status()||0,...out,pageErrors:errors,pass:ok}));
    if(!ok)failures.push({width,http:res?.status()||0});
