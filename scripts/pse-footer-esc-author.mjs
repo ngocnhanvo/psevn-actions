@@ -49,15 +49,19 @@ try {
   fields:first.data?.fields||[],items:first.data?.items||[],
   note:"This backup is restricted to footer table content; no WordPress user data."
  },null,2)+"\n");
- if(first.http===200){
-  if(first.data?.id!==tableId||JSON.stringify(first.data.fields?.map(x=>x.key))!==JSON.stringify(keys))
-   throw Error("Existing footer ESC Table has a different schema; preserve for manual parity review");
-  console.log("PSE_FOOTER_ESC_CMS=ALREADY_EXISTS; rows="+(first.data.items?.length||0)+"; write=false");
-  process.exit(0);
- }
- if(first.http!==404)throw Error("ESC Table preflight failed HTTP "+first.http);
- // The first Add Table request can finish server-side even when Playwright
- // times out waiting for the editor navigation. Recover its unique empty row.
+ const isComplete=first.http===200&&first.data?.id===tableId&&
+  JSON.stringify(first.data.fields?.map(f=>f.key))===JSON.stringify(keys)&&
+  first.data.items?.length===1&&first.data.items[0].group==="credit"&&
+  first.data.items[0].value==="Designed by ESC";
+ if(isComplete){console.log("PSE_FOOTER_ESC_CMS=ALREADY_DONE; no_write=true");process.exit(0)}
+ const isBlankTarget=first.http===200&&first.data?.id===tableId&&
+  first.data.fields?.length===keys.length&&first.data.fields.every(f=>!String(f.key||"").trim())&&
+  Array.isArray(first.data.items)&&first.data.items.length===1&&
+  first.data.items.every(item=>Object.values(item).every(v=>!String(v||"").trim()));
+ if(first.http!==404&&!isBlankTarget)
+  throw Error("Existing global footer ESC Table has data or incompatible schema; refuse overwrite");
+ if(isBlankTarget)console.log("PSE_FOOTER_RECOVER_EMPTY_TARGET=true");
+ if(first.http===404){
  const list=await get("/wp-json/tablepress/v1/tables/prefix/all?per_page=100&page=1");
  if(list.http!==200||!Array.isArray(list.data))throw Error("ESC Table inventory unavailable after preflight");
  const candidates=list.data.filter(x=>x?.name==="Footer PSE - Thông tin bổ sung");
@@ -88,7 +92,18 @@ try {
  await p.locator("#table-name").focus();
  await p.getByRole("button",{name:/Save Changes|Lưu thay đổi/i}).first().click({noWaitAfter:true});
  await p.waitForTimeout(1600);
- await p.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
+ }
+ // WordPress editor may abort a navigation while the previous Save response
+ // completes; retry transient ERR_ABORTED only, never duplicate writes.
+ for(let attempt=0;attempt<3;attempt++){
+  try{
+   await p.goto(origin+"/wp-admin/admin.php?page=tablepress&action=edit&table_id="+tableId,{waitUntil:"domcontentloaded",timeout:65000});
+   break;
+  }catch(e){
+   if(attempt===2||!/net::ERR_ABORTED/.test(String(e)))throw e;
+   await p.waitForTimeout(1500);
+  }
+ }
  await p.waitForFunction(()=>Array.isArray(window.tp?.table?.data)&&typeof window.tp?.editor?.setValueFromCoords==="function",null,{timeout:25000});
  const state=await p.evaluate(()=>({id:window.tp.table.id,grid:window.tp.table.data}));
  if(state.id!==tableId||state.grid.length!==3||state.grid.some(row=>row.length!==keys.length||row.some(x=>String(x||"").trim())))
