@@ -59,6 +59,20 @@ try {
  if(before.includes('data-pse-cms-form="v1"')){
    const ok=expectedNames.every(n=>before.includes('name="'+n+'"'))&&priorCSS.includes(".pse-complaint__grid");
    if(!ok)throw Error("Partially migrated CMS; stop instead of overwrite");
+   await p.goto(url.origin+"/wp-admin/post.php?post=81087&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+   await p.locator("#content-tmce").click();
+   await p.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:25000});
+   const visual=await p.evaluate(()=>{
+     const ed=window.tinymce.get("content"),body=ed.getBody(),grid=body.querySelector(".pse-complaint__grid");
+     const view=ed.getDoc()?.defaultView;
+     return {h1:body.querySelector("h1")?.textContent?.trim(),form:!!body.querySelector("#pse-complaint-form"),
+       inputCount:body.querySelectorAll("#pse-complaint-form input,#pse-complaint-form textarea").length,
+       sectionCount:body.querySelectorAll(".pse-complaint__section-heading").length,
+       gridDisplay:grid&&view?.getComputedStyle(grid)?.display||null,
+       h1FontSize:body.querySelector("h1")&&view?.getComputedStyle(body.querySelector("h1"))?.fontSize||null};
+   });
+   console.log("PSE_COMPLAINT_CMS_EDITOR_PARITY="+JSON.stringify(visual));
+   if(!visual.form||visual.inputCount!==9||visual.sectionCount!==2||!visual.h1)throw Error("WordPress Visual Editor lost CMS form content");
    console.log("PSE_COMPLAINT_CMS=ALREADY_DONE; no_write=true");process.exit(0);
  }
  // This Page was intentionally created with an empty editor. Never overwrite an
