@@ -1,0 +1,1 @@
+2026-10-27 Authorized correction to WordPress robots.txt for Lighthouse SEO score on PSE public test origin. Replace only exact root Disallow: / with Allow: / via WordPress Admin Save. Preserve sitemap/llms. No Astro build in this job.
