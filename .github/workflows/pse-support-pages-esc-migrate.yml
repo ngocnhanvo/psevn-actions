@@ -1,0 +1,38 @@
+name: PSE hotline and FAQ ESC author + native Page attachment (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-support-pages-esc-migrate.mjs
+      - .github/workflows/pse-support-pages-esc-migrate.yml
+      - .pse-support-pages-esc-migrate-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-support-native-esc-writer
+  cancel-in-progress: false
+jobs:
+  migrate:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_SUPPORT_MODE: "${{ github.event.head_commit.message == 'cms(pse): author hotline and FAQ ESC tables' && 'tables' || github.event.head_commit.message == 'cms(pse): attach hotline and FAQ ESC tables' && 'pages' || 'dry' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-support-pages-esc-migrate.mjs && node scripts/pse-support-pages-esc-migrate.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-support-pages-original-content-backup
+          path: artifacts/pse-support-esc-migration/*.json
+          if-no-files-found: ignore
+          retention-days: 14
