@@ -70,10 +70,24 @@ try{
    // In wp-admin/nav-menus.php the native .item-edit control is visually
    // hidden while its menu item is collapsed; Playwright's locator.click()
    // waits for visibility forever. Trigger its native DOM click once.
-   const editor=item.locator(".item-edit");
-   if(await editor.count()!==1)throw Error("Native menu edit toggle not unique");
-   await editor.evaluate(anchor=>anchor.click());
-   await details.waitFor({state:"visible",timeout:12000});
+   const ui=await item.evaluate(el=>{
+     const settings=el.querySelector(".menu-item-settings");
+     const edit=el.querySelector("a.item-edit");
+     if(!settings||!edit)throw Error("Native WordPress item settings are missing");
+     // Use WordPress's own menu edit controller. The hidden a.item-edit
+     // cannot be activated by Playwright's visibility-based click action.
+     const ctrl=window.wpNavMenu;
+     if(!ctrl||typeof ctrl.eventOnClickEditLink!=="function")
+       throw Error("WordPress native menu editor script not initialized");
+     if(el.classList.contains("menu-item-edit-inactive"))
+       ctrl.eventOnClickEditLink(edit);
+     // WordPress animates settings with slideDown; do not synthesize a Save.
+     return {active:el.classList.contains("menu-item-edit-active"),
+       hasSettings:!!settings,hiddenParent:!el.getClientRects().length};
+   });
+   console.log("PSE_COMPLAINT_NATIVE_MENU_UI="+JSON.stringify(ui));
+   if(!ui.active)throw Error("WordPress native item editor refused to expand");
+   await details.waitFor({state:"visible",timeout:10000});
  }
  await select.selectOption("page");
  const pageSelect=item.locator('select[name="esc-menu-item-page-id['+itemId+']"]');
