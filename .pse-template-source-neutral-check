@@ -1,1 +1,2 @@
 2026-10-26 footer Astro complete unit/parser regression: support FAQ Tailwind focus selector allowed
+2026-10-27 Astro development image API priority and Imagick-missing fallback: run existing full Vitest + parser CI (NO BUILD)
