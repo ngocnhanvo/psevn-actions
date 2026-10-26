@@ -1,4 +1,4 @@
-PSE ESC Visual Builder G2 native WordPress custom Menu URL source regression, 2026-10-27.
-FE github a5dd7a26040bdfd7b8d1200723a7d14b44269fcd; PHP master b43832979d6417aa086c3cb0f97b6df6024cc643; Actions existing schema CI.
-Validate no-build source syntax and unit tests: scoped Header/vi/en, readonly guards, XSS/unsafe URLs, 403/409, save + readback, link preview patch.
-NO WEBSITE BUILD. NO FTP. NO WORDPRESS CMS WRITE.
+PSE ESC Visual Builder G2 native WP Menu target regression, 2026-10-27.
+Astro DEV github 29de923871d68b77d87f66a3f009461331ece2b8; PHP master c71027cfead8d7c89fc61318a7b2eed5881091a3.
+Source CI: syntax parse, Menu target metadata/403/409/rollback-preserving save, inspector JS, Astro parse, Vitest.
+NO WEBSITE BUILD. NO FTP. NO CMS WRITE.
