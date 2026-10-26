@@ -1,4 +1,4 @@
-PSE ESC Visual Builder G1 continuation source regression, 2026-10-27.
-Verify Astro github 7f247a3a796803ebf7d819b504feb3600f8c3577 against PHP master 73f9fc1df2a1c64afd4415087750650a91efeb6c.
-Scope: readonly Menu/Footer no-fetch guards, Header unsupported links, skeleton, native WordPress adapter source.
-Existing schema CI only: Vitest, PHP lint, Astro syntax, Tailwind source. NO WEBSITE BUILD, NO FTPS, NO CMS WRITE.
+PSE ESC Visual Builder G2 native WordPress custom Menu URL source regression, 2026-10-27.
+FE github a5dd7a26040bdfd7b8d1200723a7d14b44269fcd; PHP master b43832979d6417aa086c3cb0f97b6df6024cc643; Actions existing schema CI.
+Validate no-build source syntax and unit tests: scoped Header/vi/en, readonly guards, XSS/unsafe URLs, 403/409, save + readback, link preview patch.
+NO WEBSITE BUILD. NO FTP. NO WORDPRESS CMS WRITE.
