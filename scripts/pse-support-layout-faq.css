@@ -1,0 +1,41 @@
+/* PSE_FAQ_CMS_LAYOUT_V1: Editable WordPress ACF cssmore; taken from previously deployed Astro styling for zero visual drift. */
+.pse-faq{max-width:1180px;margin:0 auto;color:#283c30}
+  .pse-faq__list{display:grid;gap:14px}
+  .pse-faq__item{min-width:0;border:1px solid #dce9de;border-radius:18px;
+    background:#fff;box-shadow:0 8px 28px rgba(24,73,43,.045);overflow:hidden}
+  .pse-faq__item[open]{border-color:#c7e3d1;box-shadow:0 10px 32px rgba(21,90,50,.075)}
+  .pse-faq__item summary{list-style:none;display:flex;align-items:center;gap:16px;
+    cursor:pointer;padding:21px 24px;min-height:72px;color:#1b5a3b}
+  .pse-faq__item summary::-webkit-details-marker{display:none}
+  .pse-faq__item summary:hover{background:#f4faf5}
+  .pse-faq__item summary:focus-visible{outline:3px solid #30945c;outline-offset:-4px}
+  .pse-faq__item[open] summary{background:linear-gradient(105deg,#eff8f0,#f8fbf6);
+    border-bottom:1px solid #dceadd}
+  .pse-faq__index{flex:none;border-radius:11px;background:#e8f5eb;color:#217c4a;
+    padding:7px 9px;font-size:13px;font-weight:850;font-variant-numeric:tabular-nums}
+  .pse-faq__question{flex:1;min-width:0;font-size:clamp(16px,1.4vw,19px);line-height:1.52;
+    font-weight:750;overflow-wrap:anywhere}
+  .pse-faq__toggle{width:28px;height:28px;flex:none;border-radius:50%;border:1px solid #cae1d1;
+    display:grid;place-items:center;background:#fff;color:#226b43}
+  .pse-faq__toggle:before{content:"+";font-size:21px;font-weight:500;line-height:1}
+  .pse-faq__item[open] .pse-faq__toggle:before{content:"−"}
+  .pse-faq__answer{padding:clamp(20px,3vw,33px) clamp(22px,3.3vw,42px);
+    font-size:16px;line-height:1.83;color:#384d40;overflow-wrap:anywhere}
+  .pse-faq__answer p{font-size:inherit!important;line-height:inherit!important;
+    color:inherit!important;margin:0 0 13px!important;max-width:none!important}
+  .pse-faq__answer p:last-child{margin-bottom:0!important}
+  .pse-faq__answer a{color:#176f49;text-decoration:underline;text-underline-offset:3px}
+  .pse-faq__answer a:focus-visible{outline:2px solid #238550;outline-offset:2px}
+  .pse-faq__answer strong{font-weight:750;color:#205b3c}
+  .pse-faq__answer ul,.pse-faq__answer ol{padding-left:24px;margin:8px 0 15px}
+  .pse-faq__answer li{margin:6px 0;max-width:none}
+  .pse-faq__answer img{display:block;max-width:100%;height:auto}
+  @media(max-width:620px){
+    .pse-faq__list{gap:12px}
+    .pse-faq__item{border-radius:15px}
+    .pse-faq__item summary{padding:17px 15px;gap:11px;align-items:flex-start}
+    .pse-faq__index{margin-top:1px}
+    .pse-faq__toggle{width:25px;height:25px;margin-top:2px}
+    .pse-faq__answer{font-size:15px;padding:19px 18px}
+  }
+  @media(prefers-reduced-motion:reduce){.pse-faq__item{scroll-behavior:auto}}
