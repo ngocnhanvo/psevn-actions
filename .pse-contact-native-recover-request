@@ -1,1 +1,3 @@
 Guarded apply: restore existing native ESC Table shortcodes pse_contact_office_vi and pse_contact_warehouses_vi around existing contact_00_vi on WordPress Page 47222. Do not recreate tables, modify business details, or build Astro.
+
+Retry after native Thickbox teardown guard. Prior attempt did not save WordPress Page; preflight will verify exact state and abort if already recovered.
