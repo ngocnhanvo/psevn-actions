@@ -66,6 +66,14 @@ try {
  if(before.replace(/<[^>]+>/g,"").replace(/&nbsp;/gi,"").trim()!==""||priorCSS.trim()!=="")throw Error("WordPress author content or CSS is not empty; stop before overwriting");
  await p.goto(url.origin+"/wp-admin/post.php?post=81087&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
  await p.locator("#content-html").click();
+ await p.evaluate(()=>{
+   const wrap=document.querySelector("#wp-content-wrap");
+   if(!wrap?.classList.contains("html-active")){
+     if(typeof window.switchEditors?.go!=="function")throw Error("Classic Editor switchEditors unavailable");
+     window.switchEditors.go("content","html");
+   }
+ });
+ await p.waitForTimeout(450);
  const mode=await p.evaluate(()=>{
    const e=window.tinymce?.get("content"),area=document.querySelector("#content"),wrap=document.querySelector("#wp-content-wrap");
    return {wrapClass:wrap?.className,editorHidden:e?.isHidden()??null,
@@ -75,6 +83,7 @@ try {
  });
  console.log("PSE_COMPLAINT_CMS_EDITOR_MODE="+JSON.stringify(mode));
  if(!apply){console.log("PSE_COMPLAINT_CMS=DRY_PASS; no_write=true");process.exit(0)}
+ if(!mode.wrapClass?.includes("html-active"))throw Error("Native Classic Editor remains in Visual mode; do not save");
  const editor=p.locator("#content");
  await editor.waitFor({state:"attached"});
  if((await editor.inputValue()).replace(/<[^>]+>/g,"").replace(/&nbsp;/gi,"").trim()!=="")throw Error("Classic Editor has changed while applying");
