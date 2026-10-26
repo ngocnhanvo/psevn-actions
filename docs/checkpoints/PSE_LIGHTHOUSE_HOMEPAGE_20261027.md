@@ -25,3 +25,9 @@
 
 ## Next action
 Check GitHub Actions run `40373166713`; if failed, inspect job logs and `artifacts/pse-lighthouse/summary.json`, fix only remaining real regressions through PSE source/CMS owner, repeat source tests then WordPress/PHP build. If 100 for SEO/A11y, report measured actual and run link. Note that allowing crawling on the staging domain can expose it to search indexing; reverse robots policy at domain cutover as SEO strategy requires.
+
+## Verified live Lighthouse desktop after deployment
+- Run `40373166713` PASS: Performance **99**, Accessibility **100**, Best Practices **100**, SEO **100**.
+- `robotsBlocked=false`, `failedActionable=[]`, public route `/trang-chu`.
+- Performance was **100** in the user's earlier desktop report; one-point variation on a new runner is not by itself grounds for changing image/cache architecture.
+- Repeat measurement requested through existing read-only workflow to check stability, with no second build or CMS mutation.
