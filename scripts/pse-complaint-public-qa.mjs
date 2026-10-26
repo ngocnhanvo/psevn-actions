@@ -37,12 +37,16 @@ try {
     const form=main?.querySelector("#pse-complaint-form");
     const fields=["name","email","phone","address","product","subject","complaints"];
     const required=fields.every(x=>Boolean(form?.querySelector('[name="'+x+'"][required]')));
+    const cmsOwned=main?.hasAttribute("data-pse-complaint-cms")===true &&
+      Boolean(main.querySelector('[data-pse-cms-form="v1"]'));
+    const cmsGrid=main?.querySelector(".pse-complaint__grid");
+    const cssLoaded=Boolean(cmsGrid)&&getComputedStyle(cmsGrid).display==="grid";
     const h1=[...document.querySelectorAll("main h1")].map(x=>x.textContent?.trim());
     const submit=main?.querySelector("#pse-complaint-submit");
     const security=main?.querySelector("#pse-complaint-turnstile");
     const header=document.querySelector(".pse-header");
     const footer=document.querySelector(".pse-footer");
-    return {h1,main:!!main,form:!!form,fieldsRequired:required,submitDisabled:submit?.disabled===true,security:!!security,
+    return {h1,main:!!main,form:!!form,cmsOwned,cssLoaded,fieldsRequired:required,submitDisabled:submit?.disabled===true,security:!!security,
      header:!!header,footer:!!footer,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
      adminHostLeak:document.documentElement.outerHTML.includes(privateHost),
      candidateLinks:[...document.querySelectorAll("#main-header a[href]")].filter(a=>/khiếu|khieu|ý kiến|y kien/i.test(a.textContent||"")).map(a=>({text:(a.textContent||"").trim().slice(0,80),path:new URL(a.href).pathname,host:new URL(a.href).hostname===location.hostname?"frontend":"other"})),
@@ -54,7 +58,7 @@ try {
      }),
      hasContent:(main?.textContent||"").length>200};
    },privateHost);
-   const ok=res?.status()===200&&out.main&&out.form&&out.fieldsRequired&&out.h1.length===1&&out.security&&out.header&&out.footer&&out.menuLinked
+   const ok=res?.status()===200&&out.main&&out.form&&out.cmsOwned&&out.cssLoaded&&out.fieldsRequired&&out.h1.length===1&&out.security&&out.header&&out.footer&&out.menuLinked
     &&!out.overflow&&!out.adminHostLeak&&out.hasContent&&errors.length===0;
    console.log("PSE_COMPLAINT_PUBLIC_QA="+JSON.stringify({width,http:res?.status()||0,...out,pageErrors:errors,pass:ok}));
    if(!ok)failures.push({width,http:res?.status()||0});
