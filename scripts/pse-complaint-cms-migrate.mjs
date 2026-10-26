@@ -19,6 +19,16 @@ const css=".pse-complaint{background:#fbfdfb;color:#274535}\n .pse-complaint__sh
 
 const browser=await chromium.launch({headless:true});
 const p=await browser.newPage({viewport:{width:1440,height:950}});
+const editorResourceErrors=[];
+const earlyPageErrors=[];
+p.on("pageerror",e=>earlyPageErrors.push(String(e?.message||e).slice(0,140)));
+p.on("response",res=>{
+  if(res.request().resourceType()==="script"&&res.status()>=400)
+    editorResourceErrors.push({status:res.status(),path:new URL(res.url()).pathname});
+});
+p.on("requestfailed",req=>{
+  if(req.resourceType()==="script")editorResourceErrors.push({networkFailed:true,path:new URL(req.url()).pathname});
+});
 try {
  await p.goto(url.origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
  if(await p.locator("#user_login").count()){
@@ -75,7 +85,17 @@ try {
          editorIframePresent:!!document.querySelector("#content_ifr"),
          currentPath:location.pathname,loginFormPresent:!!document.querySelector("#loginform")};
      }).catch(()=>({diagnosticUnavailable:true}));
-     console.log("PSE_COMPLAINT_TINYMCE_BOOT_DIAG="+JSON.stringify({...diag,pageErrors:editorPageErrors.slice(0,4)}));
+     const init=await p.evaluate(()=>({
+       preInitDefined:typeof window.tinyMCEPreInit!=="undefined",
+       hasPreInitScript:[...document.scripts].some(script=>!script.src&&script.textContent.includes("tinyMCEPreInit")),
+       loadedEditorScripts:[...document.scripts].filter(script=>script.src&&/editor|tinymce|load-scripts/.test(script.src)).map(script=>new URL(script.src).pathname).slice(-12),
+       hasWordPressCoreEditor:!!window.switchEditors,
+       visualButton:document.querySelector("#content-tmce")?.className||"",
+       iframeCount:document.querySelectorAll("#wp-content-wrap iframe").length
+     })).catch(()=>({unavailable:true}));
+     console.log("PSE_COMPLAINT_TINYMCE_BOOT_DIAG="+JSON.stringify({...diag,...init,
+       pageErrors:[...earlyPageErrors,...editorPageErrors].slice(0,6),
+       scriptFailures:editorResourceErrors.slice(0,8)}));
      throw error;
    }
    const visual=await p.evaluate(()=>{
