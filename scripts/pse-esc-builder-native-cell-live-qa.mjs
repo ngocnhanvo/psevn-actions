@@ -21,6 +21,9 @@ try {
  if(page.url().includes('wp-login'))throw Error('WordPress login rejected');
  await page.goto(wp.origin+'/wp-admin/edit.php?post_type=page&page=esc-visual-builder',{waitUntil:'domcontentloaded',timeout:60000});
  await page.locator('#esc-vb-page').waitFor({state:'visible',timeout:30000});
+ // The Builder itself selects WordPress's homepage by default. Use that
+ // canonical Page ID instead of guessing a translated display name.
+ const homePageId=await page.locator('#esc-vb-page').inputValue();
  const options=await page.locator('#esc-vb-page option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,label:n.textContent.trim()})));
  const contact=options.find(o=>/^Liên hệ$/i.test(o.label));
  if(!contact)throw Error('Contact page is unavailable in Visual Builder');
@@ -45,9 +48,9 @@ try {
  if(!await page.locator('#esc-vb-image-editor').isHidden())throw Error('Image editor incorrectly opened for a text cell');
  // Verify the independent Media workflow: clicking an actual ESC Table image
  // opens the image picker panel, never the text editor. No Save is performed.
- const home=options.find(o=>/^(Trang chủ|Home)$/i.test(o.label));
- if(!home)throw Error('Homepage is not available in Visual Builder for image QA');
- await page.locator('#esc-vb-page').selectOption(home.value);
+ if(!homePageId||!options.some(o=>o.value===homePageId))
+   throw Error('WordPress did not select a homepage in Visual Builder');
+ await page.locator('#esc-vb-page').selectOption(homePageId);
  await Promise.all([page.waitForLoadState('domcontentloaded'),page.getByRole('button',{name:'Mở trang'}).click()]);
  const homeFrame=page.frameLocator('#esc-vb-frame');
  const images=homeFrame.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]');
