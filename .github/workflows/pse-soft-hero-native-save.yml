@@ -1,0 +1,28 @@
+name: PSE hero native WordPress change registration (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-soft-hero-native-save-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-soft-hero-native-save
+  cancel-in-progress: false
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 18
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_HERO_REGISTER_CHANGES: "${{ github.event.head_commit.message == 'cms(pse): register four saved hero pages via native WordPress Save' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-soft-hero-native-save.mjs && node scripts/pse-soft-hero-native-save.mjs
