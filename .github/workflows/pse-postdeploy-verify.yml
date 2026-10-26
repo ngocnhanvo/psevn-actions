@@ -91,3 +91,22 @@ jobs:
           print('PSE_LIVE_VERIFY=FAIL_SAFE last_status='+str(last))
           raise SystemExit(1)
           PY
+
+  related-product-quote-browser:
+    name: Click related product quote and verify contact form prefill (READ ONLY)
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' && github.event.head_commit.message == 'test(pse): run related product quote live browser QA'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned browser client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Click a real related product quote link without submitting a form
+        run: node --check scripts/pse-related-product-quote-live-qa.mjs && node scripts/pse-related-product-quote-live-qa.mjs
