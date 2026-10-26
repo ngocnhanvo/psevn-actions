@@ -1,10 +1,1 @@
-2026-10-26 DEV native Contact ESC location table renderer and data-only components: Pse_contact_office + Pse_contact_warehouses + shared PseContactLocationCard. Vitest and Astro compiler syntax NO BUILD. Does not mutate CMS.
-
-2026-10-26 PSE support hotline and FAQ native ESC Table Astro DEV components and test, no site build.
-
-2026-10-26 PSE support layout CSS moved to WordPress ACF cssmore (2 Pages). Astro DEV removes component-local visual CSS; Vitest regression prevents CSS returning. NO ASTRO BUILD.
-
-PSE DEV support pages final CSS-ownership test regression correction: run 486+ Vitest assertions on current github branch (NO BUILD).
-
-2026-10-26 Contact ESC stylesheet ownership moved into Astro DEV renderer (all original display/grid/mobile rules preserved); compile and Vitest only. No Build Website.
-2026-10-26 Complaint CMS ownership refactor: verify Astro page reads WordPress body/cssmore and keeps secure Turnstile client behavior. Test only; do not build Astro.
+footer-unit-and-Astro-layout-parse-2026-10-26
