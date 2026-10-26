@@ -25,6 +25,7 @@ const origin=url.origin;
 const tokens=html=>[...String(html||"").matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1]);
 const wrappers=html=>[...String(html||"").matchAll(/<div\b(?=[^>]*class=["'][^"']*tablepress-preview-wrap[^"']*["'])[^>]*>[\s\S]*?<\/div>/gi)].map(m=>m[0]);
 const sha=html=>createHash("sha256").update(String(html)).digest("hex");
+const normalizedCss=value=>String(value||"").replace(/\r\n?/g,"\n");
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1500,height:1050}});
 let page=await context.newPage();
@@ -239,11 +240,12 @@ try {
    const after=String(saved.data?.content?.raw||"");
    const savedWraps=wrappers(after);
    if(savedWraps.length!==1||JSON.stringify(tokens(after))!==JSON.stringify([spec.table])||
-      tokens(savedWraps[0])[0]!==spec.table||saved.data?.acf?.cssmore!==css){
+      tokens(savedWraps[0])[0]!==spec.table||
+      normalizedCss(saved.data?.acf?.cssmore)!==normalizedCss(css)){
        console.log("PSE_NATIVE_AFTER_SAVE_DIAGNOSTIC="+JSON.stringify({
          slug:spec.slug,rawLength:after.length,rawSha256:sha(after),rawSample:after.slice(0,220),
          previewBlocks:savedWraps.length,nativeIds:tokens(after),
-         cssMatched:saved.data?.acf?.cssmore===css,cssSha256:sha(saved.data?.acf?.cssmore||""),
+         cssMatchedNormalized:normalizedCss(saved.data?.acf?.cssmore)===normalizedCss(css),cssSha256:sha(saved.data?.acf?.cssmore||""),
          savedModified:saved.data?.modified||null
        }));
        throw Error("WordPress after-save readback mismatch "+spec.slug);
