@@ -3,3 +3,5 @@
 2026-10-26 PSE support hotline and FAQ native ESC Table Astro DEV components and test, no site build.
 
 2026-10-26 PSE support layout CSS moved to WordPress ACF cssmore (2 Pages). Astro DEV removes component-local visual CSS; Vitest regression prevents CSS returning. NO ASTRO BUILD.
+
+PSE DEV support pages final CSS-ownership test regression correction: run 486+ Vitest assertions on current github branch (NO BUILD).
