@@ -60,6 +60,43 @@ try {
  const tables=await Promise.all(ids.map(id=>read('/wp-json/tablepress/v1/table/'+id)));
  if(tables.some(t=>t.http!==200)||JSON.stringify(tables.map(t=>t.data?.items?.length))!=='[1,6,5]')
    throw Error('Original ESC Table records altered/missing');
+ const persistedWrappers=[...raw.matchAll(/<div\b(?=[^>]*class=["'][^"']*tablepress-preview-wrap[^"']*["'])[^>]*>[\s\S]*?<\/div>/gi)];
+ if(persistedWrappers.length){
+   // Previous apply may have SUCCEEDED in WordPress before Playwright lost its
+   // execution context during the Save redirect. Read first; NEVER rewrite twice.
+   const wrapperIds=persistedWrappers.map(w=>(w[0].match(/data-table-id=["']([^"']+)["']/i)||[])[1]);
+   if(JSON.stringify(wrapperIds)!==JSON.stringify(ids)||
+      persistedWrappers.some((w,i)=>tokens(w[0]).length!==1||tokens(w[0])[0].id!==ids[i]||
+        (w[0].match(/<img\b/gi)||[]).length!==1))
+     throw Error('Saved ESC preview blocks malformed; stop, no additional CMS writes');
+   await writeFile('artifacts/pse-contact-native-editor/verified.json',JSON.stringify({
+     page:47222,ids,wrapperCount:persistedWrappers.length,cssmoreUnchanged:true,tableItemCounts:tables.map(t=>t.data.items.length)
+   },null,2));
+   await page.goto(u.origin+'/wp-admin/post.php?post=47222&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
+   if(await page.locator('#pse-contact-editor-preview').count())throw Error('Unrequested separate Admin preview remains active');
+   await page.locator('#content-tmce').click();
+   await page.waitForFunction(()=>Boolean(window.tinymce?.get('content')?.getBody()),null,{timeout:20000});
+   await page.locator('#title').click();
+   await page.waitForTimeout(1100);
+   const live=await page.evaluate(()=>{
+     const editor=window.tinymce.get('content');
+     return {
+       ids:[...editor.getBody().querySelectorAll('.tablepress-preview-wrap')].map(x=>x.getAttribute('data-table-id')),
+       images:[...editor.getBody().querySelectorAll('.tablepress-preview-wrap img')].map(x=>({
+          id:x.getAttribute('data-table-id'),naturalWidth:x.naturalWidth,
+          hasSource:!!x.getAttribute('src')
+       }))
+     };
+   });
+   if(JSON.stringify(live.ids)!==JSON.stringify(ids)||
+     JSON.stringify(live.images.map(x=>x.id))!==JSON.stringify(ids)||
+     live.images.some(x=>!x.hasSource))
+     throw Error('Editor reload native image badges do not match saved ESC Table structure');
+   await page.locator('#wp-content-wrap').screenshot({path:'artifacts/pse-contact-native-editor/verified-editor.png'});
+   console.log('PSE_CONTACT_NATIVE_EDITOR=ALREADY_DONE; saved_image_blocks=3; native_insert_code=verified; no_cms_write=true; no_build=true');
+   console.log('PSE_CONTACT_NATIVE_RELOADED_IMAGES='+JSON.stringify(live.images));
+   process.exit(0);
+ }
  const intro=raw.slice(0,existing[0].index).trim();
  const suffix=raw.slice(existing[0].index).replace(/\[table\s+id=[a-z0-9_-]+\s*\/\]/gi,'');
  if(suffix.replace(/[\s\u00a0]/g,'')!=='')
@@ -160,9 +197,18 @@ try {
  // WordPress-owned TinyMCE publishes exactly what the native ESC visual editor
  // generated. No REST content write and no shortcode added as pasted text.
  await page.locator('#publish').click();
- await page.waitForTimeout(1700);
- await page.waitForLoadState('domcontentloaded',{timeout:15000}).catch(()=>{});
- const saved=await read(endpoint);
+ let saved=null;
+ for(let attempt=0;attempt<8;attempt++){
+   try{
+     await page.waitForLoadState('domcontentloaded',{timeout:12000});
+     saved=await read(endpoint);
+     break;
+   }catch(e){
+     if(!/execution context was destroyed|navigation/i.test(String(e)))throw e;
+     await page.waitForTimeout(650);
+   }
+ }
+ if(!saved)throw Error('WordPress Save redirect remained unstable; re-run read-only verification before another edit');
  const body=String(saved.data?.content?.raw||'');
  const savedIds=tokens(body).map(t=>t.id);
  const savedWrappers=[...body.matchAll(/<div\b(?=[^>]*class=["'][^"']*tablepress-preview-wrap[^"']*["'])[^>]*>[\s\S]*?<\/div>/gi)];
