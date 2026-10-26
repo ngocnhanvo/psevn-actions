@@ -59,6 +59,9 @@ try{
  await item.waitFor({state:"attached",timeout:45000});
  const select=item.locator('select[name="esc-menu-item-link-type['+itemId+']"]');
  if(!await select.count())throw Error("Native ESC Menu link mode missing");
+ const expand=p.locator(".esc-menu-bulk-toggle button").filter({hasText:"Mở rộng"}).first();
+ if(await expand.count())await expand.click();
+ await item.scrollIntoViewIfNeeded();
  const details=item.locator(".menu-item-settings");
  if(!(await details.isVisible()))await item.locator(".item-edit").click();
  await select.selectOption("page");
