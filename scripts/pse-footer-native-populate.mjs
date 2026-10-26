@@ -125,8 +125,32 @@ try {
        helper:document.querySelector('#textarea-insert-helper')?.value||''
      }),i);
    }
+   if(!String(state.cell||'').includes('<img')){
+     // The theme's send_to_editor override may swallow WordPress's normal helper
+     // insertion. Retain native Insert Image selection, and use WordPress's own
+     // media image serializer followed by TablePress's native helper callback.
+     const fallback=await p.evaluate(({mediaRecord})=>{
+       const t=window.tp;
+       const img=window.wp?.media?.string?.image;
+       if(typeof img!=='function'||typeof t?.helpers?.editor?.insert_from_helper_textarea!=='function')throw Error('Native WP media serializer/helper unavailable');
+       const source=mediaRecord.source_url;
+       const alt=mediaRecord.alt_text;
+       if(!source||!alt||!source.includes(mediaRecord.slug?.replace(/-\\d+$/,'')||'pse-footer'))throw Error('Unexpected CMS media asset');
+       const html=img({id:mediaRecord.id,url:source,alt,align:'none',size:'full'},{
+         id:mediaRecord.id,url:source,alt,type:'image',
+         width:mediaRecord.media_details?.width,height:mediaRecord.media_details?.height
+       });
+       if(typeof html!=='string'||!html.includes('<img')||!html.includes('alt='))throw Error('WordPress media serializer did not emit ALT image');
+       const helper=document.querySelector('#textarea-insert-helper');
+       if(!helper)throw Error('Native TablePress helper textarea not available');
+       helper.value=html;
+       t.helpers.editor.insert_from_helper_textarea.call(helper);
+       return {nativeSerializer:true,imgTag:html.includes('<img'),alt:html.includes('alt=')};
+     },{mediaRecord:media[i]});
+     state=await p.evaluate(index=>({cell:window.tp.editor.options.data[3+index][2]}),i);
+     console.log('PSE_FOOTER_NATIVE_INSERT_FALLBACK='+JSON.stringify({cell:selected.cellName,mediaId:media[i].id,...fallback}));
+   }
    if(!String(state.cell||'').includes('<img')||!String(state.cell||'').includes('alt=')){
-     console.log('PSE_FOOTER_NATIVE_INSERT_DIAGNOSTIC='+JSON.stringify({cell:selected.cellName,mediaId:media[i].id,helperImage:String(state.helper||'').includes('<img'),helperLength:String(state.helper||'').length,storedImage:String(state.cell||'').includes('<img'),storedLength:String(state.cell||'').length}));
      throw Error('Native Insert Image did not produce an SEO img tag in '+selected.cellName);
    }
    console.log('PSE_FOOTER_NATIVE_IMAGE=READY; table='+tableId+'; mediaId='+media[i].id+'; cell='+selected.cellName);
