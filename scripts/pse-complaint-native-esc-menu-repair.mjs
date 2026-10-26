@@ -127,6 +127,11 @@ try{
  await pageSelect.selectOption(String(pageId));
  if(await select.inputValue()!=="page"||await pageSelect.inputValue()!==String(pageId))
    throw Error("Native ESC Menu selection was not applied");
+ // Register the navigation waiter *before* submitting; otherwise WP can
+ // unload the evaluation context between requestSubmit and REST readback.
+ const navigation=p.waitForEvent("framenavigated",{
+   predicate:frame=>frame===p.mainFrame(),timeout:45000
+ }).catch(()=>null);
  const submission=await p.evaluate(()=>{
    // The PSE admin can animate its Save controls, making Playwright's
    // stability-based click time out. Native requestSubmit retains WordPress
@@ -142,8 +147,9 @@ try{
    return {nativeForm:true,buttonId:button.id};
  });
  console.log("PSE_COMPLAINT_ESC_NATIVE_SAVE_REQUEST="+JSON.stringify(submission));
- await p.waitForLoadState("domcontentloaded",{timeout:30000}).catch(()=>{});
- await p.waitForTimeout(1200);
+ await navigation;
+ await p.waitForLoadState("load",{timeout:30000}).catch(()=>{});
+ await p.waitForTimeout(500);
  // Never press Save twice; read the authoritative API before retrying anything.
  const after=await readMenu();
  const itemAfter=after.item;
