@@ -30,3 +30,15 @@
 Status: native WordPress authoring/editor image previews **PASS**; PHP custom preview removal **DEPLOYED/PASS**; Knowledge policy **MERGED**; post-correction public site independent QA **NOT TESTED**; actual mail send **NOT TESTED** (intentionally).
 
 Chế độ code: auto-build.
+
+
+## Post-correction live public acceptance (2026-10-26)
+
+- Newly run independent **read-only browser QA** [#40256243021](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40256243021) **SUCCESS** after native WordPress Editor Save → Reload #40254970202. Trigger-only Actions commit `54af1a6a22f829e553ca3c9cf610ac0f20a874c5`, with no PHP/Astro code edits, no CMS writes and no build.
+- Live `/lien-he` Chromium screenshots/test at **390, 768, 1440px** report `PSE_CONTACT_TWO_COLUMN=PASS`, `PSE_MEDIA_LIVE_CONTACT=PASS`, `esc_owned=true` for every viewport. Office and form are responsive, five warehouses appear below, and the internal editorial note is absent.
+- The live page contains **three structured ESC regions**, including the office `pse_contact_office_vi`, form `contact_00_vi`, warehouses `pse_contact_warehouses_vi`. Form exists exactly once with five required fields and native HTML5 validation. Private WordPress origin is not leaked; no horizontal overflow.
+- Evidence: [run screenshot artifact `pse-media-responsive-visual`](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40256243021) (artifact ID `12623205225`). No live form submission or email sending occurred.
+- Final status: `CMS_NATIVE_IMAGE_EDITOR=PASS`; `CUSTOM_PREVIEW_REMOVED=DEPLOYED/PASS`; `KNOWLEDGE_POLICY_MERGED=PASS`; `POST_CORRECTION_PUBLIC_RESPONSIVE_QA=PASS`; `CONTACT_EMAIL_DELIVERY=NOT_TESTED` (intentional).
+- Do not repeat CMS Insert Code/Save or rebuild website for this already-passing requirement. New editor changes must be tested Save → Reload independently, and public site validation should follow only if those changes affect the site.
+
+Chế độ code: auto-build.
