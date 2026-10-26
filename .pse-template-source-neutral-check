@@ -1,1 +1,3 @@
 2026-10-26 DEV native Contact ESC location table renderer and data-only components: Pse_contact_office + Pse_contact_warehouses + shared PseContactLocationCard. Vitest and Astro compiler syntax NO BUILD. Does not mutate CMS.
+
+2026-10-26 PSE support hotline and FAQ native ESC Table Astro DEV components and test, no site build.
