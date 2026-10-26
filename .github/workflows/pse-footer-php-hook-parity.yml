@@ -1,0 +1,63 @@
+name: PSE live WordPress PHP hook parity (FTPS READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-footer-php-hook-parity.yml
+permissions:
+  contents: read
+jobs:
+  parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Compare verified TLS live hook against PHP source without modification
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os,ftplib,ssl,io,hashlib
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          base=[s.split('=',1)[1].strip().strip("'\"") for s in os.environ['ENV_FILE'].splitlines() if s.strip().startswith('WC_URL=')]
+          assert len(base)==1
+          origin=urlsplit(base[0]); assert origin.scheme=='https' and origin.hostname and origin.path in ('','/') and not origin.username and not origin.password and not origin.query and not origin.fragment
+          server=os.environ.get('FTP_SERVER','')
+          if '://' not in server:server='ftp://'+server
+          ftpurl=urlsplit(server)
+          assert ftpurl.scheme in ('ftp','ftps') and ftpurl.hostname and ftpurl.port in (None,21) and not ftpurl.username and not ftpurl.password and not ftpurl.path.strip('/')
+          root='/domains/'+origin.hostname+'/public_html'
+          f=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          try:
+            f.connect(ftpurl.hostname,ftpurl.port or 21);f.auth();f.login(os.environ['FTP_USERNAME'],os.environ['FTP_PASSWORD']);f.prot_p()
+            f.cwd(root)
+            assert f.pwd().rstrip('/')==root,'WordPress root mismatch'
+            targets=['wp-content/plugins/github-trigger/vcs-hook.php','wp-content/plugins/github-trigger/vcs-build-trigger.php']
+            same=True
+            for path in targets:
+              parent,name=path.rsplit('/',1)
+              f.cwd(root+'/'+parent)
+              assert f.pwd().rstrip('/')==root+'/'+parent,'Plugin scope mismatch'
+              binary=io.BytesIO()
+              f.retrbinary('RETR '+name,binary.write)
+              remote=binary.getvalue();local=(Path('source-php')/path).read_bytes()
+              ok=hashlib.sha256(remote).digest()==hashlib.sha256(local).digest()
+              print('PSE_PHP_LIVE_PARITY name='+name+' match='+str(ok)+' remote_bytes='+str(len(remote))+' source_bytes='+str(len(local)))
+              same=same and ok
+            print('PSE_PHP_LIVE_HOOK_PARITY='+('PASS' if same else 'MISMATCH'))
+          finally:
+            try:f.quit()
+            except Exception:f.close()
+          PY
