@@ -57,6 +57,14 @@ try {
   panelText:document.body.innerText.slice(-1400),
  }));
  console.log('PSE_FOOTER_NATIVE_EDITOR_INSPECT='+JSON.stringify(editor));
+ const check=await page.evaluate(async()=>{
+   const nonce=window.wpApiSettings?.nonce || await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'same-origin'}).then(r=>r.text());
+   const r=await fetch('/wp-json/tablepress/v1/table/pub_footer_assets_vi',{credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':nonce}});
+   const j=await r.json().catch(()=>null);
+   return {http:r.status,items:j?.items?.map(item=>({group:item.group,label:item.label,value:item.value,visible:item.visible,imagePresent:typeof item.image==='string'&&/<img\\b/i.test(item.image),altPresent:typeof item.image==='string'&&/alt=/i.test(item.image),imageChars:item.image?.length||0}))||[],fields:j?.fields?.map(f=>f.key)};
+ });
+ console.log('PSE_FOOTER_GLOBAL_REST_AFTER_SAVE='+JSON.stringify(check));
+
  const rowFns=await page.evaluate(()=>({
   insertRow: String(window.tp?.editor?.insertRow||'').slice(0,1500),
   selectedCell:String(window.tp?.editor?.updateSelectionFromCoords||'').slice(0,600),
