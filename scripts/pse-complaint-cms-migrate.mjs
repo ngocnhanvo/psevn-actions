@@ -65,15 +65,13 @@ try {
  // unexpected change made since the latest owner screenshot/checkpoint.
  if(before.replace(/<[^>]+>/g,"").replace(/&nbsp;/gi,"").trim()!==""||priorCSS.trim()!=="")throw Error("WordPress author content or CSS is not empty; stop before overwriting");
  await p.goto(url.origin+"/wp-admin/post.php?post=81087&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+ await p.locator("#content-tmce").click();
+ await p.waitForFunction(()=>{
+   const ed=window.tinymce?.get("content");
+   return !!ed?.selection&&!!ed?.getBody?.();
+ },null,{timeout:25000});
  await p.locator("#content-html").click();
- await p.evaluate(()=>{
-   const wrap=document.querySelector("#wp-content-wrap");
-   if(!wrap?.classList.contains("html-active")){
-     if(typeof window.switchEditors?.go!=="function")throw Error("Classic Editor switchEditors unavailable");
-     window.switchEditors.go("content","html");
-   }
- });
- await p.waitForTimeout(450);
+ await p.waitForFunction(()=>document.querySelector("#wp-content-wrap")?.classList.contains("html-active"),null,{timeout:12000});
  const mode=await p.evaluate(()=>{
    const e=window.tinymce?.get("content"),area=document.querySelector("#content"),wrap=document.querySelector("#wp-content-wrap");
    return {wrapClass:wrap?.className,editorHidden:e?.isHidden()??null,
