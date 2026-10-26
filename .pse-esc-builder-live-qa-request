@@ -1,3 +1,5 @@
 Run READ-ONLY Playwright WordPress Visual Builder on deployed PSE. Validate contact address and phone native source cell selection without saving, FTP or Astro build. WordPress PHP release 40275723004 PASS; Astro source #83 merged, WordPress normal Build Website pending_count=0.
 
 Additional image-vs-text click QA after read-only native address/phone check passed run 40276365427.
+
+Retry using WordPress-selected homepage ID instead of translated label. Previous image-check run 40276603865 reached contact text PASS before homepage selection failure.
