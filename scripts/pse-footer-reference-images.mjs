@@ -14,4 +14,9 @@ try{
       imgCount:images.length};
  });
  console.log('PSE_REFERENCE_FOOTER_SOURCE='+JSON.stringify(audit));
+ for(const logo of audit.probableLogos){
+  try {const response=await p.request.get(logo.src,{timeout:25000});const bytes=await response.body();console.log('PSE_REFERENCE_IMAGE_CHECK='+JSON.stringify({file:new URL(logo.src).pathname,status:response.status(),type:response.headers()['content-type']||'',bytes:bytes.length,signature:bytes.subarray(0,8).toString('hex')}));}
+  catch(error){console.log('PSE_REFERENCE_IMAGE_CHECK='+JSON.stringify({file:new URL(logo.src).pathname,error:String(error).slice(0,220)}));}
+ }
+
 }finally{await browser.close()}
