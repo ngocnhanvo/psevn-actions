@@ -1,1 +1,2 @@
 2026-10-27 Postdeploy PSE Lighthouse /trang-chu real Chrome desktop, after Astro master a3cb6a46 and WordPress-native robots Save #40372166380, deploy #40372851512. GET only, no build, no FTP.
+2026-10-27 repeat desktop Lighthouse run to check Performance score stability (previous 99 vs provided 100; SEO/A11y both 100); READ ONLY, no build.\n
