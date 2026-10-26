@@ -10,7 +10,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   wordpress-robots:
-    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message == 'fix(pse): enable WordPress crawlers for Lighthouse SEO (owner request)'
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'fix(pse): enable WordPress crawlers for Lighthouse SEO (owner request)'
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble
