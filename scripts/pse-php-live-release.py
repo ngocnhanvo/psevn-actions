@@ -38,6 +38,10 @@ FILES = (
     "wp-content/plugins/github-trigger/vcs-build-trigger.php",
     "wp-content/plugins/github-trigger/vcs-hook.php",
     "wp-content/plugins/github-trigger/vcs-build-trigger.js",
+    "wp-content/plugins/esc-visual-builder/includes/site-config.php",
+    "wp-content/plugins/esc-visual-builder/includes/text-editor.php",
+    "wp-content/plugins/esc-visual-builder/includes/text-editor-ui.php",
+    "wp-content/plugins/esc-visual-builder/includes/image-editor.php",
     "wp-content/themes/vibe-code-theme/inc/tools/menu.php",
 )
 raw = os.environ.get("FTP_SERVER", "").strip()
