@@ -1,1 +1,1 @@
-Retry only native TablePress delete 136 after robust DOM row identification; earlier attempts no delete, backups stored. 2026-10-26 22:12 local.
+2026-10-26 Retry guarded TablePress native delete 136; fix escaped selector, previous no delete, verified backups.
