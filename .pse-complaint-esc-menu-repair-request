@@ -1,3 +1,5 @@
 Native WordPress Menu Manager repair for existing Header item 77020: REST item now points to published Page 81087, but ESC-specific linkMode remained custom and API still emits external Joomla URL (diagnostic #40275080144). Select Page in ESC editor, Save, then readback; do not change other menus or trigger Astro build here.
 
 2026-10-26: resume only failed native ESC Menu item-edit UI step; after #40275499870 failed before Save. DOM-native expand fixed commit dc9ebb1, original Page 81087 and menu 77020 unchanged. Do not rebuild during repair; verify other menu entries unchanged.
+
+Retry after #40276099335 failed only at scrollIntoViewIfNeeded before changing form. Script commit 026fa438 switches to native instant scroll; avoid any repeated Save if ESC menu is already in mode Page.
