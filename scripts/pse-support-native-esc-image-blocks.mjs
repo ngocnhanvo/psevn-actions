@@ -98,6 +98,13 @@ try {
    if(!css.includes(spec.css)||JSON.stringify(tokens(raw))!==JSON.stringify([spec.table]))
       throw Error("Page CSS or single native ESC Table token altered "+spec.slug);
    const existing=wrappers(raw);
+   console.log("PSE_SUPPORT_PAGE_READBACK="+JSON.stringify({
+     slug:spec.slug,rawLength:raw.length,rawSha256:sha(raw),
+     nativeIds:tokens(raw),previewBlocks:existing.length,
+     previewImages:(raw.match(/<img\\b/gi)||[]).length,
+     cssLength:css.length,cssSha256:sha(css),layoutMarkerPresent:css.includes(spec.css),
+     contentStartsWith:raw.slice(0,130)
+   }));
    if(existing.length){
      if(existing.length!==1||tokens(existing[0]).length!==1||tokens(existing[0])[0]!==spec.table||
         !(existing[0].includes('data-table-id="'+spec.table+'"')||
@@ -201,8 +208,15 @@ try {
    const after=String(saved.data?.content?.raw||"");
    const savedWraps=wrappers(after);
    if(savedWraps.length!==1||JSON.stringify(tokens(after))!==JSON.stringify([spec.table])||
-      tokens(savedWraps[0])[0]!==spec.table||saved.data?.acf?.cssmore!==css)
-      throw Error("WordPress after-save readback mismatch "+spec.slug);
+      tokens(savedWraps[0])[0]!==spec.table||saved.data?.acf?.cssmore!==css){
+       console.log("PSE_NATIVE_AFTER_SAVE_DIAGNOSTIC="+JSON.stringify({
+         slug:spec.slug,rawLength:after.length,rawSha256:sha(after),rawSample:after.slice(0,220),
+         previewBlocks:savedWraps.length,nativeIds:tokens(after),
+         cssMatched:saved.data?.acf?.cssmore===css,cssSha256:sha(saved.data?.acf?.cssmore||""),
+         savedModified:saved.data?.modified||null
+       }));
+       throw Error("WordPress after-save readback mismatch "+spec.slug);
+    }
    await visitEditor(spec.id);
    await page.locator("#content-tmce").click();
    await page.waitForFunction(t=>{
