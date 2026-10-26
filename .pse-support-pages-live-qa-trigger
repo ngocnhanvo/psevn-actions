@@ -1,1 +1,1 @@
-post-native-editor-save public read-only regression; FAQ Page 80930 and hotline Page 80932: 3 viewport browser checks and ESC-CMS CSS; 2026-10-26; no Astro build
+Read-only post-build QA for https://pse.webnvn.com/duong-day-nong and /hoi-dap after successful WordPress-controlled Astro deployment #40257838766. Check CMS cssmore marker and layout at 390/768/1440 px, ESC table counts, accordion and phone links. No CMS write; no build.
