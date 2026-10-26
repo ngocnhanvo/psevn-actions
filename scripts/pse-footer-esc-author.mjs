@@ -28,7 +28,8 @@ try {
    if(!await captcha.count())throw Error("WP arithmetic challenge control absent");
    await captcha.fill(String(n));
   }
-  await Promise.all([p.waitForLoadState("domcontentloaded"),p.locator("#wp-submit").click()]);
+  await p.locator("#wp-submit").click({noWaitAfter:true,timeout:25000});
+  await p.waitForURL(url=>!url.pathname.includes("wp-login"),{timeout:45000});
  }
  if(p.url().includes("wp-login"))throw Error("WP login failed");
  const nonce=await p.evaluate(async()=>{
