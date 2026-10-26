@@ -70,4 +70,14 @@ jobs:
           }
           console.log('ESC_BUILDER_ASTRO_PARSE=PASS');
           NODE
+          # Compile only Tailwind CSS utilities, not the Astro website.
+          pnpm exec tailwindcss -c tailwind.config.mjs -i src/styles/global.css -o /tmp/pse-esc-source-tailwind.css --minify
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const css=readFileSync('/tmp/pse-esc-source-tailwind.css','utf8');
+          for(const token of ['grid-template-columns:repeat(auto-fit','padding:clamp(22px,3vw,34px)','border-radius:23px']){
+            if(!css.includes(token))throw Error('Tailwind utility missing: '+token);
+          }
+          console.log('PSE_ESC_TAILWIND_SOURCE_COMPILE=PASS no_website_build=true');
+          NODE
           echo 'PSE_ESC_BUILDER_SCHEMA_CI=PASS; NO_BUILD=PASS; NO_FTP=PASS'
