@@ -161,9 +161,9 @@ try {
    await p.waitForTimeout(1000);
    saved=await get('/wp-json/tablepress/v1/table/'+tableId);
    if(saved.http===200&&saved.data?.items?.length===6&&
-     saved.data.items.slice(1,4).every(row=>/<img\\b/i.test(row.image||'')&&/alt=/i.test(row.image||''))&&
+     saved.data.items.slice(1,4).every(row=>/<img\b/i.test(row.image||'')&&/alt=/i.test(row.image||''))&&
      saved.data.items[4]?.value==='Đoàn Văn Trường')break;
  }
- if(!saved||saved.data?.items?.length!==6||!saved.data.items.slice(1,4).every(row=>/<img\\b/i.test(row.image||'')&&/alt=/i.test(row.image||'')))throw Error('Native footer Insert Image Save/REST readback failed');
+ if(!saved||saved.data?.items?.length!==6||!saved.data.items.slice(1,4).every(row=>/<img\b/i.test(row.image||'')&&/alt=/i.test(row.image||'')))throw Error('Native footer Insert Image Save/REST readback failed');
  console.log('PSE_FOOTER_ESC_POPULATED=PASS; id='+tableId+'; rows=6; certification=3; responsible=2; credit=1; native_media_insert=true; no_astro_build=true');
 }finally{await browser.close()}
