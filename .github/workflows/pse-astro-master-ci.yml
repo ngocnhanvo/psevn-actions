@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pse-astro-master-ci.yml
+      - .pse-lighthouse-master-ci-trigger
 
 permissions:
   contents: read
