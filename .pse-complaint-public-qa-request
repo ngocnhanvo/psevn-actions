@@ -5,3 +5,5 @@ Final post-menu QA: native WP Header 77020 -> Page 81087 successfully bound #402
 Diagnostic READ ONLY: public Header anchors and labels after WP menu binding, do not reconfigure CMS or build. Inspect actual menu URL identity, not generic status.
 
 Scoped API/HTML difference diagnostic: read only REST esc-api Header item 77020 against actual compiled anchors; identify stale data layer without changing WordPress or building.
+
+2026-10-26 FINAL post-release QA: signed WordPress/PHP build #40277718959 and Astro deploy #40277799427 PASS after native ESC Menu Page/internal verified #40277535579 (menu 77020 -> Page 81087). Check actual compiled Header anchor, form, no admin host, no horizontal overflow at 390/768/1440. READ ONLY; no form submission.
