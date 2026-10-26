@@ -62,7 +62,7 @@ try {
     if(!Array.isArray(arr))throw Error('WordPress '+type+' inventory not an array');
     for(const post of arr){
       const source=String(post?.content?.raw || post?.content?.rendered || '');
-      if(/\\[table\\s+id\\s*=\\s*["']?136\\b/i.test(source)||/table_id[=:"']+136\\b/i.test(source))refs.push({type,id:post.id});
+      if(/\[table\s+id\s*=\s*["']?136\b/i.test(source)||/table_id[=:"']+136\b/i.test(source))refs.push({type,id:post.id});
     }
     const total=Number(resp.headers.get('X-WP-TotalPages')||1);
     if(i>=total)break;
@@ -83,9 +83,9 @@ try {
  if(!empty)throw Error('Table 136 has non-blank cells; refuse deletion');
  const fs=await import('node:fs/promises');
  await fs.mkdir('artifacts/pse-footer-delete-136',{recursive:true});
- await fs.writeFile('artifacts/pse-footer-delete-136/table136-before.json',JSON.stringify(rawBackup,null,2)+'\\n');
+ await fs.writeFile('artifacts/pse-footer-delete-136/table136-before.json',JSON.stringify(rawBackup,null,2)+'\n');
  await page.goto(u.origin+'/wp-admin/admin.php?page=tablepress',{waitUntil:'domcontentloaded',timeout:65000});
- const tableRows=page.locator('tr').filter({hasText:/\\b136\\b/}).filter({hasText:'Footer PSE - Thông tin bổ sung'});
+ const tableRows=page.locator('tr').filter({hasText:/\b136\b/}).filter({hasText:'Footer PSE - Thông tin bổ sung'});
  if(await tableRows.count()!==1)throw Error('TablePress admin native 136 row not unique');
  const row=tableRows.first();
  const del=row.getByRole('link',{name:'Delete',exact:true});
