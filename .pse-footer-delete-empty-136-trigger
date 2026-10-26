@@ -1,1 +1,1 @@
-Guarded native delete 136 via validated WP admin-post hyperlink because row action is outside viewport; prior attempts never deleted.
+2026-10-26 table136 Delete via native nonce-authenticated admin-post URL; save backup, verify no refs, no prior deletion.
