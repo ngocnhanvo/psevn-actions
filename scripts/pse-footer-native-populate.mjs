@@ -112,10 +112,22 @@ try {
    if(!await insert.count())throw Error('Native WordPress Insert Image button missing');
    await insert.click({timeout:20000});
    await p.locator('.media-modal').waitFor({state:'hidden',timeout:20000});
-   const cell=await p.evaluate(index=>window.tp.editor.options.data[3+index][2],i);
-   if(typeof cell!=='string'||!cell.includes('<img')||!cell.includes('alt=')||!cell.includes(media[i].source_url.split('/').pop()?.split('.')[0]||'pse-footer')) {
-     // Original src may be transformed by WordPress insertion. Require just an image tag and ALT.
-     if(typeof cell!=='string'||!cell.includes('<img')||!cell.includes('alt='))throw Error('Native Insert Image did not produce an SEO img tag in '+selected.cellName);
+   await p.waitForTimeout(700);
+   let state=await p.evaluate(index=>({
+     cell:window.tp.editor.options.data[3+index][2],
+     helper:document.querySelector('#textarea-insert-helper')?.value||'',
+     selected:window.tp.helpers.selection
+   }),i);
+   if(!String(state.cell||'').includes('<img') && String(state.helper||'').includes('<img')){
+     await p.evaluate(()=>window.tp.helpers.editor.insert_from_helper_textarea.call(document.querySelector('#textarea-insert-helper')));
+     state=await p.evaluate(index=>({
+       cell:window.tp.editor.options.data[3+index][2],
+       helper:document.querySelector('#textarea-insert-helper')?.value||''
+     }),i);
+   }
+   if(!String(state.cell||'').includes('<img')||!String(state.cell||'').includes('alt=')){
+     console.log('PSE_FOOTER_NATIVE_INSERT_DIAGNOSTIC='+JSON.stringify({cell:selected.cellName,mediaId:media[i].id,helperImage:String(state.helper||'').includes('<img'),helperLength:String(state.helper||'').length,storedImage:String(state.cell||'').includes('<img'),storedLength:String(state.cell||'').length}));
+     throw Error('Native Insert Image did not produce an SEO img tag in '+selected.cellName);
    }
    console.log('PSE_FOOTER_NATIVE_IMAGE=READY; table='+tableId+'; mediaId='+media[i].id+'; cell='+selected.cellName);
  }
