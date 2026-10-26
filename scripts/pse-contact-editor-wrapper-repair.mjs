@@ -77,7 +77,11 @@ try {
    await page.locator('#content-tmce').click();
    await page.waitForFunction(()=>Boolean(window.tinymce?.get('content')?.getBody()),null,{timeout:20000});
    await page.locator('#title').click();
-   await page.waitForTimeout(1100);
+   await page.waitForFunction(()=>{
+     const ed=window.tinymce?.get('content');
+     const images=ed?[...ed.getBody().querySelectorAll('.tablepress-preview-wrap img')]:[];
+     return images.length===3 && images.every(img=>img.complete && img.naturalWidth>0);
+   },null,{timeout:30000});
    const live=await page.evaluate(()=>{
      const editor=window.tinymce.get('content');
      return {
@@ -90,7 +94,7 @@ try {
    });
    if(JSON.stringify(live.ids)!==JSON.stringify(ids)||
      JSON.stringify(live.images.map(x=>x.id))!==JSON.stringify(ids)||
-     live.images.some(x=>!x.hasSource))
+     live.images.some(x=>!x.hasSource||x.naturalWidth<=0))
      throw Error('Editor reload native image badges do not match saved ESC Table structure');
    await page.locator('#wp-content-wrap').screenshot({path:'artifacts/pse-contact-native-editor/verified-editor.png'});
    console.log('PSE_CONTACT_NATIVE_EDITOR=ALREADY_DONE; saved_image_blocks=3; native_insert_code=verified; no_cms_write=true; no_build=true');
