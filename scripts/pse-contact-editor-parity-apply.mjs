@@ -63,7 +63,7 @@ try{
    const ed=window.tinymce.get('content'),h=ed.getBody().querySelector('.pse-contact-hero .pse-contact-locations__intro');
    const elements={intro:h,eyebrow:h?.querySelector('span'),heading:h?.querySelector('h2'),description:h?.querySelector('p')};
    if(Object.values(elements).some(v=>!v))throw Error('Contact native hero not present');
-   return {elements:Object.fromEntries(Object.entries(elements).map(([k,e])=>[k,{text:e.textContent.trim(),style:e.getAttribute('style')}]))),images:ed.getBody().querySelectorAll('.tablepress-preview-wrap img').length,
+   return {elements:Object.fromEntries(Object.entries(elements).map(([k,e])=>[k,{text:e.textContent.trim(),style:e.getAttribute('style')}])),images:ed.getBody().querySelectorAll('.tablepress-preview-wrap img').length,
    wrappers:ed.getBody().querySelectorAll('.tablepress-preview-wrap').length};
  });
  if(before.images!==3||before.wrappers!==3||before.elements.heading.text!=='Thông tin liên hệ'||before.elements.eyebrow.text.toLowerCase()!=='pvfcco-pse')throw Error('WordPress native editor content mismatch');
