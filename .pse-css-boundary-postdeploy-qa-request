@@ -1,1 +1,3 @@
 Read-only frontend 26-page smoke plus CSS visual parity on ESC Hotline/FAQ after CMS cssmore cleanup. Report deploy drift if Astro source not yet built. No writes or build.
+
+Diagnostic only: distinguish live markup Tailwind classes from old cssmore-loaded SSR cache after WordPress pending_count=0.
