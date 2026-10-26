@@ -7,3 +7,5 @@ Retry after #40276099335 failed only at scrollIntoViewIfNeeded before changing f
 Retry after #40276308155 stopped pre-Save: native WordPress menu item settings stayed collapsed despite anchor DOM click; now use wpNavMenu.eventOnClickEditLink directly with visible status assertions (script 3a096474). No rebuild until readback PASS.
 
 Read-only native WordPress Header DOM diagnostic after #40276568500: item 77020 hidden at ancestor despite WP native controller reporting active. This run must inspect ancestor and select schema then stop before Save; no build.
+
+After #40276840537 diagnostic confirmed root cause: LI 77020 carries `esc-menu-child-hidden` and is display:none despite native controller active, page dropdown initially only 1 placeholder. Expose only this verified child temporarily in DOM, set native Page mode/id and Save once; validate other Header items stable, NO BUILD in this job.
