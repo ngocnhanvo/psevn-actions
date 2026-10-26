@@ -1,0 +1,38 @@
+name: PSE Contact native editor parity (guarded NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-contact-editor-parity-apply.mjs
+      - .github/workflows/pse-contact-editor-parity-apply.yml
+      - .pse-contact-editor-parity-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-contact-native-content-writer
+  cancel-in-progress: false
+jobs:
+  author:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_CONTACT_PARITY_PHASE: "${{ github.event.head_commit.message == 'cms(pse): style Contact heading in native WordPress editor' && 'intro' || github.event.head_commit.message == 'cms(pse): retire legacy Contact ESC cssmore after Astro deployment' && 'finalize' || 'dry' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-contact-editor-parity-apply.mjs && node scripts/pse-contact-editor-parity-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-contact-editor-parity-backup
+          path: artifacts/pse-contact-editor-parity/backup.json
+          if-no-files-found: warn
+          retention-days: 14
