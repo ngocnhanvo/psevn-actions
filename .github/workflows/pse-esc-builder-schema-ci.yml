@@ -50,6 +50,26 @@ jobs:
           node-version: '24'
           cache: pnpm
           cache-dependency-path: astro/pnpm-lock.yaml
+      - name: Parse WordPress Builder inspector inline JavaScript (NO BUILD)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          for(const file of [
+            'php/wp-content/plugins/esc-visual-builder/includes/shared-menu-ui.php',
+            'php/wp-content/plugins/esc-visual-builder/includes/shared-footer-ui.php'
+          ]){
+            const content=readFileSync(file,'utf8');
+            const scripts=[...content.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/g)];
+            if(scripts.length!==1)throw Error('Expected one inspector script: '+file);
+            // PHP injects a JSON config object at runtime. Use an inert
+            // object literal so this source-only check validates JS syntax.
+            const js=scripts[0][1].replace(/<\\?php[\\s\\S]*?\\?>/g,'{}');
+            new Function(js);
+            console.log('ESC_BUILDER_INSPECTOR_JS_PARSE=PASS '+file);
+          }
+          NODE
       - name: Test dynamic text binding and retained media mapping (NO BUILD)
         working-directory: astro
         shell: bash
