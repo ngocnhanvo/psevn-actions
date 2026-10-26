@@ -40,3 +40,9 @@ Read-only complete native WP REST Page inventory: [run 40307227780](https://gith
 - Rollback: download CSS baseline artifact from run 40309429680 (private, 30-day retention), restore only after verifying ID/key/hash; source code rollback by reverting PR #86. Do not modify public content to artificially increase pending_count.
 
 The audit and CMS migration are complete; the frontend deployment parity is **BLOCKED solely by the official WordPress build gate**. Do not repeat completed audits or CMS writes without a change in inputs.
+
+## Final source-level checks
+
+- Independent Tailwind utility CSS compilation (no Astro website build) and 18/18 source tests PASS: [40311111811](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40311111811).
+- Superseded support CSS-to-ACF publisher replaced by a safe read-only retired notice; the formerly failing script-triggered audit now PASS: [40311408074](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40311408074). Never reapply the obsolete support CSS to WordPress.
+- Source-only and all-Page audit complete; production Astro still requires explicit authorized build via WordPress/PHP Build Website when `pending_count=0`. Do not misreport public parity until the HTML classes switch to new Tailwind output.
