@@ -96,7 +96,8 @@ try {
  const href=await del.getAttribute('href');
  const nativeUrl=new URL(href,u.origin);
  if(nativeUrl.origin!==u.origin||nativeUrl.pathname!=='/wp-admin/admin-post.php'||nativeUrl.searchParams.get('action')!=='tablepress_delete_table'||nativeUrl.searchParams.get('item')!=='136'||!nativeUrl.searchParams.get('_wpnonce'))throw Error('Unexpected native delete action');
- await del.evaluate(el=>el.click());
+ const visited=await page.goto(nativeUrl.toString(),{waitUntil:'domcontentloaded',timeout:65000});
+ console.log('PSE_FOOTER_NATIVE_DELETE_ROUTE='+JSON.stringify({http:visited?.status(),path:new URL(page.url()).pathname,notice:(await page.locator('.notice, .error, .updated').allInnerTexts()).slice(0,3).map(s=>s.slice(0,170))}));
  await page.waitForTimeout(1300);
  const dialogs=page.locator('.ui-dialog:visible, [role="alertdialog"]:visible');
  if(await dialogs.count()){
