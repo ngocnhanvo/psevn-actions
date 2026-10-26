@@ -4,7 +4,9 @@
  */
 import {chromium} from "playwright";
 import {createHash} from "node:crypto";
-const apply=String(process.env.PSE_COMPLAINT_CMS_APPLY||"")==="true";
+import {readFile} from "node:fs/promises";
+const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
+const apply=String(event.head_commit?.message||"").trim()==="cms(pse): author complaint Page with native WordPress editor";
 const sha=s=>createHash("sha256").update(String(s)).digest("hex");
 const env=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
 const wc=env.filter(s=>s.startsWith("WC_URL="));
