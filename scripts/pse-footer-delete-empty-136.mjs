@@ -86,7 +86,7 @@ try {
  await fs.writeFile('artifacts/pse-footer-delete-136/table136-before.json',JSON.stringify(rawBackup,null,2)+'\n');
  await page.goto(u.origin+'/wp-admin/admin.php?page=tablepress',{waitUntil:'domcontentloaded',timeout:65000});
  await page.locator('a.row-title').first().waitFor({state:'visible',timeout:20000});
- const rows=await page.locator('tr').evaluateAll(trs=>trs.map((tr,index)=>({index,text:(tr.innerText||'').slice(0,300),idCells:[...tr.querySelectorAll('td')].map(td=>td.innerText.trim()).filter(Boolean).slice(0,5)})).filter(row=>row.text.includes('Footer PSE - Thông tin bổ sung')&&/(^|\\s)136(\\s|$)/.test(row.text)));
+ const rows=await page.locator('tr').evaluateAll(trs=>trs.map((tr,index)=>({index,text:(tr.innerText||'').slice(0,300),idCells:[...tr.querySelectorAll('td')].map(td=>td.innerText.trim()).filter(Boolean).slice(0,5)})).filter(row=>row.text.includes('Footer PSE - Thông tin bổ sung')&&row.text.includes('136')));
  console.log('PSE_FOOTER_DELETE_MATCHED_ROWS='+JSON.stringify(rows));
  if(rows.length!==1)throw Error('TablePress admin native 136 row not unique');
  const row=page.locator('tr').nth(rows[0].index);
