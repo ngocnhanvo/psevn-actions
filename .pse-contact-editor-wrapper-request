@@ -1,3 +1,5 @@
-Apply after successful dry-run #40250221436: WordPress Page #47222 currently has exactly one TinyMCE preview wrapper for contact_00_vi whose badge erroneously contains both office and form native Insert Code shortcodes. Extract only those two existing tokens from the editor artifact into direct page content, keeping warehouse shortcode, all ESC Table items, CSS and other content intact. Backup first. No REST writes, no Astro build.
-
-Validated native WordPress UI Save left visual envelope unchanged. Perform only guarded WordPress post-content normalization; native Insert Code-generated three token IDs and sequence remain exactly the same; no table creation or styling changes.
+Owner-approved WordPress Contact Page #47222 native Visual Editor correction, 2026-10-26.
+Two unsaved safe dry-runs PASS: #40253991605, #40254198126. Keep the existing CMS intro, order, action/key, cssmore, and three existing native ESC Tables (office 1, contact 6 fields, warehouses 5).
+Use WordPress Visual Editor and ESC Table native Insert Code selector to create three SEPARATE image-preview blocks in the exact published order. Never paste shortcode text, create another preview widget, rewrite layout in Astro, or submit a form.
+Backup original CMS content+CSS; verify persistence with authenticated REST readback, Editor reload with three independently rendered preview images; no Astro build.
+This trigger reuses the workflow's existing exact commit-message guard solely to authorize the new native image block recovery (not the old nested badge repair).
