@@ -21,3 +21,5 @@ jobs:
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - run: node --check scripts/pse-news-url-contract-live-qa.mjs && node scripts/pse-news-url-contract-live-qa.mjs
+      - name: Verify public article image API and Imagick fallback (READ ONLY)
+        run: node --check scripts/pse-post-image-api-live-qa.mjs && node scripts/pse-post-image-api-live-qa.mjs
