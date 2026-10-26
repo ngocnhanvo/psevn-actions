@@ -34,7 +34,7 @@ const updated = {
   reference_href: '/gioi-thieu-doanh-nghiep', version: 'b'.repeat(64),
   saved: true
 };
-function setup(canEdit = true) {
+function setup(canEdit = true, responseRead = read, responseSaved = updated) {
   const dom = new JSDOM(
     '<div id="esc-vb-layout"><div class="esc-vb-sidebar"></div></div><iframe id="esc-vb-frame"></iframe>',
     { url: 'https://admin.example.test/wp-admin/admin.php', runScripts: 'outside-only' }
@@ -51,14 +51,14 @@ function setup(canEdit = true) {
   window.fetch = async (url, init) => {
     const body = JSON.parse(init.body);
     calls.push({ url, body });
-    if (url === config.readUrl) return { ok: true, json: async () => read };
+    if (url === config.readUrl) return { ok: true, json: async () => responseRead };
     if (url === config.referenceUrl) return {
       ok: true, json: async () => ({ mode: 'page', items: [
         { id: 301, label: 'Giới thiệu PSE', href: '/gioi-thieu' },
         { id: 303, label: 'Giới thiệu doanh nghiệp', href: '/gioi-thieu-doanh-nghiep' }
       ] })
     };
-    if (url === config.saveUrl) return { ok: true, json: async () => updated };
+    if (url === config.saveUrl) return { ok: true, json: async () => responseSaved };
     throw Error('Unexpected WordPress route: ' + url);
   };
   window.eval(js.replace(JSON.stringify(config), JSON.stringify({ ...config, canEdit })));
@@ -140,4 +140,42 @@ function setup(canEdit = true) {
   assert.equal(save.disabled,false,'draft remains editable after validation error');
   dom.window.close();
 }
-console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS page_search=PASS parent=PASS invalid_draft=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
+// Existing top-level Mega owner: edit text only, cancel restores draft,
+// and preview correctly requests refresh without rewriting native media.
+{
+  const mega = {
+    ...read, menu_type:'mega', mega_position:0,
+    mega_header_texts:['Cột đầu','Cột sau'],
+    allowed_fields:[...read.allowed_fields,'mega_header_texts']
+  };
+  const savedMega = {
+    ...mega, mega_header_texts:['Cột mới','Cột sau'],
+    version:'c'.repeat(64), saved:true
+  };
+  const { dom, doc, calls, sent, select }=setup(true,mega,savedMega);
+  select();await tick();await tick();
+  const panel=doc.getElementById('esc-vb-menu-editor');
+  const fields=panel.querySelectorAll('#esc-vb-menu-mega-headers input');
+  assert.equal(fields.length,2,'two native Mega title inputs');
+  assert.equal(fields[0].value,'Cột đầu');
+  const save=[...panel.querySelectorAll('button')].find(b=>b.textContent==='Lưu WordPress');
+  const cancel=[...panel.querySelectorAll('button')].find(b=>b.textContent==='Hủy thay đổi');
+  fields[0].value='Bản nháp';
+  fields[0].dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  assert.equal(save.disabled,false,'title edit is dirty');
+  cancel.click();
+  assert.equal(panel.querySelector('#esc-vb-menu-mega-headers input').value,'Cột đầu',
+    'cancel restores native title');
+  const changed=panel.querySelector('#esc-vb-menu-mega-headers input');
+  changed.value='Cột mới';
+  changed.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  save.click();await tick();await tick();
+  const write=calls.find(c=>c.url===config.saveUrl);
+  assert.deepEqual(write?.body.mega_header_texts,['Cột mới','Cột sau'],
+    'save sends text only, not native media');
+  assert.equal(save.disabled,true,'saved title clears draft');
+  assert.ok(sent.some(m=>m.type==='esc-vb-menu-label-saved'&&m.descriptionChanged===true),
+    'Mega header title change marks iframe refresh needed');
+  dom.window.close();
+}
+console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS mega_headers=PASS page_search=PASS parent=PASS invalid_draft=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
