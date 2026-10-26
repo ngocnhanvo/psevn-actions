@@ -37,8 +37,10 @@ try{
   try{response=await front.goto(url,{waitUntil:'domcontentloaded',timeout:45000})}
   catch(e){console.log('PSE_CSS_MATCH='+JSON.stringify({id:row.id,slug:row.slug,error:'frontend_unreachable'}));continue}
   const result=await front.evaluate(({css,raw})=>{
-   const parser=new CSSStyleSheet();
-   try{parser.replaceSync(css)}catch{return {parseError:true}};
+   const style=document.createElement('style');
+   style.textContent=css;document.head.appendChild(style);
+   const parser=style.sheet;
+   if(!parser)return {parseError:true,cssLength:css.length};
    let scanned=0,matched=0,unmatched=0,esc=0,html=0,outside=0,matchSamples=[],escSamples=[],bad=0;
    const seen=new Set();
    const walk=rules=>{for(const rule of rules){
@@ -59,7 +61,8 @@ try{
      }
    }};
    walk(parser.cssRules);
-   return{scanned,matched,unmatched,esc,html,outside,bad,
+   const ruleCount=parser.cssRules.length;style.remove();
+   return{cssLength:css.length,ruleCount,scanned,matched,unmatched,esc,html,outside,bad,
     matchSamples,escSamples,escRoots:document.querySelectorAll('[data-tablepress-preview]').length,
     editorWrappers:document.querySelectorAll('[data-esc-builder-html-part]').length};
   },{css,raw});
