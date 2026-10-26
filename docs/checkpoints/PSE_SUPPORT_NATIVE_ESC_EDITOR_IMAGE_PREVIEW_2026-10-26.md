@@ -20,4 +20,15 @@
 - Initial guarded apply attempt had a mismatch until canonical `tinymce.editor.save()` was called; then an apparent CSS mismatch was proven to be CRLF-only. Read-only diagnosis preceded retry; no duplicate CMS writes after the accepted saved Hotline image wrapper.
 - Any future modifications should use original WordPress ESC Insert Code, not hand-typed shortcode or second preview tool.
 
+## Final signed production and live browser acceptance (2026-10-26)
+- Astro source `ngocnhanvo/psevn-astro@master` commit `3e2e36bd81a55ad5d1dacc8235512439b92212d0` removed Hotline/FAQ duplicate component-owned CSS; site layout CSS remains in WordPress ACF `cssmore`. Source-only tests were already PASS; no additional Astro source code patch in this continuation.
+- Immediately after native Editor Save, the old production site had passed functional six-viewport checks but **failed CMS CSS origin markers** in browser QA [#40257352670](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40257352670). Do not count this pre-release regression as a passing run.
+- Authenticated WordPress/PHP Build Website request [#40257740480](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40257740480) **SUCCESS**. Preflight signed FTP/unzip PASS. Although an explicit one-time exception was authorized for the subpages, PHP reported `pending_count=3` and used `PSE_WP_BUILD_REQUEST_MODE=normal`, so no force build occurred and no standalone Actions build was dispatched.
+- Signed WordPress-initiated Astro build and production FTP-TLS activation [#40257838766](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40257838766): **SUCCESS**, source SHA verified above, `SIGNED_UNZIP_SUCCESS`, public GET smoke complete. Delta Image reused 865/865; Static Delta reused 46/76 files.
+- **Post-deploy public acceptance PASS** in independent Playwright runs [#40258041199](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40258041199) and [#40258047637](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40258047637). Both reported `PSE_SUPPORT_LIVE_QA_SUMMARY={"checks":6,"failures":[],"readOnly":true}` for `/duong-day-nong` and `/hoi-dap` at 390px, 768px and 1440px.
+- Each tested page returned HTTP 200 and exactly one H1, with no horizontal overflow or uncaught browser errors. Hotline preserved 3 valid tel links/cards. FAQ preserved 15 items, nonempty answers and working native accordion. Critically, `cmsCssLoaded=true` for both page-specific WordPress CSS marker strings on every viewport, confirming released CMS-owned layout.
+- No live contact form or FAQ submission was performed; not in task scope. No further build or CMS rewrite required for this completed requirement.
+
+Status: `CMS_NATIVE_IMAGE_PREVIEWS=PASS`; `DUPLICATE_CUSTOM_PREVIEW_REMOVED=DEPLOYED/PASS`; `ESC_DATA_PARITY=PASS`; `SIGNED_ASTRO_DEPLOY=PASS`; `POST_DEPLOY_RESPONSIVE_QA=PASS`; `LIVE_SUBMISSION=NOT_TESTED` (intentional).
+
 Chế độ code: auto-build.
