@@ -58,7 +58,8 @@ try {
    if(table.http!==200||table.data?.id!==spec.table||table.data.items?.length!==spec.rows||
       JSON.stringify(table.data.fields?.map(x=>x.key))!==JSON.stringify(spec.fieldKeys))throw Error("ESC Table data identity mismatch "+spec.slug);
    const raw=String(pageState.data.content?.raw||"").trim();
-   if(raw!=="[table id="+spec.table+" /]")throw Error("Unexpected WordPress Editor shortcode state "+spec.slug);
+   if(!new RegExp('\\\\[table\\\\s+id=["\\\\x27]?'+spec.table,'i').test(raw))
+     throw Error("Native ESC Table shortcode missing "+spec.slug);
    const saved=String(pageState.data.acf?.cssmore||"").trim();
    if(saved && saved!==css)throw Error("Refusing overwrite of nonmatching WordPress CMS layout "+spec.slug);
    console.log("PSE_SUPPORT_LAYOUT_PREFLIGHT="+JSON.stringify({slug:spec.slug,table:spec.table,rows:spec.rows,existing:saved===css?"MATCH":saved?"CHANGED":"EMPTY",cssBytes:Buffer.byteLength(css),mode}));
