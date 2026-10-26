@@ -52,7 +52,7 @@ try{
  const wraps=s=>(String(s).match(/tablepress-preview-wrap/g)||[]).length;
  if(JSON.stringify(idList(content))!==JSON.stringify(ids)||wraps(content)!==3||!content.includes('class="pse-contact-hero"')||content.includes('pse-location-card'))throw Error('Native ESC editor structure has changed');
  const oldAt=css.lastIndexOf(marker);
- if(phase==='finalize' && (oldAt<0||css.indexOf(marker)!==oldAt||normalize(css.slice(oldAt))!==normalize(legacy)||!/font-size:\\s*clamp\\(28px,\\s*3\\.4vw,\\s*43px\\)/i.test(content)))throw Error('CSS tail or native heading unexpected; do not cleanup');
+ if(phase==='finalize' && (oldAt<0||css.indexOf(marker)!==oldAt||normalize(css.slice(oldAt))!==normalize(legacy)||!/font-size:\s*clamp\(28px,\s*3\.4vw,\s*43px\)/i.test(content)))throw Error('CSS tail or native heading unexpected; do not cleanup');
  await mkdir('artifacts/pse-contact-editor-parity',{recursive:true});
  await writeFile('artifacts/pse-contact-editor-parity/backup.json',JSON.stringify({id:47222,phase,content,cssmore:css},null,2));
  await page.goto(url.origin+'/wp-admin/post.php?post=47222&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
@@ -91,7 +91,7 @@ try{
  if(!result||result.status!==200)throw Error('CMS readback unavailable; inspect persisted state before retrying');
  const after=String(result.page?.content?.raw||''),nextCSS=String(result.page?.acf?.cssmore||'');
  if(JSON.stringify(idList(after))!==JSON.stringify(ids)||wraps(after)!==3||after.includes('pse-location-card'))throw Error('Readback lost native ESC blocks');
- const styled=/font-size:\\s*clamp\\(28px,\\s*3\\.4vw,\\s*43px\\)/i.test(after)&&/color:\\s*#175238/i.test(after)&&/font-family:\\s*Quicksand/i.test(after);
+ const styled=/font-size:\s*clamp\(28px,\s*3\.4vw,\s*43px\)/i.test(after)&&/color:\s*#175238/i.test(after)&&/font-family:\s*Quicksand/i.test(after);
  if(!styled)throw Error('Native WordPress heading inline styles not persisted');
  if(phase==='intro'&&nextCSS!==css)throw Error('Intro phase unexpectedly changed cssmore');
  if(phase==='finalize'&&(nextCSS.includes(marker)||normalize(nextCSS)!==normalize(css.slice(0,oldAt))))throw Error('CSS cleanup changed non-ESC authored rules');
