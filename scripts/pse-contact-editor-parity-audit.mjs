@@ -40,5 +40,6 @@ try{
   return{headingText:heading?.textContent?.trim(),headingStyle:heading?getComputedStyle(heading).cssText:null,headingColor:heading?getComputedStyle(heading).color:null,headingFontSize:heading?getComputedStyle(heading).fontSize:null,heroStyle:h?.getAttribute('style'),imagePreviews:ed.getBody().querySelectorAll('.tablepress-preview-wrap img').length,customPreview:!!document.querySelector('#pse-contact-editor-preview')};
  });
  console.log('PSE_CONTACT_EDITOR_PARITY_PREFLIGHT='+JSON.stringify({details,admin}));
- console.log('PSE_CONTACT_EDITOR_PARITY_READ_ONLY=PASS; after_native_save=true');
+ if(details.cssMarker || details.nativeWrappers!==3 || details.tableIds.join(',')!=='pse_contact_office_vi,contact_00_vi,pse_contact_warehouses_vi' || admin.headingColor!=='rgb(23, 82, 56)' || !admin.heroStyle || admin.imagePreviews!==3 || admin.customPreview)throw Error('Contact CMS heading/ESC CSS ownership parity regression');
+ console.log('PSE_CONTACT_EDITOR_PARITY_READ_ONLY=PASS; wp_hero_styled=true; cssmore_esc_removed=true; previews=3; no_extra_panel=true');
 }finally{await b.close()}
