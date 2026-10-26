@@ -32,7 +32,9 @@ jobs:
         shell: bash
         run: |
           node --input-type=module <<'NODE'
-          import {build} from 'esbuild';
-          await build({entryPoints:['src/lib/utils/fetchWithDiagnostics.ts'],bundle:true,write:false,platform:'node',format:'esm',external:['undici']});
+          import {readFile} from 'node:fs/promises';
+          import {transformWithEsbuild} from 'vite';
+          const path='src/lib/utils/fetchWithDiagnostics.ts';
+          await transformWithEsbuild(await readFile(path,'utf8'),path,{loader:'ts'});
           console.log('PSE_WORDPRESS_FETCH_PARSE=PASS; NO_BUILD=PASS');
           NODE
