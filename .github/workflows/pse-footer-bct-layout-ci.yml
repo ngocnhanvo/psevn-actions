@@ -1,0 +1,43 @@
+name: PSE footer BCT and certificate layout source CI (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-footer-bct-layout-ci.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: fix/pse-footer-bct-cert-row-20261026
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm exec vitest run src/lib/wordpress/tablepress/pseFooterAssets.test.ts src/astro/components/Layout/Footer.poweredby.test.ts
+      - name: Parse Astro footer without site build
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { pathToFileURL } from 'node:url';
+          const require=createRequire(import.meta.url);
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
+          const path='src/astro/components/Layout/Footer.astro';
+          await compiler.transform(await readFile(path,'utf8'),{filename:path});
+          console.log('PSE_FOOTER_BCT_GRID_SOURCE=PASS; NO_ASTRO_BUILD=true');
+          NODE
