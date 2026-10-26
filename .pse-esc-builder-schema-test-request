@@ -1,1 +1,4 @@
-PSE ESC Visual Builder G1/G2 source regression: menu item ID, editor, WP ticket/nonce/capability, skeleton; verify updated PHP master and Astro github. NO WEBSITE BUILD. Trigger date 2026-10-27; source check after commit 9a9c4d00.
+PSE ESC Visual Builder G1 continuation source regression, 2026-10-27.
+Verify Astro github 7f247a3a796803ebf7d819b504feb3600f8c3577 against PHP master 73f9fc1df2a1c64afd4415087750650a91efeb6c.
+Scope: readonly Menu/Footer no-fetch guards, Header unsupported links, skeleton, native WordPress adapter source.
+Existing schema CI only: Vitest, PHP lint, Astro syntax, Tailwind source. NO WEBSITE BUILD, NO FTPS, NO CMS WRITE.
