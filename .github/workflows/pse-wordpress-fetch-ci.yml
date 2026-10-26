@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pse-wordpress-fetch-ci.yml
+      - .pse-wordpress-fetch-ci-trigger
 permissions:
   contents: read
 jobs:
