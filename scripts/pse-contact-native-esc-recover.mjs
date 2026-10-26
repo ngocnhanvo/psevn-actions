@@ -152,7 +152,20 @@ try{
  if(JSON.stringify(synced.after)!==JSON.stringify(ids))throw Error("TinyMCE synchronization lost a native shortcode");
  await page.locator("#publish").click();
  await page.waitForTimeout(2400);
- const next=await read(target);
+ // WordPress Classic Editor may redirect twice after Save. Avoid a false negative
+ // from an ephemeral execution context while preserving strict read-after-write.
+ let next=null;
+ for(let attempt=0;attempt<8;attempt++){
+   try {
+     await page.waitForLoadState("domcontentloaded",{timeout:12000});
+     next=await read(target);
+     break;
+   } catch(error) {
+     if(!/Execution context was destroyed|navigation/i.test(String(error)))throw error;
+     await page.waitForTimeout(750);
+   }
+ }
+ if(!next)throw Error("WordPress edit navigation never stabilized; verify saved content separately");
  const latest=String(next.data?.content?.raw||"");
  const actual=[...latest.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(x=>x[1]);
  console.log("PSE_CONTACT_RECOVERY_READBACK="+JSON.stringify({http:next.http,ids:actual,
