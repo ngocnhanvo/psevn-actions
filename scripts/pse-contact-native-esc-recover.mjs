@@ -86,7 +86,20 @@ try{
      window.tablepress_open_shortcode_thickbox();
    });
    const option=page.frameLocator("#TB_iframeContent").locator('.insert-shortcode[title*="'+entry.id+'"]');
-   await option.waitFor({state:"visible",timeout:30000});
+   try {
+     await option.waitFor({state:"visible",timeout:14000});
+   } catch(e) {
+     const modalState=await page.evaluate(()=>({
+       thickboxVisible:!!document.querySelector("#TB_window")?.getClientRects().length,
+       iframe:!!document.querySelector("#TB_iframeContent"),
+       active:window.wpActiveEditor,
+       list:document.querySelector("#TB_iframeContent")?.getAttribute("src")?.split("?")[0]||""
+     }));
+     let options=[];
+     try{options=await page.frameLocator("#TB_iframeContent").locator(".insert-shortcode").evaluateAll(nodes=>nodes.map(x=>x.getAttribute("title")).slice(0,15))}catch{}
+     console.log("PSE_CONTACT_NATIVE_INSERT_MODAL_DIAGNOSTIC="+JSON.stringify({id:entry.id,modalState,options}));
+     throw e;
+   }
    if(!(await option.getAttribute("title"))?.includes(snippet))throw Error("Wrong ESC Table in Insert Code");
    await page.evaluate(({snippet,pos})=>{
      window.wpActiveEditor="content";
@@ -110,6 +123,8 @@ try{
    }),entry.id);
    if(!confirmed.native||confirmed.count!==1)throw Error("Native Insert Code did not insert "+entry.id);
    console.log("PSE_CONTACT_RECOVERY_INSERT=PASS "+entry.id);
+   await page.locator("#TB_window").waitFor({state:"hidden",timeout:10000});
+   await page.waitForTimeout(650);
  }
  const finalText=await editor.inputValue();
  const all=[...finalText.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(m=>m[1]);
