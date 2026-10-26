@@ -62,8 +62,18 @@ try{
   const raw=String(r.data.content?.raw||"");
   const inserted="[table id="+spec.table+" /]";
   const migrated=clean(raw)===inserted;
-  if(!migrated&&(r.data.modified!==spec.oldModified||raw.includes("[table id=")))throw Error("Page changed since source audit, no overwrite "+spec.slug);
-  const rows=migrated?null:await page.evaluate(({raw,kind})=>{
+  // Recover the single blank Page produced by the verified stale Classic Editor buffer.
+  // No other blank/changed Pages are eligible for this narrowly scoped recovery.
+  const recoverBlank=spec.id===80932&&raw===""&&r.data.modified==="2026-10-26T07:38:08";
+  if(!migrated&&!recoverBlank&&(r.data.modified!==spec.oldModified||raw.includes("[table id=")))
+    throw Error("Page changed since source audit, no overwrite "+spec.slug);
+  const existing=await readTable(spec);
+  if(![200,404].includes(existing.http))throw Error("Unexpected table state "+spec.table+" HTTP "+existing.http);
+  if(recoverBlank&&(existing.http!==200||existing.data?.items?.length!==3||
+    JSON.stringify(existing.data?.fields?.map(x=>x.key))!==JSON.stringify(spec.keys)))
+    throw Error("Blank recovery lacks verified three-row ESC Table");
+  const rows=migrated?null:recoverBlank?existing.data.items.map(item=>
+    Object.fromEntries(spec.keys.map(k=>[k,String(item[k]??"")]))) :await page.evaluate(({raw,kind})=>{
    const root=document.createElement("div");root.innerHTML=raw;
    if(kind==="hotline"){
     const tables=[...root.querySelectorAll("table")];
@@ -99,8 +109,6 @@ try{
    });
   },{raw,kind:spec.slug==="hoi-dap"?"faq":"hotline"});
   if(!migrated&&(rows.length!==spec.expectedCount||rows.some(x=>spec.keys.some(k=>x[k]==null))))throw Error("Source ESC item count/schema mismatch "+spec.slug);
-  const existing=await readTable(spec);
-  if(![200,404].includes(existing.http))throw Error("Unexpected table state "+spec.table+" HTTP "+existing.http);
   const entry={spec,record:r.data,raw,rows,table:existing,migrated};
   source.push(entry);
   await writeFile("artifacts/pse-support-esc-migration/"+spec.slug+"-before.json",
