@@ -5,7 +5,7 @@
  * readback. Does not alter ESC Table rows, ACF CSS, URLs, status or Astro.
  */
 import {chromium} from "playwright";
-import {mkdir,writeFile} from "node:fs/promises";
+import {mkdir,writeFile,readFile} from "node:fs/promises";
 import {createHash} from "node:crypto";
 
 const apply=process.env.PSE_SUPPORT_NATIVE_APPLY==="true";
@@ -97,6 +97,15 @@ try {
    const token="[table id="+spec.table+" /]";
    if(!css.includes(spec.css)||JSON.stringify(tokens(raw))!==JSON.stringify([spec.table]))
       throw Error("Page CSS or single native ESC Table token altered "+spec.slug);
+   const expectedCss=(await readFile("scripts/pse-support-layout-"+(spec.slug==="hoi-dap"?"faq":"hotline")+".css","utf8")).trim();
+   const diff=Array.from({length:Math.min(expectedCss.length,css.length)},(_,i)=>i).find(i=>expectedCss[i]!==css[i]);
+   const firstDiff=diff===undefined?(expectedCss.length===css.length?-1:Math.min(expectedCss.length,css.length)):diff;
+   console.log("PSE_SUPPORT_CSS_DIAG="+JSON.stringify({
+     slug:spec.slug,currentLength:css.length,expectedLength:expectedCss.length,
+     matchesSource:css===expectedCss,firstDiff,
+     oldContext:firstDiff<0?"":expectedCss.slice(Math.max(0,firstDiff-35),firstDiff+95),
+     newContext:firstDiff<0?"":css.slice(Math.max(0,firstDiff-35),firstDiff+95)
+   }));
    const existing=wrappers(raw);
    console.log("PSE_SUPPORT_PAGE_READBACK="+JSON.stringify({
      slug:spec.slug,rawLength:raw.length,rawSha256:sha(raw),
