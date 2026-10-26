@@ -1,1 +1,1 @@
-2026-10-26 PSE footer normal WordPress/PHP Build Website after master 6a37ac5b46fdbdb91b9950ca5146e48d01161ba3. WordPress REST requests now use matching Undici v8 fetch/Agent. Bounded retries, signed v2 preflight, no force.
+2026-10-26 PSE WordPress Build Website normal retry: Astro master 3ee602d487e298cfd6179dff3121b9f5802e3134 fixes TablePress numeric ID shortcode.startsWith; all 505/505 tests PASS in Actions 40336988549. Trigger only authenticated PHP/WordPress Build Website, no force or bypass of signed preflight.
