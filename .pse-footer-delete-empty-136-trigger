@@ -1,1 +1,1 @@
-2026-10-26 Retry guarded TablePress native delete 136; fix escaped selector, previous no delete, verified backups.
+Guarded native delete 136 via validated WP admin-post hyperlink because row action is outside viewport; prior attempts never deleted.
