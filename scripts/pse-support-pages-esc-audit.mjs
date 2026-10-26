@@ -37,7 +37,7 @@ try {
     const text=(root.textContent||"").replace(/\s+/g," ").trim();
     return{sections,headings,tables,counts,firstTags,textLength:text.length,excerpt:text.slice(0,2000)};
    },raw);
-   console.log("PSE_SUPPORT_PAGE_STRUCTURE="+JSON.stringify({slug,id:p.id,status:p.status,key:p.acf?.key,action:p.acf?.action,modified:p.modified,rawLength:raw.length,cssmoreLength:String(p.acf?.cssmore||"").length,shortcodes:[...raw.matchAll(/\[table\s+id=([^\s\]]+)/gi)].map(m=>m[1]),...structure}));
+   console.log("PSE_SUPPORT_PAGE_STRUCTURE="+JSON.stringify({slug,id:p.id,status:p.status,key:p.acf?.key,action:p.acf?.action,modified:p.modified,rawLength:raw.length,rawPreview:raw.length<3000?raw.slice(0,3000):raw.slice(0,450),cssmoreLength:String(p.acf?.cssmore||"").length,shortcodes:[...raw.matchAll(/\[table\s+id=([^\s\]]+)/gi)].map(m=>m[1]),...structure}));
   }
   const v=await browser.newPage({viewport:{width:1440,height:900}});
   try{
