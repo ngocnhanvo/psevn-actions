@@ -139,7 +139,31 @@ try{
    if(body.includes("nội dung sẽ được cập nhật khi cấu hình website mới"))
      throw Error("Internal CMS editor note leaked to public Contact page");
    const useESC=await page.locator('[data-tablepress-preview="pse_contact_office_vi"]').count()===1;
-   if(expectStructuredESC&&!useESC)throw Error("New contact ESC office shortcode missing in production");
+   if(expectStructuredESC&&!useESC){
+     const frontendShape=await page.locator("main#main-content").evaluate(root=>({
+       sectionIds:[...root.querySelectorAll("[data-tablepress-preview]")].map(x=>x.getAttribute("data-tablepress-preview")),
+       htmlClasses:[...root.children].map(x=>x.getAttribute("class")||x.tagName).slice(0,15),
+       hasLegacyLocations:!!root.querySelector(".pse-contact-locations"),
+       hasNativeHero:!!root.querySelector(".pse-contact-hero"),
+       formCount:root.querySelectorAll("#contact-form").length,
+       gridDisplay:getComputedStyle(root).display,
+     }));
+     let api={status:0,renderedShortcodes:[],hasOffice:0,hasWarehouse:0,hasLegacy:false,hasHero:false,modified:null};
+     try{
+       const response=await page.request.get(wp+"/wp-json/wp/v2/pages/47222?_fields=id,modified,content",{timeout:20000});
+       const record=await response.json();
+       const rendered=String(record?.content?.rendered||"");
+       api={status:response.status(),
+         renderedShortcodes:[...rendered.matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\/\]/gi)].map(x=>x[1]),
+         hasOffice:(rendered.match(/pse_contact_office_vi/g)||[]).length,
+         hasWarehouse:(rendered.match(/pse_contact_warehouses_vi/g)||[]).length,
+         hasLegacy:rendered.includes("pse-contact-locations"),
+         hasHero:rendered.includes("pse-contact-hero"),
+         modified:record?.modified||null};
+     }catch(e){api.error=String(e).slice(0,120)}
+     console.log("PSE_CONTACT_MISMATCH_DIAGNOSTIC="+JSON.stringify({frontendShape,api}));
+     throw Error("New contact ESC office shortcode missing in production");
+   }
    const geometry=await page.locator("main#main-content").evaluate((root,useESC)=>{
      const office=root.querySelector(useESC?'[data-tablepress-preview="pse_contact_office_vi"]':'.pse-contact-locations__office');
      const form=root.querySelector('[data-tablepress-preview="contact_00_vi"]');
