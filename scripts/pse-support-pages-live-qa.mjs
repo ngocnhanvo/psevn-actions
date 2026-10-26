@@ -24,13 +24,18 @@ try{
      const h1=[...main?.querySelectorAll("h1")||[]].map(x=>x.textContent?.trim());
      const overflow=document.documentElement.scrollWidth>document.documentElement.clientWidth+4;
      const links=spec.kind==="faq"?[...root?.querySelectorAll("a[href]")||[]]:[...root?.querySelectorAll("a[href^='tel:']")||[]];
-     return{root:!!root,count:nodes.length,h1,overflow,links:links.length,editorAccordion:!!main?.querySelector(".accordionfaq"),legacyTables:main?.querySelectorAll(".article-content table").length||0,
+     const cmsCssMarker=spec.kind==="faq"?"PSE_FAQ_CMS_LAYOUT_V1":"PSE_HOTLINE_CMS_LAYOUT_V1";
+     const cmsCssLoaded=[...document.querySelectorAll("style")].some(node=>(node.textContent||"").includes(cmsCssMarker));
+     const cardCss=nodes.length?getComputedStyle(nodes[0]):null;
+     const computedLayout=cardCss?{radius:cardCss.borderRadius,display:cardCss.display}:null;
+     return{root:!!root,count:nodes.length,h1,overflow,links:links.length,cmsCssMarker,cmsCssLoaded,computedLayout,editorAccordion:!!main?.querySelector(".accordionfaq"),legacyTables:main?.querySelectorAll(".article-content table").length||0,
       details:spec.kind==="faq"?nodes.map(x=>({summary:!!x.querySelector("summary"),textLength:(x.querySelector(".pse-faq__answer")?.textContent||"").trim().length})):[],
       phoneNumbers:spec.kind==="hotline"?nodes.map(x=>({phone:x.querySelector("a[href^='tel:']")?.textContent?.trim(),href:x.querySelector("a[href^='tel:']")?.getAttribute("href")})):[]};
     },spec);
     if(spec.kind==="faq"&&found.root){await page.locator(".pse-faq__item").nth(1).locator("summary").click();
       found.secondOpen=await page.locator(".pse-faq__item").nth(1).evaluate(el=>el.open)}
     const ok=res?.status()===200&&found.root&&found.count===spec.expected&&found.h1.length===1&&!found.overflow&&!found.editorAccordion&&
+      found.cmsCssLoaded&&found.computedLayout?.radius!=="0px"&&found.computedLayout?.radius!==""&&
       (spec.kind==="faq"?found.details.every(x=>x.summary&&x.textLength>10)&&found.secondOpen:found.phoneNumbers.every(x=>x.phone&&x.href?.startsWith("tel:")));
     console.log("PSE_SUPPORT_LIVE="+JSON.stringify({width:viewport.width,slug:spec.slug,status:res?.status(),pass:ok,...found,errors}));
     if(!ok||errors.length)failures.push({width:viewport.width,slug:spec.slug,pass:ok,errors});
