@@ -26,8 +26,20 @@ const tokens=html=>[...String(html||"").matchAll(/\[table\s+id=([a-z0-9_-]+)\s*\
 const wrappers=html=>[...String(html||"").matchAll(/<div\b(?=[^>]*class=["'][^"']*tablepress-preview-wrap[^"']*["'])[^>]*>[\s\S]*?<\/div>/gi)].map(m=>m[0]);
 const sha=html=>createHash("sha256").update(String(html)).digest("hex");
 const browser=await chromium.launch({headless:true});
-const page=await browser.newPage({viewport:{width:1500,height:1050}});
-page.on("dialog",async d=>{if(d.type()==="confirm")await d.accept();else await d.dismiss()});
+const context=await browser.newContext({viewport:{width:1500,height:1050}});
+let page=await context.newPage();
+const handleDialogs=p=>p.on("dialog",async d=>{if(d.type()==="confirm")await d.accept();else await d.dismiss()});
+handleDialogs(page);
+const visitEditor=async id=>{
+ const target=origin+"/wp-admin/post.php?post="+id+"&action=edit";
+ for(let attempt=0;attempt<3;attempt++){
+   try{return await page.goto(target,{waitUntil:"domcontentloaded",timeout:45000})}
+   catch(error){
+     if(!/ERR_ABORTED|Timeout/i.test(String(error))||attempt===2)throw error;
+     await page.waitForTimeout(1000+attempt*800);
+   }
+ }
+};
 await mkdir("artifacts/pse-support-native-blocks",{recursive:true});
 try {
  if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)throw Error("WordPress Admin secrets unavailable");
@@ -61,6 +73,15 @@ try {
  const readPage=s=>read("/wp-json/wp/v2/pages/"+s.id+"?context=edit&_fields=id,slug,status,acf,content,modified");
  const readTable=s=>read("/wp-json/tablepress/v1/table/"+encodeURIComponent(s.table));
  for(const spec of specs){
+   // Each WordPress Visual Editor owns its own unsaved TinyMCE buffer. Never
+   // navigate one edited Page to another: its onbeforeunload/auto-save can
+   // cancel page.goto or accidentally persist an unsaved dry-run preview.
+   if(spec!==specs[0]){
+     await page.close({runBeforeUnload:false});
+     page=await context.newPage();
+     handleDialogs(page);
+     await page.goto(origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
+   }
    const before=await readPage(spec);
    const table=await readTable(spec);
    if(before.http!==200||before.data?.id!==spec.id||before.data?.slug!==spec.slug||
@@ -89,7 +110,7 @@ try {
    await writeFile("artifacts/pse-support-native-blocks/"+spec.slug+"-before.json",
      JSON.stringify({id:spec.id,slug:spec.slug,raw,sha256:sha(raw),
        cssSha256:sha(css),table:spec.table,itemCount:table.data.items.length},null,2));
-   await page.goto(origin+"/wp-admin/post.php?post="+spec.id+"&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+   await visitEditor(spec.id);
    await page.locator("#content-tmce").click();
    await page.waitForFunction(()=>Boolean(window.tinymce?.get("content")?.getBody()),null,{timeout:20000});
    if(await page.locator("#pse-support-editor-preview").count())
@@ -165,7 +186,7 @@ try {
    if(savedWraps.length!==1||JSON.stringify(tokens(after))!==JSON.stringify([spec.table])||
       tokens(savedWraps[0])[0]!==spec.table||saved.data?.acf?.cssmore!==css)
       throw Error("WordPress after-save readback mismatch "+spec.slug);
-   await page.goto(origin+"/wp-admin/post.php?post="+spec.id+"&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+   await visitEditor(spec.id);
    await page.locator("#content-tmce").click();
    await page.waitForFunction(t=>{
      const e=window.tinymce?.get("content");
