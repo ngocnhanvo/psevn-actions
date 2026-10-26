@@ -32,6 +32,7 @@ jobs:
           done
           php php/wp-content/plugins/esc-visual-builder/tests/auto-discovery.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
+          php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
       - name: Checkout Astro development source (source only)
         uses: actions/checkout@v4
         with:
