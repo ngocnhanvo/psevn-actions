@@ -103,7 +103,19 @@ try{
        formId:form?.id||"",isMenuToEdit:!!el.closest("#menu-to-edit"),menuController:!!window.wpNavMenu};
    });
    console.log("PSE_COMPLAINT_ESC_HIDDEN_DIAG="+JSON.stringify(diag));
-   if(ui.hiddenParent)throw Error("ESC native item rendered in hidden ancestor; inspect CSS/DOM before Save");
+   if(ui.hiddenParent){
+     // ESC WordPress Menu Manager intentionally collapses nested menu items
+     // with esc-menu-child-hidden (display:none); only expose this *one*
+     // already-verified child in the admin DOM so native controls can be used.
+     const exposed=await item.evaluate(el=>{
+       if(!el.classList.contains("esc-menu-child-hidden")||
+          !el.classList.contains("menu-item-depth-1"))
+         throw Error("Unexpected hidden WordPress menu item");
+       el.style.setProperty("display","list-item","important");
+       return el.getClientRects().length>0;
+     });
+     if(!exposed)throw Error("Native ESC child cannot be revealed for edit");
+   }
    await details.waitFor({state:"visible",timeout:10000});
  }
  await select.selectOption("page");
