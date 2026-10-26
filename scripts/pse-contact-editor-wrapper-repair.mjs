@@ -122,7 +122,7 @@ try {
       throw Error('Native Insert Code failed or corrupted other ESC section at '+id);
  }
  await page.locator('#title').click(); // commit the last native TinyMCE image insertion before inspecting serialized HTML
- await page.waitForTimeout(900);
+ await page.waitForTimeout(1800);
  const state=await page.evaluate(()=>{
    const editor=window.tinymce.get('content');
    return {html:editor.getContent(),previewImages:[...editor.getBody().querySelectorAll('.tablepress-preview-wrap img')].map(img=>({
@@ -165,9 +165,28 @@ try {
  const saved=await read(endpoint);
  const body=String(saved.data?.content?.raw||'');
  const savedIds=tokens(body).map(t=>t.id);
+ const savedWrappers=[...body.matchAll(/<div\b(?=[^>]*class=["'][^"']*tablepress-preview-wrap[^"']*["'])[^>]*>[\s\S]*?<\/div>/gi)];
  if(saved.http!==200||JSON.stringify(savedIds)!==JSON.stringify(ids)||
     !body.includes('pse-contact-hero')||String(saved.data?.acf?.cssmore||'')!==css||
-    !body.includes('tablepress-preview-wrap'))
+    savedWrappers.length!==3||savedWrappers.some((w,i)=>tokens(w[0]).length!==1||tokens(w[0])[0].id!==ids[i]))
    throw Error('WordPress Visual editor save readback failed; backup artifact available');
+ await page.goto(u.origin+'/wp-admin/post.php?post=47222&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
+ await page.locator('#content-tmce').click();
+ await page.waitForFunction(()=>[...document.querySelectorAll('#content_ifr')].length>0,null,{timeout:15000});
+ const reloaded=await page.evaluate(()=>{
+   const ed=window.tinymce?.get('content');
+   return {images:[...ed.getBody().querySelectorAll('.tablepress-preview-wrap img')].map(x=>({
+     tableId:x.getAttribute('data-table-id'),src:x.getAttribute('src'),naturalWidth:x.naturalWidth
+   })),wrappers:ed.getBody().querySelectorAll('.tablepress-preview-wrap').length,
+     hasUnrequestedPanel:!!document.querySelector('#pse-contact-editor-preview')};
+ });
+ if(reloaded.hasUnrequestedPanel||reloaded.wrappers!==3||
+    JSON.stringify(reloaded.images.map(x=>x.tableId))!==JSON.stringify(ids))
+   throw Error('WordPress Editor reload visual section parity failed; see backup');
+ await page.locator('#wp-content-wrap').screenshot({path:'artifacts/pse-contact-native-editor/after-save.png'});
+ console.log('PSE_CONTACT_NATIVE_RELOAD='+JSON.stringify({
+   wrappers:reloaded.wrappers,imageCount:reloaded.images.length,
+   imagesWithUrl:reloaded.images.filter(x=>x.src).length,unrequestedPanel:false
+ }));
  console.log('PSE_CONTACT_NATIVE_EDITOR=PASS; separate_ESC_visual_blocks=3; cms_owned=true; no_astro_build=true');
 }finally { await browser.close(); }
