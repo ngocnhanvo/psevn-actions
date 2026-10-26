@@ -205,15 +205,26 @@ try {
        previewImageLoaded:true,imageWidth:state.imageWidth,noSave:true,noBuild:true}));
      continue;
    }
+   if(wrappers(serialized).length!==1||JSON.stringify(tokens(serialized))!==JSON.stringify([spec.table]))
+     throw Error("Native WordPress editor serialization did not retain one visual ESC image block "+spec.slug);
    const latest=await readPage(spec);
    if(latest.http!==200||String(latest.data?.content?.raw||"")!==raw||
       String(latest.data?.acf?.cssmore||"")!==css)
      throw Error("Concurrent WordPress content/CSS edit detected "+spec.slug);
    await page.locator("#publish").click();
-   let saved;
-   for(let n=0;n<8;n++){
-     try{await page.waitForLoadState("domcontentloaded",{timeout:12000});saved=await readPage(spec);break}
-     catch(e){if(!/navigation|execution context was destroyed/i.test(String(e)))throw e;await page.waitForTimeout(650)}
+   let saved=null;
+   // WP Classic Editor submit may finish after the initial REST read.
+   // Poll the saved source, never click Publish twice on uncertain state.
+   for(let n=0;n<12;n++){
+     try{
+       await page.waitForLoadState("domcontentloaded",{timeout:12000});
+       const candidate=await readPage(spec);
+       if(candidate.http!==200)throw Error("Saved Page REST HTTP "+candidate.http);
+       saved=candidate;
+       const body=String(candidate.data?.content?.raw||"");
+       if(wrappers(body).length===1&&JSON.stringify(tokens(body))===JSON.stringify([spec.table]))break;
+     }catch(e){if(!/navigation|execution context was destroyed/i.test(String(e)))throw e}
+     await page.waitForTimeout(800);
    }
    if(!saved||saved.http!==200)throw Error("WordPress save result indeterminate; verify read-only before replay");
    const after=String(saved.data?.content?.raw||"");
