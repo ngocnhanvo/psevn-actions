@@ -5,3 +5,5 @@ Native WordPress Menu Manager repair for existing Header item 77020: REST item n
 Retry after #40276099335 failed only at scrollIntoViewIfNeeded before changing form. Script commit 026fa438 switches to native instant scroll; avoid any repeated Save if ESC menu is already in mode Page.
 
 Retry after #40276308155 stopped pre-Save: native WordPress menu item settings stayed collapsed despite anchor DOM click; now use wpNavMenu.eventOnClickEditLink directly with visible status assertions (script 3a096474). No rebuild until readback PASS.
+
+Read-only native WordPress Header DOM diagnostic after #40276568500: item 77020 hidden at ancestor despite WP native controller reporting active. This run must inspect ancestor and select schema then stop before Save; no build.
