@@ -218,6 +218,16 @@ try{
   const current=await editor.inputValue();
   if(!(await page.evaluate(()=>window.__pseSupportNative===true))||clean(current)!==target)
    throw Error("Insert Code did not produce exactly one shortcode "+spec.table);
+  const sync = await page.evaluate(target => {
+    const area = document.querySelector("#content");
+    if (!area || area.value.trim() !== target) throw Error("Invalid Classic Editor value before save");
+    const visual = window.tinymce?.get("content");
+    if (visual) { visual.setContent(target); visual.save(); }
+    area.dispatchEvent(new Event("input", { bubbles: true }));
+    return {text:area.value.trim(), visual: Boolean(visual)};
+  },target);
+  if(sync.text !== target) throw Error("Visual editor synchronization mismatch");
+  console.log("PSE_SUPPORT_EDITOR_SYNC="+JSON.stringify({slug:spec.slug, visual:sync.visual}));
   await page.locator("#publish").click();await page.waitForTimeout(2400);
   let saved=null;
   for(let n=0;n<6;n++){
