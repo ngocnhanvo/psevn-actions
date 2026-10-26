@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pse-footer-editor-inspect.yml
+      - scripts/pse-footer-editor-inspect.mjs
       - .pse-footer-editor-inspect-trigger
 permissions:
   contents: read
