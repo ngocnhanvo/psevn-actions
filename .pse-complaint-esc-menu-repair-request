@@ -11,3 +11,5 @@ Read-only native WordPress Header DOM diagnostic after #40276568500: item 77020 
 After #40276840537 diagnostic confirmed root cause: LI 77020 carries `esc-menu-child-hidden` and is display:none despite native controller active, page dropdown initially only 1 placeholder. Expose only this verified child temporarily in DOM, set native Page mode/id and Save once; validate other Header items stable, NO BUILD in this job.
 
 #40277065673 had page/id selected correctly but timed out before submitting the moving native Save control. Script d7046ec now uses WordPress native form.requestSubmit with verified nonce and submitter and checks ESC menu readback. Do not duplicate Save if already corrected.
+
+#40277317550 reached native WordPress form Save request and navigated; QA readback crashed due context destroying. FIRST inspect ESC API: if already Page/internal, skip Save entirely. Source a3cd1e8 awaits navigation if Save still required. No duplicate successful Save.
