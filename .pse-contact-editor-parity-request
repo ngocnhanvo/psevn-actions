@@ -1,2 +1,4 @@
 2026-10-26 phase=WordPress-native-hero-inline-css
 Preflight #40267970911 PASS; retain all three native ESC Table Insert Code blocks and source items. Apply only editor-authored hero typography. CSS cleanup is NOT included in this phase.
+
+2026-10-26 post-deploy finalize: Astro master 2f36599 deployed through WordPress #40268301999 -> signed #40268379392 SUCCESS. Native title styles independently verified #40268316608; fresh guarded dry #40268521935 PASS. Remove ONLY known Contact ESC CSS tail from cssmore; preserve all other WP styles and ESC Insert Code image blocks.
