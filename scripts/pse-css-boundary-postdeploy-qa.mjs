@@ -38,8 +38,13 @@ try {
        const hotline=slug==='duong-day-nong',root=document.querySelector(hotline?'.pse-hotline':'.pse-faq');
        const card=root?.querySelector(hotline?'.pse-hotline__card':'.pse-faq__item');
        const grid=root?.querySelector(hotline?'.pse-hotline__grid':'.pse-faq__list');
+       const astroTailwindSource=hotline
+         ? String(card?.getAttribute('class')||'').includes('shadow-[0_6px_22px')
+         : String(card?.getAttribute('class')||'').includes('[&[open]]:border-[#c7e3d1]');
+       const legacyCssmoreInline=[...document.querySelectorAll('style')]
+         .some(el=>String(el.textContent||'').includes(hotline?'PSE_HOTLINE_CMS_LAYOUT_V1':'PSE_FAQ_CMS_LAYOUT_V1'));
        const button=root?.querySelector('summary');
-       return {grid:getComputedStyle(grid).display,
+       return {astroTailwindSource,legacyCssmoreInline,grid:getComputedStyle(grid).display,
          cardBorder:getComputedStyle(card).borderTopStyle,
          cardRadius:parseFloat(getComputedStyle(card).borderTopLeftRadius),
          display:getComputedStyle(card).display,
