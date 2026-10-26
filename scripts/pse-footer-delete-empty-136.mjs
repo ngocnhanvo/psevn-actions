@@ -85,9 +85,11 @@ try {
  await fs.mkdir('artifacts/pse-footer-delete-136',{recursive:true});
  await fs.writeFile('artifacts/pse-footer-delete-136/table136-before.json',JSON.stringify(rawBackup,null,2)+'\n');
  await page.goto(u.origin+'/wp-admin/admin.php?page=tablepress',{waitUntil:'domcontentloaded',timeout:65000});
- const tableRows=page.locator('tr').filter({hasText:/\b136\b/}).filter({hasText:'Footer PSE - Thông tin bổ sung'});
- if(await tableRows.count()!==1)throw Error('TablePress admin native 136 row not unique');
- const row=tableRows.first();
+ await page.locator('a.row-title').first().waitFor({state:'visible',timeout:20000});
+ const rows=await page.locator('tr').evaluateAll(trs=>trs.map((tr,index)=>({index,text:(tr.innerText||'').slice(0,300),idCells:[...tr.querySelectorAll('td')].map(td=>td.innerText.trim()).filter(Boolean).slice(0,5)})).filter(row=>row.text.includes('Footer PSE - Thông tin bổ sung')&&/(^|\\s)136(\\s|$)/.test(row.text)));
+ console.log('PSE_FOOTER_DELETE_MATCHED_ROWS='+JSON.stringify(rows));
+ if(rows.length!==1)throw Error('TablePress admin native 136 row not unique');
+ const row=page.locator('tr').nth(rows[0].index);
  const del=row.getByRole('link',{name:'Delete',exact:true});
  if(await del.count()!==1)throw Error('TablePress native delete action missing');
  page.on('dialog', async dialog=>{if(dialog.type()==='confirm')await dialog.accept();else await dialog.dismiss()});
