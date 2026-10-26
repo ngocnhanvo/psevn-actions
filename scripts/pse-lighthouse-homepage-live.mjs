@@ -38,6 +38,15 @@ const verdict={url:new URL(audit.finalUrl).pathname,
   robotsBlocked:audit.audits['is-crawlable']?.score===0};
 writeFileSync('artifacts/pse-lighthouse/summary.json',JSON.stringify(verdict,null,2)+'\n');
 console.log('PSE_LIGHTHOUSE_LIVE='+JSON.stringify(verdict));
+const perfDiagnostics = (audit.categories.performance?.auditRefs || [])
+  .filter(x => x.weight > 0)
+  .map(x => {
+    const a = audit.audits[x.id] || {};
+    return {id:x.id,weight:x.weight,score:a.score,numeric:a.numericValue,
+      display:a.displayValue || '',mode:a.scoreDisplayMode};
+  });
+console.log('PSE_LIGHTHOUSE_PERF_METRICS='+JSON.stringify(perfDiagnostics));
+
 if(scores.accessibility!==100||scores.seo!==100||scores['best-practices']!==100) {
   console.error('PSE_LIGHTHOUSE_ACCESSIBILITY_SEO_100=NOT_YET');
   process.exitCode=1;
