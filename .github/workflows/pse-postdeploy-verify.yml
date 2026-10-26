@@ -94,7 +94,10 @@ jobs:
 
   related-product-quote-browser:
     name: Click related product quote and verify contact form prefill (READ ONLY)
-    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push' && github.event.head_commit.message == 'test(pse): run related product quote live browser QA'
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event_name == 'push' &&
+      github.event.head_commit.message == 'test(pse): run related product quote live browser QA'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     container:
