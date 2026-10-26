@@ -1,4 +1,4 @@
-name: PSE Contact native TinyMCE ESC wrapper correction (guarded NO BUILD)
+name: PSE native Contact ESC image-block editor (guarded NO BUILD)
 on:
   push:
     branches: [main]
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pse-contact-wrapper-prechange-backup
-          path: artifacts/pse-contact-preview-wrapper/backup.json
+          name: pse-contact-native-editor-evidence
+          path: artifacts/pse-contact-native-editor/
           if-no-files-found: warn
           retention-days: 14
