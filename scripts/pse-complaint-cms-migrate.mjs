@@ -76,7 +76,7 @@ try {
    if(!visual.form||visual.inputCount!==9||visual.sectionCount!==2||!visual.h1)throw Error("WordPress Visual Editor lost CMS form content");
    // Read-only live proof that the native TinyMCE iframe uses the same ACF
    // cssmore as Astro; source-level PHP tests alone cannot certify parity.
-   if(visual.gridDisplay!=="grid"||String(visual.gridColumns||"").trim().split(/\\s+/).length!==2)
+   if(visual.gridDisplay!=="grid"||String(visual.gridColumns||"").trim().split(/\s+/).length!==2)
      throw Error("WordPress native Visual Editor failed CMS cssmore two-column layout parity");
    console.log("PSE_COMPLAINT_CMS=ALREADY_DONE; no_write=true");process.exit(0);
  }
