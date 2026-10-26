@@ -60,5 +60,15 @@ try {
  if(!await page.locator('#esc-vb-text-editor').isHidden())throw Error('Text editor incorrectly opened for an ESC image cell');
  if(!(await page.locator('#esc-vb-image-caption').innerText()).trim())
    throw Error('Image editor did not identify its canonical ESC source');
- console.log('PSE_ESC_BUILDER_LIVE=PASS source=ESC_Table native_row=0 fields=address,phone text_click=PASS image_click=PASS distinct_editors=PASS READ_ONLY=PASS NO_BUILD=PASS');
+ // Verify a user actually can switch the live banner in the iframe.
+ // This is a read-only UI change and must NOT select another ESC Table cell.
+ const dots=homeFrame.locator('[data-home-slider]:visible [data-slider-dot]');
+ await dots.first().waitFor({state:'visible',timeout:30000});
+ if(await dots.count()<2)throw Error('Banner has fewer than two selectable slides');
+ const nextDot=dots.nth(1);
+ await nextDot.click();
+ await nextDot.evaluate(node=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ const current=await nextDot.getAttribute('aria-current');
+ if(current!=='true')throw Error('Banner dot click was intercepted by Visual Builder instead of switching slides');
+ console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click=PASS distinct_editors=PASS READ_ONLY=PASS NO_BUILD=PASS');
 } finally { await browser.close(); }
