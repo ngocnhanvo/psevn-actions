@@ -1,0 +1,36 @@
+name: PSE modern footer source CI (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-footer-modern-ci.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: fix/pse-footer-legacy-content-modern-20261026
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Test all PSE contracts without building Astro
+        run: pnpm exec vitest run
+      - name: Source-only template and back-to-top check
+        run: |
+          grep -F 'id="back-to-top-btn"' src/astro/components/Layout/Footer.astro
+          grep -F 'readPseFooterAssets' src/astro/components/Layout/Footer.astro
+          grep -F 'border-t-4' src/astro/components/Layout/Footer.astro
+          echo 'PSE_FOOTER_MODERN_UNIT=PASS; NO_BUILD=true'
