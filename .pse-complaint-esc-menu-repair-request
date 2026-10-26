@@ -9,3 +9,5 @@ Retry after #40276308155 stopped pre-Save: native WordPress menu item settings s
 Read-only native WordPress Header DOM diagnostic after #40276568500: item 77020 hidden at ancestor despite WP native controller reporting active. This run must inspect ancestor and select schema then stop before Save; no build.
 
 After #40276840537 diagnostic confirmed root cause: LI 77020 carries `esc-menu-child-hidden` and is display:none despite native controller active, page dropdown initially only 1 placeholder. Expose only this verified child temporarily in DOM, set native Page mode/id and Save once; validate other Header items stable, NO BUILD in this job.
+
+#40277065673 had page/id selected correctly but timed out before submitting the moving native Save control. Script d7046ec now uses WordPress native form.requestSubmit with verified nonce and submitter and checks ESC menu readback. Do not duplicate Save if already corrected.
