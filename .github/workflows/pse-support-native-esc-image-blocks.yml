@@ -1,0 +1,39 @@
+name: PSE hotline FAQ native ESC Table image blocks (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-support-native-esc-image-blocks.yml
+      - scripts/pse-support-native-esc-image-blocks.mjs
+      - .pse-support-native-esc-image-blocks-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-support-native-esc-image-blocks-writer
+  cancel-in-progress: false
+jobs:
+  native-image-blocks:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_SUPPORT_NATIVE_APPLY: "${{ github.event.head_commit.message == 'cms(pse): save hotline FAQ native ESC image previews' }}"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Inspect WordPress Pages, select ESC tables through Insert Code and verify image blocks
+        run: node --check scripts/pse-support-native-esc-image-blocks.mjs && node scripts/pse-support-native-esc-image-blocks.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-support-native-esc-images-and-readback
+          path: artifacts/pse-support-native-blocks/
+          if-no-files-found: warn
+          retention-days: 14
