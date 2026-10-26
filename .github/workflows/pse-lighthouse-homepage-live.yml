@@ -1,0 +1,32 @@
+name: PSE live Lighthouse homepage accessibility and SEO (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-lighthouse-live-trigger]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned browser client and Lighthouse
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0 lighthouse@13.0.1
+      - name: Audit real homepage without altering website
+        run: node --check scripts/pse-lighthouse-homepage-live.mjs && node scripts/pse-lighthouse-homepage-live.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-homepage-lighthouse-desktop
+          path: artifacts/pse-lighthouse/
+          if-no-files-found: warn
+          retention-days: 14
