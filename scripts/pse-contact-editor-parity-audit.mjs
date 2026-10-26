@@ -40,5 +40,5 @@ try{
   return{headingText:heading?.textContent?.trim(),headingStyle:heading?getComputedStyle(heading).cssText:null,headingColor:heading?getComputedStyle(heading).color:null,headingFontSize:heading?getComputedStyle(heading).fontSize:null,heroStyle:h?.getAttribute('style'),imagePreviews:ed.getBody().querySelectorAll('.tablepress-preview-wrap img').length,customPreview:!!document.querySelector('#pse-contact-editor-preview')};
  });
  console.log('PSE_CONTACT_EDITOR_PARITY_PREFLIGHT='+JSON.stringify({details,admin}));
- console.log('PSE_CONTACT_EDITOR_PARITY_READ_ONLY=PASS');
+ console.log('PSE_CONTACT_EDITOR_PARITY_READ_ONLY=PASS; after_native_save=true');
 }finally{await b.close()}
