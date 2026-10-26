@@ -32,6 +32,8 @@ try {
     return {h1,main:!!main,form:!!form,fieldsRequired:required,submitDisabled:submit?.disabled===true,security:!!security,
      header:!!header,footer:!!footer,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
      adminHostLeak:document.documentElement.outerHTML.includes(privateHost),
+     candidateLinks:[...document.querySelectorAll("#main-header a[href]")].filter(a=>/khiếu|khieu|ý kiến|y kien/i.test(a.textContent||"")).map(a=>({text:(a.textContent||"").trim().slice(0,80),path:new URL(a.href).pathname,host:new URL(a.href).hostname===location.hostname?"frontend":"other"})),
+     candidateButtons:[...document.querySelectorAll("#main-header button")].filter(a=>/khiếu|khieu|ý kiến|y kien/i.test(a.textContent||"")).map(a=>(a.textContent||"").trim().slice(0,80)),
      menuLinked:[...document.querySelectorAll(".pse-header a[href]")].some(a=>{
        if(!/xử lý khiếu nại/i.test(a.textContent||""))return false;
        try{return new URL(a.href).pathname.replace(/\/+$/,"")==="/xu-ly-khieu-nai-y-kien-khach-hang"}
