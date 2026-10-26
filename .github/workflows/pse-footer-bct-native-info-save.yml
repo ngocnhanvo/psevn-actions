@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/pse-footer-bct-native-info-save.yml
+      - scripts/pse-footer-bct-native-info-save.mjs
 permissions:
   contents: read
 concurrency:
