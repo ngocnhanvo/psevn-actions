@@ -124,7 +124,16 @@ def main():
     }
 
     if mode == "verify":
-        marker = request(backend + "/pse-unzip-v2.ready", timeout=12).strip()
+        # TLS handshake on the verified WordPress endpoint can occasionally stall.
+        # Retry only this transport timeout; never ignore the signed target check.
+        for attempt in range(3):
+            try:
+                marker = request(backend + "/pse-unzip-v2.ready", timeout=30).strip()
+                break
+            except RuntimeError as error:
+                if attempt == 2 or "handshake operation timed out" not in str(error):
+                    raise
+                time.sleep(3 * (attempt + 1))
         if marker != READY:
             raise RuntimeError("unzip-v2.ready is missing or incorrect; deploy the PHP endpoint first")
         result = signed_post(backend + "/pse-unzip.php", token, {"action": "check", **common}, 30)
