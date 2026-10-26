@@ -48,6 +48,8 @@ jobs:
           php -l source-php/wp-content/mu-plugins/pse-post-routing-defaults.php
           php -l source-php/wp-content/mu-plugins/pse-published-post-search.php
           php -l source-php/wp-content/mu-plugins/pse-public-contact-form-id.php
+          php -l source-php/wp-content/mu-plugins/pse-contact-editor-preview.php
+          node --check source-php/wp-content/mu-plugins/pse-contact-editor-preview.js
           php -l source-php/tests/pse-public-contact-form-id.php
           php source-php/tests/pse-public-contact-form-id.php
           php -l source-php/tests/pse-post-routing-defaults.php
