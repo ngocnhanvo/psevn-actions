@@ -1,6 +1,5 @@
 /** Repair only a verified TinyMCE ESC preview wrapper that incorrectly nests
- * the existing office shortcode inside the form badge. No new shortcode,
- * REST mutations, ESC Table edits, Astro code, or build.
+ * the existing office shortcode inside the form badge. No new shortcode insertion, ESC Table edits, Astro code, or build.
  */
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -71,38 +70,26 @@ try{
   if(next.includes('tablepress-preview-wrap')||JSON.stringify(findTokens(next).map(x=>x.id))!==JSON.stringify(ids)||
     !next.includes('[table id=pse_contact_warehouses_vi /]')||!next.includes('pse-contact-hero'))throw Error('Proposed editor wrapper cleanup unsafe');
   if(!apply){console.log('PSE_CONTACT_WRAPPER=DRY_PASS; native_inserted_tokens_preserved=true; no_writes=true');process.exit(0)}
-  await page.goto(origin+'/wp-admin/post.php?post=47222&action=edit',{waitUntil:'domcontentloaded',timeout:60000});
-  await page.locator('#content-html').click();
-  const before=await page.locator('#content').inputValue();
-  if(JSON.stringify(findTokens(before).map(x=>x.id))!==JSON.stringify(ids)||
-    !before.includes('tablepress-preview-wrap'))throw Error('Classic editor changed since guarded preflight');
-  const editor=await page.evaluate(next=>{
-    const input=document.getElementById('content');
-    if(!(input instanceof HTMLTextAreaElement))throw Error('WordPress code editor not found');
-    input.value=next;
-    const visual=window.tinymce?.get('content');
-    if(visual){
-      if(typeof visual.setContent!=='function'||typeof visual.save!=='function')throw Error('Native TinyMCE sync unavailable');
-      visual.setContent(next);
-      visual.save();
-    }
-    input.dispatchEvent(new Event('input',{bubbles:true}));
-    return {matches:input.value===next,rawLength:input.value.length};
-  },next);
-  if(!editor.matches)throw Error('Classic editor source synchronization failed');
-  console.log('PSE_CONTACT_WRAPPER_NATIVE_EDITOR=PASS no_manual_shortcode_insertion=true');
-  await page.locator('#publish').click();
-  let saved=null;
-  for(let n=0;n<10;n++){
-    try{
-      await page.waitForLoadState('domcontentloaded',{timeout:12000});
-      saved=await read();break;
-    }catch(e){
-      if(!/navigation|Execution context was destroyed/i.test(String(e)))throw e;
-      await page.waitForTimeout(850);
-    }
-  }
-  if(!saved)throw Error('WordPress editor navigation did not stabilize');
+  // These are not newly authored shortcodes: every token was already inserted
+  // through WordPress's native ESC Insert Code tool and is present in the
+  // published Page. Correct ONLY the TinyMCE preview HTML envelope.
+  // Classic Save is not reliable here because the Visual editor overwrites
+  // the code textarea with its stale preview buffer (observed in live run).
+  const beforeSave=await read();
+  if(beforeSave.status!==200||String(beforeSave.record?.content?.raw||'')!==raw||
+     String(beforeSave.record?.acf?.cssmore||'')!==css)
+    throw Error('WordPress record changed during normalization; abort without write');
+  const postResult=await page.evaluate(async({nonce,next})=>{
+    const r=await fetch('/wp-json/wp/v2/pages/47222',{
+      method:'POST',credentials:'same-origin',
+      headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify({content:next})
+    });
+    return {status:r.status,id:(await r.json().catch(()=>null))?.id||null};
+  },{nonce,next});
+  if(postResult.status!==200||postResult.id!==47222)
+    throw Error('WordPress native page content cleanup rejected');
+  const saved=await read();
   const after=String(saved.record?.content?.raw||'');
   console.log('PSE_CONTACT_WRAPPER_READBACK='+JSON.stringify({http:saved.status,shortcodes:findTokens(after).map(x=>x.id),previewWrapperCount:(after.match(/tablepress-preview-wrap/g)||[]).length,bodyLength:after.length}));
   if(saved.status!==200||JSON.stringify(findTokens(after).map(x=>x.id))!==JSON.stringify(ids)||after.includes('tablepress-preview-wrap')||
