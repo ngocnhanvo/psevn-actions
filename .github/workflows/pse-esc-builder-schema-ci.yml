@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 16
     steps:
+      - name: Checkout PSE Actions test scripts (source only)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Checkout WordPress PHP master (source only)
         uses: actions/checkout@v4
         with:
