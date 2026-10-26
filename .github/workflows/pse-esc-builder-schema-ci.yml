@@ -1,0 +1,66 @@
+name: PSE ESC Visual Builder native-cell contract (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-esc-builder-schema-ci.yml
+      - .pse-esc-builder-schema-test-request
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-cell-contract:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout WordPress PHP master (source only)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: php
+          persist-credentials: false
+      - name: Validate ESC Visual Builder PHP and native-cell discovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in php/wp-content/plugins/esc-visual-builder/esc-visual-builder.php \
+            php/wp-content/plugins/esc-visual-builder/includes/*.php; do
+            php -l "$file"
+          done
+          php php/wp-content/plugins/esc-visual-builder/tests/auto-discovery.test.php
+      - name: Checkout Astro development source (source only)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: github
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: astro
+          persist-credentials: false
+      - name: Install Node and pnpm (no website build)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: astro/pnpm-lock.yaml
+      - name: Test dynamic text binding and retained media mapping (NO BUILD)
+        working-directory: astro
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {transform} from '@astrojs/compiler';
+          const path='src/pages/esc-builder/preview/[pageId].astro';
+          await transform(await readFile(path,'utf8'),{filename:path});
+          console.log('ESC_BUILDER_ASTRO_PARSE=PASS');
+          NODE
+          echo 'PSE_ESC_BUILDER_SCHEMA_CI=PASS; NO_BUILD=PASS; NO_FTP=PASS'
