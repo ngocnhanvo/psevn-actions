@@ -147,6 +147,7 @@ try{
        hasNativeHero:!!root.querySelector(".pse-contact-hero"),
        formCount:root.querySelectorAll("#contact-form").length,
        gridDisplay:getComputedStyle(root).display,
+       htmlSpans:[...root.querySelectorAll(":scope > span")].map(x=>({length:x.innerHTML.length,hasOfficeId:x.innerHTML.includes("pse_contact_office_vi"),hasWarehousesId:x.innerHTML.includes("pse_contact_warehouses_vi"),hasPreviewWrap:x.innerHTML.includes("tablepress-preview-wrap"),textPrefix:x.textContent.trim().slice(0,45)})),
      }));
      let api={status:0,renderedShortcodes:[],hasOffice:0,hasWarehouse:0,hasLegacy:false,hasHero:false,modified:null};
      try{
@@ -159,7 +160,9 @@ try{
          hasWarehouse:(rendered.match(/pse_contact_warehouses_vi/g)||[]).length,
          hasLegacy:rendered.includes("pse-contact-locations"),
          hasHero:rendered.includes("pse-contact-hero"),
-         modified:record?.modified||null};
+         modified:record?.modified||null,
+         officeContext:rendered.slice(Math.max(0,rendered.indexOf("pse_contact_office_vi")-170),rendered.indexOf("pse_contact_office_vi")+110).replace(/https?:\/\/[^/"' ]+/g,"[origin]"),
+         previewWrapCount:(rendered.match(/tablepress-preview-wrap/g)||[]).length};
      }catch(e){api.error=String(e).slice(0,120)}
      console.log("PSE_CONTACT_MISMATCH_DIAGNOSTIC="+JSON.stringify({frontendShape,api}));
      throw Error("New contact ESC office shortcode missing in production");
