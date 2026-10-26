@@ -1,1 +1,1 @@
-2026-10-26 PSE footer normal WordPress Build Website after Astro master 770fc6955cc07f7cb794fa193026f8465a7cad8b (Undici slow-TLS WordPress REST timeout fix). Signed checks retained, no force.
+2026-10-26 PSE footer normal WordPress/PHP Build Website after master 6a37ac5b46fdbdb91b9950ca5146e48d01161ba3. WordPress REST requests now use matching Undici v8 fetch/Agent. Bounded retries, signed v2 preflight, no force.
