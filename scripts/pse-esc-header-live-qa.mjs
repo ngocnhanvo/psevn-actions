@@ -12,6 +12,9 @@ try{
  if(json?.success!==true||!Array.isArray(menu?.items)||menu?.items.length<3)throw Error("WordPress Header/vi menu schema changed");
  const flatten=items=>items.flatMap(x=>[x,...flatten(x.children||[])]);
  const all=flatten(menu.items);
+ if(all.some(x=>Object.prototype.hasOwnProperty.call(x,"showViewAll")))
+  throw Error("Legacy synthetic View all checkbox remains in live WordPress menu API");
+ console.log("PSE_NATIVE_MENU_OWNERSHIP="+JSON.stringify({cmsItems:all.length,syntheticFlagFields:0,readOnly:true}));
  if(all.length<20)throw Error("PSE Header count unexpectedly low "+all.length);
  const unwanted=all.filter(x=>{try{return new URL(x.href).hostname==="www.pse.vn"&&Number(x.id)!==77020}catch{return false}});
  if(unwanted.length)throw Error("ESC Header still has unmigrated pse.vn links "+JSON.stringify(unwanted.map(x=>({id:x.id,label:x.label,href:x.href}))));
