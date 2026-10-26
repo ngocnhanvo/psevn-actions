@@ -58,9 +58,13 @@ jobs:
           pnpm exec vitest run src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs
           node --input-type=module <<'NODE'
           import {readFile} from 'node:fs/promises';
-          import {transform} from '@astrojs/compiler';
+          import {createRequire} from 'node:module';
+          import {pathToFileURL} from 'node:url';
+          const require=createRequire(import.meta.url);
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
           const path='src/pages/esc-builder/preview/[pageId].astro';
-          await transform(await readFile(path,'utf8'),{filename:path});
+          await compiler.transform(await readFile(path,'utf8'),{filename:path});
           console.log('ESC_BUILDER_ASTRO_PARSE=PASS');
           NODE
           echo 'PSE_ESC_BUILDER_SCHEMA_CI=PASS; NO_BUILD=PASS; NO_FTP=PASS'
