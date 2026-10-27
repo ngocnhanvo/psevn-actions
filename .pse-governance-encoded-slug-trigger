@@ -1,0 +1,1 @@
+Joomla source 1184 / existing WordPress 79439. Public lower-percent, upper-percent and UTF-8 decoded URL variants each returned HTTP 404; ASCII slug vacant. Only replace slug, preserve body/date/categories/status. Evidence audit #40523214271.
