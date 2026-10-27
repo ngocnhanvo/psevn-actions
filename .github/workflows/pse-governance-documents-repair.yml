@@ -1,0 +1,41 @@
+name: PSE governance documents provenance and taxonomy repair (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-governance-documents-repair.mjs
+      - .github/workflows/pse-governance-documents-repair.yml
+      - .pse-governance-documents-trigger
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-governance-documents-single-writer
+  cancel-in-progress: false
+jobs:
+  audit-apply:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 20
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Audit verified Joomla governance category, tag pre-existing posts only when authorized
+        run: node --check scripts/pse-governance-documents-repair.mjs && node scripts/pse-governance-documents-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-governance-documents-manifest
+          path: artifacts/pse-governance-documents/manifest.json
+          if-no-files-found: ignore
+          retention-days: 7
