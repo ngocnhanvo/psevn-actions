@@ -1,2 +1,2 @@
-d3f640b8d6b16a2deba73f4631ca476e56013453
-PSE Visual Builder Footer ESC Table native TablePress capability fix; source CI #40436283510 PASS, prior FTPS #40434370415 PASS. Bounded changed files only, no CMS content writes, no Astro build.
+5621d9fce58c6419b5ecf3650616e92edae43e44
+2026-10-27 PHP-only Menu inspector transient database error UX patch. Source PHP/JS contract Actions #40443274512 SUCCESS and #40443294401 SUCCESS. Upload only changed shared-menu-ui.php, SHA readback and rollback; no CMS write or Astro build.
