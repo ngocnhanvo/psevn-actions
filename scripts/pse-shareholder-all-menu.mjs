@@ -105,7 +105,7 @@ try{
  }else if(marker==='MODE=VERIFY'){
   if(!existing||existing.linkMode!=='custom'||
      Number(existing.parentID)!==Number(branch.id)||
-     String(existing.href||'').replace(/\\/$/,'')!==href)
+     String(existing.href||'').replace(/\/$/,'')!==href)
     throw Error('WordPress native "Tất cả" route is missing/mismatched');
   const pageURL=await page.request.get(href,{timeout:50000,failOnStatusCode:false});
   if(pageURL.status()!==200)throw Error('Public category archive is HTTP '+pageURL.status());
@@ -115,8 +115,8 @@ try{
    const response=await page.goto(site+'/',{waitUntil:'domcontentloaded',timeout:60000});
    if(response?.status()!==200)throw Error('Public homepage HTTP error width='+width);
    const links=await page.locator('#main-header a[href]').evaluateAll((nodes,canonical)=>
-    nodes.filter(n=>n.href.replace(/\\/$/,'')===canonical).map(n=>({
-      label:(n.textContent||'').trim().replace(/\\s+/g,' ').slice(0,45),visible:n.getClientRects().length>0
+    nodes.filter(n=>n.href.replace(/\/$/,'')===canonical).map(n=>({
+      label:(n.textContent||'').trim().replace(/\s+/g,' ').slice(0,45),visible:n.getClientRects().length>0
     })),href);
    if(!links.some(x=>x.label.toLocaleLowerCase('vi').includes('tất cả')))
      throw Error('Public Astro Header missing native shareholder all link at width '+width);
