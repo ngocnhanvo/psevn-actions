@@ -233,8 +233,13 @@ try{
    }finally{await original.close()}
    // Short source notices are valid when they have substantial text (65+ chars)
    // or 20+ chars backed by actual linked media. Never synthesize an article body.
+   // A genuine Joomla document notice may consist solely of "Download" and a PDF.
+   // The attachment must pass the source HTTP/size/signature checks below.
+   const verifiedPdfNotice=article.chars>=7 &&
+     /(?:download|tải|\.pdf|chi tiết)/i.test(article.bodyText) &&
+     article.assets.some(u=>/\.pdf(?:[?#]|$)/i.test(u));
    const verifiedShortNotice=article.chars>=65 ||
-     (article.chars>=20 && article.assets.length>0);
+     (article.chars>=20 && article.assets.length>0) || verifiedPdfNotice;
    if(!article.title||!verifiedShortNotice||article.chars>150000||article.html.length>550000)
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
@@ -275,6 +280,8 @@ try{
      const buf=await download.body();
      if(buf.length<80||buf.length>24_000_000)throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
+     if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
+       throw Error("Original PDF signature invalid");
      const types={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",
        gif:"image/gif",pdf:"application/pdf",doc:"application/msword",
        docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
