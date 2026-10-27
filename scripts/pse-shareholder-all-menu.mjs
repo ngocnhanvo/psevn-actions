@@ -103,7 +103,44 @@ try{
   console.log('PSE_SHAREHOLDER_ALL_AUDIT=PASS NO_CMS_WRITE=PASS');
   process.exitCode=0;
  }else{
-  if(!existing)throw Error('Not yet a saved WordPress native "Tất cả"; cannot safely choose target automatically');
+  // A Menu Manager draft is not a persisted nav_menu_item; the audit above
+  // proved there is no existing "Tất cả" under the verified shareholder branch.
+  // The owner explicitly asked to add it. Create ONE native WordPress item,
+  // never a fake WP Page, and verify every existing menu identity afterwards.
+  if(!existing){
+   if(Number(menuVi.id)!==1687||Number(branch.id)!==77022||
+      categoryId!==1744||Number(cat.body[0].count)<1)
+     throw Error('Shareholder category/menu baseline drift; refuse creation');
+   const route=await page.request.get(href,{timeout:45000,failOnStatusCode:false}).catch(()=>null);
+   if(!route||route.status()!==200)throw Error('Public shareholder category archive not HTTP 200; no CMS write');
+   const beforeIds=nodes.map(n=>Number(n.id)).sort((a,b)=>a-b).join(',');
+   const result=await page.evaluate(async({nonce,url,menuId,parentId})=>{
+     const res=await fetch('/wp-json/wp/v2/menu-items',{
+       method:'POST',credentials:'same-origin',
+       headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json',Accept:'application/json'},
+       body:JSON.stringify({title:'Tất cả',url,type:'custom',
+         status:'publish',parent:parentId,menus:menuId})
+     });
+     const data=await res.json().catch(()=>({}));
+     return {http:res.status,id:data.id,parent:data.parent,menus:data.menus,code:data.code||''};
+   },{nonce,url:href,menuId:Number(menuVi.id),parentId:Number(branch.id)});
+   if(result.http!==201||!Number.isSafeInteger(result.id)||result.id<1||
+      result.parent!==Number(branch.id)||result.menus!==Number(menuVi.id))
+     throw Error('Native WP menu create failed or returned unexpected identity '+JSON.stringify(result));
+   const after=await api('/wp-json/esc-api/v1/menus?_esc_preview='+Date.now());
+   if(after.http!==200||after.body?.success!==true)throw Error('Menu created but WordPress readback unavailable, do not retry create');
+   const latest=flat(after.body.menus?.Header?.vi?.items||[]);
+   const latestItem=latest.find(n=>Number(n.id)===result.id);
+   const expectedIds=beforeIds?beforeIds.split(',').concat(String(result.id)).map(Number).sort((a,b)=>a-b).join(','):'';
+   if(!latestItem||normalize(latestItem.label)!=='tất cả'||
+      latestItem.linkMode!=='custom'||String(latestItem.href||'').replace(/\/$/,'')!==href||
+      Number(latestItem.parentID)!==Number(branch.id)||
+      latest.map(n=>Number(n.id)).sort((a,b)=>a-b).join(',')!==expectedIds)
+     throw Error('Created native item readback invalid; verify existing item, DO NOT create another');
+   console.log('PSE_SHAREHOLDER_ALL_APPLY=PASS created=1 id='+result.id+
+     ' categoryPosts='+cat.body[0].count+
+     ' canonicalPath=/'+archiveRoot+'/thong-tin-co-dong allPreviousMenuIdsPreserved=true');
+  }else{
   const id=Number(existing.id);
   const isCanonical=(String(existing.href||'').replace(/\/$/,'')===href&&existing.linkMode==='custom');
   if(isCanonical){console.log('PSE_SHAREHOLDER_ALL_APPLY=ALREADY_PASS');}
@@ -144,6 +181,7 @@ try{
      throw Error('Menu IDs unexpectedly changed after save');
    console.log('PSE_SHAREHOLDER_ALL_APPLY=PASS item_id='+id+' canonicalPath=/'+archiveRoot+
      '/thong-tin-co-dong menuPreserved=true backendSaved=true');
+  }
   }
  }
 }finally{await browser.close()}
