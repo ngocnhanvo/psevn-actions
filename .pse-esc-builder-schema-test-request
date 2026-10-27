@@ -4,3 +4,5 @@ Check exact-source capability/403/409/schema/rollback, WordPress menu metadata i
 NO WEBSITE BUILD. NO FTP. NO CMS WRITE. Source-only final SHA verification after #40420568496 tested earlier PHP dee8df0.
 
 2026-10-27 PSE master→github sync PR #98 merged; run existing NO BUILD ESC Builder source contracts against Astro github d0b18aa8f8daed02ded0f90dfc59e19a275243dc and PHP master 232e8a6ce03214bb23833365a62cff1fbbbfb81c. Verify merged Footer production layout + G1/G2/G3 Builder markers; no FTP/CMS write/build.
+
+2026-10-27 Native ESC Table capability fix: PHP source d3f640b8; TablePress table CPT map_meta_cap=false, test WP native cap and reject unrelated post edit; NO BUILD.
