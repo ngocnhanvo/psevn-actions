@@ -3654,19 +3654,19 @@
     },
     "1129": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created",
       "group_hint": "company",
       "last_failure_reason": "Source content incomplete or oversized",
+      "seo_cleaned": true,
       "short_content_rechecked": true,
+      "source_created_date": "2015-07-01",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1129-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html",
       "status": "imported",
-      "verified_pdf_notice_source": true,
-      "wp_id": 82240,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
       "verified_date": "2015-07-01T00:00:00",
-      "date_source": "joomla_com_search_created",
-      "date_precision": "day",
-      "source_created_date": "2015-07-01"
+      "verified_pdf_notice_source": true,
+      "wp_id": 82240
     },
     "1130": {
       "attempts": 1,
@@ -3902,19 +3902,19 @@
     },
     "1150": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created",
       "group_hint": "company",
       "last_failure_reason": "Source content incomplete or oversized",
+      "seo_cleaned": true,
       "short_content_rechecked": true,
+      "source_created_date": "2015-10-22",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1150-nghi-quyet-ve-viec-thuc-hien-tam-ung-chi-tra-co-tuc-dot-12015.html",
       "status": "imported",
-      "verified_pdf_notice_source": true,
-      "wp_id": 82237,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
       "verified_date": "2015-10-22T00:00:00",
-      "date_source": "joomla_com_search_created",
-      "date_precision": "day",
-      "source_created_date": "2015-10-22"
+      "verified_pdf_notice_source": true,
+      "wp_id": 82237
     },
     "1151": {
       "attempts": 1,
@@ -3970,14 +3970,18 @@
     },
     "1155": {
       "attempts": 3,
+      "category_repaired_at": "2026-10-27",
+      "category_repaired_source": "PSE Chi bo 2015 verified existing PDF notice binding GitHub Actions #40468467174",
       "group_hint": "company",
+      "last_failure_reason": "WP slug occupied by unrelated or empty content",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1155-chi-tra-co-tuc-dot-1-nam-2015.html",
       "status": "existing",
-      "last_failure_reason": "WP slug occupied by unrelated or empty content",
       "wp_id": 79462,
-      "category_repaired_at": "2026-10-27",
-      "category_repaired_source": "PSE Chi bo 2015 verified existing PDF notice binding GitHub Actions #40468467174"
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "1156": {
       "attempts": 2,
@@ -11765,6 +11769,11 @@
       "sha256": "0a47ecab8d57c605351c4bb9782944a2437670ecf84085245f3b7c8e0114d879",
       "url": "/wp-content/uploads/2026/10/pse-legacy-211503fc6d4d7d59.jpg"
     },
+    "https://www.pse.vn/images/NQ_tam_ung_co_tuc_dot_1.2015.pdf": {
+      "id": 82236,
+      "sha256": "feddbcaf70063b2e82afbea29992db3d6b3289fa2b177762a7554865474f92f7",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-839dc7b704500104.pdf"
+    },
     "https://www.pse.vn/images/Ngocvy.pdf": {
       "id": 79117,
       "sha256": "73e9a943b7ec402a1c5bbd4deec1c0886ba0cfcd583d6e2aa8c71fd5d30ef87e",
@@ -13624,6 +13633,11 @@
       "id": 77719,
       "sha256": "fb6d6f3172de41c46a305aaf3a3f24447200dace089f6d0299b871f210dc22d4",
       "url": "/wp-content/uploads/2026/10/pse-legacy-053c0da4965598bf.pdf"
+    },
+    "https://www.pse.vn/images/tai-lieu-quan-tri/15-87-NQ-DNB-QD.pdf": {
+      "id": 82239,
+      "sha256": "00fd786408d21999398fab052564eef0f757e7f6b3b68033cdf227d7b9002bc1",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-6c6a510f35db5a7e.pdf"
     },
     "https://www.pse.vn/images/tai-lieu-quan-tri/2015/thong-bao-ngay-chot-nhan-co-tuc-dot-1-2015.pdf": {
       "id": 79464,
@@ -22509,21 +22523,11 @@
       "id": 77078,
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
-    },
-    "https://www.pse.vn/images/NQ_tam_ung_co_tuc_dot_1.2015.pdf": {
-      "id": 82236,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-839dc7b704500104.pdf",
-      "sha256": "feddbcaf70063b2e82afbea29992db3d6b3289fa2b177762a7554865474f92f7"
-    },
-    "https://www.pse.vn/images/tai-lieu-quan-tri/15-87-NQ-DNB-QD.pdf": {
-      "id": 82239,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-6c6a510f35db5a7e.pdf",
-      "sha256": "00fd786408d21999398fab052564eef0f757e7f6b3b68033cdf227d7b9002bc1"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 209,
+  "runs": 210,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
