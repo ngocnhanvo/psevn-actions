@@ -106,14 +106,31 @@ try {
     const text=document.querySelector('#esc-vb-footer-assets-editor p')?.textContent||'';
     return text.includes('dòng '+(row+1));
   },second,{timeout:30000}).catch(()=>{});
-  await delay(1500);
+  // WordPress requests may take several seconds independent of our injected
+  // delays. Wait for the real latest inspector request to settle rather than
+  // treating an arbitrary 1.5-second observation as a stuck loader.
+  let settled=false;
+  try {
+    await page.waitForFunction(() => {
+      const skeleton=document.getElementById('esc-vb-selection-skeleton');
+      return skeleton?.getAttribute('aria-busy')==='false' && skeleton.hidden;
+    },null,{timeout:16000});
+    settled=true;
+  } catch {
+    const diag=await page.evaluate(()=>({
+      busy:document.getElementById('esc-vb-selection-skeleton')?.getAttribute('aria-busy'),
+      hidden:document.getElementById('esc-vb-selection-skeleton')?.hidden,
+      text:document.getElementById('esc-vb-footer-assets-editor')?.innerText.slice(0,240)
+    }));
+    console.log('PSE_BUILDER_G1_STUCK_DIAG='+JSON.stringify({intercepted,diag}));
+  }
   const panelText=await inspector.innerText();
+  if(!settled)throw Error('Latest Footer selection loading never settled after 16 seconds');
   if(!panelText.includes('dòng '+(second+1)))
     throw Error('Out-of-order response changed selection; expected row '+second);
   if(/Không tải được dòng Footer/.test(panelText))
     throw Error('Footer REST selection failed under network delay');
-  const busy=await page.locator('#esc-vb-selection-skeleton').getAttribute('aria-busy');
-  if(busy!=='false')throw Error('Skeleton remained busy after newest network selection');
+  if(intercepted<2)throw Error('Real WordPress API rapid-selection requests were not both intercepted');
   console.log('PSE_BUILDER_G1_RAPID_FOOTER=PASS selection='+second+
     ' first='+first+' requests='+intercepted+' READ_ONLY=PASS NO_CMS_WRITE=PASS NO_BUILD=PASS');
 } finally {
