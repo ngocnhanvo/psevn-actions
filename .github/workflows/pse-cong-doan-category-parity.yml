@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/pse-cong-doan-category-parity.mjs'
+      - '.github/workflows/pse-cong-doan-category-parity.yml'
   workflow_dispatch:
 permissions:
   contents: read
