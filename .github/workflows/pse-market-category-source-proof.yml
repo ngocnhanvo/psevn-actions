@@ -1,0 +1,29 @@
+name: PSE market WordPress taxonomy and Joomla created dates proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-market-category-source-proof.mjs'
+      - '.github/workflows/pse-market-category-source-proof.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-market-category-source-proof.mjs && node scripts/pse-market-category-source-proof.mjs
