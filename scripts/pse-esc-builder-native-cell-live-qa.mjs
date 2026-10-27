@@ -91,6 +91,17 @@ try {
  await wpFields.first().waitFor({state:'visible',timeout:20000});
  await wpFields.first().click();
  await page.locator('#esc-vb-footer-editor').waitFor({state:'visible',timeout:20000});
+ const footerRowStates=await homeFrame.locator('#footer-contact [data-esc-vb-footer-asset-row]').evaluateAll(nodes=>nodes.map(node=>({
+   row:node.getAttribute('data-esc-vb-footer-asset-row'),
+   state:node.getAttribute('data-esc-vb-region-state'),
+   label:node.getAttribute('data-esc-vb-region-label')?.includes('quyền')?'permission_denied':'other'
+ })));
+ const regionCaps=await homeFrame.locator('#esc-vb-region-rules').evaluate(node=>({
+   asset:node.getAttribute('data-footer-assets-editable'),
+   info:node.getAttribute('data-footer-info-editable'),
+   menu:node.getAttribute('data-menu-editable')
+ })).catch(()=>({error:'marker_missing'}));
+ console.log('PSE_WAVE1_FOOTER_DIAGNOSTIC='+JSON.stringify({rows:footerRowStates,caps:regionCaps}));
  const assetRows=homeFrame.locator('#footer-contact [data-esc-vb-footer-asset-row][data-esc-vb-region-state="editable"]');
  await assetRows.first().waitFor({state:'visible',timeout:20000});
  await assetRows.first().click();
