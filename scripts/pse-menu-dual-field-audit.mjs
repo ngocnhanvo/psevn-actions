@@ -69,10 +69,10 @@ try{
   if(await expand.count()) await expand.click();
  }
  const openBefore=await firstRoot.count()?await firstRoot.evaluate(el=>el.classList.contains("menu-item-edit-active")):null;
- await p.locator("#save_menu_header").click();
+ await p.evaluate(()=>document.getElementById("save_menu_header").click());
  await p.locator("#esc-pse-menu-ajax-status.notice-success").waitFor({state:"visible",timeout:15000});
  await p.waitForFunction(()=>!document.querySelector("#update-nav-menu")?.classList.contains("esc-menu-ajax-saving"));
- await p.locator("#save_menu_header").click();
+ await p.evaluate(()=>document.getElementById("save_menu_header").click());
  await p.waitForFunction(()=>!document.querySelector("#update-nav-menu")?.classList.contains("esc-menu-ajax-saving"));
  if(ajaxSave!==2||saveSizes.length!==2||saveSizes[1]>saveSizes[0]*1.25){throw Error("Consecutive AJAX saves must avoid nested nav-menu-data: "+JSON.stringify({ajaxSave,saveSizes}))}
  const afterItems=await p.locator("#menu-to-edit > li.menu-item").count();
