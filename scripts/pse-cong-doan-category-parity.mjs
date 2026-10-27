@@ -123,7 +123,7 @@ try{
  const unresolved=legacy.filter(x=>!x.wpId||!publishedIds.has(Number(x.wpId)));
  const blockedIds=unresolved.map(x=>x.sourceId).sort((a,b)=>Number(a)-Number(b));
  const linkedMissing=mapped.filter(x=>!x.childPublished).map(x=>String(x.sourceId)).sort();
- const unlinked=pages.flatMap(p=>p.blocks.filter(b=>b.tag==="DIV"&&b.directLinks.length===0).map(b=>b.heading));
+ const unlinked=pages.flatMap(p=>p.blocks.filter(b=>b.tag==="DIV"&&!b.directLinks.some(h=>/\/tin-tuc-su-kien\/tin-cong-ty\/hoat-dong-cong-doan-doan-tn-nu-cong\/\d+-[^/]+\.html$/i.test(h))).map(b=>b.heading));
  if(pages.length!==7||originalCards!==39||legacy.length!==39||
     mapped.length!==34||unlinked.length!==5||
     blockedIds.join(",")!=="230,321" ||
