@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/pse-market-source-date-audit.mjs'
+      - '.github/workflows/pse-market-source-date-audit.yml'
   workflow_dispatch:
 permissions:
   contents: read
