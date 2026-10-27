@@ -1,0 +1,37 @@
+name: PSE homepage panorama image origin diagnostics (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-home-panorama-origin-audit.mjs
+      - .github/workflows/pse-home-panorama-origin-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-home-panorama-readonly
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-home-panorama-origin-audit.mjs && node scripts/pse-home-panorama-origin-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-panorama-readonly-evidence
+          path: artifacts/pse-panorama-audit/result.json
+          if-no-files-found: ignore
+          retention-days: 7
