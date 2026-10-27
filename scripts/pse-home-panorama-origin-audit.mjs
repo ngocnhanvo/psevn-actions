@@ -17,6 +17,8 @@ try{
  const res=await page.goto(front+'/trang-chu',{waitUntil:'domcontentloaded',timeout:60000});
  if(res?.status()!==200)throw Error('Public homepage unavailable '+res?.status());
  await page.locator('[data-pse-section="promise"]').waitFor({state:'attached',timeout:20000});
+ await page.locator('[data-pse-section="promise"] img.pse-promise__background').scrollIntoViewIfNeeded();
+ await page.waitForFunction(()=>{const x=document.querySelector('[data-pse-section="promise"] img.pse-promise__background');return x?.complete&&x.naturalWidth>0},null,{timeout:30000});
  output.home=await page.evaluate(()=>{
   const section=document.querySelector('[data-pse-section="promise"]');
   const img=section?.querySelector('img.pse-promise__background');
@@ -51,6 +53,14 @@ try{
     diagnostic:String(r.headers()['x-esc-image-error']||''),bytes:r.ok()?Number(r.headers()['content-length'])||null:null});
   }catch(e){output.proxies.push({url:p,error:String(e).slice(0,100)})}
  }
+ if(output.home.sectionHtmlHasAdmin||!output.home.image.src?.originIsPublic||
+    !output.home.image.src.path.startsWith('/api/images/')||
+    output.home.image.srcset.length===0||output.home.image.srcset.some(x=>!x.originIsPublic)||
+    output.home.image.naturalWidth<=0||
+    !/^\\s*<img\\b/i.test(output.table.backgroundHtml)||
+    !/\\balt\\s*=\\s*["'][^"']+["']/i.test(output.table.backgroundHtml)||
+    output.proxies.some(x=>x.http!==200))throw Error('Public PSE panorama image / CMS Insert Image contract failed after release');
+ console.log('PSE_PANORAMA_PUBLIC_NO_ADMIN=PASS; same_origin=true; responsive=true; actual_image_loaded=true');
  await mkdir('artifacts/pse-panorama-audit',{recursive:true});
  await writeFile('artifacts/pse-panorama-audit/result.json',JSON.stringify(output,null,2)+'\n');
  console.log('PSE_PANORAMA_AUDIT='+JSON.stringify(output));
