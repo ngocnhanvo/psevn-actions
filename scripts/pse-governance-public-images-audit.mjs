@@ -5,7 +5,7 @@ const state=JSON.parse(await readFile('docs/pse-legacy-migration-state.json','ut
 if(state.schema!=='pse-legacy-article-migration-v1')throw Error('Wrong PSE source');
 const target='/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/';
 const rows=Object.entries(state.articles).filter(([id,r])=>r.wp_id&&r.source_url?.startsWith('https://www.pse.vn'+target+id+'-')).sort((a,b)=>Number(b[0])-Number(a[0]));
-if(rows.length!==18)throw Error('Governance post checkpoint changed; expected 18, got '+rows.length);
+if(rows.length!==20)throw Error('Governance post checkpoint changed; expected 20 after two verified PDFs, got '+rows.length);
 const origin='https://pse.webnvn.com';
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1366,height:850}});
