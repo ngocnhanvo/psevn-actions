@@ -1,0 +1,1 @@
+Audit #40530556953 confirmed only pse_02_vi row 0 background holds a bare WordPress image URL; original media ID 76979, JPG remains valid. Convert via existing WP native Insert Image, preserve all other rows/values; no independent Astro build.
