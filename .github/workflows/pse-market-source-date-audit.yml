@@ -1,0 +1,20 @@
+name: PSE market source dates read-only
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-market-source-date-audit.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-market-source-date-audit.mjs && node scripts/pse-market-source-date-audit.mjs
