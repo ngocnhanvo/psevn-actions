@@ -45,7 +45,11 @@ try{
    if(!await input.count())throw Error("WordPress login math control missing");
    await input.fill(String(n));
   }
-  await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
+  // Login click may redirect slowly under WordPress DB load. Do not
+  // resend the login POST just because Playwright's navigation wait timed out.
+  await page.locator("#wp-submit").click({noWaitAfter:true,timeout:20000});
+  await page.waitForURL(url=>!url.href.includes("wp-login"),{timeout:90000});
+  await page.waitForLoadState("domcontentloaded",{timeout:90000});
  }
  if(page.url().includes("wp-login"))throw Error("WordPress login failed");
  await page.goto(u.origin+"/wp-admin/post.php?post=248&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
