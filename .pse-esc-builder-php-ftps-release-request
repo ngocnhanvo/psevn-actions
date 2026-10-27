@@ -1,2 +1,2 @@
-232e8a6ce03214bb23833365a62cff1fbbbfb81c
-PSE Visual Builder FTP release retry after preflight-only manifest fix; old run #40434232978 failed before any connection/write. PHP ONLY / NO ASTRO BUILD.
+d3f640b8d6b16a2deba73f4631ca476e56013453
+PSE Visual Builder Footer ESC Table native TablePress capability fix; source CI #40436283510 PASS, prior FTPS #40434370415 PASS. Bounded changed files only, no CMS content writes, no Astro build.
