@@ -1,12 +1,12 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 34,
+  "runs": 35,
   "records": {
     "92": {
       "wp_id": 82431,
-      "attempts": 1,
-      "status": "retry",
+      "attempts": 2,
+      "status": "review",
       "reason": "Untrusted legacy source identity"
     },
     "110": {
