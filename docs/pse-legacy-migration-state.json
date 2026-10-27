@@ -1742,24 +1742,34 @@
     },
     "342": {
       "attempts": 1,
+      "attribution_cleaned": true,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "group_hint": "agriculture-market",
       "requeued_from_reason": "Article contains non-local mandatory media",
+      "seo_cleaned": true,
       "source_created_date": "2013-03-13",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/342-gia-tang-thi-truong-ca-phe-lai-vui-nhu-tet.html",
       "status": "imported",
-      "wp_id": 82278,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "verified_date": "2013-03-13T00:00:00"
+      "verified_date": "2013-03-13T00:00:00",
+      "wp_id": 82278
     },
     "343": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/343-thanh-long-trung-gia.html",
-      "status": "quarantined"
+      "status": "imported",
+      "broken_image_recovery_attempted": true,
+      "omitted_broken_source_images": [
+        "http://nongnghiep.vn/Upload/Image/2013/3/12/12032013144852.jpg"
+      ],
+      "wp_id": 82286,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-03-14T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-03-14"
     },
     "344": {
       "attempts": 1,
@@ -1781,18 +1791,38 @@
       "wp_id": 77885
     },
     "346": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/346-ngong-mua-tung-ngay.html",
-      "status": "quarantined"
+      "status": "imported",
+      "broken_image_recovery_attempted": true,
+      "omitted_broken_source_images": [
+        "http://nongnghiep.vn/Upload/Image/2013/3/17/17032013164111.JPG"
+      ],
+      "wp_id": 82284,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-03-18T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-03-18"
     },
     "347": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/347-suc-mua-phan-bon-tang.html",
-      "status": "quarantined"
+      "status": "imported",
+      "broken_image_recovery_attempted": true,
+      "omitted_broken_source_images": [
+        "http://nongnghiep.vn/Upload/Image/2013/3/14/14032013150031.jpg"
+      ],
+      "wp_id": 82288,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-03-18T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-03-18"
     },
     "348": {
       "attempts": 1,
@@ -1816,24 +1846,34 @@
     },
     "351": {
       "attempts": 1,
+      "attribution_cleaned": true,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "group_hint": "agriculture-market",
       "requeued_from_reason": "Article contains non-local mandatory media",
+      "seo_cleaned": true,
       "source_created_date": "2013-03-25",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/351-ca-phe-mua-chua-nhieu-gia-da-xieu.html",
       "status": "imported",
-      "wp_id": 82275,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "verified_date": "2013-03-25T00:00:00"
+      "verified_date": "2013-03-25T00:00:00",
+      "wp_id": 82275
     },
     "352": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/352-nong-dan-dong-kho-trung-vu-bap.html",
-      "status": "quarantined"
+      "status": "imported",
+      "broken_image_recovery_attempted": true,
+      "omitted_broken_source_images": [
+        "http://www.bttv.org.vn/userfiles/image/bap%20lai%201.jpg"
+      ],
+      "wp_id": 82282,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-03-25T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-03-25"
     },
     "353": {
       "attempts": 1,
@@ -1888,11 +1928,21 @@
       "wp_id": 80629
     },
     "360": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/360-se-loai-hon-mot-nua-co-so-san-xuat-phan-bon.html",
-      "status": "quarantined"
+      "status": "imported",
+      "broken_image_recovery_attempted": true,
+      "omitted_broken_source_images": [
+        "http://tinphanbon.com/wp-content/uploads/2013/04/san-xuat-phan-bon.jpg"
+      ],
+      "wp_id": 82280,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-05-03T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-05-03"
     },
     "361": {
       "attempts": 1,
@@ -9868,6 +9918,26 @@
     }
   ],
   "media": {
+    "http://giacaphe.com/gia-ca-phe.gif": {
+      "id": 82274,
+      "sha256": "aff79ea03c32776cf2a87caf62c3d8dd30bf362172a44db084e4334c35b95f10",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-ff312c99a2e40867.gif"
+    },
+    "http://giacaphe.com/wp-content/uploads/2013/03/357c8_cf21.jpg": {
+      "id": 82273,
+      "sha256": "4de638dba73999d88935b5f9f8c10309192a37e642fd9964ae93a0cec5cbf260",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-c88d8af19dcd2e43.jpg"
+    },
+    "http://giacaphe.com/wp-content/uploads/2013/03/707b3_cf1.jpg": {
+      "id": 82272,
+      "sha256": "f28e8e53f61c7f6fc57f1b9a6d09636babb26aced8073e726cc0ea3ade8b42bc",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-b929c6a674c99080.jpg"
+    },
+    "http://giacaphe.com/wp-content/uploads/2013/03/85362_cf1.jpg": {
+      "id": 82277,
+      "sha256": "9b8396428b60a8b442866d9849537ff7b31741c5ff86b36fc88744f7f13edf26",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-82dc930f5c8e8628.jpg"
+    },
     "https://www.pse.vn/images//pdf/2018/10/20181012---CV72-DNB-HDQT-CBTT-ti-cu-trc-b-my-t-chc--gii-th-cc-CN-km-QD125-126-127-128-129.pdf": {
       "id": 79492,
       "sha256": "364683341112ca21d791327eb5a0ed8cd186aeecf17da957ef40668d4655b444",
@@ -22712,31 +22782,11 @@
       "id": 77078,
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
-    },
-    "http://giacaphe.com/wp-content/uploads/2013/03/707b3_cf1.jpg": {
-      "id": 82272,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-b929c6a674c99080.jpg",
-      "sha256": "f28e8e53f61c7f6fc57f1b9a6d09636babb26aced8073e726cc0ea3ade8b42bc"
-    },
-    "http://giacaphe.com/wp-content/uploads/2013/03/357c8_cf21.jpg": {
-      "id": 82273,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-c88d8af19dcd2e43.jpg",
-      "sha256": "4de638dba73999d88935b5f9f8c10309192a37e642fd9964ae93a0cec5cbf260"
-    },
-    "http://giacaphe.com/gia-ca-phe.gif": {
-      "id": 82274,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-ff312c99a2e40867.gif",
-      "sha256": "aff79ea03c32776cf2a87caf62c3d8dd30bf362172a44db084e4334c35b95f10"
-    },
-    "http://giacaphe.com/wp-content/uploads/2013/03/85362_cf1.jpg": {
-      "id": 82277,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-82dc930f5c8e8628.jpg",
-      "sha256": "9b8396428b60a8b442866d9849537ff7b31741c5ff86b36fc88744f7f13edf26"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 217,
+  "runs": 218,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
