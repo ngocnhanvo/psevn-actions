@@ -60,7 +60,9 @@ try{
   if(req.method()==="POST"&&(req.postData()||"").includes("esc_pse_menu_async_save")){
    ajaxSave++;
    saveSizes.push((req.postData()||'').length);
-   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({success:true,data:{message:"AJAX save mock",count:beforeItems}})});
+   // Third save is deliberately rejected, without ever forwarding a write to WordPress.
+   const rejected=ajaxSave===3;
+   await route.fulfill({status:rejected?409:200,contentType:"application/json",body:JSON.stringify(rejected?{success:false,data:{message:"Số lượng item không khớp. Chưa lưu để tránh mất dữ liệu."}}:{success:true,data:{message:"AJAX save mock",count:beforeItems}})});
   }else await route.continue();
  });
  const firstRoot=p.locator("#menu-to-edit > li.menu-item-depth-0").first();
@@ -80,5 +82,15 @@ try{
  if(ajaxSave!==2||legacyPost!==0||navigations!==0||p.url()!==beforeUrl||afterItems!==beforeItems||openAfter!==openBefore){
   throw Error("AJAX save must update without navigation or collapsing the active editor: "+JSON.stringify({ajaxSave,legacyPost,navigations,beforeItems,afterItems,openBefore,openAfter}));
  }
+ // Simulate the user's reported 409 error: the notification must stay
+ // visible at viewport level, with accessible dismissal and no navigation.
+ await p.evaluate(()=>document.getElementById("save_menu_header").click());
+ const errorNotice=p.locator("#esc-pse-menu-ajax-status.notice-error[role='alert']");
+ await errorNotice.waitFor({state:"visible",timeout:15000});
+ const errorUI=await errorNotice.evaluate(el=>({position:getComputedStyle(el).position,zIndex:Number(getComputedStyle(el).zIndex),text:el.textContent,close:!!el.querySelector("button[aria-label='Đóng thông báo']")}));
+ if(ajaxSave!==3||errorUI.position!=="fixed"||errorUI.zIndex<9999||!errorUI.close||!errorUI.text.includes("Chưa lưu")||legacyPost!==0||navigations!==0)throw Error("Sticky menu error UX is not safe: "+JSON.stringify({ajaxSave,errorUI,legacyPost,navigations}));
+ await errorNotice.locator("button[aria-label='Đóng thông báo']").click();
+ if(await errorNotice.isVisible())throw Error("Sticky error dismissal failed");
+ console.log("PSE_NATIVE_MENU_STICKY_ERROR_READONLY_QA=PASS "+JSON.stringify({mockErrorHttp:409,position:errorUI.position,zIndex:errorUI.zIndex,accessibleDismiss:true,wordpressWrites:0}));
  console.log("PSE_NATIVE_MENU_AJAX_READONLY_QA=PASS "+JSON.stringify({ajaxSave,legacyPost,navigations,beforeItems,afterItems,openStatePreserved:true,wordpressWrites:0}));
 }finally{await browser.close()}
