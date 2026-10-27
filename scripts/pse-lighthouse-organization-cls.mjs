@@ -14,7 +14,6 @@ const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
 const live=[];
 try{
- for(let i=0;i<3;i++){
   await page.addInitScript(()=>{
    window.__pseLayoutShifts=[];
    try{
@@ -36,6 +35,7 @@ try{
     });po.observe({type:'layout-shift',buffered:true});
    }catch{}
   });
+ for(let i=0;i<3;i++){
   const response=await page.goto(target.href,{waitUntil:'load',timeout:60000});
   await page.waitForTimeout(2200);
   const sample=await page.evaluate(()=>({
@@ -59,30 +59,9 @@ try{
    cls,shifts:sample.shifts,images:sample.images}).slice(0,14000));
  }
 }finally{await browser.close()}
-const lighthouse=[];
-for(let i=0;i<3;i++){
- const out='artifacts/pse-organization-cls/lh-'+i+'.json';
- const run=spawnSync('node_modules/.bin/lighthouse',[
-  target.href,'--quiet','--preset=desktop',
-  '--chrome-flags=--headless --no-sandbox --disable-dev-shm-usage',
-  '--only-categories=performance',
-  '--output=json','--output-path='+out
- ],{encoding:'utf8',timeout:160000,env:{...process.env,CHROME_PATH:chromium.executablePath()}});
- if(run.status!==0){
-  lighthouse.push({run:i+1,error:String(run.error?.message||run.stderr||run.stdout||run.status).slice(-450)});
-  continue;
- }
- const data=JSON.parse(readFileSync(out,'utf8'));
- const metric=k=>data.audits[k]?.numericValue??null;
- const rec={run:i+1,performance:Math.round((data.categories.performance?.score??0)*100),
-  cls:metric('cumulative-layout-shift'),lcpMs:metric('largest-contentful-paint'),
-  tbtMs:metric('total-blocking-time'),fcpMs:metric('first-contentful-paint'),
-  largestContentfulPaintElement:data.audits['largest-contentful-paint-element']?.details?.items?.[0]?.node?.snippet?.slice(0,300)};
- lighthouse.push(rec);rmSync(out,{force:true});
- console.log('PSE_ORGANIZATION_LIGHTHOUSE='+JSON.stringify(rec));
-}
+
 writeFileSync('artifacts/pse-organization-cls/summary.json',JSON.stringify({
- purpose:'Read-only investigation of one previous desktop Lighthouse CLS spike',
- site:target.origin,route:target.pathname,live,lighthouse,noChanges:true
-},null,2)+'\n');
-if(lighthouse.filter(x=>!x.error).length<2)throw Error('Not enough successful Lighthouse samples');
+ purpose:'Read-only browser layout-shift source investigation after independent Lighthouse repeats',
+ site:target.origin,route:target.pathname,live,noChanges:true
+},null,2)+'\\n');
+if(live.filter(x=>x.http===200).length<2)throw Error('Not enough page observations');
