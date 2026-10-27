@@ -1,0 +1,35 @@
+name: PSE Lighthouse failing audits exact DOM selectors (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-lighthouse-remediation-diag-trigger]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      PSE_AUDIT_SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0 lighthouse@13.0.1
+      - run: node --check scripts/pse-lighthouse-remediation-diag.mjs && node scripts/pse-lighthouse-remediation-diag.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-lighthouse-dom-shard-${{ matrix.shard }}
+          path: artifacts/pse-lighthouse-dom/
+          if-no-files-found: ignore
+          retention-days: 7
