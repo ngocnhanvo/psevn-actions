@@ -3653,12 +3653,13 @@
       "wp_id": 80198
     },
     "1129": {
-      "attempts": 3,
+      "attempts": 0,
       "group_hint": "company",
-      "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1129-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html",
-      "status": "quarantined"
+      "status": "pending",
+      "last_failure_reason": "Source content incomplete or oversized",
+      "verified_pdf_notice_source": true
     },
     "1130": {
       "attempts": 1,
@@ -3893,12 +3894,13 @@
       "status": "quarantined"
     },
     "1150": {
-      "attempts": 3,
+      "attempts": 0,
       "group_hint": "company",
-      "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1150-nghi-quyet-ve-viec-thuc-hien-tam-ung-chi-tra-co-tuc-dot-12015.html",
-      "status": "quarantined"
+      "status": "pending",
+      "last_failure_reason": "Source content incomplete or oversized",
+      "verified_pdf_notice_source": true
     },
     "1151": {
       "attempts": 1,
