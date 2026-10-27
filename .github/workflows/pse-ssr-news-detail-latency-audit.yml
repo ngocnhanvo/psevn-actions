@@ -1,0 +1,30 @@
+name: PSE article SSR versus related-posts API timing (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-ssr-news-detail-latency-audit.yml]
+permissions:
+  contents: read
+jobs:
+  detail:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Measure one latest live article and native PHP related endpoint (read only)
+        run: node --check scripts/pse-ssr-news-detail-latency-audit.mjs && node scripts/pse-ssr-news-detail-latency-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-news-detail-ssr-latency
+          path: artifacts/pse-ssr-post-detail
+          retention-days: 7
+          if-no-files-found: warn
