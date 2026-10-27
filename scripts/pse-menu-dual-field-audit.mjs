@@ -36,6 +36,40 @@ try{
   return{fields,form:!!document.querySelector("#update-nav-menu"),menuItemCount:document.querySelectorAll("#menu-to-edit > li").length};
  });
  console.log("PSE_HEADER_EDITOR_FIELDS="+JSON.stringify(inspected).slice(0,30000));
+
+ // Inspect WordPress's default URL field without mutating any server data.
+ // PSE's custom link input is the single visible editor, but the native input
+ // must remain present and receive the same value for core save compatibility.
+ const urlParity=await p.evaluate(()=>{
+  const boxes=[...document.querySelectorAll("#menu-to-edit .esc-menu-item-fields")];
+  const custom=boxes.find(box=>{
+   const native=box.closest(".menu-item")?.querySelector(".field-url input");
+   return box.querySelector(".esc-menu-link-mode")?.value==="custom" &&
+    !!box.querySelector(".esc-menu-custom-url-input") && !!native;
+  });
+  if(!custom)return{candidateCount:0};
+  const parent=custom.closest(".menu-item");
+  const native=parent.querySelector(".field-url input");
+  const nativeWrapper=parent.querySelector(".field-url");
+  const input=custom.querySelector(".esc-menu-custom-url-input");
+  const escWrapper=custom.querySelector(".esc-menu-custom-url-field");
+  const nativeHidden=getComputedStyle(nativeWrapper).display==="none";
+  const escVisible=getComputedStyle(escWrapper).display!=="none";
+  const initial=input.value;
+  input.value="/__pse_read_only_parity_probe__";
+  input.dispatchEvent(new Event("input",{bubbles:true}));
+  const synced=native.value===input.value;
+  input.value=initial;
+  input.dispatchEvent(new Event("input",{bubbles:true}));
+  const restored=native.value===initial;
+  const references=boxes.filter(box=>["page","post"].includes(box.querySelector(".esc-menu-link-mode")?.value));
+  const referenceCustomHidden=references.every(box=>getComputedStyle(box.querySelector(".esc-menu-custom-url-field")).display==="none");
+  return{candidateCount:1,nativeHidden,escVisible,synced,restored,referenceCount:references.length,referenceCustomHidden};
+ });
+ if(urlParity.candidateCount!==1||!urlParity.nativeHidden||!urlParity.escVisible||!urlParity.synced||!urlParity.restored||!urlParity.referenceCustomHidden)
+  throw Error("PSE single custom URL field parity regression: "+JSON.stringify(urlParity));
+ console.log("PSE_MENU_SINGLE_URL_READONLY_QA=PASS "+JSON.stringify(urlParity));
+
  const mismatch=linked.filter(x=>/^https?:\/\/www\.pse\.vn\//.test(x.href)||/^https?:\/\/www\.pse\.vn\//.test(x.slug));
  console.log("PSE_HEADER_AUDIT_SUMMARY="+JSON.stringify({nativeCount:all.length,escCount:linked.length,oldOriginCount:mismatch.length,oldOrigin:mismatch.map(x=>({id:x.id,label:x.label,href:x.href,slug:x.slug,mode:x.mode,type:x.type})),readOnly:true}).slice(0,22000));
 
