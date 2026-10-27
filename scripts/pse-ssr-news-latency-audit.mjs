@@ -60,6 +60,7 @@ for(const target of anchors.slice(0,4)){
   try{const u=new URL(target,publicOrigin);if(u.origin===publicOrigin){postSlug=u.pathname.split('/').filter(Boolean).pop()||'';break}}catch{}
 }
 const queries=[
+  ['SSR archive:all',new URL('/tin-tuc-su-kien',publicOrigin)],
   ['SSR archive:thi-truong',new URL(categoryPaths[1],publicOrigin)],
   ['SSR archive:bao-cao',new URL(categoryPaths[2],publicOrigin)],
   ['SSR archive:co-dong',new URL(categoryPaths[3],publicOrigin)],
