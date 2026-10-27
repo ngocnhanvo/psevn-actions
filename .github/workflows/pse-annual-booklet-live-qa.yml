@@ -1,0 +1,35 @@
+name: PSE annual report public gallery Playwright QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-annual-booklet-live-qa.mjs
+      - .github/workflows/pse-annual-booklet-live-qa.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-annual-booklet-live-qa
+  cancel-in-progress: false
+jobs:
+  browser:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-annual-booklet-live-qa.mjs && node scripts/pse-annual-booklet-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-booklet-public-qa
+          path: artifacts/pse-annual-booklet-live-qa
+          if-no-files-found: ignore
+          retention-days: 7
