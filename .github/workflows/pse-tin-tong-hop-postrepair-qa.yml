@@ -1,0 +1,45 @@
+name: PSE Tin tong hop post-repair parity QA (READ ONLY)
+on:
+  workflow_run:
+    workflows:
+      - 'PSE source-verified Tin tong hop category repair (NO ASTRO BUILD)'
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  postrepair-parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify category post count and Astro SSR list parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-tin-tong-hop-parity.mjs
+          node scripts/pse-tin-tong-hop-parity.mjs | tee parity.log
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const line=fs.readFileSync('parity.log','utf8').split('\n').find(l=>l.startsWith('PSE_TIN_TONG_HOP_PARITY='));
+          if(!line) throw Error('Missing live parity report');
+          const data=JSON.parse(line.slice('PSE_TIN_TONG_HOP_PARITY='.length));
+          const count=data.wordpress.tinTongHop;
+          const shown=data.newSite.text.match(/Tổng\s+(\d+)\s+bài viết/i);
+          if(data.newSite.http!==200||count<100||data.newSite.cardCount!==12||
+             !shown||Number(shown[1])!==count||
+             !data.oldFirstPageSamples.every(x=>x.inSpecificCategory))
+             throw Error('PSE Tin tong hop live SSR parity mismatch; WP='+count+' visible='+shown?.[1]);
+          console.log('PSE_TIN_TONG_HOP_POST_REPAIR_QA=PASS; wp='+count+'; astro='+shown[1]);
+          NODE
