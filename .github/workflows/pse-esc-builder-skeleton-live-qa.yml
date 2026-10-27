@@ -31,5 +31,8 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/pse-esc-builder-skeleton-live-qa.mjs
+          if grep -q '^NETWORK_ONLY          node scripts/pse-esc-builder-skeleton-live-qa.mjs
+          echo 'PSE_G1_SKELETON_LIVE=PASS NO_CMS_WRITE=PASS NO_BUILD=PASS'
+ .pse-esc-builder-skeleton-qa-request; then export PSE_SKIP_STATIC_SKELETON=1; fi
           node scripts/pse-esc-builder-skeleton-live-qa.mjs
           echo 'PSE_G1_SKELETON_LIVE=PASS NO_CMS_WRITE=PASS NO_BUILD=PASS'
