@@ -33,7 +33,15 @@ const report={schema:"pse-market-taxonomy-correction-v1",backupVerified:true,cha
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage();
 try{
- await page.goto(u.origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
+ // WP admin HTML can time out under database load. A failed GET is safe to
+ // retry using the standard WP login endpoint; never repeat an uncertain POST.
+ try{
+  await page.goto(u.origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:32000});
+ }catch(e){
+  console.warn("PSE_MARKET_ADMIN_GET_FALLBACK; original_error="+String(e).slice(0,110));
+  const login=await page.goto(u.origin+"/wp-login.php",{waitUntil:"domcontentloaded",timeout:45000});
+  if(!login||login.status()>=500)throw Error("WP login unavailable after admin GET fallback");
+ }
  if(await page.locator("#user_login").count()){
   await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME);
   await page.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD);
@@ -47,9 +55,10 @@ try{
   }
   // Login click may redirect slowly under WordPress DB load. Do not
   // resend the login POST just because Playwright's navigation wait timed out.
-  await page.locator("#wp-submit").click({noWaitAfter:true,timeout:20000});
-  await page.waitForURL(url=>!url.href.includes("wp-login"),{timeout:90000});
-  await page.waitForLoadState("domcontentloaded",{timeout:90000});
+  // DOM submit does not wait for slow navigation; authenticate exactly once.
+  await page.locator("#wp-submit").evaluate(el=>el.click());
+  await page.waitForURL(url=>!url.href.includes("wp-login"),{timeout:80000});
+  await page.waitForLoadState("domcontentloaded",{timeout:80000});
  }
  if(page.url().includes("wp-login"))throw Error("WordPress login failed");
  await page.goto(u.origin+"/wp-admin/post.php?post=248&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
@@ -75,8 +84,10 @@ try{
  const list=[];
  for(const row of selected){
   const r=await api("/wp-json/wp/v2/posts/"+row.wp+"?context=edit&_fields=id,slug,status,categories,date");
-  if(r.http!==200||r.data?.id!==row.wp||r.data.slug!==row.slug||r.data.status!=="publish"||
-    !r.data.categories?.includes(1743))throw Error("Post verification failed id="+row.id);
+  if(r.http!==200||r.data?.id!==row.wp||r.data.slug!==row.slug||r.data.status!=="publish")
+   throw Error("Post verification failed id="+row.id);
+  if(row.kind==="knowledge" && !r.data.categories.some(c=>[1755,1756].includes(c)))
+   throw Error("Knowledge source lacks its confirmed category "+row.id);
   const next=[...new Set([...r.data.categories.filter(c=>c!==1743),
     ...(row.kind==="knowledge"?[]:row.kind==="company-general"?[1742,1746]:[1742])])];
   if(next.length===0||next.includes(1743))throw Error("Cannot orphan post "+row.id);
