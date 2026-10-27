@@ -94,13 +94,20 @@ try{
    const val=await hidden.inputValue();
    if(val!==record.next)throw Error('Yoast hidden field not synced; do not save '+record.slug);
   }
-  const saveButton=record.type==='product_cat'
-    ? page.locator('#submit').first():page.locator('#publish').first();
-  if(!await saveButton.count())throw Error('Native Update button absent '+record.slug);
-  await Promise.all([
-   page.waitForLoadState('domcontentloaded',{timeout:60000}).catch(()=>null),
-   saveButton.click()
-  ]);
+  if(record.type==='product_cat'){
+   // WordPress taxonomy update uses the already-verified native #edittag form.
+   // requestSubmit follows the browser's actual submit + nonce path, not REST/DB bypass.
+   await page.locator('#edittag').evaluate(f=>{
+    if(!(f instanceof HTMLFormElement))throw Error('Not a WordPress form');
+    f.requestSubmit();
+   });
+   await page.waitForLoadState('domcontentloaded',{timeout:60000});
+  }else{
+   const saveButton=page.locator('#publish').first();
+   if(!await saveButton.count())throw Error('Native Update button absent '+record.slug);
+   await saveButton.click();
+   await page.waitForLoadState('domcontentloaded',{timeout:60000});
+  }
   const verify=record.type==='product_cat'
     ? await get('/wp-json/astro/v1/get-product-categories?_esc_preview='+Date.now())
     : await get('/wp-json/wp/v2/pages/79300?context=edit&_fields=id,slug,yoast_head_json');
