@@ -146,7 +146,9 @@ try{
   const sourceChildSlug=item.group_hint==="company"
     ? (path.startsWith("/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/")?"tin-tong-hop":
        path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/")?
-         "hoat-dong-chi-bo-hdqt-bks":null)
+         "hoat-dong-chi-bo-hdqt-bks":
+       path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/")?
+         "hoat-dong-cong-doan-doan-tn-nu-cong":null)
     : null;
   let sourceChildCategory=null;
   if(sourceChildSlug && /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path)){
