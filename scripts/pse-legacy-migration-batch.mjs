@@ -290,6 +290,11 @@ try{
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
    let originalDate=iso ? iso.slice(0,19).replace(" ","T") : null;
+   if(!originalDate && remoteAllowed && verifiedRemote.day===item.source_created_date){
+    // Dates are NOT guesses; independently evidenced original Joomla search result.
+    originalDate=verifiedRemote.day+"T00:00:00";
+    console.log("PSE_LEGACY_VERIFIED_MARKET_DAY="+id+"; day="+verifiedRemote.day);
+   }
    let discoveredDate=null;
    // Joomla article pages frequently omit published metadata. In that case
    // query legacy com_search and REQUIRE the exact source article ID+title.
@@ -313,10 +318,40 @@ try{
    if(article.assets.length>75){
     item.status="quarantined";item.reason="Excessive media count; special batch required";failed++;continue;
    }
-   const missing=article.assets.filter(u=>{
-     try{const x=new URL(u);return !["pse.vn","www.pse.vn"].includes(x.hostname)}catch{return true}
+   // Provenance-restricted exception for two exact 2013 Joomla market articles:
+   // Original third-party image binaries returned HTTP 200 and valid image
+   // signatures in read-only source audit #40486975333, and their Joomla
+   // created days were independently verified in audit #40488038617.
+   // Refuse any extra/different external URL; do not generalize to all hosts.
+   const recoveredRemoteBySource={
+    "342":{
+     day:"2013-03-13",
+     urls:["http://giacaphe.com/wp-content/uploads/2013/03/85362_cf1.jpg"]
+    },
+    "351":{
+     day:"2013-03-25",
+     urls:[
+      "http://giacaphe.com/wp-content/uploads/2013/03/707b3_cf1.jpg",
+      "http://giacaphe.com/wp-content/uploads/2013/03/357c8_cf21.jpg",
+      "http://giacaphe.com/gia-ca-phe.gif"
+     ]
+    }
+   };
+   const verifiedRemote=recoveredRemoteBySource[id];
+   const remoteAllowed=!!verifiedRemote&&
+      item.source_url.startsWith("https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/"+id+"-")&&
+      item.source_created_date===verifiedRemote.day&&
+      item.date_source==="joomla_com_search_created"&&item.date_precision==="day";
+   const expectedRemote=remoteAllowed?new Set(verifiedRemote.urls):new Set();
+   const actualRemote=article.assets.filter(u=>{
+    try{const x=new URL(u);return !["pse.vn","www.pse.vn"].includes(x.hostname)}
+    catch{return true}
    });
-   if(missing.length){item.status="quarantined";item.reason="Article contains non-local mandatory media";failed++;continue}
+   if(actualRemote.some(u=>!expectedRemote.has(u))||
+      (expectedRemote.size>0&&(actualRemote.length!==expectedRemote.size||
+        [...expectedRemote].some(u=>!actualRemote.includes(u))))){
+    item.status="quarantined";item.reason="Article contains non-local mandatory media";failed++;continue
+   }
    const outstanding=article.assets.filter(x=>!state.media[x]);
    if(outstanding.length){
     const subset=outstanding.slice(0,6);
@@ -328,6 +363,20 @@ try{
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
        throw Error("Original PDF signature invalid");
+     if(expectedRemote.has(assetUrl)){
+      // No HTML/placeholder/redirected fake assets are accepted as photos.
+      const head=buf.subarray(0,16);
+      const validImage=(["jpg","jpeg"].includes(ext)&&head.subarray(0,3).toString("hex")==="ffd8ff")||
+       (ext==="png"&&head.subarray(0,8).toString("hex")==="89504e470d0a1a0a")||
+       (ext==="gif"&&["GIF89a","GIF87a"].includes(head.subarray(0,6).toString("latin1")))||
+       (ext==="webp"&&head.subarray(0,4).toString("latin1")==="RIFF"&&
+         head.subarray(8,12).toString("latin1")==="WEBP");
+      if(!validImage||!String(download.headers()["content-type"]||"").toLowerCase().startsWith("image/"))
+       throw Error("Verified external source image rejected id="+id);
+      const finalUrl=new URL(download.url());
+      if(!["http:","https:"].includes(finalUrl.protocol)||!["giacaphe.com","www.giacaphe.com"].includes(finalUrl.hostname))
+       throw Error("Verified source asset redirected outside approved host");
+     }
      const types={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",
        gif:"image/gif",pdf:"application/pdf",doc:"application/msword",
        docx:"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
