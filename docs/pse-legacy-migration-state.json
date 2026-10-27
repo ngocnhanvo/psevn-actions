@@ -1741,11 +1741,14 @@
       "status": "quarantined"
     },
     "342": {
-      "attempts": 1,
+      "attempts": 0,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/342-gia-tang-thi-truong-ca-phe-lai-vui-nhu-tet.html",
-      "status": "quarantined"
+      "status": "pending",
+      "requeued_from_reason": "Article contains non-local mandatory media",
+      "source_created_date": "2013-03-13",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "343": {
       "attempts": 1,
@@ -1808,11 +1811,14 @@
       "wp_id": 80735
     },
     "351": {
-      "attempts": 1,
+      "attempts": 0,
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/351-ca-phe-mua-chua-nhieu-gia-da-xieu.html",
-      "status": "quarantined"
+      "status": "pending",
+      "requeued_from_reason": "Article contains non-local mandatory media",
+      "source_created_date": "2013-03-25",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "352": {
       "attempts": 1,
