@@ -1,3 +1,5 @@
 After PHP FTPS Actions #40443416813 PASS, SHA 5621d9fc; inject single synthetic WordPress database 503 only in Playwright, then verify manual retry recovers. READ ONLY; no CMS writes, no build.
 
 Read-only QA retry after #40443552354 responsive menu click became hidden; direct DOM Alt-click marker; PHP already deployed, no FTP needed.
+
+2026-10-27 single retry only: direct Builder iframe postMessage selection, avoid responsive header test timing; PHP FTP already PASS.
