@@ -4,3 +4,5 @@ NETWORK_ONLY
 G1 static skeleton quick/slow/rapid/stale PASSED in run 40437608156; retry only real network selection after waiting for capability markers.
 
 Retry after workflow YAML correction 0159061e; ONLY network race, static skeleton already passed #40437608156.
+
+Retry network-only with completion-based timeout after #40437946466 prematurely measured busy at 1.5 seconds.
