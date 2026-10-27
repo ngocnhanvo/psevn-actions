@@ -8252,6 +8252,15 @@
       "verified_date": "2023-04-22T00:00:00",
       "wp_id": 79004
     },
+    "1552": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1552-chi-bo-pvfcco-pse-to-chuc-le-ket-nap-dang-vien-moi.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2023-04-23"
+    },
     "1555": {
       "attempts": 1,
       "attribution_attempts": 1,
@@ -8292,6 +8301,15 @@
       "status": "imported",
       "verified_date": "2023-05-29T00:00:00",
       "wp_id": 79001
+    },
+    "1559": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1559-chi-bo-pvfcco-pse-to-chuc-hoi-nghi-so-ket-giua-nhiem-ky-2020-2025-so-ket-6-thang-dau-nam-va-trien-khai-nhiem-vu-6-thang-cuoi-nam-2023.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2023-06-23"
     },
     "1560": {
       "attempts": 1,
@@ -9098,6 +9116,15 @@
       "status": "draft_needs_date",
       "verified_date": null,
       "wp_id": 77365
+    },
+    "1631": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1631-pvfcco-pse-to-chuc-thanh-cong-dai-hoi-chi-bo-lan-thu-iv-nhiem-ky-2025-2030-voi-phuong-cham-mot-doi-ngu-mot-muc-tieu.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2025-04-08"
     },
     "1634": {
       "attempts": 1,
