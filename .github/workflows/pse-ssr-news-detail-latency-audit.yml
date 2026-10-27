@@ -2,7 +2,9 @@ name: PSE article SSR versus related-posts API timing (READ ONLY)
 on:
   push:
     branches: [main]
-    paths: [.github/workflows/pse-ssr-news-detail-latency-audit.yml]
+    paths:
+      - .github/workflows/pse-ssr-news-detail-latency-audit.yml
+      - scripts/pse-ssr-news-detail-latency-audit.mjs
 permissions:
   contents: read
 jobs:
