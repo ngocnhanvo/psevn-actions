@@ -12,6 +12,45 @@ const parseOrigin=(key)=>{
   return u.origin;
 };
 const origin=parseOrigin('WC_URL');
+// Fast, bounded, GET-only health gate. Prevent a broken WordPress backend from
+// consuming the full runner timeout before returning any diagnostic result.
+const fastChecks=[];
+for(const [name,path] of [['rest','/wp-json/'],['login','/wp-login.php'],['admin','/wp-admin/'],['home','/']]){
+  const ctrl=new AbortController();
+  const timeout=setTimeout(()=>ctrl.abort(),8000);
+  const result={name};
+  try{
+    const response=await fetch(origin+path,{method:'GET',redirect:'manual',
+      signal:ctrl.signal,headers:{'Accept':'text/html,application/json'}});
+    result.status=response.status;
+    result.type=(response.headers.get('content-type')||'').split(';')[0];
+    // Never log raw site responses, credentials, redirects, or private HTML.
+    let body='';
+    if(response.body){
+      const reader=response.body.getReader();
+      let count=0;
+      while(count<16384){
+        const {done,value}=await reader.read();
+        if(done)break;
+        count+=value.byteLength;
+        body+=new TextDecoder().decode(value);
+      }
+    }
+    result.db_error=/Error establishing a database connection|Lỗi kết nối tới cơ sở dữ liệu|Error connecting to database|mysqli_real_connect|Too many connections/i.test(body);
+    result.php_error=/Fatal error|Uncaught Error|Allowed memory size of/i.test(body);
+    result.ok=response.status>=200&&response.status<400&&!result.db_error&&!result.php_error;
+  }catch(e){result.error=e?.name==='AbortError'?'TIMEOUT':String(e?.name||'FETCH_ERROR').slice(0,30);result.ok=false;}
+  finally{clearTimeout(timeout);ctrl.abort();}
+  fastChecks.push(result);
+}
+console.log('PSE_WP_FAST_PREFLIGHT='+JSON.stringify(fastChecks));
+if(!fastChecks.find(r=>r.name==='rest')?.ok ||
+   !fastChecks.some(r=>['login','admin'].includes(r.name)&&r.ok)){
+  console.log('PSE_WP_ADMIN_STATE=UNAVAILABLE; CMS_WRITES=ZERO; SKIP_DEEP_BROWSER=YES');
+  process.exit(2);
+}
+console.log('PSE_WP_ADMIN_STATE=READY_FOR_DEEP_READONLY_CHECK');
+
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:850}});
 const attempts={api:[],builder:[],menu:[],frontend:[],login:[]};
