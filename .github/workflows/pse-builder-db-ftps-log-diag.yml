@@ -1,0 +1,32 @@
+name: PSE WordPress DB failure log fingerprint (FTPS READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-builder-db-ftps-log-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-builder-db-log-readonly
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read small hosting error logs and print aggregate DB failure signatures
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-builder-db-ftps-log-diag.py
+          python3 scripts/pse-builder-db-ftps-log-diag.py
+          echo 'PSE_DB_LOG_DIAG=READ_ONLY_PASS NO_BUILD=PASS'
