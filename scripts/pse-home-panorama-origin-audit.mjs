@@ -55,7 +55,8 @@ try{
  }
  console.log('PSE_PANORAMA_POSTDEPLOY_DIAGNOSTIC='+JSON.stringify(output));
  if(output.home.sectionHtmlHasAdmin||!output.home.image.src?.originIsPublic||
-    !output.home.image.src.path.startsWith('/api/images/')||
+    !(/^\/images\/pages\/pse-original-panorama-2026-\d+w\.webp$/.test(output.home.image.src.path)||
+      /^\/api\/images\/\d+\/jpg\/wp-content\/uploads\/2026\/10\/pse-original-panorama-2026\.webp$/.test(output.home.image.src.path))||
     output.home.image.srcset.length===0||output.home.image.srcset.some(x=>!x.originIsPublic)||
     output.home.image.naturalWidth<=0||
     !/^\s*<img\b/i.test(output.table.backgroundHtml)||
