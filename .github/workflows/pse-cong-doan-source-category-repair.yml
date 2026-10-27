@@ -1,0 +1,43 @@
+name: PSE Cong doan source-verified WordPress category repair (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-cong-doan-source-category-repair.mjs'
+      - '.github/workflows/pse-cong-doan-source-category-repair.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-cong-doan-category-repair-single-writer
+  cancel-in-progress: false
+jobs:
+  category-repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify original category, update exact matched posts and read back
+        run: |
+          node --check scripts/pse-cong-doan-source-category-repair.mjs
+          node scripts/pse-cong-doan-source-category-repair.mjs
+      - name: Store rollback mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-cong-doan-category-rollback
+          path: docs/reports/pse-cong-doan-category-rollback.json
+          if-no-files-found: ignore
+          retention-days: 7
