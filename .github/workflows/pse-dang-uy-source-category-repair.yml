@@ -1,0 +1,43 @@
+name: PSE Dang uy source-verified WordPress category repair (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-dang-uy-source-category-repair.mjs'
+      - '.github/workflows/pse-dang-uy-source-category-repair.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-dang-uy-source-category-repair
+  cancel-in-progress: false
+jobs:
+  dang-uy-repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Add category only to exact source-verified records
+        run: |
+          node --check scripts/pse-dang-uy-source-category-repair.mjs
+          node scripts/pse-dang-uy-source-category-repair.mjs
+      - name: Save taxonomy before/after rollback manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-dang-uy-category-rollback
+          path: docs/reports/pse-dang-uy-category-rollback.json
+          if-no-files-found: ignore
+          retention-days: 7
