@@ -133,6 +133,26 @@ try{
   checkpoint:{total:legacy.length,rows:legacy},
   astro:{http:live?.status(),...display},readonly:true};
  console.log("PSE_CHI_BO_CATEGORY_PARITY="+JSON.stringify(report));
+ const sourceArticleItems=pages.reduce((n,p)=>n+
+   p.blocks.filter(b=>/\bitem\b/.test(b.className)).length,0);
+ const publishedIds=new Set(publishedChild.rows.map(p=>p.id));
+ const missingWp=legacy.filter(row=>!row.wpId||!publishedIds.has(Number(row.wpId)));
+ const unlinkedNames=pages[0]?.blocks.filter(b=>b.tag==="DIV"&&b.directLinks.length===0).length||0;
+ const actualSiteTotal=Number(display.description.match(/Tổng\s+(\d+)\s+bài viết/i)?.[1]||0);
+ if(pages.length!==2||sourceArticleItems!==9||legacy.length!==9||
+    mapped.length!==6||mapped.some(p=>!p.childPublished)||
+    missingWp.length>0||unlinkedNames!==3||
+    publishedChild.total!==sourceArticleItems||
+    live?.status()!==200||display.count!==sourceArticleItems||
+    actualSiteTotal!==sourceArticleItems)
+   throw Error("Chi bo category migration parity mismatch: "+
+     JSON.stringify({pages:pages.length,oldItems:sourceArticleItems,
+       manifest:legacy.length,linked: mapped.length,
+       missingWp,unlinkedNames,wp:publishedChild.total,
+       astro:display.count,siteTotal:actualSiteTotal}));
+ console.log("PSE_CHI_BO_DATA_PARITY=PASS; legacy="+sourceArticleItems+
+   "; wordpress="+publishedChild.total+"; astro="+actualSiteTotal+
+   "; all_nine_source_ids_verified=true; no_astro_build=true");
  console.log("PSE_CHI_BO_PARITY_READ_ONLY=PASS; pages="+pages.length+
   "; source_article_urls="+listed.length+"; child_published="+publishedChild.total+
   "; astro_cards="+display.count);
