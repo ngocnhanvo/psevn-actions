@@ -66,8 +66,14 @@ for(const [id,original] of Object.entries(verifiedGovernanceTwoDigitSources)){
   console.log("PSE_GOV_TWO_DIGIT_SEEDED=PASS; source_id="+id+"; exact_source_verified=true");
  }
 }
+// 2013 governance resolution contains a source-owned scanned JPG plus a short
+// editorial byline; verify the scan binary before counting it as an article.
+const governance376Image="https://www.pse.vn/images/web/quanhe-codong/tin-tuc/NghiQuyet2012/106-nq-nb.jpg";
+const canVerifyGovernance376=(id,v)=>id==="376"&&isGovernance(id,v)&&!v.wp_id&&
+ v.status==="quarantined"&&v.reason==="Source content incomplete or oversized"&&
+ !v.governance_376_image_recovery_attempted;
 const candidates=Object.keys(state.articles).filter(id=>
- mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) ||
+ mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) || canVerifyGovernance376(id,state.articles[id]) ||
  mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
     (state.articles[id].attempts||0)<3) ||
@@ -178,10 +184,12 @@ try{
   const recoverAnnualGif=mayRecoverAnnualGif(id,item);
   const recoverAnnualPdf=mayRecoverAnnualPdf(id,item);
   const recoverGovernancePdf=mayRecoverGovernancePdf(id,item);
+  const recoverGovernance376=canVerifyGovernance376(id,item);
   if(brokenImageUrl){item.broken_image_recovery_attempted=true;await persist();}
   if(recoverAnnualGif){item.annual_valid_gif_recovery_attempted=true;await persist();}
   if(recoverAnnualPdf){if(item.annual_pdf_2025_attempted)item.annual_pdf_regex_retry_attempted=true;item.annual_pdf_2025_attempted=true;await persist();}
   if(recoverGovernancePdf){item.governance_large_pdf_attempted=true;await persist();}
+  if(recoverGovernance376){item.governance_376_image_recovery_attempted=true;item.attempts=2;await persist();}
   // One bounded second look for source pages that are legitimate short PDF/link notices.
   // Legacy 100-character minimum was too strict for investor disclosures.
   if(item.status==="quarantined" && item.reason==="Source content incomplete or oversized" &&
@@ -400,8 +408,20 @@ try{
    const verifiedPdfNotice=article.chars>=7 &&
      /(?:download|tải|\.pdf|chi tiết)/i.test(article.bodyText) &&
      article.assets.some(u=>/\.pdf(?:[?#]|$)/i.test(u));
+   let verifiedScan376=false;
+   if(recoverGovernance376 && article.bodyText==="H.H"&&article.assets.length===1&&
+      article.assets[0]===governance376Image&&article.html.includes(governance376Image)){
+     const image=await context.request.get(governance376Image,{timeout:30000});
+     const bytes=await image.body();
+     const final=new URL(image.url());
+     verifiedScan376=image.status()===200&&bytes.length>=256&&bytes.length<=24_000_000&&
+       bytes.subarray(0,3).toString("hex")==="ffd8ff"&&
+       String(image.headers()["content-type"]||"").toLowerCase().startsWith("image/jpeg")&&
+       final.hostname==="www.pse.vn"&&final.protocol==="https:";
+     if(verifiedScan376)console.log("PSE_GOV_376_SCAN_PROOF=PASS; bytes="+bytes.length+"; text_preserved=true");
+   }
    const verifiedShortNotice=article.chars>=65 ||
-     (article.chars>=20 && article.assets.length>0) || verifiedPdfNotice;
+     (article.chars>=20 && article.assets.length>0) || verifiedPdfNotice || verifiedScan376;
    if(!article.title||!verifiedShortNotice||article.chars>150000||article.html.length>550000)
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
@@ -605,7 +625,7 @@ try{
    }
    item.status=originalDate?"imported":"draft_needs_date";
    if(isAnnual(id,item))item.annual_category_verified=true;
-   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf||recoverGovernancePdf||item.annual_valid_gif_recovery_attempted)delete item.reason;
+   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf||recoverGovernancePdf||verifiedScan376||item.annual_valid_gif_recovery_attempted)delete item.reason;
    item.seo_cleaned=true;
    item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
