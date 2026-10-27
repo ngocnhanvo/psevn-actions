@@ -9,3 +9,5 @@ Retry using WordPress-selected homepage ID instead of translated label. Previous
 Retry after #40426338548: contact text/image selections passed, but deployed homepage lacked visible slider dots. Treat banner-dot separately as NOT_TESTED_NO_VISIBLE_SLIDER, continue read-only public Footer BCT/3-cert responsive baseline.
 
 2026-10-27 PSE Builder PHP FTPS wave1 deployed commit 232e8a6c via run #40434370415; run read-only WordPress builder UI and production Footer smoke before Astro PR #99 release.
+
+2026-10-27 post-Astro Build Website run #40435085754 SUCCESS, commit d81e2b2 deployed. Wave1 new read-only iframe Menu/Footer selection + three viewport baseline; no CMS Save.
