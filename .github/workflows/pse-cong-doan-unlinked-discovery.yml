@@ -1,0 +1,25 @@
+name: PSE Cong doan unlinked Joomla source discovery (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-cong-doan-unlinked-discovery.mjs'
+      - '.github/workflows/pse-cong-doan-unlinked-discovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-discovery:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-cong-doan-unlinked-discovery.mjs && node scripts/pse-cong-doan-unlinked-discovery.mjs
