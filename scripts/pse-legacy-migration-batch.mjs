@@ -40,9 +40,17 @@ const isAnnual=(id,v)=>annualIds.has(id) && new RegExp("^https://(?:www\\.)?pse\
 const brokenAnnualGifIds=new Set(["1042","1043","1188","1259"]);
 const mayRecoverAnnualGif=(id,v)=>brokenAnnualGifIds.has(id)&&isAnnual(id,v)&&v.status==="quarantined"&&!v.wp_id&&!v.annual_valid_gif_recovery_attempted&&v.reason==="Annual source GIF not proven corrupt; preserve image";
 const mayRecoverAnnualPdf=(id,v)=>id==="1667"&&isAnnual(id,v)&&["quarantined","pending"].includes(v.status)&&v.reason==="Original media size unsafe; bytes=33341195; ext=pdf"&&!v.wp_id&&(!v.annual_pdf_2025_attempted||!v.annual_pdf_regex_retry_attempted);
+// Bounded exception: two source-verified large governance PDFs, NOT images.
+const governancePdfBytes=Object.freeze({"1649":28360845,"1664":39702837});
+const isGovernance=(id,v)=>v?.group_hint==="shareholder" &&
+ new RegExp("^https://(?:www\\.)?pse\\.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/"+id+"-[^/]+\\.html$","i").test(v.source_url||"");
+const mayRecoverGovernancePdf=(id,v)=>Object.hasOwn(governancePdfBytes,id)&&isGovernance(id,v)&&!v.wp_id&&
+ ["quarantined","pending"].includes(v.status)&&
+ v.reason==="Original media size unsafe; bytes="+governancePdfBytes[id]+"; ext=pdf"&&
+ !v.governance_large_pdf_attempted;
 const mayTagAnnual=(id,v)=>isAnnual(id,v)&&Number.isSafeInteger(v.wp_id)&&!v.annual_category_verified&&["existing","imported","draft_needs_date"].includes(v.status);
 const candidates=Object.keys(state.articles).filter(id=>
- mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) ||
+ mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) ||
  mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
     (state.articles[id].attempts||0)<3) ||
@@ -152,9 +160,11 @@ try{
   const annualTagOnly=mayTagAnnual(id,item);
   const recoverAnnualGif=mayRecoverAnnualGif(id,item);
   const recoverAnnualPdf=mayRecoverAnnualPdf(id,item);
+  const recoverGovernancePdf=mayRecoverGovernancePdf(id,item);
   if(brokenImageUrl){item.broken_image_recovery_attempted=true;await persist();}
   if(recoverAnnualGif){item.annual_valid_gif_recovery_attempted=true;await persist();}
   if(recoverAnnualPdf){if(item.annual_pdf_2025_attempted)item.annual_pdf_regex_retry_attempted=true;item.annual_pdf_2025_attempted=true;await persist();}
+  if(recoverGovernancePdf){item.governance_large_pdf_attempted=true;await persist();}
   // One bounded second look for source pages that are legitimate short PDF/link notices.
   // Legacy 100-character minimum was too strict for investor disclosures.
   if(item.status==="quarantined" && item.reason==="Source content incomplete or oversized" &&
@@ -173,7 +183,9 @@ try{
   const slug=path.match(/\/\d{2,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   const cat=cats[item.group_hint];
   // Preserve legacy child taxonomy from exact Joomla source path, not keywords.
-  const sourceChildSlug=isAnnual(id,item)
+  const sourceChildSlug=isGovernance(id,item)
+    ? "tai-lieu-quan-tri-cong-ty"
+    : isAnnual(id,item)
     ? "bao-cao-thuong-nien"
     : item.group_hint==="company"
     ? (path.startsWith("/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/")?"tin-tong-hop":
@@ -185,7 +197,7 @@ try{
          "dang-uy":null)
     : null;
   let sourceChildCategory=null;
-  if(sourceChildSlug && (isAnnual(id,item) || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
+  if(sourceChildSlug && (isAnnual(id,item) || isGovernance(id,item) || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
     const r=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(sourceChildSlug)+"&_fields=id,slug,parent");
     if(r.status!==200||r.data?.length!==1||
       Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!==sourceChildSlug)
@@ -451,6 +463,8 @@ try{
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
      const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
+     const governanceBigPdf=(recoverGovernancePdf||item.governance_large_pdf_attempted===true)&&
+       isGovernance(id,item) && Object.hasOwn(governancePdfBytes,id) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
      const annualTinyGif=(recoverAnnualGif||item.annual_valid_gif_recovery_attempted===true) && isAnnual(id,item) && /\.gif(?:[?#]|$)/i.test(assetUrl) && buf.length>=35 && buf.length<80;
      if(annualTinyGif){
        const origin=new URL(assetUrl),finalUrl=new URL(download.url());
@@ -460,7 +474,17 @@ try{
          throw Error("Small annual GIF failed origin, MIME or binary proof; preserve source");
        console.log("PSE_ANNUAL_TINY_GIF_VALID=PASS; source_id="+id+"; bytes="+buf.length+"; image_preserved=true");
      }
-     if((buf.length<80&&!annualTinyGif)||buf.length>(annual2025Pdf?40_000_000:24_000_000))
+     if(governanceBigPdf){
+       const original=new URL(assetUrl),final=new URL(download.url());
+       if(!["pse.vn","www.pse.vn"].includes(original.hostname)||original.protocol!=="https:"||
+          !["pse.vn","www.pse.vn"].includes(final.hostname)||final.protocol!=="https:"||
+          buf.length!==governancePdfBytes[id]||
+          !String(download.headers()["content-type"]||"").toLowerCase().includes("pdf")||
+          !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
+         throw Error("Governance original large PDF origin/size/MIME/signature mismatch "+id);
+       console.log("PSE_GOV_PDF_PROOF=PASS; source_id="+id+"; bytes="+buf.length);
+     }
+     if((buf.length<80&&!annualTinyGif)||buf.length>(governanceBigPdf?42_000_000:(annual2025Pdf?40_000_000:24_000_000)))
        throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
@@ -564,7 +588,7 @@ try{
    }
    item.status=originalDate?"imported":"draft_needs_date";
    if(isAnnual(id,item))item.annual_category_verified=true;
-   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf||item.annual_valid_gif_recovery_attempted)delete item.reason;
+   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf||recoverGovernancePdf||item.annual_valid_gif_recovery_attempted)delete item.reason;
    item.seo_cleaned=true;
    item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
