@@ -35,7 +35,7 @@ const updated = {
   reference_href: '/gioi-thieu-doanh-nghiep', version: 'b'.repeat(64),
   saved: true
 };
-function setup(canEdit = true, responseRead = read, responseSaved = updated, responseMoved = null) {
+function setup(canEdit = true, responseRead = read, responseSaved = updated, responseMoved = null, readStatus = 200) {
   const dom = new JSDOM(
     '<div id="esc-vb-layout"><div class="esc-vb-sidebar"></div></div><iframe id="esc-vb-frame"></iframe>',
     { url: 'https://admin.example.test/wp-admin/admin.php', runScripts: 'outside-only' }
@@ -52,7 +52,7 @@ function setup(canEdit = true, responseRead = read, responseSaved = updated, res
   window.fetch = async (url, init) => {
     const body = JSON.parse(init.body);
     calls.push({ url, body });
-    if (url === config.readUrl) return { ok: true, json: async () => responseRead };
+    if (url === config.readUrl) return { ok: readStatus < 400, status: readStatus, json: async () => responseRead };
     if (url === config.referenceUrl) return {
       ok: true, json: async () => ({ mode: 'page', items: [
         { id: 301, label: 'Giới thiệu PSE', href: '/gioi-thieu' },
@@ -208,6 +208,23 @@ function setup(canEdit = true, responseRead = read, responseSaved = updated, res
   assert.match(status.textContent,/Tải lại bản xem trước/i,
     'structural move explicitly requires a scoped preview refresh');
   assert.equal(sent.length,0,'structural move must not masquerade as a label patch');
+  dom.window.close();
+}
+// Database connectivity failure must remain safely readable. The user can
+// explicitly retry; the inspector must not render WordPress's raw HTML <h1>.
+{
+  const {dom,doc,calls,select}=setup(true,
+    {message:'<h1>Lỗi kết nối tới cơ sở dữ liệu</h1>'},updated,null,503);
+  select();await tick();await tick();
+  const status=doc.querySelector('#esc-vb-menu-editor [role="status"]');
+  assert.match(status.textContent,/WordPress.*cơ sở dữ liệu/i,
+    'DB connection failure gets actionable Vietnamese error');
+  assert.doesNotMatch(status.textContent,/<h1/i,'raw WP database HTML is not displayed');
+  const retry=doc.querySelector('#esc-vb-menu-retry');
+  assert.equal(retry.hidden,false,'manual retry offered after transient failure');
+  retry.click();await tick();await tick();
+  assert.equal(calls.filter(c=>c.url===config.readUrl).length,2,
+    'retry sends one explicit, nonce-protected native Menu read');
   dom.window.close();
 }
 console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS sibling_order=PASS mega_headers=PASS page_search=PASS parent=PASS invalid_draft=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
