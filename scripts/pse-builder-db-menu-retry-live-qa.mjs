@@ -47,9 +47,23 @@ try{
  // The original live test already verified pointer behavior. Dispatch a
  // modifier click to the hydrated menu marker directly, avoiding responsive
  // nav visibility races that are unrelated to DB error presentation.
- await menu.evaluate(el=>el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,altKey:true})));
+ // Directly exercise the established iframe→WP Admin selection protocol.
+ // Previous read-only QA already covered the physical menu click contract.
+ await menu.evaluate((el,wpOrigin)=>{
+   const id=Number(el.getAttribute('data-esc-vb-menu-item-id'));
+   if(!Number.isSafeInteger(id)||id<=0)throw Error('Invalid native menu marker');
+   window.parent.postMessage({
+     type:'esc-vb-menu-item-select',itemId:id,label:(el.textContent||'').trim()
+   },wpOrigin);
+ },u.origin);
  const retry=page.locator('#esc-vb-menu-retry');
- await retry.waitFor({state:'visible',timeout:25000});
+ await retry.waitFor({state:'visible',timeout:20000}).catch(async error=>{
+   const status=await page.locator('#esc-vb-menu-editor [role="status"]').first().innerText().catch(()=>'');
+   const panel=await page.locator('#esc-vb-menu-editor').isVisible();
+   console.log('PSE_DB_MENU_RETRY_DIAG='+JSON.stringify({synthetic,hasPanel:panel,
+     statusKind:/Không tải được/.test(status)?'ERROR':/Đang tải/.test(status)?'LOADING':status?'OTHER':'EMPTY'}));
+   throw error;
+ });
  const status=page.locator('#esc-vb-menu-editor [role="status"]').first();
  const error=await status.innerText();
  if(!/WordPress.*cơ sở dữ liệu/i.test(error)||/<h1/i.test(error))
