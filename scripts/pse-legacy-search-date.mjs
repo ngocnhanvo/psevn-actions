@@ -9,10 +9,10 @@ export function sourceId(href){
  try {
   const u=new URL(href,base);
   if(!["www.pse.vn","pse.vn"].includes(u.hostname))return null;
-  const m=u.pathname.match(/\/(\d{3,6})-[^/]+\.html$/i);
+  const m=u.pathname.match(/\/(\d{2,6})-[^/]+\.html$/i);
   if(m)return Number(m[1]);
   if(u.searchParams.get("option")==="com_content"&&u.searchParams.get("view")==="article"){
-   const q=u.searchParams.get("id")?.match(/^(\d{3,6})(?::|$)/);
+   const q=u.searchParams.get("id")?.match(/^(\d{2,6})(?::|$)/);
    return q?Number(q[1]):null;
   }
  }catch{}

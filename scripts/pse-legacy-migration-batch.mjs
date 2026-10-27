@@ -140,7 +140,7 @@ try{
    item.status="quarantined";item.reason="Unsafe or mismatched original source URL";failed++;continue;
   }
   const path=url.pathname;
-  const slug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
+  const slug=path.match(/\/\d{2,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   const cat=cats[item.group_hint];
   // Preserve legacy child taxonomy from exact Joomla source path, not keywords.
   const sourceChildSlug=item.group_hint==="company"
@@ -196,11 +196,41 @@ try{
    let article;
    try{
     const resp=await original.goto(item.source_url,{waitUntil:"domcontentloaded",timeout:45000});
-    if(resp?.status()!==200)throw Error("Source HTTP "+resp?.status());
-    article=await original.evaluate(()=>{
-     const root=document.querySelector('[itemprop="articleBody"]');
-     if(!root)throw Error("Verified Joomla articleBody missing");
+    let inlineTitle=null;
+    // The two exact source permalinks return Joomla HTTP 500, but the original
+    // category lists the complete HTML article and its mandatory images.
+    // Titles, paths and source-created days were independently verified via
+    // Joomla com_search. Do not use this fallback for any other source ID.
+    const inlineTitles={
+     "1637":"PVFCCo-PSE cùng nhau hưởng ứng hướng về ngày Lễ trọng đại, kỷ niệm 50 năm Ngày Giải phóng Miền Nam, thống nhất Đất nước (30/4/1975 – 30/4/2025)",
+     "1638":"Kỷ niệm 21 năm Công đoàn PVFCCo – Hướng về 50 năm Ngày Giải phóng Miền Nam, thống nhất Đất nước"
+    };
+    if(resp?.status()!==200){
+     if(resp?.status()!==500 || !inlineTitles[id] ||
+        !/^\/tin-tuc-su-kien\/tin-cong-ty\/hoat-dong-cong-doan-doan-tn-nu-cong\/(1637|1638)-[a-z0-9-]+\.html$/i.test(path)||
+        item.source_created_date!=="2025-04-28" ||
+        item.date_source!=="joomla_com_search_created"||
+        !item.verified_category_blog_fallback)
+       throw Error("Source HTTP "+resp?.status());
+     const categoryURL="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong.html";
+     const listing=await original.goto(categoryURL,{waitUntil:"domcontentloaded",timeout:60000});
+     if(listing?.status()!==200)throw Error("Verified original Joomla category unavailable");
+     inlineTitle=inlineTitles[id];
+     console.log("PSE_LEGACY_INLINE_SOURCE=VERIFIED; source_id="+id+
+       "; detail_http=500; category_http=200; source_created_day="+item.source_created_date);
+    }
+    article=await original.evaluate(expectedTitle=>{
+     let root;
+     if(expectedTitle){
+      const rows=[...document.querySelectorAll('.blog [itemprop="blogPost"]')].filter(e=>
+       e.querySelector('h2[itemprop="name"]')?.textContent?.replace(/\s+/g," ").trim()===expectedTitle);
+      if(rows.length!==1||rows[0].querySelector(".readmore,a.readmore"))
+       throw Error("Inline Joomla blog article missing, truncated or ambiguous");
+      root=rows[0];
+     }else root=document.querySelector('[itemprop="articleBody"]');
+     if(!root)throw Error("Verified Joomla source article body missing");
      const copy=root.cloneNode(true);
+     if(expectedTitle)copy.querySelector(".page-header")?.remove();
      // Remove the Joomla related-articles tail before collecting text or linked media.
      const related=[...copy.querySelectorAll("h1,h2,h3,h4,h5,p")].find(el=>
        String(el.textContent||"").replace(/[\u00a0\s]+/g," ").trim().toLocaleLowerCase("vi")==="các bài viết khác");
@@ -228,7 +258,7 @@ try{
        }catch{el.removeAttribute(attr)}
       }
      }
-     const title=(document.title||"").replace(/\s+-\s+PSE\.VN\s*$/i,"").trim();
+     const title=expectedTitle||(document.title||"").replace(/\s+-\s+PSE\.VN\s*$/i,"").trim();
      const rawDates=[
        ...document.querySelectorAll('meta[property="article:published_time"],meta[itemprop="datePublished"],meta[name="date"],meta[name="DC.date.issued"],time[datetime],[itemprop="datePublished"],.article-info dd.published,.article-info dd.created')
      ].map(e=>e.getAttribute("content")||e.getAttribute("datetime")||e.textContent||"");
@@ -242,8 +272,8 @@ try{
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
-     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:rawDates,assets};
-    });
+     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets};
+    },inlineTitle);
    }finally{await original.close()}
    // Short source notices are valid when they have substantial text (65+ chars)
    // or 20+ chars backed by actual linked media. Never synthesize an article body.
