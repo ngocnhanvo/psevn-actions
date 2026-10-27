@@ -1,0 +1,40 @@
+name: PSE WordPress duplicate article audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-legacy-post-duplicate-audit.mjs'
+      - '.github/workflows/pse-legacy-post-duplicate-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  duplicate-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare all WordPress post statuses and migrated source identities
+        run: |
+          node --check scripts/pse-legacy-post-duplicate-audit.mjs
+          node scripts/pse-legacy-post-duplicate-audit.mjs
+      - name: Preserve complete read-only duplicate candidates report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-wordpress-post-duplicates-audit
+          path: docs/reports/pse-wordpress-duplicate-audit.json
+          if-no-files-found: ignore
+          retention-days: 7
