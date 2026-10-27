@@ -1,4 +1,4 @@
-/** Read-only targeted Lighthouse retry. Only three NO_NAVSTART measurements from #40542508873. */
+/** Read-only targeted Lighthouse retry. Only five NO_NAVSTART measurements from #40549910858. */
 import {chromium} from 'playwright';
 import {spawnSync} from 'node:child_process';
 import {mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
@@ -9,9 +9,11 @@ const url=new URL(rows[0].slice('WC_URL_CLIENT='.length).replace(/^['"]|['"]$/g,
 if(url.protocol!=='https:'||url.username||url.password||url.port||
  url.search||url.hash||!['','/'].includes(url.pathname))throw Error('Invalid HTTPS origin');
 const targets=[
- {path:'/san-pham/nhom-phan-hon-hop-npk-phu-my',device:'mobile'},
- {path:'/nganh-nghe-kinh-doanh',device:'mobile'},
- {path:'/tin-tuc-su-kien/hoat-dong-cong-doan-doan-tn-nu-cong',device:'desktop'}
+ {path:'/ban-giam-doc',device:'desktop'},
+ {path:'/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my',device:'mobile'},
+ {path:'/nganh-nghe-kinh-doanh',device:'desktop'},
+ {path:'/san-pham/nhom-san-pham-ure-nguyen-lieu-cho-san-xuat-cong-nghiep',device:'mobile'},
+ {path:'/thong-tin-tai-chinh',device:'mobile'}
 ];
 mkdirSync('artifacts/pse-lighthouse-menu-retry',{recursive:true});
 const results=[];
@@ -53,7 +55,7 @@ for(const [index,t] of targets.entries()){
  }
  results.push(entry);
  writeFileSync('artifacts/pse-lighthouse-menu-retry/summary.json',
-  JSON.stringify({run:'40542508873',targets:targets.length,results},null,2)+'\n');
+  JSON.stringify({run:'40549910858',targets:targets.length,results},null,2)+'\n');
 }
 const failed=results.filter(x=>x.status!=='MEASURED');
 console.log('PSE_MENU_LIGHTHOUSE_RETRY_SUMMARY='+JSON.stringify({
