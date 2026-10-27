@@ -96,7 +96,32 @@ try{
   console.log('PSE_GOV_RECORD='+JSON.stringify({...rec,source:undefined}));
  }
  if(apply&&manifest.filter(x=>x.wp_id).some(x=>!['TAGGED','ALREADY_TAGGED'].includes(x.result)))throw Error('Governance complete tagging check failed');
+ // Source archive has six Joomla pages; verify the 21-item import checkpoint
+ // against ALL paginated original entries, not merely already-imported WP posts.
+ const originalPageRows=[],visited=[];
+ for(const start of [0,5,10,15,20,25]){
+  const url='https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty.html'+(start?'?start='+start:'');
+  try{
+   const response=await legacy.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
+   if(response?.status()!==200){visited.push({start,http:response?.status()});continue}
+   const item=await legacy.evaluate(()=>{
+    const root=document.querySelector('.blog');if(!root)return {error:'missing_blog'};
+    const prefix='/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/';
+    const xs=[...root.querySelectorAll('a[href]')].map(a=>{try{
+     const u=new URL(a.href);const m=u.pathname.match(/\/tai-lieu-quan-tri-cong-ty\/(\d+)-([^/]+)\.html$/i);
+     if(u.hostname!=='www.pse.vn'||u.protocol!=='https:'||!m||!u.pathname.startsWith(prefix))return null;
+     return {id:m[1],slug:m[2],title:(a.textContent||'').replace(/\s+/g,' ').trim().slice(0,110)}
+    }catch{return null}}).filter(Boolean);
+    return {items:[...new Map(xs.map(x=>[x.id,x])).values()]};
+   });
+   visited.push({start,http:response.status(),count:item.items?.length||0,error:item.error});
+   if(item.items)originalPageRows.push(...item.items);
+  }catch(e){visited.push({start,error:String(e).slice(0,140)})}
+ }
+ const unique=[...new Map(originalPageRows.map(x=>[x.id,x])).values()];
+ const unmapped=unique.filter(x=>!rows.some(([id])=>id===x.id));
+ console.log('PSE_GOV_SOURCE_ALL_PAGES='+JSON.stringify({pages:visited,discovered:unique.length,checkpoint:rows.length,missing:unmapped}));
  await mkdir('artifacts/pse-governance-documents',{recursive:true});
- await writeFile('artifacts/pse-governance-documents/manifest.json',JSON.stringify({mode:apply?'apply':'audit',category:cats.data[0],old:originCheck,new:publicInfo,rows:manifest},null,2)+'\n');
+ await writeFile('artifacts/pse-governance-documents/manifest.json',JSON.stringify({mode:apply?'apply':'audit',category:cats.data[0],old:originCheck,new:publicInfo,rows:manifest,sourcePages:visited,allSourceItems:unique,notInCheckpoint:unmapped},null,2)+'\n');
  console.log('PSE_GOV_AUDIT='+JSON.stringify({mode:apply?'apply':'audit',sourceTotal:rows.length,withWp:manifest.filter(x=>x.wp_id).length,alreadyTagged:manifest.filter(x=>x.result==='ALREADY_TAGGED').length,tagged:changed,awaitingOriginal:manifest.filter(x=>!x.wp_id).length,possibleSpam:manifest.filter(x=>x.possibleSpam).map(x=>x.id),noBuild:true}));
 }finally{await browser.close()}
