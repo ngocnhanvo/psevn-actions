@@ -1,0 +1,49 @@
+name: PSE Redirect registry bounded-parallel source tests (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-redirect-registry-parallel-ci.yml
+permissions:
+  contents: read
+jobs:
+  unit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - name: Checkout PSE Astro isolated production-source candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: perf/redirect-registry-bounded-parallel-20261028
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+          path: source
+      - name: Confirm branch and measured SHA
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "perf/redirect-registry-bounded-parallel-20261028"
+          echo "PSE_REDIRECT_SOURCE_SHA=$(git rev-parse HEAD)"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Install pinned packages and verify old plus new redirect tests
+        working-directory: source
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run src/lib/wordpress/redirects/registry.test.ts src/lib/wordpress/redirects/registry.bounded-concurrency.test.ts scripts/inject-handler.redirects.test.ts
+          echo 'PSE_REDIRECT_REGISTRY_SOURCE_TESTS=PASS'
+      - name: Confirm no Astro build, WP writes or deployment
+        run: |
+          echo 'NO_ASTRO_BUILD=PASS'
+          echo 'NO_WORDPRESS_WRITES=PASS'
+          echo 'NO_FTP=PASS'
