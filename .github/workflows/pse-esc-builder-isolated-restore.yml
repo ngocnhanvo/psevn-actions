@@ -1,0 +1,56 @@
+name: PSE ESC Builder isolated backup restore G0 (NO LIVE WRITES)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-esc-builder-isolated-restore-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-esc-builder-restore-disposable
+  cancel-in-progress: false
+jobs:
+  isolated-restore:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'test(pse): restore exact Builder backup in disposable MariaDB'
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Ensure local disposable MariaDB server only
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq >/dev/null
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends mariadb-server >/dev/null
+          sudo systemctl start mariadb
+          sudo -n mariadb --protocol=socket --batch --skip-column-names -e 'SELECT 1' >/dev/null
+          echo 'PSE_G0_EPHEMERAL_DB_LOCAL_SOCKET=PASS'
+      - name: Verify exact backup time window and pin remote read-only digest
+        id: pin
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-esc-builder-restore-pin.py
+          python3 scripts/pse-esc-builder-restore-pin.py
+      - name: Restore protected snapshot only inside disposable MariaDB, verify and drop
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PSE_EXPECTED_BACKUP_SHA16: ${{ steps.pin.outputs.sha16 }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-template-private-restore.py
+          python3 scripts/pse-template-private-restore.py
+          echo 'PSE_ESC_BUILDER_G0_RESTORE=PASS; LIVE_DB_UNCHANGED=PASS; NO_ARTIFACT=PASS; NO_ASTRO_BUILD=PASS'
