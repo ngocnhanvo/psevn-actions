@@ -290,11 +290,7 @@ try{
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
    let originalDate=iso ? iso.slice(0,19).replace(" ","T") : null;
-   if(!originalDate && remoteAllowed && verifiedRemote.day===item.source_created_date){
-    // Dates are NOT guesses; independently evidenced original Joomla search result.
-    originalDate=verifiedRemote.day+"T00:00:00";
-    console.log("PSE_LEGACY_VERIFIED_MARKET_DAY="+id+"; day="+verifiedRemote.day);
-   }
+
    let discoveredDate=null;
    // Joomla article pages frequently omit published metadata. In that case
    // query legacy com_search and REQUIRE the exact source article ID+title.
@@ -343,6 +339,11 @@ try{
       item.source_created_date===verifiedRemote.day&&
       item.date_source==="joomla_com_search_created"&&item.date_precision==="day";
    const expectedRemote=remoteAllowed?new Set(verifiedRemote.urls):new Set();
+   if(!originalDate && remoteAllowed && verifiedRemote.day===item.source_created_date){
+    // Dates are NOT guesses; independently evidenced original Joomla search result.
+    originalDate=verifiedRemote.day+"T00:00:00";
+    console.log("PSE_LEGACY_VERIFIED_MARKET_DAY="+id+"; day="+verifiedRemote.day);
+   }
    const actualRemote=article.assets.filter(u=>{
     try{const x=new URL(u);return !["pse.vn","www.pse.vn"].includes(x.hostname)}
     catch{return true}
