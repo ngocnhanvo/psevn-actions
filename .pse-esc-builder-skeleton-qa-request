@@ -1,1 +1,4 @@
 PSE G1 dedicated read-only live QA on deployed Wave1; user requested continue without duplicate deployment. Astro master d81e2b216c3b11b011b94075490085cbab543708, PHP master/deployed d3f640b8d6b16a2deba73f4631ca476e56013453. No CMS Save, no FTP, no Astro build.
+
+NETWORK_ONLY
+G1 static skeleton quick/slow/rapid/stale PASSED in run 40437608156; retry only real network selection after waiting for capability markers.
