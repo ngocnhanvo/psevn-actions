@@ -33,7 +33,16 @@ const mayRecoverImage=(id,v)=>Object.hasOwn(BROKEN_MARKET_IMAGES,id) &&
  v?.status==="quarantined" && v.reason==="Article contains non-local mandatory media" &&
  !v.wp_id && !v.broken_image_recovery_attempted &&
  new RegExp("^https://(?:www\\.)?pse\\.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/"+id+"-[^/]+\\.html$","i").test(v.source_url||"");
+// Report archive: retry only provenance-verified broken GIFs / exact 2025 PDF;
+// categorize existing posts in-place (never create a duplicate by source slug).
+const annualIds=new Set(["998","999","1000","1041","1042","1043","1092","1188","1259","1307","1353","1386","1412","1511","1546","1578","1625","1667"]);
+const isAnnual=(id,v)=>annualIds.has(id) && new RegExp("^https://(?:www\\.)?pse\\.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/"+id+"-[^/]+\\.html$","i").test(v?.source_url||"") && v.group_hint==="shareholder";
+const brokenAnnualGifIds=new Set(["1042","1043","1188","1259"]);
+const mayRecoverAnnualGif=(id,v)=>brokenAnnualGifIds.has(id)&&isAnnual(id,v)&&v.status==="quarantined"&&!v.annual_gif_recovery_attempted&&v.reason==="Original media size unsafe; bytes=49; ext=gif"&&!v.wp_id;
+const mayRecoverAnnualPdf=(id,v)=>id==="1667"&&isAnnual(id,v)&&v.status==="quarantined"&&!v.annual_pdf_2025_attempted&&v.reason==="Original media size unsafe; bytes=33341195; ext=pdf"&&!v.wp_id;
+const mayTagAnnual=(id,v)=>isAnnual(id,v)&&Number.isSafeInteger(v.wp_id)&&!v.annual_category_verified&&["existing","imported","draft_needs_date"].includes(v.status);
 const candidates=Object.keys(state.articles).filter(id=>
+ mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) ||
  mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
     (state.articles[id].attempts||0)<3) ||
@@ -140,7 +149,12 @@ try{
   }
   const item=state.articles[id];
   const brokenImageUrl=mayRecoverImage(id,item)?BROKEN_MARKET_IMAGES[id]:null;
+  const annualTagOnly=mayTagAnnual(id,item);
+  const recoverAnnualGif=mayRecoverAnnualGif(id,item);
+  const recoverAnnualPdf=mayRecoverAnnualPdf(id,item);
   if(brokenImageUrl){item.broken_image_recovery_attempted=true;await persist();}
+  if(recoverAnnualGif){item.annual_gif_recovery_attempted=true;await persist();}
+  if(recoverAnnualPdf){item.annual_pdf_2025_attempted=true;await persist();}
   // One bounded second look for source pages that are legitimate short PDF/link notices.
   // Legacy 100-character minimum was too strict for investor disclosures.
   if(item.status==="quarantined" && item.reason==="Source content incomplete or oversized" &&
@@ -159,7 +173,9 @@ try{
   const slug=path.match(/\/\d{2,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   const cat=cats[item.group_hint];
   // Preserve legacy child taxonomy from exact Joomla source path, not keywords.
-  const sourceChildSlug=item.group_hint==="company"
+  const sourceChildSlug=isAnnual(id,item)
+    ? "bao-cao-thuong-nien"
+    : item.group_hint==="company"
     ? (path.startsWith("/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/")?"tin-tong-hop":
        path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/")?
          "hoat-dong-chi-bo-hdqt-bks":
@@ -169,7 +185,7 @@ try{
          "dang-uy":null)
     : null;
   let sourceChildCategory=null;
-  if(sourceChildSlug && /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path)){
+  if(sourceChildSlug && (isAnnual(id,item) || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
     const r=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(sourceChildSlug)+"&_fields=id,slug,parent");
     if(r.status!==200||r.data?.length!==1||
       Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!==sourceChildSlug)
@@ -186,6 +202,7 @@ try{
    if(before.data.length>1)throw Error("WP duplicate slug, human review required");
    if(before.data.length===1){
     const old=before.data[0];
+    if(annualTagOnly&&old.id!==item.wp_id)throw Error("Annual checkpoint WP identity mismatch");
     // WP slug is unique within the same verified category. Old PSE posts
     // were imported before the source-URL marker was introduced, so requiring
     // that marker or comparing accented titles generates false conflicts.
@@ -206,7 +223,11 @@ try{
         !verify.data.categories?.includes(sourceChildCategory))
         throw Error("Existing source child category readback failed");
     }
-    item.status="existing";item.wp_id=old.id;existing++;
+    if(annualTagOnly){
+      item.annual_category_verified=Boolean(sourceChildCategory && old.id===item.wp_id);
+      console.log("PSE_ANNUAL_CATEGORY=PASS; source_id="+id+"; wp_id="+old.id+"; category="+sourceChildCategory+"; original_status="+item.status);
+    }else{item.status="existing";item.wp_id=old.id;}
+    existing++;
     console.log("PSE_LEGACY_SKIP_EXISTING=PASS; source_id="+id+"; wp_id="+old.id);
     await persist();continue;
    }
@@ -257,7 +278,29 @@ try{
      console.log("PSE_LEGACY_INLINE_SOURCE=VERIFIED; source_id="+id+
        "; detail_http=500; category_http=200; source_created_day="+item.source_created_date);
     }
-    article=await original.evaluate(({expectedTitle,brokenImageUrl})=>{
+    // Four older annual reports reference corrupt 49-byte GIF resources.
+    // Verify each resource is actually corrupt before omitting only its visual tag/link.
+    let omittedAnnualGifs=[];
+    if(recoverAnnualGif){
+      const urls=await original.evaluate(()=>{
+        const root=document.querySelector('[itemprop="articleBody"]');
+        if(!root)throw Error("Annual source content missing");
+        return [...new Set([...root.querySelectorAll('img[src],a[href]')]
+          .map(el=>{try{return new URL(el.getAttribute(el.tagName==="IMG"?"src":"href"),location.href).href}catch{return null}})
+          .filter(x=>x&&/\\.gif(?:[?#]|$)/i.test(x)))];
+      });
+      if(urls.length<1||urls.length>5)throw Error("Annual corrupt GIF URL count changed");
+      for(const url of urls){
+        const u=new URL(url);
+        if(!["pse.vn","www.pse.vn"].includes(u.hostname)||u.protocol!=="https:")throw Error("Annual image outside verified legacy origin");
+        const r=await context.request.get(url,{timeout:30000});
+        const bytes=await r.body();
+        if(r.status()!==200||bytes.length!==49||["GIF89a","GIF87a"].includes(bytes.subarray(0,6).toString("latin1")))
+          throw Error("Annual source GIF not proven corrupt; preserve image");
+        omittedAnnualGifs.push(url);
+      }
+    }
+    article=await original.evaluate(({expectedTitle,brokenImageUrl,omittedAnnualGifs})=>{
      let root;
      if(expectedTitle){
       const rows=[...document.querySelectorAll('.blog [itemprop="blogPost"]')].filter(e=>
@@ -289,6 +332,20 @@ try{
       if((copy.textContent||"").replace(/\s+/g," ").trim()!==originalText)
        throw Error("Source text changed by photo omission");
       omittedImages.push(brokenImageUrl);
+     }
+     if(omittedAnnualGifs.length){
+       const beforeText=(copy.textContent||"").replace(/\\s+/g," ").trim();
+       const doomed=new Set(omittedAnnualGifs);
+       for(const img of [...copy.querySelectorAll("img[src]")]){
+         if(!doomed.has(new URL(img.getAttribute("src"),location.href).href))continue;
+         const parent=img.closest("a");img.remove();
+         if(parent&&!parent.textContent.trim()&&!parent.querySelector("img,svg,video"))parent.remove();
+       }
+       for(const link of [...copy.querySelectorAll("a[href]")]){
+         if(doomed.has(new URL(link.getAttribute("href"),location.href).href))link.replaceWith(...link.childNodes);
+       }
+       if((copy.textContent||"").replace(/\\s+/g," ").trim()!==beforeText)throw Error("Annual source text changed while removing corrupt GIF");
+       omittedImages.push(...omittedAnnualGifs);
      }
      // Remove the Joomla related-articles tail before collecting text or linked media.
      const related=[...copy.querySelectorAll("h1,h2,h3,h4,h5,p")].find(el=>
@@ -332,8 +389,16 @@ try{
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
      return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages};
-    },{expectedTitle:inlineTitle,brokenImageUrl});
+    },{expectedTitle:inlineTitle,brokenImageUrl,omittedAnnualGifs});
    }finally{await original.close()}
+   if(recoverAnnualGif){
+    if(article.chars<7 || omittedAnnualGifs.length<1 ||
+       !omittedAnnualGifs.every(u=>article.omittedImages.includes(u)&&!article.assets.includes(u)&&!article.html.includes(u)))
+       throw Error("Corrupt annual image exclusion/readback not verified");
+    item.omitted_broken_source_images=omittedAnnualGifs;
+    console.log("PSE_ANNUAL_GIF_REMOVED=PASS; source_id="+id+"; text_chars="+article.chars+"; removed="+omittedAnnualGifs.length);
+    await persist();
+   }
    if(brokenImageUrl){
     if(article.omittedImages?.length!==1||article.chars<200||article.assets.includes(brokenImageUrl)||article.html.includes(brokenImageUrl))
      throw Error("Approved photo exclusion not verified");
@@ -424,7 +489,8 @@ try{
      const download=await context.request.get(assetUrl,{timeout:45000});
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
-     if(buf.length<80||buf.length>24_000_000)throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
+     const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\\.pdf(?:[?#]|$)/i.test(assetUrl);
+     if(buf.length<80||buf.length>(annual2025Pdf?40_000_000:24_000_000))throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
        throw Error("Original PDF signature invalid");
@@ -526,7 +592,8 @@ try{
      finalStatus="publish";
    }
    item.status=originalDate?"imported":"draft_needs_date";
-   if(brokenImageUrl)delete item.reason;
+   if(isAnnual(id,item))item.annual_category_verified=true;
+   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf)delete item.reason;
    item.seo_cleaned=true;
    item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
