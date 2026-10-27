@@ -57,8 +57,8 @@ try{
     !output.home.image.src.path.startsWith('/api/images/')||
     output.home.image.srcset.length===0||output.home.image.srcset.some(x=>!x.originIsPublic)||
     output.home.image.naturalWidth<=0||
-    !/^\\s*<img\\b/i.test(output.table.backgroundHtml)||
-    !/\\balt\\s*=\\s*["'][^"']+["']/i.test(output.table.backgroundHtml)||
+    !/^\s*<img\b/i.test(output.table.backgroundHtml)||
+    !/\balt\s*=\s*["'][^"']+["']/i.test(output.table.backgroundHtml)||
     output.proxies.some(x=>x.http!==200))throw Error('Public PSE panorama image / CMS Insert Image contract failed after release');
  console.log('PSE_PANORAMA_PUBLIC_NO_ADMIN=PASS; same_origin=true; responsive=true; actual_image_loaded=true');
  await mkdir('artifacts/pse-panorama-audit',{recursive:true});
