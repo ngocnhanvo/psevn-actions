@@ -11,3 +11,5 @@ Retry after #40426338548: contact text/image selections passed, but deployed hom
 2026-10-27 PSE Builder PHP FTPS wave1 deployed commit 232e8a6c via run #40434370415; run read-only WordPress builder UI and production Footer smoke before Astro PR #99 release.
 
 2026-10-27 post-Astro Build Website run #40435085754 SUCCESS, commit d81e2b2 deployed. Wave1 new read-only iframe Menu/Footer selection + three viewport baseline; no CMS Save.
+
+2026-10-27 diagnose G3 Footer ESC capabilities after Playwright run #40435396348 failed (rows not editable); no CMS writes, no Astro build.
