@@ -7,3 +7,5 @@ Retry using WordPress-selected homepage ID instead of translated label. Previous
 2026-10-27 G4 read-only production baseline: verify Footer BCT + three certificates and no horizontal overflow at 1440/768/390, in addition to existing native-cell click smoke. NO CMS WRITE, NO FTP, NO BUILD. This is deployed baseline only, not source feature acceptance.
 
 Retry after #40426338548: contact text/image selections passed, but deployed homepage lacked visible slider dots. Treat banner-dot separately as NOT_TESTED_NO_VISIBLE_SLIDER, continue read-only public Footer BCT/3-cert responsive baseline.
+
+2026-10-27 PSE Builder PHP FTPS wave1 deployed commit 232e8a6c via run #40434370415; run read-only WordPress builder UI and production Footer smoke before Astro PR #99 release.
