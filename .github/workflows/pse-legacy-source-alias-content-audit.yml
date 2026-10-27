@@ -1,0 +1,38 @@
+name: PSE Joomla alias source content audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-legacy-source-alias-content-audit.mjs'
+      - '.github/workflows/pse-legacy-source-alias-content-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare-source-aliases:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare original Joomla content and WordPress rendered notice attachments
+        run: |
+          node --check scripts/pse-legacy-source-alias-content-audit.mjs
+          node scripts/pse-legacy-source-alias-content-audit.mjs
+      - name: Preserve alias comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-joomla-alias-and-notice-verification
+          path: docs/reports/pse-joomla-source-alias-content-audit.json
+          if-no-files-found: ignore
+          retention-days: 7
