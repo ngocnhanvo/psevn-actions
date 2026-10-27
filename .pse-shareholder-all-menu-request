@@ -1,2 +1,2 @@
-MODE=APPLY
-Audit #40446535114 PASS: Header VI 1687, shareholder branch 77022, category 1744 (282 articles), published news archive. The new 'Tất cả' is unsaved in WordPress; create once via native WordPress REST and verify preserved menu IDs.
+MODE=VERIFY
+WP native item 82063 created in #40446786939, WordPress Build Website #40446975618 SUCCESS and Astro deploy #40447057987 SUCCESS. Verify public Header link & archive at 1440 768 390 read-only, no further CMS writes.
