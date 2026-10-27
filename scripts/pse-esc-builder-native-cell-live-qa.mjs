@@ -60,6 +60,42 @@ try {
  if(!await page.locator('#esc-vb-text-editor').isHidden())throw Error('Text editor incorrectly opened for an ESC image cell');
  if(!(await page.locator('#esc-vb-image-caption').innerText()).trim())
    throw Error('Image editor did not identify its canonical ESC source');
+ // Wave 1 G1/G2/G3 Builder preview smoke (READ ONLY): not a Save test.
+ // Header Menu markers and capability cues must exist in the deployed iframe;
+ // activating the menu must never switch the inspected WordPress Page.
+ const menuItems=homeFrame.locator('#main-header [data-esc-vb-menu-item-id]');
+ await menuItems.first().waitFor({state:'attached',timeout:30000});
+ const editableMenu=homeFrame.locator('#main-header [data-esc-vb-menu-item-id][data-esc-vb-region-state="editable"]');
+ if(await editableMenu.count()<1)
+   throw Error('Wave1 menu editability markers missing on deployed Builder preview');
+ const toggle=homeFrame.locator('#desktop-menu button[data-menu-trigger]:visible').first();
+ if(!await toggle.count())throw Error('Wave1 Header dropdown toggle unavailable');
+ const previewUrl=await page.locator('#esc-vb-frame').getAttribute('src');
+ await toggle.click();
+ if(await toggle.getAttribute('aria-expanded')!=='true')
+   throw Error('Wave1 Builder intercepted dropdown open');
+ await toggle.click();
+ if(await toggle.getAttribute('aria-expanded')!=='false')
+   throw Error('Wave1 Builder intercepted dropdown close');
+ await toggle.click({modifiers:['Alt']});
+ await page.locator('#esc-vb-menu-editor').waitFor({state:'visible',timeout:25000});
+ if(await page.locator('#esc-vb-frame').getAttribute('src')!==previewUrl)
+   throw Error('Wave1 menu click navigated Builder Page unexpectedly');
+ const visibleLink=homeFrame.locator('#desktop-menu a[href]:visible').first();
+ if(await visibleLink.count()){
+   await visibleLink.click();
+   if(await page.locator('#esc-vb-frame').getAttribute('src')!==previewUrl)
+     throw Error('Wave1 menu link navigated Builder Page unexpectedly');
+ }
+ const wpFields=homeFrame.locator('#footer-contact [data-esc-vb-footer-field][data-esc-vb-region-state="editable"]');
+ await wpFields.first().waitFor({state:'visible',timeout:20000});
+ await wpFields.first().click();
+ await page.locator('#esc-vb-footer-editor').waitFor({state:'visible',timeout:20000});
+ const assetRows=homeFrame.locator('#footer-contact [data-esc-vb-footer-asset-row][data-esc-vb-region-state="editable"]');
+ await assetRows.first().waitFor({state:'visible',timeout:20000});
+ await assetRows.first().click();
+ await page.locator('#esc-vb-footer-assets-editor').waitFor({state:'visible',timeout:20000});
+ console.log('PSE_ESC_BUILDER_WAVE1_LIVE=PASS menu_markers=PASS toggle=PASS no_navigation=PASS footer_info_select=PASS footer_esc_select=PASS READ_ONLY=PASS');
  // Verify a user actually can switch the live banner in the iframe.
  // This is a read-only UI change and must NOT select another ESC Table cell.
  const dots=homeFrame.locator('[data-home-slider]:visible [data-slider-dot]');
