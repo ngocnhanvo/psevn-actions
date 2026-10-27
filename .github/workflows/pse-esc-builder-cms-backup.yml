@@ -1,0 +1,38 @@
+name: PSE ESC Builder CMS database snapshot (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-esc-builder-cms-backup-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-esc-builder-cms-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'ops(pse): snapshot CMS before Visual Builder release (DB ONLY)'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - name: Checkout PSE backup script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install browser automation (no website build)
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Create UpdraftPlus database-only local snapshot and verify listing
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-template-updraft-backup.mjs
+          node scripts/pse-template-updraft-backup.mjs
+          echo 'PSE_ESC_BUILDER_DB_BACKUP=PASS; NO_EXPORT=PASS; NO_FTP=PASS; NO_ASTRO_BUILD=PASS'
