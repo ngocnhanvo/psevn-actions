@@ -1,0 +1,31 @@
+name: PSE news thumbnails postdeploy browser QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-news-thumbnails-live-qa-trigger
+      - .github/workflows/pse-news-thumbnails-live-qa.yml
+permissions:
+  contents: read
+jobs:
+  thumbnail:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-news-thumbnails-live-qa.mjs && node scripts/pse-news-thumbnails-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-news-thumbnails-browser
+          path: artifacts/pse-news-thumbnails/
+          if-no-files-found: warn
+          retention-days: 14
