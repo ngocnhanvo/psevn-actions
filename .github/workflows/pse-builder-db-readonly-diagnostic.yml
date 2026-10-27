@@ -31,5 +31,5 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/pse-builder-db-readonly-diagnostic.mjs
-          node scripts/pse-builder-db-readonly-diagnostic.mjs
+          timeout --signal=TERM --kill-after=5s 180s node scripts/pse-builder-db-readonly-diagnostic.mjs
           echo 'PSE_DB_DIAGNOSTIC_DONE=READ_ONLY NO_CMS_WRITE=PASS NO_ASTRO_BUILD=PASS'
