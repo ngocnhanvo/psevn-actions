@@ -1,4 +1,4 @@
-name: PSE Home_00 desktop and mobile slider postdeploy QA (READ ONLY)
+name: PSE real Pse_00 Desktop and Mobile hero postdeploy QA (READ ONLY)
 on:
   push:
     branches: [main]
