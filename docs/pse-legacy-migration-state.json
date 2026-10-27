@@ -1741,14 +1741,18 @@
       "status": "quarantined"
     },
     "342": {
-      "attempts": 0,
+      "attempts": 1,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "group_hint": "agriculture-market",
       "requeued_from_reason": "Article contains non-local mandatory media",
       "source_created_date": "2013-03-13",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/342-gia-tang-thi-truong-ca-phe-lai-vui-nhu-tet.html",
-      "status": "pending"
+      "status": "imported",
+      "wp_id": 82278,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-03-13T00:00:00"
     },
     "343": {
       "attempts": 1,
@@ -1811,14 +1815,18 @@
       "wp_id": 80735
     },
     "351": {
-      "attempts": 0,
+      "attempts": 1,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "group_hint": "agriculture-market",
       "requeued_from_reason": "Article contains non-local mandatory media",
       "source_created_date": "2013-03-25",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/351-ca-phe-mua-chua-nhieu-gia-da-xieu.html",
-      "status": "pending"
+      "status": "imported",
+      "wp_id": 82275,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-03-25T00:00:00"
     },
     "352": {
       "attempts": 1,
@@ -22704,11 +22712,31 @@
       "id": 77078,
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
+    },
+    "http://giacaphe.com/wp-content/uploads/2013/03/707b3_cf1.jpg": {
+      "id": 82272,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-b929c6a674c99080.jpg",
+      "sha256": "f28e8e53f61c7f6fc57f1b9a6d09636babb26aced8073e726cc0ea3ade8b42bc"
+    },
+    "http://giacaphe.com/wp-content/uploads/2013/03/357c8_cf21.jpg": {
+      "id": 82273,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-c88d8af19dcd2e43.jpg",
+      "sha256": "4de638dba73999d88935b5f9f8c10309192a37e642fd9964ae93a0cec5cbf260"
+    },
+    "http://giacaphe.com/gia-ca-phe.gif": {
+      "id": 82274,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-ff312c99a2e40867.gif",
+      "sha256": "aff79ea03c32776cf2a87caf62c3d8dd30bf362172a44db084e4334c35b95f10"
+    },
+    "http://giacaphe.com/wp-content/uploads/2013/03/85362_cf1.jpg": {
+      "id": 82277,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-82dc930f5c8e8628.jpg",
+      "sha256": "9b8396428b60a8b442866d9849537ff7b31741c5ff86b36fc88744f7f13edf26"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 216,
+  "runs": 217,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
