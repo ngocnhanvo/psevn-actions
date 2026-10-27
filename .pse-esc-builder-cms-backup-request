@@ -1,0 +1,1 @@
+2026-10-27 G0: owner-authorized PSE Visual Builder recoverable CMS snapshot. Use existing UpdraftPlus WordPress Admin DB-only local backup, keep manually, no remote transfer. Verify new DB backup listing. Do not write menu, Info or ESC Table content. No website build, FTP or Astro merge.
