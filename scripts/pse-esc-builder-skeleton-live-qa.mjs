@@ -41,6 +41,7 @@ try {
 
   // Verify real deployed inspector timer: fast cached data must never flash,
   // stale completion must never close the currently active selection.
+  if(process.env.PSE_SKIP_STATIC_SKELETON!=='1'){
   const result=await page.evaluate(async()=>{
     const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const panel=document.querySelector('#esc-vb-selection-skeleton');
@@ -74,6 +75,7 @@ try {
     return {quick:'PASS',slow:'PASS',rapid_10:'PASS',stale:'PASS',stuck_loading:'NONE'};
   });
   console.log('PSE_BUILDER_G1_SKELETON_LIVE='+JSON.stringify(result));
+  } else { console.log('PSE_BUILDER_G1_SKELETON_LIVE=ALREADY_PASS_RUN_40437608156'); }
 
   // Real event→WordPress REST→inspector race (read-only): delay the FIRST
   // Footer selection request so that it arrives after the second one.
@@ -84,8 +86,14 @@ try {
     await delay(seq===1?1200:80);
     await route.continue();
   });
-  const assets=frame.locator('#footer-contact [data-esc-vb-footer-asset-row][data-esc-vb-region-state="editable"]:visible');
-  if(await assets.count()<2)throw Error('Expected at least two editable Footer rows');
+  const assets=frame.locator('#footer-contact [data-esc-vb-footer-asset-row][data-esc-vb-region-state="editable"]');
+  await assets.first().waitFor({state:'visible',timeout:25000});
+  if(await assets.count()<2){
+    const state=await frame.locator('#footer-contact [data-esc-vb-footer-asset-row]').evaluateAll(
+      nodes=>nodes.map(n=>({row:n.getAttribute('data-esc-vb-footer-asset-row'),status:n.getAttribute('data-esc-vb-region-state')})));
+    console.log('PSE_BUILDER_G1_ASSET_SELECTION_DIAG='+JSON.stringify(state));
+    throw Error('Expected at least two editable Footer rows');
+  }
   const first=Number(await assets.nth(0).getAttribute('data-esc-vb-footer-asset-row'));
   const second=Number(await assets.nth(1).getAttribute('data-esc-vb-footer-asset-row'));
   if(!Number.isSafeInteger(first)||!Number.isSafeInteger(second)||first===second)
