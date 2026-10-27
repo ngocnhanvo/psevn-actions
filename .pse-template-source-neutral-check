@@ -7,3 +7,4 @@
 2026-10-27 master→github backmerge #98: full Astro DEV Vitest, parser, local import audit on github d0b18aa8f8daed02ded0f90dfc59e19a275243dc, production Footer visual + Builder-only markers, soft hero and TablePress getData. NO WEBSITE BUILD/FTP.
 2026-10-27 post content thumbnail fallback: Astro github images from first real WP body image, same-origin API, related cards + no-image guard; full Vitest/parser NO BUILD.
 2026-10-27 PSE news card legacy WP admin URL source fix: full Astro github Vitest + parser CI NO BUILD; ensure existing featured source converted to same-origin image API.
+2026-10-27 Lighthouse menu remediation: Astro DEV headings and semantic WordPress metrics headers, source SHA 12e8ae50e56ef05b31682a099721c4023151c5c0, full Vitest/parser no build.
