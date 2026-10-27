@@ -49,6 +49,33 @@ def main():
                 }
                 out={k:len(re.findall(p,content,re.I)) for k,p in patterns.items()}
                 print("PSE_WP_DB_LOG "+name.replace("/","_")+"=READ_ONLY "+ " ".join(k+"="+str(v) for k,v in out.items()))
+
+                # Only predefined issue classes and UTC hour bins; never print full lines.
+                classes={
+                    "wp_query_error":r"WordPress database error",
+                    "mysql_connect":r"mysqli_real_connect|mysqli_connect|connect\s*\(\)\s*failed|Can't connect to MySQL",
+                    "mysql_denied":r"Access denied for user|using password:\s*(?:YES|NO)",
+                    "mysql_limit":r"max_user_connections|Too many connections|User .* has exceeded",
+                    "mysql_packet":r"Packet too large|Got a packet bigger",
+                    "mysql_lost":r"MySQL server has gone away|Lost connection to MySQL",
+                    "db_fatal":r"Error establishing a database connection|Lỗi kết nối tới cơ sở dữ liệu",
+                    "wp_timeout":r"Connection timed out|server has gone away",
+                    "wp_memory":r"Allowed memory size of .* exhausted",
+                    "wp_php_exception":r"PHP Fatal error|Uncaught .*Error",
+                }
+                details={k:len(re.findall(p,content,re.I)) for k,p in classes.items()}
+                hours={}
+                for line in content.splitlines():
+                    if not re.search(r"database error|database connection|kết nối tới cơ sở dữ liệu|mysqli_real_connect|too many connections",line,re.I):
+                        continue
+                    hit=re.search(r"\[(?:27-Oct-2026|26-Oct-2026)\s+(\d{2}):",line,re.I)
+                    if hit:
+                        key=hit.group(1)
+                        hours[key]=hours.get(key,0)+1
+                print("PSE_WP_DB_CLASSES "+name.replace("/","_")+"="+
+                    " ".join(k+"="+str(v) for k,v in details.items())+
+                    " today_or_yesterday_hour_bins="+','.join(f'{k}:{v}' for k,v in sorted(hours.items())))
+
             except (ftplib.error_perm,ftplib.error_temp):
                 print("PSE_WP_DB_LOG "+name.replace("/","_")+"=UNAVAILABLE")
         print("PSE_WP_DB_FTPS_NO_WRITES=PASS")
