@@ -1,1 +1,3 @@
 G4 isolated QA after verified G0 Updraft restore #40438558697. Only idempotent no-op label Save, re-read, invalid nonce and stale version; abort unexpected mutation. No production content changes or Astro build.
+
+2026-10-27 diagnostic retry: previous #40439003491 timeout on UI saved status; safe no-op only; capture status/HTTP without content.
