@@ -13,7 +13,16 @@ const headers={Authorization:"Bearer "+token,Accept:"application/vnd.github+json
 const before=await fetch(url+"?ref=main",{headers});
 if(!before.ok)throw Error("Cannot load checkpoint SHA "+before.status);
 const remote=await before.json();
-const original=JSON.parse(Buffer.from(remote.content.replace(/\s/g,""),"base64").toString("utf8"));
+let encoded=remote.content;
+if(remote.encoding!=="base64"||!encoded){
+ if(!/^[0-9a-f]{40}$/.test(remote.sha||""))throw Error("Missing checkpoint blob SHA");
+ const blobResponse=await fetch("https://api.github.com/repos/"+repo+"/git/blobs/"+remote.sha,{headers});
+ if(!blobResponse.ok)throw Error("Checkpoint git blob HTTP "+blobResponse.status);
+ const blob=await blobResponse.json();
+ if(blob.encoding!=="base64"||!blob.content)throw Error("Invalid checkpoint git blob");
+ encoded=blob.content;
+}
+const original=JSON.parse(Buffer.from(encoded.replace(/\s/g,""),"base64").toString("utf8"));
 if(original.schema!==local.schema||original.tracker_issue!==local.tracker_issue)throw Error("Checkpoint scope mismatch");
 if((original.runs||0)>=(local.runs||0))throw Error("Stale checkpoint would overwrite newer worker progress");
 const statuses={};for(const r of Object.values(local.articles))statuses[r.status]=(statuses[r.status]||0)+1;
