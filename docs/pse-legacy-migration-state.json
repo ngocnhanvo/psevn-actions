@@ -1,5 +1,11 @@
 {
   "articles": {
+    "86": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/86-doan-thanh-nien-pse-day-manh-hoat-dong.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0
+    },
     "110": {
       "attempts": 1,
       "attribution_cleaned": true,
@@ -181,6 +187,15 @@
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/199-bao-cao-tai-chinh-6-thang-dau-nam-2011.html",
       "status": "quarantined"
+    },
+    "200": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/200-pvfcco-se-dong-hanh-cung-mua-he-xanh-2011.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "source_created_date": "2011-08-15",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "201": {
       "attempts": 1,
@@ -7893,6 +7908,15 @@
       "verified_date": "2022-06-11T00:00:00",
       "wp_id": 79070
     },
+    "1520": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1520-chi-doan-pvfcco-se-to-chuc-chuong-trinh-trai-nghiem-lam-gom-thu-cong-cho-con-cbnv-cong-ty.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "source_created_date": "2022-06-15",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
+    },
     "1521": {
       "attempts": 1,
       "attribution_cleaned": true,
@@ -8287,6 +8311,15 @@
       "status": "imported",
       "verified_date": "2023-04-23T00:00:00",
       "wp_id": 82231
+    },
+    "1553": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1553-pvfcco-pse-to-chuc-hoat-dong-ky-niem-ngay-quoc-te-phu-nu-8-3.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "source_created_date": "2023-04-23",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "1555": {
       "attempts": 1,
@@ -9189,6 +9222,24 @@
       "status": "imported",
       "verified_date": "2025-04-22T00:00:00",
       "wp_id": 77354
+    },
+    "1637": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1637-pvfcco-pse-cung-nhau-huong-ung-huong-ve-ngay-le-trong-dai-ky-niem-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc-30-4-1975-30-4-2025.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "source_created_date": "2025-04-28",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
+    },
+    "1638": {
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1638-ky-niem-21-nam-cong-doan-pvfcco-a-huong-ve-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc.html",
+      "group_hint": "company",
+      "status": "pending",
+      "attempts": 0,
+      "source_created_date": "2025-04-28",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "1639": {
       "attempts": 1,
