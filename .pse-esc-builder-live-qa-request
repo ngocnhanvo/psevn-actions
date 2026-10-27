@@ -13,3 +13,5 @@ Retry after #40426338548: contact text/image selections passed, but deployed hom
 2026-10-27 post-Astro Build Website run #40435085754 SUCCESS, commit d81e2b2 deployed. Wave1 new read-only iframe Menu/Footer selection + three viewport baseline; no CMS Save.
 
 2026-10-27 diagnose G3 Footer ESC capabilities after Playwright run #40435396348 failed (rows not editable); no CMS writes, no Astro build.
+
+2026-10-27 after PHP native TablePress capability fix d3f640b8 FTPS #40436405405 PASS (one file modified). Re-test formerly readonly Footer ESC Table rows and full deployed read-only smoke.
