@@ -1,1 +1,3 @@
 2026-10-28 after production Astro master f797eb2fb0da82146eebe923332c919df2cc3e80 deployed via signed WordPress/PHP pipeline #40559677451 → #40559824616. Browser-check desktop deferred banner, next/prev images, mobile unchanged; read-only and no build.
+
+2026-10-28 actual Pse_00 hero: Astro PR #105 master 029834d737af0998f7c8811751fbb35b406adf9b, WordPress native Build Website success #40561324614, signed deploy #40561470854 PASS. Browser QA checks actual data-pse-slider/dots and images desktop+mobile, no writes/build.
