@@ -26,12 +26,12 @@ try{
     const items=[...root.querySelectorAll("img[src],a[href]")].map(el=>{
      const kind=el.tagName==="IMG"?"image":"link",attr=kind==="image"?"src":"href";
      try{const u=new URL(el.getAttribute(attr),location.href);
-       return {kind,ext:(u.pathname.match(/\\.([a-z0-9]{2,5})$/i)?.[1]||"none").toLowerCase(),host:u.hostname};
+       return {kind,ext:(u.pathname.match(/\.([a-z0-9]{2,5})$/i)?.[1]||"none").toLowerCase(),host:u.hostname};
      }catch{return {kind,ext:"invalid",host:""}}
     });
     const countBy=(name)=>Object.entries(items.reduce((a,x)=>(a[x[name]]=(a[x[name]]||0)+1,a),{}))
       .sort((a,b)=>b[1]-a[1]).slice(0,12);
-    const text=(root.textContent||"").replace(/\\s+/g," ").trim();
+    const text=(root.textContent||"").replace(/\s+/g," ").trim();
     return {hasArticleBody:true,textChars:text.length,textPreview:text.slice(0,230),
      totalMediaOrAnchors:items.length,images:items.filter(x=>x.kind==="image").length,
      byExtension:countBy("ext"),byHost:countBy("host"),
