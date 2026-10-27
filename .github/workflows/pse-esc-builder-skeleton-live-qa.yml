@@ -1,0 +1,35 @@
+name: PSE ESC Visual Builder G1 skeleton rapid-click live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-esc-builder-skeleton-qa-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-esc-builder-skeleton-readonly
+  cancel-in-progress: false
+jobs:
+  qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Real WordPress Builder skeleton and rapid-click read-only QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-esc-builder-skeleton-live-qa.mjs
+          node scripts/pse-esc-builder-skeleton-live-qa.mjs
+          echo 'PSE_G1_SKELETON_LIVE=PASS NO_CMS_WRITE=PASS NO_BUILD=PASS'
