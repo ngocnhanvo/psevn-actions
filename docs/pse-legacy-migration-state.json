@@ -3971,10 +3971,13 @@
     "1155": {
       "attempts": 3,
       "group_hint": "company",
-      "reason": "WP slug occupied by unrelated or empty content",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1155-chi-tra-co-tuc-dot-1-nam-2015.html",
-      "status": "quarantined"
+      "status": "existing",
+      "last_failure_reason": "WP slug occupied by unrelated or empty content",
+      "wp_id": 79462,
+      "category_repaired_at": "2026-10-27",
+      "category_repaired_source": "PSE Chi bo 2015 verified existing PDF notice binding GitHub Actions #40468467174"
     },
     "1156": {
       "attempts": 2,
