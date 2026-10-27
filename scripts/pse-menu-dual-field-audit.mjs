@@ -38,4 +38,37 @@ try{
  console.log("PSE_HEADER_EDITOR_FIELDS="+JSON.stringify(inspected).slice(0,30000));
  const mismatch=linked.filter(x=>/^https?:\/\/www\.pse\.vn\//.test(x.href)||/^https?:\/\/www\.pse\.vn\//.test(x.slug));
  console.log("PSE_HEADER_AUDIT_SUMMARY="+JSON.stringify({nativeCount:all.length,escCount:linked.length,oldOriginCount:mismatch.length,oldOrigin:mismatch.map(x=>({id:x.id,label:x.label,href:x.href,slug:x.slug,mode:x.mode,type:x.type})),readOnly:true}).slice(0,22000));
+
+ // READ-ONLY AJAX UX: simulate a menu save; every potential write request is
+ // intercepted and either mocked (AJAX) or aborted (native navigation).
+ if(!(await p.evaluate(()=>typeof window.escPseMenuEditorRefresh==="function")))throw Error("Native menu AJAX partial refresher not installed");
+ let ajaxSave=0,legacyPost=0,navigations=0;
+ const beforeUrl=p.url();
+ const beforeItems=await p.locator("#menu-to-edit > li.menu-item").count();
+ p.on("framenavigated",frame=>{if(frame===p.mainFrame())navigations++});
+ await p.route("**/wp-admin/nav-menus.php**",async route=>{
+  if(route.request().method()==="POST"){legacyPost++;await route.abort("blockedbyclient")}
+  else await route.continue();
+ });
+ await p.route("**/wp-admin/admin-ajax.php",async route=>{
+  const req=route.request();
+  if(req.method()==="POST"&&(req.postData()||"").includes("esc_pse_menu_async_save")){
+   ajaxSave++;
+   await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({success:true,data:{message:"AJAX save mock",count:beforeItems}})});
+  }else await route.continue();
+ });
+ const firstRoot=p.locator("#menu-to-edit > li.menu-item-depth-0").first();
+ if(await firstRoot.count()){
+  const expand=firstRoot.locator(".item-edit").first();
+  if(await expand.count()) await expand.click();
+ }
+ const openBefore=await firstRoot.count()?await firstRoot.evaluate(el=>el.classList.contains("menu-item-edit-active")):null;
+ await p.locator("#save_menu_header").click();
+ await p.locator("#esc-pse-menu-ajax-status.notice-success").waitFor({state:"visible",timeout:15000});
+ const afterItems=await p.locator("#menu-to-edit > li.menu-item").count();
+ const openAfter=await firstRoot.count()?await firstRoot.evaluate(el=>el.classList.contains("menu-item-edit-active")):null;
+ if(ajaxSave!==1||legacyPost!==0||navigations!==0||p.url()!==beforeUrl||afterItems!==beforeItems||openAfter!==openBefore){
+  throw Error("AJAX save must update without navigation or collapsing the active editor: "+JSON.stringify({ajaxSave,legacyPost,navigations,beforeItems,afterItems,openBefore,openAfter}));
+ }
+ console.log("PSE_NATIVE_MENU_AJAX_READONLY_QA=PASS "+JSON.stringify({ajaxSave,legacyPost,navigations,beforeItems,afterItems,openStatePreserved:true,wordpressWrites:0}));
 }finally{await browser.close()}
