@@ -38,7 +38,7 @@ const mayRecoverImage=(id,v)=>Object.hasOwn(BROKEN_MARKET_IMAGES,id) &&
 const annualIds=new Set(["998","999","1000","1041","1042","1043","1092","1188","1259","1307","1353","1386","1412","1511","1546","1578","1625","1667"]);
 const isAnnual=(id,v)=>annualIds.has(id) && new RegExp("^https://(?:www\\.)?pse\\.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/"+id+"-[^/]+\\.html$","i").test(v?.source_url||"") && v.group_hint==="shareholder";
 const brokenAnnualGifIds=new Set(["1042","1043","1188","1259"]);
-const mayRecoverAnnualGif=(id,v)=>brokenAnnualGifIds.has(id)&&isAnnual(id,v)&&v.status==="quarantined"&&!v.wp_id&&((!v.annual_gif_recovery_attempted&&v.reason==="Original media size unsafe; bytes=49; ext=gif")||(v.annual_gif_recovery_attempted&&!v.annual_gif_regex_retry_attempted&&v.reason==="Annual corrupt GIF URL count changed"));
+const mayRecoverAnnualGif=(id,v)=>brokenAnnualGifIds.has(id)&&isAnnual(id,v)&&v.status==="quarantined"&&!v.wp_id&&!v.annual_valid_gif_recovery_attempted&&v.reason==="Annual source GIF not proven corrupt; preserve image";
 const mayRecoverAnnualPdf=(id,v)=>id==="1667"&&isAnnual(id,v)&&["quarantined","pending"].includes(v.status)&&v.reason==="Original media size unsafe; bytes=33341195; ext=pdf"&&!v.wp_id&&(!v.annual_pdf_2025_attempted||!v.annual_pdf_regex_retry_attempted);
 const mayTagAnnual=(id,v)=>isAnnual(id,v)&&Number.isSafeInteger(v.wp_id)&&!v.annual_category_verified&&["existing","imported","draft_needs_date"].includes(v.status);
 const candidates=Object.keys(state.articles).filter(id=>
@@ -153,7 +153,7 @@ try{
   const recoverAnnualGif=mayRecoverAnnualGif(id,item);
   const recoverAnnualPdf=mayRecoverAnnualPdf(id,item);
   if(brokenImageUrl){item.broken_image_recovery_attempted=true;await persist();}
-  if(recoverAnnualGif){if(item.annual_gif_recovery_attempted)item.annual_gif_regex_retry_attempted=true;item.annual_gif_recovery_attempted=true;await persist();}
+  if(recoverAnnualGif){item.annual_valid_gif_recovery_attempted=true;await persist();}
   if(recoverAnnualPdf){if(item.annual_pdf_2025_attempted)item.annual_pdf_regex_retry_attempted=true;item.annual_pdf_2025_attempted=true;await persist();}
   // One bounded second look for source pages that are legitimate short PDF/link notices.
   // Legacy 100-character minimum was too strict for investor disclosures.
@@ -278,29 +278,9 @@ try{
      console.log("PSE_LEGACY_INLINE_SOURCE=VERIFIED; source_id="+id+
        "; detail_http=500; category_http=200; source_created_day="+item.source_created_date);
     }
-    // Four older annual reports reference corrupt 49-byte GIF resources.
-    // Verify each resource is actually corrupt before omitting only its visual tag/link.
-    let omittedAnnualGifs=[];
-    if(recoverAnnualGif){
-      const urls=await original.evaluate(()=>{
-        const root=document.querySelector('[itemprop="articleBody"]');
-        if(!root)throw Error("Annual source content missing");
-        return [...new Set([...root.querySelectorAll('img[src],a[href]')]
-          .map(el=>{try{return new URL(el.getAttribute(el.tagName==="IMG"?"src":"href"),location.href).href}catch{return null}})
-          .filter(x=>x&&/\.gif(?:[?#]|$)/i.test(x)))];
-      });
-      if(urls.length<1||urls.length>5)throw Error("Annual corrupt GIF URL count changed");
-      for(const url of urls){
-        const u=new URL(url);
-        if(!["pse.vn","www.pse.vn"].includes(u.hostname)||u.protocol!=="https:")throw Error("Annual image outside verified legacy origin");
-        const r=await context.request.get(url,{timeout:30000});
-        const bytes=await r.body();
-        if(r.status()!==200||bytes.length!==49||["GIF89a","GIF87a"].includes(bytes.subarray(0,6).toString("latin1")))
-          throw Error("Annual source GIF not proven corrupt; preserve image");
-        omittedAnnualGifs.push(url);
-      }
-    }
-    article=await original.evaluate(({expectedTitle,brokenImageUrl,omittedAnnualGifs})=>{
+    // Source GIFs can be tiny but valid. Keep original markup; validate the
+    // exact 49-byte binary before a narrowly scoped WordPress media upload.
+    article=await original.evaluate(({expectedTitle,brokenImageUrl})=>{
      let root;
      if(expectedTitle){
       const rows=[...document.querySelectorAll('.blog [itemprop="blogPost"]')].filter(e=>
@@ -332,20 +312,6 @@ try{
       if((copy.textContent||"").replace(/\s+/g," ").trim()!==originalText)
        throw Error("Source text changed by photo omission");
       omittedImages.push(brokenImageUrl);
-     }
-     if(omittedAnnualGifs.length){
-       const beforeText=(copy.textContent||"").replace(/\s+/g," ").trim();
-       const doomed=new Set(omittedAnnualGifs);
-       for(const img of [...copy.querySelectorAll("img[src]")]){
-         if(!doomed.has(new URL(img.getAttribute("src"),location.href).href))continue;
-         const parent=img.closest("a");img.remove();
-         if(parent&&!parent.textContent.trim()&&!parent.querySelector("img,svg,video"))parent.remove();
-       }
-       for(const link of [...copy.querySelectorAll("a[href]")]){
-         if(doomed.has(new URL(link.getAttribute("href"),location.href).href))link.replaceWith(...link.childNodes);
-       }
-       if((copy.textContent||"").replace(/\s+/g," ").trim()!==beforeText)throw Error("Annual source text changed while removing corrupt GIF");
-       omittedImages.push(...omittedAnnualGifs);
      }
      // Remove the Joomla related-articles tail before collecting text or linked media.
      const related=[...copy.querySelectorAll("h1,h2,h3,h4,h5,p")].find(el=>
@@ -389,16 +355,8 @@ try{
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
      return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages};
-    },{expectedTitle:inlineTitle,brokenImageUrl,omittedAnnualGifs});
+    },{expectedTitle:inlineTitle,brokenImageUrl});
    }finally{await original.close()}
-   if(recoverAnnualGif){
-    if(article.chars<7 || omittedAnnualGifs.length<1 ||
-       !omittedAnnualGifs.every(u=>article.omittedImages.includes(u)&&!article.assets.includes(u)&&!article.html.includes(u)))
-       throw Error("Corrupt annual image exclusion/readback not verified");
-    item.omitted_broken_source_images=omittedAnnualGifs;
-    console.log("PSE_ANNUAL_GIF_REMOVED=PASS; source_id="+id+"; text_chars="+article.chars+"; removed="+omittedAnnualGifs.length);
-    await persist();
-   }
    if(brokenImageUrl){
     if(article.omittedImages?.length!==1||article.chars<200||article.assets.includes(brokenImageUrl)||article.html.includes(brokenImageUrl))
      throw Error("Approved photo exclusion not verified");
@@ -490,7 +448,17 @@ try{
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
      const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
-     if(buf.length<80||buf.length>(annual2025Pdf?40_000_000:24_000_000))throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
+     const annualTinyGif=recoverAnnualGif && isAnnual(id,item) && /\.gif(?:[?#]|$)/i.test(assetUrl) && buf.length>=35 && buf.length<80;
+     if(annualTinyGif){
+       const origin=new URL(assetUrl),finalUrl=new URL(download.url());
+       const trusted=u=>["pse.vn","www.pse.vn"].includes(u.hostname)&&["https:","http:"].includes(u.protocol);
+       if(!trusted(origin)||!trusted(finalUrl)||!["GIF89a","GIF87a"].includes(buf.subarray(0,6).toString("latin1"))||
+         !String(download.headers()["content-type"]||"").toLowerCase().startsWith("image/gif"))
+         throw Error("Small annual GIF failed origin, MIME or binary proof; preserve source");
+       console.log("PSE_ANNUAL_TINY_GIF_VALID=PASS; source_id="+id+"; bytes="+buf.length+"; image_preserved=true");
+     }
+     if((buf.length<80&&!annualTinyGif)||buf.length>(annual2025Pdf?40_000_000:24_000_000))
+       throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
        throw Error("Original PDF signature invalid");
