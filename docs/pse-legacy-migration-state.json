@@ -9238,24 +9238,24 @@
       "wp_id": 77354
     },
     "1637": {
-      "attempts": 2,
+      "attempts": 3,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "group_hint": "company",
       "reason": "Source HTTP 500",
       "source_created_date": "2025-04-28",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1637-pvfcco-pse-cung-nhau-huong-ung-huong-ve-ngay-le-trong-dai-ky-niem-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc-30-4-1975-30-4-2025.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1638": {
-      "attempts": 2,
+      "attempts": 3,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "group_hint": "company",
       "reason": "Source HTTP 500",
       "source_created_date": "2025-04-28",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1638-ky-niem-21-nam-cong-doan-pvfcco-a-huong-ve-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc.html",
-      "status": "pending"
+      "status": "quarantined"
     },
     "1639": {
       "attempts": 1,
@@ -22614,7 +22614,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 212,
+  "runs": 213,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
