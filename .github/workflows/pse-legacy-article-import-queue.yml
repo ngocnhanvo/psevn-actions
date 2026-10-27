@@ -46,7 +46,16 @@ jobs:
           data=json.load(open('docs/pse-legacy-migration-state.json',encoding='utf-8'))
           if data['schema']!='pse-legacy-article-migration-v1' or data['tracker_issue']!=3:
               raise SystemExit('Wrong PSE migration checkpoint')
-          incomplete=bool(data.get('queue')) or any((r['status'] in ('pending','media') and r.get('attempts',0)<3) or (r['status']=='quarantined' and r.get('reason')=='Source content incomplete or oversized' and not r.get('short_content_rechecked')) or (r.get('wp_id') and r.get('status') in ('imported','draft_needs_date','existing') and not r.get('seo_cleaned') and (r.get('seo_attempts',0)<3 or r.get('seo_error')=='Post has no exact migration provenance marker') or (r['status'] in ('imported','draft_needs_date','existing') and not r.get('attribution_cleaned') and r.get('attribution_attempts',0)<3) or (id in ('343','346','347','352','360') and r['status']=='quarantined' and r.get('reason')=='Article contains non-local mandatory media' and not r.get('wp_id') and not r.get('broken_image_recovery_attempted'))) for id,r in data['articles'].items())
+          annual_ids=set('998 999 1000 1041 1042 1043 1092 1188 1259 1307 1353 1386 1412 1511 1546 1578 1625 1667'.split())
+          annual_pending=any(
+              id in annual_ids and r.get('group_hint')=='shareholder' and
+              '/quan-he-nha-dau-tu/bao-cao-thuong-nien/'+id+'-' in r.get('source_url','') and (
+                  (r.get('wp_id') and r.get('status') in ('existing','imported','draft_needs_date') and not r.get('annual_category_verified')) or
+                  (id in ('1042','1043','1188','1259') and r.get('status')=='quarantined' and r.get('reason')=='Original media size unsafe; bytes=49; ext=gif' and not r.get('annual_gif_recovery_attempted') and not r.get('wp_id')) or
+                  (id=='1667' and r.get('status')=='quarantined' and r.get('reason')=='Original media size unsafe; bytes=33341195; ext=pdf' and not r.get('annual_pdf_2025_attempted') and not r.get('wp_id'))
+              ) for id,r in data['articles'].items()
+          )
+          incomplete=bool(data.get('queue')) or any((r['status'] in ('pending','media') and r.get('attempts',0)<3) or (r['status']=='quarantined' and r.get('reason')=='Source content incomplete or oversized' and not r.get('short_content_rechecked')) or (r.get('wp_id') and r.get('status') in ('imported','draft_needs_date','existing') and not r.get('seo_cleaned') and (r.get('seo_attempts',0)<3 or r.get('seo_error')=='Post has no exact migration provenance marker') or (r['status'] in ('imported','draft_needs_date','existing') and not r.get('attribution_cleaned') and r.get('attribution_attempts',0)<3) or (id in ('343','346','347','352','360') and r['status']=='quarantined' and r.get('reason')=='Article contains non-local mandatory media' and not r.get('wp_id') and not r.get('broken_image_recovery_attempted'))) for id,r in data['articles'].items()) or annual_pending
           with open(os.environ['GITHUB_ENV'],'a') as f:
               f.write('PSE_IMPORT_WORK='+('yes' if incomplete else 'no')+'\n')
           print('PSE_IMPORT_QUEUE='+('ACTIVE' if incomplete else 'NO_PENDING')+'; discovered='+str(len(data['articles'])))
