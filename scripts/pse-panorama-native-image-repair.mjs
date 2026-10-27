@@ -2,13 +2,13 @@
  * Ordinary push is read-only. Apply only on authorized commit. No Astro build.
  */
 import {chromium} from 'playwright';
-import {writeFile,mkdir} from 'node:fs/promises';
+import {writeFile,mkdir,readFile} from 'node:fs/promises';
 const keys=String(process.env.ENV_FILE||'').split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith('WC_URL='));
 if(keys.length!==1)throw Error('PSE WordPress origin missing/ambiguous');
 const u=new URL(keys[0].slice(7).replace(/^['"]|['"]$/g,''));
 if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash||!['','/'].includes(u.pathname))throw Error('Wrong CMS origin');
 const wp=u.origin,table='pse_02_vi',name='pse-original-panorama-2026.jpg';
-const event=process.env.GITHUB_EVENT_PATH?JSON.parse((await import('node:fs/promises')).readFile?await(await import('node:fs/promises')).readFile(process.env.GITHUB_EVENT_PATH,'utf8'):'{}'):{};
+const event=process.env.GITHUB_EVENT_PATH?JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8')):{};
 const apply=event.head_commit?.message==='cms(pse): replace homepage panorama bare URL via native Insert Image';
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1500,height:940}});
