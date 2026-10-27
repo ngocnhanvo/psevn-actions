@@ -60,7 +60,19 @@ const persist=async()=>await writeFile(STATE,JSON.stringify(state,null,2)+"\n","
 let imported=0,existing=0,partial=0,failed=0;
 try{
  if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)throw Error("WP credentials unavailable");
- await admin.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
+ // WordPress admin occasionally times out while its DB is under load.
+ // Retry only the non-mutating login navigation; never retry an uncertain POST.
+ for(let attempt=1;attempt<=3;attempt++){
+  try{
+   const access=await admin.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:45000});
+   if(!access||access.status()>=500)throw Error("WordPress admin HTTP "+access?.status());
+   break;
+  }catch(e){
+   if(attempt===3)throw Error("WordPress admin unavailable after three GET attempts: "+String(e).slice(0,160));
+   console.warn("PSE_LEGACY_WP_ADMIN_RETRY; attempt="+attempt+"; no_wp_write=true");
+   await admin.waitForTimeout(attempt*3000);
+  }
+ }
  if(await admin.locator("#user_login").count()){
   await admin.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME);
   await admin.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD);
