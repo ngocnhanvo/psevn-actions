@@ -31,8 +31,8 @@ try{
  await page.locator('#esc-vb-page').waitFor({state:'visible',timeout:30000});
  await Promise.all([page.waitForLoadState('domcontentloaded'),page.getByRole('button',{name:'Mở trang'}).click()]);
  const frame=page.frameLocator('#esc-vb-frame');
- const toggle=frame.locator('#desktop-menu button[data-menu-trigger]:visible').first();
- await toggle.waitFor({state:'visible',timeout:60000});
+ const menu=frame.locator('#main-header [data-esc-vb-menu-item-id][data-esc-vb-region-state="editable"]').first();
+ await menu.waitFor({state:'attached',timeout:60000});
  let synthetic=0;
  const pattern='**/wp-json/esc-builder/v1/menu-item*';
  const handler=async route=>{
@@ -44,7 +44,10 @@ try{
    return route.continue();
  };
  await page.route(pattern,handler);
- await toggle.click({modifiers:['Alt']});
+ // The original live test already verified pointer behavior. Dispatch a
+ // modifier click to the hydrated menu marker directly, avoiding responsive
+ // nav visibility races that are unrelated to DB error presentation.
+ await menu.evaluate(el=>el.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,altKey:true})));
  const retry=page.locator('#esc-vb-menu-retry');
  await retry.waitFor({state:'visible',timeout:25000});
  const status=page.locator('#esc-vb-menu-editor [role="status"]').first();
