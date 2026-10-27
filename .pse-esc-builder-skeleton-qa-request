@@ -2,3 +2,5 @@ PSE G1 dedicated read-only live QA on deployed Wave1; user requested continue wi
 
 NETWORK_ONLY
 G1 static skeleton quick/slow/rapid/stale PASSED in run 40437608156; retry only real network selection after waiting for capability markers.
+
+Retry after workflow YAML correction 0159061e; ONLY network race, static skeleton already passed #40437608156.
