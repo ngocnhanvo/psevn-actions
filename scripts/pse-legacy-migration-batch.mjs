@@ -448,7 +448,7 @@ try{
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
      const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
-     const annualTinyGif=recoverAnnualGif && isAnnual(id,item) && /\.gif(?:[?#]|$)/i.test(assetUrl) && buf.length>=35 && buf.length<80;
+     const annualTinyGif=(recoverAnnualGif||item.annual_valid_gif_recovery_attempted===true) && isAnnual(id,item) && /\.gif(?:[?#]|$)/i.test(assetUrl) && buf.length>=35 && buf.length<80;
      if(annualTinyGif){
        const origin=new URL(assetUrl),finalUrl=new URL(download.url());
        const trusted=u=>["pse.vn","www.pse.vn"].includes(u.hostname)&&["https:","http:"].includes(u.protocol);
@@ -561,7 +561,7 @@ try{
    }
    item.status=originalDate?"imported":"draft_needs_date";
    if(isAnnual(id,item))item.annual_category_verified=true;
-   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf)delete item.reason;
+   if(brokenImageUrl||recoverAnnualGif||recoverAnnualPdf||item.annual_valid_gif_recovery_attempted)delete item.reason;
    item.seo_cleaned=true;
    item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
