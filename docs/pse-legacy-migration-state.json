@@ -16,41 +16,41 @@
       "wp_id": 82270
     },
     "90": {
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/90-quy-che-quan-tri-cong-ty-14-01-2016.html",
-      "group_hint": "shareholder",
-      "status": "imported",
       "attempts": 1,
-      "wp_id": 82437,
-      "seo_cleaned": true,
       "attribution_cleaned": true,
-      "verified_date": "2011-06-20T00:00:00",
-      "date_source": "joomla_com_search_created",
       "date_precision": "day",
-      "source_created_date": "2011-06-20"
+      "date_source": "joomla_com_search_created",
+      "group_hint": "shareholder",
+      "seo_cleaned": true,
+      "source_created_date": "2011-06-20",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/90-quy-che-quan-tri-cong-ty-14-01-2016.html",
+      "status": "imported",
+      "verified_date": "2011-06-20T00:00:00",
+      "wp_id": 82437
     },
     "91": {
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/91-quy-trinh-cong-bo-thong-tin.html",
-      "group_hint": "shareholder",
-      "status": "imported",
       "attempts": 1,
-      "wp_id": 82434,
-      "seo_cleaned": true,
       "attribution_cleaned": true,
-      "verified_date": "2011-06-20T00:00:00",
-      "date_source": "joomla_com_search_created",
       "date_precision": "day",
-      "source_created_date": "2011-06-20"
+      "date_source": "joomla_com_search_created",
+      "group_hint": "shareholder",
+      "seo_cleaned": true,
+      "source_created_date": "2011-06-20",
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/91-quy-trinh-cong-bo-thong-tin.html",
+      "status": "imported",
+      "verified_date": "2011-06-20T00:00:00",
+      "wp_id": 82434
     },
     "92": {
-      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/92-dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo.html",
-      "group_hint": "shareholder",
-      "status": "draft_needs_date",
       "attempts": 1,
-      "wp_id": 82431,
-      "seo_cleaned": true,
       "attribution_cleaned": true,
+      "group_hint": "shareholder",
+      "reason": "Original source lacks independently verifiable publish timestamp",
+      "seo_cleaned": true,
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/92-dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo.html",
+      "status": "draft_needs_date",
       "verified_date": null,
-      "reason": "Original source lacks independently verifiable publish timestamp"
+      "wp_id": 82431
     },
     "110": {
       "attempts": 1,
@@ -2116,10 +2116,17 @@
     "376": {
       "attempts": 3,
       "group_hint": "shareholder",
-      "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/376-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2013.html",
-      "status": "quarantined"
+      "status": "imported",
+      "governance_376_image_recovery_attempted": true,
+      "wp_id": 82440,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-06-29T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-06-29"
     },
     "377": {
       "attempts": 1,
@@ -13978,6 +13985,11 @@
       "sha256": "0dcc81587220e48da7b4441054e76890c7b4e09682729b8b1467adf581de7a4a",
       "url": "/wp-content/uploads/2026/10/pse-legacy-b46814a225683b90.pdf"
     },
+    "https://www.pse.vn/images/pdf/2016/2016-01-14-Quy-che-quan-tri-noi-bo-Cong-ty.pdf": {
+      "id": 82436,
+      "sha256": "914f121465c7578836631cfc47a7e9a09d5af216cba625e1c8325bc723680b54",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-a44bf379821216c8.pdf"
+    },
     "https://www.pse.vn/images/pdf/2016/2016-03-07-chot-ds-co-dong.pdf": {
       "id": 79416,
       "sha256": "e072bca838a93266b60fa280e8cc07ffef48e452c2ac9a14b9a99e8b125a0998",
@@ -23393,6 +23405,11 @@
       "sha256": "46f94dbaef6f845058b055e6e07d0c0a0cb0460ccaff5e659e02ae12be76fa49",
       "url": "/wp-content/uploads/2026/10/pse-legacy-de6906cc7519ed4e.pdf"
     },
+    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Dieu_le_cty_2013/dieu_le_cty_2013.pdf": {
+      "id": 82430,
+      "sha256": "f95f8a08b3c969b670c5ec4aef4c06694a62151f75337b7e5be62dde70ac2bf3",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-ae37231fda08f452.pdf"
+    },
     "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/NghiQuyet2012/14-67-NQ-HDQT-CVHDQT.pdf": {
       "id": 78413,
       "sha256": "73e12dd778779b0947a8f413fd6691d192de182c8d9b0c4d8e325a1d25896689",
@@ -23412,6 +23429,16 @@
       "id": 79078,
       "sha256": "bb868a44ae3742f7397258c231c59bb27131fd0b0b99f89b95989f6a23cfea87",
       "url": "/wp-content/uploads/2026/10/pse-legacy-c2f909960666fdb1.pdf"
+    },
+    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Quy_trinh_cong_bo_thong_tin_PSE_19-5-2011/Quy_trinh_cong_bo_thong_tin%20PSE_19-5-20110001.png": {
+      "id": 82432,
+      "sha256": "f7697aebd67207ebbcb9e6b791f2b00ad03ccd980aac1e48b82ecdef33ba707e",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-e2bc80a2600a06c2.png"
+    },
+    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Quy_trinh_cong_bo_thong_tin_PSE_19-5-2011/Quy_trinh_cong_bo_thong_tin_2014.pdf": {
+      "id": 82433,
+      "sha256": "9118b6f9adf405f0104fa5aea003c04fd5b74d7be0d35700fb76bbb1d8f73b53",
+      "url": "/wp-content/uploads/2026/10/pse-legacy-d137d922cf16b716.pdf"
     },
     "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Tam_ung_chi_tra_co_tuc/1.jpg": {
       "id": 78838,
@@ -23483,30 +23510,15 @@
       "sha256": "7ee756b01de4464eaf4b71b85779bdb7a955b4d2af89faa3d29c4906d0ece1db",
       "url": "/wp-content/uploads/2026/10/pse-legacy-74fcbc29a90dd02b.gif"
     },
-    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Dieu_le_cty_2013/dieu_le_cty_2013.pdf": {
-      "id": 82430,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-ae37231fda08f452.pdf",
-      "sha256": "f95f8a08b3c969b670c5ec4aef4c06694a62151f75337b7e5be62dde70ac2bf3"
-    },
-    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Quy_trinh_cong_bo_thong_tin_PSE_19-5-2011/Quy_trinh_cong_bo_thong_tin%20PSE_19-5-20110001.png": {
-      "id": 82432,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-e2bc80a2600a06c2.png",
-      "sha256": "f7697aebd67207ebbcb9e6b791f2b00ad03ccd980aac1e48b82ecdef33ba707e"
-    },
-    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Quy_trinh_cong_bo_thong_tin_PSE_19-5-2011/Quy_trinh_cong_bo_thong_tin_2014.pdf": {
-      "id": 82433,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-d137d922cf16b716.pdf",
-      "sha256": "9118b6f9adf405f0104fa5aea003c04fd5b74d7be0d35700fb76bbb1d8f73b53"
-    },
-    "https://www.pse.vn/images/pdf/2016/2016-01-14-Quy-che-quan-tri-noi-bo-Cong-ty.pdf": {
-      "id": 82436,
-      "url": "/wp-content/uploads/2026/10/pse-legacy-a44bf379821216c8.pdf",
-      "sha256": "914f121465c7578836631cfc47a7e9a09d5af216cba625e1c8325bc723680b54"
+    "https://www.pse.vn/images/web/quanhe-codong/tin-tuc/NghiQuyet2012/106-nq-nb.jpg": {
+      "id": 82439,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-0a1cdbf10f464a7d.jpg",
+      "sha256": "d776dcdbc55afba02bf949e46a003ae20dafabdd10ea12ef88a21ddc2a30043d"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 228,
+  "runs": 229,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
