@@ -1,0 +1,32 @@
+name: PSE Lighthouse CMS-only contrast and ARIA repair (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-lighthouse-cms-contrast-request]
+permissions:
+  contents: read
+jobs:
+  repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-lighthouse-cms-contrast-repair.mjs && node scripts/pse-lighthouse-cms-contrast-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-lighthouse-cms-contrast-backup
+          path: artifacts/pse-lighthouse-cms-contrast/
+          if-no-files-found: warn
+          retention-days: 21
