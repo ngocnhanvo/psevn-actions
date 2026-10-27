@@ -1,1 +1,3 @@
 Retry only three Lighthouse NO_NAVSTART items from run 40542508873
+
+Retry ONLY five NO_NAVSTART measurements from postdeploy Lighthouse run 40549910858, no other repeats, 2026-10-27.
