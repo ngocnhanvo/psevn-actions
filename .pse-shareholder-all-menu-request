@@ -1,1 +1,2 @@
-MODE=AUDIT
+MODE=APPLY
+Audit #40446535114 PASS: Header VI 1687, shareholder branch 77022, category 1744 (282 articles), published news archive. The new 'Tất cả' is unsaved in WordPress; create once via native WordPress REST and verify preserved menu IDs.
