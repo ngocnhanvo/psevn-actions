@@ -53,6 +53,7 @@ try{
     diagnostic:String(r.headers()['x-esc-image-error']||''),bytes:r.ok()?Number(r.headers()['content-length'])||null:null});
   }catch(e){output.proxies.push({url:p,error:String(e).slice(0,100)})}
  }
+ console.log('PSE_PANORAMA_POSTDEPLOY_DIAGNOSTIC='+JSON.stringify(output));
  if(output.home.sectionHtmlHasAdmin||!output.home.image.src?.originIsPublic||
     !output.home.image.src.path.startsWith('/api/images/')||
     output.home.image.srcset.length===0||output.home.image.srcset.some(x=>!x.originIsPublic)||
