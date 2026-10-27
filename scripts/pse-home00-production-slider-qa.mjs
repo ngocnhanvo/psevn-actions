@@ -1,4 +1,4 @@
-/** Read-only browser QA for PSE desktop deferred carousel and mobile unchanged. */
+/** Read-only browser QA of the actual PSE Pse_00 ESC Table hero carousel. */
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -16,60 +16,55 @@ const browser = await chromium.launch({headless:true, args:['--no-sandbox', '--d
 const output = [];
 try {
   for (const scenario of [
-    {name:'desktop',width:1440,height:900,media:'(min-width: 640px)'},
-    {name:'mobile',width:390,height:844,media:'(max-width: 639px)'},
+    {name:'desktop',width:1440,height:900},
+    {name:'mobile',width:390,height:844},
   ]) {
     const page = await browser.newPage({viewport:{width:scenario.width,height:scenario.height}, deviceScaleFactor:1});
     try {
       const response = await page.goto(target, {waitUntil:'domcontentloaded',timeout:45000});
       if (!response?.ok()) throw new Error(scenario.name + ' HTTP ' + response?.status());
-      const slider = page.locator('[data-home-slider]').filter({has:page.locator('[data-slider-dot]')})
-        .and(page.locator('[data-home-slider][data-slider-media="' + scenario.media + '"]'));
+      const slider = page.locator('[data-pse-slider]').first();
       await slider.waitFor({state:'visible',timeout:20000});
-      const items = slider.locator('[data-home-slide]');
+      const items = slider.locator('[data-pse-slide]');
       const count = await items.count();
-      if (count < 2) throw new Error(scenario.name + ' expected 2+ published slides: '+count);
+      if (count < 2) throw new Error(scenario.name + ' expected 2+ ESC Table slides: '+count);
       const first = await items.first().evaluate(el => ({
         active:el.classList.contains('is-active'),
         alt:el.querySelector('img')?.alt || '',
       }));
       if (!first.active) throw new Error(scenario.name + ' first slide was not active');
       const deferred = await slider.locator('source[data-deferred-media]').count();
-      if (scenario.name === 'desktop' && deferred < 1) throw new Error('Desktop initial image deferral absent');
-      if (scenario.name === 'mobile' && deferred !== 0) throw new Error('Mobile regression: deferred source unexpectedly present');
+      if (deferred < 1) throw new Error(scenario.name + ' published inactive desktop source missing');
 
-      await page.waitForFunction((media) => {
-        const slider = [...document.querySelectorAll('[data-home-slider]')].find(s => s.dataset.sliderMedia === media);
-        const img = slider?.querySelector('[data-home-slide].is-active picture img');
+      await page.waitForFunction(() => {
+        const img = document.querySelector('[data-pse-slider] [data-pse-slide].is-active img');
         return Boolean(img?.complete && img.naturalWidth > 1 && !img.currentSrc.startsWith('data:'));
-      }, scenario.media, {timeout:20000});
+      }, null, {timeout:20000});
 
-      await slider.locator('[data-slider-next]').click();
-      await page.waitForFunction((media) => {
-        const slider = [...document.querySelectorAll('[data-home-slider]')].find(s => s.dataset.sliderMedia === media);
-        const active = slider?.querySelector('[data-home-slide].is-active');
-        const img = active?.querySelector('picture img');
-        return active?.getAttribute('data-esc-builder-image-row') !==
-          slider?.querySelector('[data-home-slide]')?.getAttribute('data-esc-builder-image-row')
-          && Boolean(img?.complete && img.naturalWidth > 1 && !img.currentSrc.startsWith('data:'));
-      }, scenario.media, {timeout:20000});
+      await slider.locator('[data-pse-dot="1"]').click();
+      await page.waitForFunction(() => {
+        const slider = document.querySelector('[data-pse-slider]');
+        const second = slider?.querySelectorAll('[data-pse-slide]')[1];
+        const img = second?.querySelector('img');
+        return Boolean(second?.classList.contains('is-active') &&
+          img?.complete && img.naturalWidth > 1 && !img.currentSrc.startsWith('data:'));
+      }, null, {timeout:20000});
 
-      const second = await slider.locator('[data-home-slide].is-active img').evaluate(img => ({
+      const second = await items.nth(1).locator('img').evaluate(img => ({
         naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,
         srcPath:(()=>{try{return new URL(img.currentSrc).pathname}catch{return ''}})(),
       }));
-      await slider.locator('[data-slider-prev]').click();
-      await page.waitForFunction((media)=>{
-        const slider=[...document.querySelectorAll('[data-home-slider]')].find(s=>s.dataset.sliderMedia===media);
-        return Boolean(slider?.querySelector('[data-home-slide]')?.classList.contains('is-active'));
-      },scenario.media,{timeout:10000});
+      await slider.locator('[data-pse-dot="0"]').click();
+      await page.waitForFunction(() => Boolean(
+        document.querySelector('[data-pse-slider] [data-pse-slide]')?.classList.contains('is-active')
+      ),null,{timeout:10000});
       const check={scenario:scenario.name,count,first,deferred,second,prevWorks:true,origin:base.origin};
       output.push(check);
-      console.log('PSE_HOME00_LIVE_QA='+JSON.stringify(check));
+      console.log('PSE_REAL_HERO_LIVE_QA='+JSON.stringify(check));
     } finally {
       await page.close();
     }
   }
   writeFileSync('artifacts/pse-home00/qa.json',JSON.stringify(output,null,2)+'\n');
-  console.log('PSE_HOME00_DESKTOP_MOBILE_INTERACTION=PASS');
+  console.log('PSE_REAL_HERO_DESKTOP_MOBILE_INTERACTION=PASS');
 } finally {await browser.close();}
