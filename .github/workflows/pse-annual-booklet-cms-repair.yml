@@ -1,0 +1,41 @@
+name: PSE source-verified annual booklet CMS repair (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-annual-booklet-cms-repair.mjs
+      - .github/workflows/pse-annual-booklet-cms-repair.yml
+      - .pse-annual-booklet-repair-trigger
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-annual-booklet-content-single-writer
+  cancel-in-progress: false
+jobs:
+  annual-repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 20
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Audit or repair WordPress booklets; exact commit message required for mutations
+        run: node --check scripts/pse-annual-booklet-cms-repair.mjs && node scripts/pse-annual-booklet-cms-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-booklet-repair-report
+          path: artifacts/pse-annual-booklet-repair/audit.json
+          if-no-files-found: ignore
+          retention-days: 7
