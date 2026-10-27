@@ -63,9 +63,10 @@ def main() -> None:
     expected_sha = os.environ.get("PSE_PHP_SOURCE_SHA", "")
     if not re.fullmatch(r"[0-9a-f]{40}", expected_sha):
         raise RuntimeError("Invalid pinned PHP commit")
-    files_on_disk = {
-        str(p.relative_to(SOURCE)).replace("\\", "/")
-        for p in SOURCE.rglob("*.php")
+    # The tests/ directory is intentionally NOT deployed. Audit only the
+    # plugin entrypoint and executable include graph.
+    files_on_disk = {"esc-visual-builder.php"} | {
+        "includes/" + p.name for p in (SOURCE / "includes").glob("*.php")
     }
     if files_on_disk != set(FILES):
         raise RuntimeError("Visual Builder manifest does not match source tree")
