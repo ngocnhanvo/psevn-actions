@@ -130,6 +130,17 @@ try{
   const path=url.pathname;
   const slug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   const cat=cats[item.group_hint];
+  const isGeneralNews=item.group_hint==="company" &&
+    /^\/tin-tuc-su-kien\/tin-cong-ty\/tin-tong-hop\/\d+-[^/]+\.html$/i.test(path);
+  let generalNewsCategory=null;
+  if(isGeneralNews){
+    const r=await api("/wp-json/wp/v2/categories?slug=tin-tong-hop&_fields=id,slug,parent");
+    if(r.status!==200||r.data?.length!==1||
+      Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!=="tin-tong-hop")
+      throw Error("Tin tong hop category missing or parent mismatched");
+    generalNewsCategory=Number(r.data[0].id);
+  }
+  const articleCategories=generalNewsCategory?[cat,generalNewsCategory]:[cat];
   if(!cat||!slug){
    item.status="quarantined";item.reason="Original Joomla section cannot be mapped to verified WP taxonomy";failed++;continue;
   }
@@ -147,6 +158,17 @@ try{
        !String(old.title?.raw||old.title?.rendered||"").trim() ||
        !String(old.content?.raw||"").trim()){
      item.status="quarantined";item.reason="WP slug occupied by unrelated or empty content";failed++;continue;
+    }
+    if(generalNewsCategory && !old.categories.includes(generalNewsCategory)){
+      const updated=await api("/wp-json/wp/v2/posts/"+old.id,"POST",
+        {categories:[...new Set([...old.categories,generalNewsCategory])]});
+      if(updated.status!==200||!updated.data?.categories?.includes(generalNewsCategory))
+        throw Error("Existing Tin tong hop category update failed");
+      const verify=await api("/wp-json/wp/v2/posts/"+old.id+"?context=edit&_fields=id,slug,status,categories");
+      if(verify.status!==200||verify.data?.slug!==slug||
+        !verify.data.categories?.includes(cat)||
+        !verify.data.categories?.includes(generalNewsCategory))
+        throw Error("Existing Tin tong hop category readback failed");
     }
     item.status="existing";item.wp_id=old.id;existing++;
     console.log("PSE_LEGACY_SKIP_EXISTING=PASS; source_id="+id+"; wp_id="+old.id);
@@ -306,7 +328,7 @@ try{
    const seoDescription=(units.length>158 && space>115?candidate.slice(0,space):candidate).trim();
    if(seoDescription.length<35||seoDescription.length>200)
      throw Error("Cannot derive a grounded SEO description from original article body");
-   const data={title:article.title,slug,categories:[cat],content:html.trim(),
+   const data={title:article.title,slug,categories:articleCategories,content:html.trim(),
      excerpt:seoDescription,pse_seo_description:seoDescription,status:"draft"};
    if(originalDate)data.date=originalDate;
    const created=await api("/wp-json/wp/v2/posts","POST",data);
@@ -318,7 +340,7 @@ try{
    const raw=String(check.data?.content?.raw||"");
    if(check.data?.pse_seo_description!==seoDescription||String(check.data?.excerpt?.raw||"").trim()!==seoDescription)
      throw Error("WordPress Yoast SEO description/excerpt readback did not match");
-   if(check.status!==200||check.data.slug!==slug||!check.data.categories?.includes(cat)||
+   if(check.status!==200||check.data.slug!==slug||!articleCategories.every(id=>check.data.categories?.includes(id))||
       check.data.status!=="draft"||!raw.trim()||
       !String(check.data.title?.raw||"").trim() ||
       article.assets.some(x=>!raw.includes(state.media[x].url)))
