@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: pse-legacy-article-migration-single-writer
+  group: pse-tin-tong-hop-category-repair-single-writer
   cancel-in-progress: false
 jobs:
   category-repair:
