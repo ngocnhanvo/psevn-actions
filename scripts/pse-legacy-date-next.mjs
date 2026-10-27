@@ -7,7 +7,16 @@ const read=async file=>{
  const r=await fetch("https://api.github.com/repos/"+repo+"/contents/"+file+"?ref=main",{headers});
  if(!r.ok)throw Error("Cannot read remote checkpoint "+file+" HTTP "+r.status);
  const x=await r.json();
- return JSON.parse(Buffer.from(x.content.replace(/\s/g,""),"base64").toString("utf8"));
+ let encoded=x.content;
+ if(x.encoding!=="base64"||!encoded){
+   if(!/^[0-9a-f]{40}$/.test(x.sha||""))throw Error("Missing checkpoint blob SHA "+file);
+   const response=await fetch("https://api.github.com/repos/"+repo+"/git/blobs/"+x.sha,{headers});
+   if(!response.ok)throw Error("Cannot load checkpoint git blob HTTP "+response.status);
+   const blob=await response.json();
+   if(blob.encoding!=="base64"||!blob.content)throw Error("Invalid checkpoint blob "+file);
+   encoded=blob.content;
+ }
+ return JSON.parse(Buffer.from(encoded.replace(/\s/g,""),"base64").toString("utf8"));
 };
 const [migration,dates]=await Promise.all([
  read("docs/pse-legacy-migration-state.json"),
