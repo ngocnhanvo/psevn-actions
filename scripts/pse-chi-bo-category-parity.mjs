@@ -104,6 +104,20 @@ try{
     (Array.isArray(wpResult.data)?wpResult.data:[]).map(p=>({id:p.id,slug:p.slug,
       status:p.status,categories:p.categories,title:p.title?.rendered})).slice(0,12)});
  }
+ const legacyCollisionChecks=[];
+ for(const slug of [
+   "chi-tra-co-tuc-dot-1-nam-2015",
+   "nghi-quyet-ve-viec-thuc-hien-tam-ung-chi-tra-co-tuc-dot-12015",
+   "nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015"
+ ]){
+   const result=await api("/wp-json/wp/v2/posts?context=edit&status=any&slug="+encodeURIComponent(slug)+
+     "&_fields=id,slug,status,categories,title,content");
+   legacyCollisionChecks.push({slug,http:result.http,
+     posts:(Array.isArray(result.data)?result.data:[]).map(p=>({
+       id:p.id,status:p.status,categories:p.categories,
+       title:p.title?.raw||p.title?.rendered||"",contentLength:p.content?.raw?.length||0
+     }))});
+ }
  const checkpoint=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
  const legacy=Object.entries(checkpoint.articles).filter(([id,p])=>
   /^https:\/\/(?:www\.)?pse\.vn\/tin-tuc-su-kien\/tin-cong-ty\/hoat-dong-chi-bo-hdqt-bks\/\d+-/i.test(p.source_url)
@@ -115,7 +129,7 @@ try{
   description:document.querySelector("#posts-grid")?.textContent?.replace(/\s+/g," ").slice(-170)||""
  }));
  const report={categories:{child,parent},wordpress:{publishedChild:publishedChild.total,publishedParent:publishedParent.total,draftsParent:draftsParent.total},
-  joomla:{pageCount:pages.length,pages,foundArticleUrls:listed.length,mapped,unlinkedSearch:searched},
+  joomla:{pageCount:pages.length,pages,foundArticleUrls:listed.length,mapped,unlinkedSearch:searched,legacyCollisionChecks},
   checkpoint:{total:legacy.length,rows:legacy},
   astro:{http:live?.status(),...display},readonly:true};
  console.log("PSE_CHI_BO_CATEGORY_PARITY="+JSON.stringify(report));
