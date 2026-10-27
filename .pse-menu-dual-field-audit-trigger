@@ -1,3 +1,4 @@
 PSE G0 read-only authoritative WordPress Menu source verification before expanding ESC Visual Builder G2 target, Page/Post link and structure. 2026-10-27.
 No edit, no WP save, no FTP, no build.
 2026-10-27 PSE native WordPress Menu AJAX production read-only QA: check authenticated fragment rendering, two intercepted/mock saves, no native page navigation or real WordPress writes, keep nested menu open. PHP deployment FTPS pass run 40450045043; NO ASTRO BUILD.
+2026-10-27 Rerun PSE native Menu AJAX READ-ONLY QA: prior attempt verified real fragment AJAX PASS; browser test used hidden header Save button and timed out before mocked save. Use click DOM dispatch to test WordPress events without server writes. Production PHP unchanged.
