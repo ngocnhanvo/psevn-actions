@@ -1,0 +1,122 @@
+name: PSE ESC Builder isolated release candidate source CI (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-esc-builder-release-candidate-ci.yml
+      - .pse-esc-builder-release-candidate-request
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout PSE Actions request only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Resolve pinned release source
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t rows < .pse-esc-builder-release-candidate-request
+          ref="\${rows[0]}"
+          sha="\${rows[1]}"
+          [[ "$ref" =~ ^release/[A-Za-z0-9._/-]+$ ]] || { echo "::error::Invalid release ref"; exit 1; }
+          [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || { echo "::error::Invalid pinned source SHA"; exit 1; }
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "PSE_RELEASE_SOURCE_PIN=$sha"
+      - name: Checkout isolated Astro release candidate (source only)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: \${{ steps.candidate.outputs.sha }}
+          token: \${{ secrets.SOURCE_REPO_PAT }}
+          path: astro
+          persist-credentials: false
+      - name: Assert exact source and safe Footer contract
+        working-directory: astro
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "\${{ steps.candidate.outputs.sha }}"
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const footer=readFileSync('src/astro/components/Layout/Footer.astro','utf8');
+          const preview=readFileSync('src/pages/esc-builder/preview/[pageId].astro','utf8');
+          for(const required of [
+            'class="mt-5 grid grid-cols-3 items-start gap-3"',
+            'class="flex min-w-0 flex-col items-center gap-2 text-center"',
+            'const boCongThuong = valueFor(data_info?.bocongthuong)',
+            '{boCongThuong?.src && (',
+            'id="back-to-top-btn"',
+            'data-esc-vb-footer-asset-row',
+            'data-esc-vb-footer-field'
+          ]) if(!footer.includes(required)) throw Error('Production Footer invariant missing: '+required);
+          for(const required of [
+            'installBuilderHeaderNavLock',
+            'installBuilderEditabilityCues',
+            'installBuilderFooterSelection',
+            'esc-vb-menu-label-saved',
+            'esc-vb-footer-asset-saved'
+          ]) if(!preview.includes(required)) throw Error('Builder preview contract missing: '+required);
+          console.log('PSE_RELEASE_FOOTER_BCT_CERTIFICATIONS_AND_BUILDER_MARKERS=PASS');
+          NODE
+      - name: Checkout PHP source (no upload)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 232e8a6ce03214bb23833365a62cff1fbbbfb81c
+          token: \${{ secrets.SOURCE_REPO_PAT }}
+          path: php
+          persist-credentials: false
+      - name: PHP Visual Builder syntax and source contracts (NO FTP)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in php/wp-content/plugins/esc-visual-builder/includes/*.php; do php -l "$file" >/dev/null; done
+          php php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
+          php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
+          php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-assets-source.test.php
+          echo "PSE_RELEASE_PHP_SOURCE=PASS; NO_FTP=PASS"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Install Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: astro/pnpm-lock.yaml
+      - name: Full Vitest and Astro component parser (NO WEBSITE BUILD)
+        working-directory: astro
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {createRequire} from 'node:module';
+          import {pathToFileURL} from 'node:url';
+          const require=createRequire(import.meta.url);
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
+          for(const file of [
+            'src/pages/esc-builder/preview/[pageId].astro',
+            'src/astro/components/Layout/Footer.astro',
+            'src/astro/components/Menu/Desktop.astro',
+            'src/astro/components/Menu/DesktopBranch.astro',
+            'src/astro/components/Menu/MobileBranch.astro',
+            'src/astro/pages/PublicPage.astro'
+          ]) await compiler.transform(await readFile(file,'utf8'),{filename:file});
+          console.log('PSE_RELEASE_ASTRO_PARSE=PASS');
+          NODE
+          echo "PSE_RELEASE_CANDIDATE_SOURCE=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS; NO_CMS_WRITE=PASS"
