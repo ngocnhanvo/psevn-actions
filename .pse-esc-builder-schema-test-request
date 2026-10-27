@@ -2,3 +2,5 @@ PSE ESC Visual Builder G2 native Mega Menu header text + G3 global Footer ESC Ta
 PHP master 9ca904458f19495ca9b56282be25fcd913f269a7; Astro github d31709f393a8798700aa130015549a29f2126bc1.
 Check exact-source capability/403/409/schema/rollback, WordPress menu metadata images/ALT, Footer row marker, inspector DOM, Astro compiler, Vitest and Tailwind.
 NO WEBSITE BUILD. NO FTP. NO CMS WRITE. Source-only final SHA verification after #40420568496 tested earlier PHP dee8df0.
+
+2026-10-27 PSE master→github sync PR #98 merged; run existing NO BUILD ESC Builder source contracts against Astro github d0b18aa8f8daed02ded0f90dfc59e19a275243dc and PHP master 232e8a6ce03214bb23833365a62cff1fbbbfb81c. Verify merged Footer production layout + G1/G2/G3 Builder markers; no FTP/CMS write/build.
