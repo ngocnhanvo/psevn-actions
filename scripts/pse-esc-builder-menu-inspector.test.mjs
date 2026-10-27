@@ -15,6 +15,7 @@ const origin = 'https://preview.example.test';
 const config = {
   origin, pageId: 10, readUrl: '/wp-json/esc-builder/v1/menu-item',
   saveUrl: '/wp-json/esc-builder/v1/save-menu-item',
+  moveUrl: '/wp-json/esc-builder/v1/move-menu-item',
   referenceUrl: '/wp-json/esc-builder/v1/menu-reference-options',
   nonce: 'test-rest', canEdit: true, managerUrl: '/wp-admin/nav-menus.php'
 };
@@ -34,7 +35,7 @@ const updated = {
   reference_href: '/gioi-thieu-doanh-nghiep', version: 'b'.repeat(64),
   saved: true
 };
-function setup(canEdit = true, responseRead = read, responseSaved = updated) {
+function setup(canEdit = true, responseRead = read, responseSaved = updated, responseMoved = null) {
   const dom = new JSDOM(
     '<div id="esc-vb-layout"><div class="esc-vb-sidebar"></div></div><iframe id="esc-vb-frame"></iframe>',
     { url: 'https://admin.example.test/wp-admin/admin.php', runScripts: 'outside-only' }
@@ -59,6 +60,7 @@ function setup(canEdit = true, responseRead = read, responseSaved = updated) {
       ] })
     };
     if (url === config.saveUrl) return { ok: true, json: async () => responseSaved };
+    if (url === config.moveUrl) return { ok: true, json: async () => responseMoved };
     throw Error('Unexpected WordPress route: ' + url);
   };
   window.eval(js.replace(JSON.stringify(config), JSON.stringify({ ...config, canEdit })));
@@ -178,4 +180,34 @@ function setup(canEdit = true, responseRead = read, responseSaved = updated) {
     'Mega header title change marks iframe refresh needed');
   dom.window.close();
 }
-console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS mega_headers=PASS page_search=PASS parent=PASS invalid_draft=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
+// Moving native sibling order is separate from editing a dirty text draft.
+{
+  const ordered={...read,order_position:2,order_total:3,
+    can_move_up:true,can_move_down:true};
+  const moved={...ordered,order_position:1,can_move_up:false,
+    version:'d'.repeat(64),saved:true,moved:true};
+  const {dom,doc,calls,sent,select}=setup(true,ordered,updated,moved);
+  select();await tick();await tick();
+  const up=doc.getElementById('esc-vb-menu-move-up');
+  const down=doc.getElementById('esc-vb-menu-move-down');
+  const status=doc.querySelector('#esc-vb-menu-editor [role="status"]');
+  assert.equal(up.disabled,false,'middle sibling can move up');
+  assert.equal(down.disabled,false,'middle sibling can move down');
+  assert.match(doc.getElementById('esc-vb-menu-order-label').textContent,/2\/3/);
+  const label=doc.getElementById('esc-vb-menu-label');
+  label.value='Nháp chưa lưu';
+  label.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  up.click();await tick();await tick();
+  const write=calls.find(c=>c.url===config.moveUrl);
+  assert.equal(write?.body.direction,'up','only one adjacent move is requested');
+  assert.equal(write?.body.item_id,103,'move is scoped to selected native item');
+  assert.equal(write?.body.expected_version,ordered.version,'full-menu version is required');
+  assert.equal(label.value,ordered.label,'dirty text draft was discarded only after confirmation');
+  assert.equal(up.disabled,true,'first sibling cannot move further up');
+  assert.equal(down.disabled,false,'moved sibling can move back down');
+  assert.match(status.textContent,/Tải lại bản xem trước/i,
+    'structural move explicitly requires a scoped preview refresh');
+  assert.equal(sent.length,0,'structural move must not masquerade as a label patch');
+  dom.window.close();
+}
+console.log('PSE_ESC_BUILDER_MENU_INSPECTOR_DOM=PASS sibling_order=PASS mega_headers=PASS page_search=PASS parent=PASS invalid_draft=PASS cancel=PASS save=PASS readonly=PASS NO_CMS_WRITE=true');
