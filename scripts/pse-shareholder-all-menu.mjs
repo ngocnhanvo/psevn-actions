@@ -5,10 +5,10 @@
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 const marker=(await readFile('.pse-shareholder-all-menu-request','utf8')).trim().split('\n')[0];
-if(!['MODE=AUDIT','MODE=APPLY'].includes(marker))throw Error('Invalid mode');
+if(!['MODE=AUDIT','MODE=APPLY','MODE=VERIFY'].includes(marker))throw Error('Invalid mode');
 const evt=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
 const message=String(evt.head_commit?.message||'').split('\n')[0];
-const expected=marker==='MODE=AUDIT'?'audit(pse): inspect shareholder all menu route':'cms(pse): link existing shareholder all menu to taxonomy archive';
+const expected=marker==='MODE=AUDIT'?'audit(pse): inspect shareholder all menu route':marker==='MODE=VERIFY'?'test(pse): verify deployed shareholder all menu route':'cms(pse): link existing shareholder all menu to taxonomy archive';
 if(message!==expected)throw Error('Missing exact native CMS change authorization');
 const cfg=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,''));
 const origin=key=>{
@@ -102,6 +102,28 @@ try{
  if(marker==='MODE=AUDIT'){
   console.log('PSE_SHAREHOLDER_ALL_AUDIT=PASS NO_CMS_WRITE=PASS');
   process.exitCode=0;
+ }else if(marker==='MODE=VERIFY'){
+  if(!existing||existing.linkMode!=='custom'||
+     Number(existing.parentID)!==Number(branch.id)||
+     String(existing.href||'').replace(/\\/$/,'')!==href)
+    throw Error('WordPress native "Tất cả" route is missing/mismatched');
+  const pageURL=await page.request.get(href,{timeout:50000,failOnStatusCode:false});
+  if(pageURL.status()!==200)throw Error('Public category archive is HTTP '+pageURL.status());
+  const results=[];
+  for(const width of [1440,768,390]){
+   await page.setViewportSize({width,height:880});
+   const response=await page.goto(site+'/',{waitUntil:'domcontentloaded',timeout:60000});
+   if(response?.status()!==200)throw Error('Public homepage HTTP error width='+width);
+   const links=await page.locator('#main-header a[href]').evaluateAll((nodes,canonical)=>
+    nodes.filter(n=>n.href.replace(/\\/$/,'')===canonical).map(n=>({
+      label:(n.textContent||'').trim().replace(/\\s+/g,' ').slice(0,45),visible:n.getClientRects().length>0
+    })),href);
+   if(!links.some(x=>x.label.toLocaleLowerCase('vi').includes('tất cả')))
+     throw Error('Public Astro Header missing native shareholder all link at width '+width);
+   results.push({width,count:links.length,labelVerified:true});
+  }
+  console.log('PSE_SHAREHOLDER_ALL_DEPLOY=PASS '+JSON.stringify({itemId:existing.id,results,
+     publicRoute:'/'+archiveRoot+'/thong-tin-co-dong',readonly:true}));
  }else{
   // A Menu Manager draft is not a persisted nav_menu_item; the audit above
   // proved there is no existing "Tất cả" under the verified shareholder branch.
