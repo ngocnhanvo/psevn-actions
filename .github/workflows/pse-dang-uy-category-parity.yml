@@ -1,0 +1,29 @@
+name: PSE Dang uy Joomla WordPress Astro category parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pse-dang-uy-category-parity.mjs'
+      - '.github/workflows/pse-dang-uy-category-parity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dang-uy-parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-dang-uy-category-parity.mjs && node scripts/pse-dang-uy-category-parity.mjs
