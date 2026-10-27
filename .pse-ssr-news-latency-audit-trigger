@@ -1,0 +1,5 @@
+2026-10-28 POST-DEPLOY SSR news archive live remeasurement
+Production Astro master: 62a92abc2f2c7b1910a7c72fb8bd161f8b0b4b3e
+WordPress PHP accepted build: 40568963424
+Signed Astro FTP production deploy/smoke PASS: 40569122811
+Read-only follow-up to compare 4 published categories against baseline #40563849404; no WP writes and no build.
