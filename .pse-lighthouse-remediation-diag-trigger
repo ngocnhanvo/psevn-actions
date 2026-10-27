@@ -3,3 +3,5 @@ Inspect DOM of observed Lighthouse failures, no site mutation, 2026-10-27
 Post verified WordPress-controlled deploy run 40549539533 PASS, Lighthouse a11y+SEO check of 9 previously failing menu pages, read-only, 2026-10-28.
 
 Organization CLS deep diagnosis, read only, after confirmed production deployment.
+
+Read-only browser shift attribution for organization page; no full Lighthouse reruns.
