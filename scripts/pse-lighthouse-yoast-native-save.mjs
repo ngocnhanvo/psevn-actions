@@ -46,8 +46,12 @@ try{
  const terms=await get('/wp-json/wp/v2/product_cat?context=edit&per_page=100&_fields=id,slug,name,description,yoast_head_json');
  if(terms.status!==200||!Array.isArray(terms.value))throw Error('Native product categories unavailable');
  const candidates=termIds.map(id=>terms.value.find(t=>t.id===id));
- if(candidates.some(t=>!t||!t.name||!t.slug||String(t.description||'').trim()||
-  String(t.yoast_head_json?.description||'').trim()))
+ if(candidates.some(t=>{
+  if(!t||!t.name||!t.slug||String(t.description||'').trim())return true;
+  const existing=String(t.yoast_head_json?.description||'').trim();
+  const expected='Danh mục '+t.name+' tại PVFCCo-PSE. Xem danh sách sản phẩm và thông tin chi tiết được công bố trên website.';
+  return existing!==''&&existing!==expected;
+ }))
   throw Error('Term identity or original metadata is unexpected; stop all writes');
  const liveTerms=await get('/wp-json/astro/v1/get-product-categories?_esc_preview='+Date.now());
  if(liveTerms.status!==200||!Array.isArray(liveTerms.value))throw Error('Cannot verify current native taxonomy SEO metadata');
