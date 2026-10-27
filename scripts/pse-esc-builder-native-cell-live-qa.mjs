@@ -70,5 +70,36 @@ try {
  await nextDot.evaluate(node=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  const current=await nextDot.getAttribute('aria-current');
  if(current!=='true')throw Error('Banner dot click was intercepted by Visual Builder instead of switching slides');
- console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click=PASS distinct_editors=PASS READ_ONLY=PASS NO_BUILD=PASS');
+ // Production Footer preservation baseline at the three requested widths.
+ // This checks DEPLOYED public content only; it does not certify unpublished
+ // G1/G2/G3 source code or perform a Builder Save.
+ const iframeSrc=await page.locator('#esc-vb-frame').getAttribute('src');
+ if(!iframeSrc)throw Error('Builder iframe source missing');
+ const publicOrigin=new URL(iframeSrc,page.url()).origin;
+ if(publicOrigin===wp.origin)throw Error('Preview origin unexpectedly equals WordPress');
+ for(const width of [1440,768,390]){
+   const publicPage=await browser.newPage({viewport:{width,height:900}});
+   try{
+     await publicPage.goto(publicOrigin+'/',{waitUntil:'domcontentloaded',timeout:60000});
+     const footer=publicPage.locator('footer#footer-contact');
+     await footer.waitFor({state:'visible',timeout:30000});
+     const certificates=footer.locator('[aria-labelledby="footer-cert-title"] img');
+     const certCount=await certificates.count();
+     if(certCount!==3)throw Error('Footer certificate count '+certCount+' at '+width+'px (expected 3)');
+     const bct=footer.locator('img[alt*="Bộ Công Thương"]');
+     if(await bct.count()<1)throw Error('Footer Bộ Công Thương badge missing at '+width+'px');
+     for(const image of [...await certificates.all(),await bct.first()]){
+       const src=await image.getAttribute('src');
+       if(!src)throw Error('Footer image source empty at '+width+'px');
+     }
+     const overflow=await publicPage.evaluate(()=>({
+       page:document.documentElement.scrollWidth,
+       viewport:window.innerWidth
+     }));
+     if(overflow.page>overflow.viewport+4)
+       throw Error('Public page horizontal overflow '+overflow.page+'/'+overflow.viewport+' at '+width+'px');
+     console.log('PSE_FOOTER_PUBLIC_BASELINE='+width+'px PASS certificates=3 bct=1 no_overflow=true');
+   }finally{await publicPage.close();}
+ }
+ console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click=PASS distinct_editors=PASS PUBLIC_FOOTER_1440_768_390=PASS READ_ONLY=PASS NO_BUILD=PASS');
 } finally { await browser.close(); }
