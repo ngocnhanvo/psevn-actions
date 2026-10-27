@@ -1,0 +1,36 @@
+name: PSE annual reports source and public archive diagnostic (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-annual-source-audit.mjs
+      - .github/workflows/pse-annual-source-audit.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-annual-reports-readonly-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read legacy annual pages and public Astro archive; no CMS mutation
+        run: node --check scripts/pse-annual-source-audit.mjs && node scripts/pse-annual-source-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-source-audit
+          path: artifacts/pse-annual-source-audit/report.json
+          if-no-files-found: ignore
+          retention-days: 7
