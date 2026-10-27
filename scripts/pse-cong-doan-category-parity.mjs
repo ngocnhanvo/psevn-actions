@@ -96,7 +96,7 @@ try{
  const checkpoint=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
  const legacy=Object.entries(checkpoint.articles).filter(([id,p])=>
   /^https:\/\/(?:www\.)?pse\.vn\/tin-tuc-su-kien\/tin-cong-ty\/hoat-dong-cong-doan-doan-tn-nu-cong\/\d+-/i.test(p.source_url)
- ).map(([id,p])=>({sourceId:id,wpId:p.wp_id||null,status:p.status,sourceUrl:p.source_url}));
+ ).map(([id,p])=>({sourceId:id,wpId:p.wp_id||null,status:p.status,reason:p.reason||null,sourceUrl:p.source_url}));
  const site=await browser.newPage();
  const live=await site.goto("https://pse.webnvn.com/tin-tuc-su-kien/hoat-dong-cong-doan-doan-tn-nu-cong",{waitUntil:"domcontentloaded",timeout:60000});
  const display=await site.evaluate(()=>({
@@ -119,6 +119,24 @@ try{
    unmatchedSource:mapped.filter(r=>!r.childPublished).map(r=>r.sourceId),
    unlinked:pages.flatMap(p=>p.blocks.filter(b=>b.tag==="DIV"&&b.directLinks.length===0).map(x=>x.heading))
  }));
+ const publishedIds=new Set(publishedChild.rows.map(x=>x.id));
+ const unresolved=legacy.filter(x=>!x.wpId||!publishedIds.has(Number(x.wpId)));
+ const blockedIds=unresolved.map(x=>x.sourceId).sort((a,b)=>Number(a)-Number(b));
+ const linkedMissing=mapped.filter(x=>!x.childPublished).map(x=>String(x.sourceId)).sort();
+ const unlinked=pages.flatMap(p=>p.blocks.filter(b=>b.tag==="DIV"&&b.directLinks.length===0).map(b=>b.heading));
+ if(pages.length!==7||originalCards!==39||legacy.length!==39||
+    mapped.length!==34||unlinked.length!==5||
+    blockedIds.join(",")!=="230,321" ||
+    unresolved.some(x=>x.status!=="quarantined"||x.reason!=="Original media HTTP 404") ||
+    linkedMissing.join(",")!=="230,321" ||
+    publishedChild.total!==37||live?.status()!==200||
+    display.count!==12||totalDisplayed!==37)
+  throw Error("PSE Cong doan Joomla-to-WordPress/Astro parity partial mismatch: "+
+   JSON.stringify({sourcePages:pages.length,sourceCards:originalCards,manifest:legacy.length,
+    linked:mapped.length,unlinked:unlinked.length,
+    unresolved,linkedMissing,wp:publishedChild.total,astroTotal:totalDisplayed,astroCards:display.count}));
+ console.log("PSE_CONG_DOAN_DATA_PARITY=PARTIAL_PASS; original=39; wordpress=37; astro=37; "+
+  "blocked_original_image_404=230,321; no_build=true");
  console.log("PSE_CONG_DOAN_PARITY_READ_ONLY=PASS; pages="+pages.length+
   "; source_article_urls="+listed.length+"; child_published="+publishedChild.total+
   "; astro_cards="+display.count);
