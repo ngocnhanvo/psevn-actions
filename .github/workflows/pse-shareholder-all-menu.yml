@@ -1,0 +1,35 @@
+name: PSE bind existing shareholder View all to native News archive
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-shareholder-all-menu-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-native-menu-items
+  cancel-in-progress: false
+jobs:
+  native-shareholder-menu:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify WordPress Header/vi category, item identity and native fields before save
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-shareholder-all-menu.mjs
+          node scripts/pse-shareholder-all-menu.mjs
+          echo 'PSE_SHAREHOLDER_NATIVE_MENU_JOB=PASS NO_ASTRO_BUILD=PASS'
