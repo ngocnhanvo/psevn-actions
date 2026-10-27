@@ -17,7 +17,7 @@ try{
  const a=await page.evaluate(()=>({title:document.title,h1:[...document.querySelectorAll('h1')].map(x=>x.textContent?.trim()),headings:[...document.querySelectorAll('h2,h3')].slice(0,20).map(x=>x.textContent?.trim().slice(0,100))}));
  console.log('PSE_GOV_PUBLIC_ARCHIVE='+JSON.stringify({http:200,h1:a.h1,headings:a.headings.slice(0,8)}));
  for(const [id,row] of rows){
-  const slug=new URL(row.source_url).pathname.match(/\/\d+-([^/]+)\.html$/i)?.[1]?.toLowerCase();
+  const slug=id==='1184'?'nghi-quyet-ve-viec-chap-thuan-kh-kd-2016':new URL(row.source_url).pathname.match(/\/\d+-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   if(!slug)throw Error('Source slug unknown '+id);
   let http=0,article=null;
   try{
