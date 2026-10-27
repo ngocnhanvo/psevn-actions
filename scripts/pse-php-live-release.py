@@ -43,6 +43,7 @@ FILES = (
     "wp-content/plugins/esc-visual-builder/includes/text-editor.php",
     "wp-content/plugins/esc-visual-builder/includes/text-editor-ui.php",
     "wp-content/plugins/esc-visual-builder/includes/image-editor.php",
+    "wp-content/themes/vibe-code-theme/inc/tools/menu-import.php",
     "wp-content/themes/vibe-code-theme/inc/tools/menu.php",
 )
 raw = os.environ.get("FTP_SERVER", "").strip()
