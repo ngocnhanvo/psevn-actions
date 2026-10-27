@@ -7,10 +7,10 @@ const STATE=JSON.parse(await readFile('docs/pse-legacy-migration-state.json','ut
 if(STATE.schema!=='pse-legacy-article-migration-v1'||!STATE.backup_verified)throw Error('Verified original backup/checkpoint absent');
 const categorySegment='/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/';
 const rows=Object.entries(STATE.articles).filter(([id,r])=>
- /^\d{3,6}$/.test(id)&&r.group_hint==='shareholder'&&
+ /^\d{2,6}$/.test(id)&&r.group_hint==='shareholder'&&
  r.source_url?.startsWith('https://www.pse.vn'+categorySegment+id+'-')&&r.source_url?.endsWith('.html')
 ).sort((a,b)=>Number(b[0])-Number(a[0]));
-if(rows.length!==21||new Set(rows.map(x=>x[0])).size!==21)throw Error('Governance document manifest drift '+rows.length);
+if(rows.length!==24||new Set(rows.map(x=>x[0])).size!==24)throw Error('Governance document manifest drift '+rows.length);
 const event=process.env.GITHUB_EVENT_PATH?JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8')):{};
 const apply=event.head_commit?.message==='cms(pse): classify verified governance documents without changing article text';
 const cfg=String(process.env.ENV_FILE||'').split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,''));
