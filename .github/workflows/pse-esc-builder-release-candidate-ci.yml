@@ -24,8 +24,8 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t rows < .pse-esc-builder-release-candidate-request
-          ref="\${rows[0]}"
-          sha="\${rows[1]}"
+          ref="${rows[0]}"
+          sha="${rows[1]}"
           [[ "$ref" =~ ^release/[A-Za-z0-9._/-]+$ ]] || { echo "::error::Invalid release ref"; exit 1; }
           [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || { echo "::error::Invalid pinned source SHA"; exit 1; }
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
@@ -35,8 +35,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-astro
-          ref: \${{ steps.candidate.outputs.sha }}
-          token: \${{ secrets.SOURCE_REPO_PAT }}
+          ref: ${{ steps.candidate.outputs.sha }}
+          token: ${{ secrets.SOURCE_REPO_PAT }}
           path: astro
           persist-credentials: false
       - name: Assert exact source and safe Footer contract
@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "\${{ steps.candidate.outputs.sha }}"
+          test "$(git rev-parse HEAD)" = "${{ steps.candidate.outputs.sha }}"
           node --input-type=module <<'NODE'
           import {readFileSync} from 'node:fs';
           const footer=readFileSync('src/astro/components/Layout/Footer.astro','utf8');
@@ -72,7 +72,7 @@ jobs:
         with:
           repository: ngocnhanvo/psevn-php
           ref: 232e8a6ce03214bb23833365a62cff1fbbbfb81c
-          token: \${{ secrets.SOURCE_REPO_PAT }}
+          token: ${{ secrets.SOURCE_REPO_PAT }}
           path: php
           persist-credentials: false
       - name: PHP Visual Builder syntax and source contracts (NO FTP)
