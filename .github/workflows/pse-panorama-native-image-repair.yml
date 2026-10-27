@@ -1,0 +1,40 @@
+name: PSE panorama native ESC Insert Image repair (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-panorama-native-image-repair.mjs
+      - .github/workflows/pse-panorama-native-image-repair.yml
+      - .pse-panorama-native-image-repair-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-panorama-native-image-single-writer
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 15
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read-only check unless exact authorized change commit
+        run: node --check scripts/pse-panorama-native-image-repair.mjs && node scripts/pse-panorama-native-image-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-panorama-native-insert-image
+          path: artifacts/pse-panorama-native-repair/result.json
+          if-no-files-found: ignore
+          retention-days: 7
