@@ -47,6 +47,7 @@ try{
  await p.evaluate(id=>window.escPseMenuEditorRefresh({itemId:id}),existingId);
  console.log("PSE_NATIVE_MENU_AJAX_FRAGMENT_READONLY=PASS");
  let ajaxSave=0,legacyPost=0,navigations=0;
+ const saveSizes=[];
  const beforeUrl=p.url();
  const beforeItems=await p.locator("#menu-to-edit > li.menu-item").count();
  p.on("framenavigated",frame=>{if(frame===p.mainFrame())navigations++});
@@ -58,6 +59,7 @@ try{
   const req=route.request();
   if(req.method()==="POST"&&(req.postData()||"").includes("esc_pse_menu_async_save")){
    ajaxSave++;
+   saveSizes.push((req.postData()||'').length);
    await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({success:true,data:{message:"AJAX save mock",count:beforeItems}})});
   }else await route.continue();
  });
@@ -69,9 +71,13 @@ try{
  const openBefore=await firstRoot.count()?await firstRoot.evaluate(el=>el.classList.contains("menu-item-edit-active")):null;
  await p.locator("#save_menu_header").click();
  await p.locator("#esc-pse-menu-ajax-status.notice-success").waitFor({state:"visible",timeout:15000});
+ await p.waitForFunction(()=>!document.querySelector("#update-nav-menu")?.classList.contains("esc-menu-ajax-saving"));
+ await p.locator("#save_menu_header").click();
+ await p.waitForFunction(()=>!document.querySelector("#update-nav-menu")?.classList.contains("esc-menu-ajax-saving"));
+ if(ajaxSave!==2||saveSizes.length!==2||saveSizes[1]>saveSizes[0]*1.25){throw Error("Consecutive AJAX saves must avoid nested nav-menu-data: "+JSON.stringify({ajaxSave,saveSizes}))}
  const afterItems=await p.locator("#menu-to-edit > li.menu-item").count();
  const openAfter=await firstRoot.count()?await firstRoot.evaluate(el=>el.classList.contains("menu-item-edit-active")):null;
- if(ajaxSave!==1||legacyPost!==0||navigations!==0||p.url()!==beforeUrl||afterItems!==beforeItems||openAfter!==openBefore){
+ if(ajaxSave!==2||legacyPost!==0||navigations!==0||p.url()!==beforeUrl||afterItems!==beforeItems||openAfter!==openBefore){
   throw Error("AJAX save must update without navigation or collapsing the active editor: "+JSON.stringify({ajaxSave,legacyPost,navigations,beforeItems,afterItems,openBefore,openAfter}));
  }
  console.log("PSE_NATIVE_MENU_AJAX_READONLY_QA=PASS "+JSON.stringify({ajaxSave,legacyPost,navigations,beforeItems,afterItems,openStatePreserved:true,wordpressWrites:0}));
