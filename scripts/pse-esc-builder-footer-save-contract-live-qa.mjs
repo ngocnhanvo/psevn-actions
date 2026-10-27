@@ -71,7 +71,18 @@ try{
   });
   await value.fill(original+' ');
   await page.locator('#esc-vb-footer-assets-editor button.button-primary').click();
-  await page.waitForFunction(()=>document.querySelector('#esc-vb-footer-assets-editor [role="status"]')?.textContent?.includes('Đã lưu'),null,{timeout:25000});
+  try {
+    await page.waitForFunction(()=>document.querySelector('#esc-vb-footer-assets-editor [role="status"]')?.textContent?.includes('Đã lưu'),null,{timeout:15000});
+  } catch(error) {
+    // Never print CMS row values, auth tokens, serialized request or response.
+    const diagnostic=await page.evaluate(()=>({
+      label:document.querySelector('#esc-vb-footer-assets-editor [role="status"]')?.textContent?.trim().slice(0,180),
+      buttonDisabled:document.querySelector('#esc-vb-footer-assets-editor button.button-primary')?.disabled,
+      skeletonBusy:document.querySelector('#esc-vb-selection-skeleton')?.getAttribute('aria-busy')
+    }));
+    console.log('PSE_G4_FOOTER_NOOP_DIAG='+JSON.stringify({http:saveResponse?.status??null,called:!!saveCall,ack:saveResponse?.json?.saved===true,...diagnostic}));
+    throw error;
+  }
   if(!saveCall||!saveResponse||saveResponse.status!==200||saveResponse.json.saved!==true)
     throw Error('WordPress no-op Footer Save not acknowledged');
   if(saveResponse.json.label!==original)throw Error('No-op Save changed Footer label');
