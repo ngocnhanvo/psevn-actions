@@ -43,6 +43,17 @@ try{
      })};
    });
   }catch(e){detail={error:String(e).slice(0,180)};}
+  if(id==="1092" && http===200){
+   const target=new URL("https://www.pse.vn/images/web/news/qhcd/ThongTinCongBo/BCTN2014");
+   // Only an exactly source-observed, same-origin annual-report destination.
+   if(target.hostname!=="www.pse.vn"||target.pathname!=="/images/web/news/qhcd/ThongTinCongBo/BCTN2014")throw Error("Untrusted 2014 destination");
+   try{
+    const head=await page.request.head(target.href,{timeout:25000,failOnStatusCode:false});
+    detail.originalDocumentLink={http:head.status(),finalHost:new URL(head.url()).hostname,
+      mime:String(head.headers()["content-type"]||"").slice(0,80),
+      length:String(head.headers()["content-length"]||"").slice(0,20)};
+   }catch(e){detail.originalDocumentLink={error:String(e).slice(0,140)}}
+  }
   report.push({id,http,status:state.articles[id]?.status,reason:state.articles[id]?.reason,...detail});
   console.log("PSE_ANNUAL_READONLY_SOURCE="+JSON.stringify(report.at(-1)));
  }
