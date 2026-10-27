@@ -40,7 +40,9 @@ try {
       const images = await page.locator('#posts-grid .grid > div .post-card-img').evaluateAll(nodes =>
         nodes.map(el => ({src:el.getAttribute('src') || '',alt:el.getAttribute('alt') || ''})));
       if (!posts.length || !images.length) throw Error('News archive has no cards: '+slug);
-      if (images.some(img => img.src.includes(new URL(wp).hostname))) throw Error('Backend hostname exposed in image src');
+      const backendImages = images.map((img, index) => ({index, src:img.src})).filter(img => img.src.includes(new URL(wp).hostname));
+      if (backendImages.length) console.log('PSE_NEWS_THUMBNAIL_BACKEND_IMAGES='+JSON.stringify({slug, backendImages:backendImages.slice(0,5)}));
+      if (backendImages.length) throw Error('Backend hostname exposed in image src');
       let eligible = 0;
       let recovered = 0;
       for (const [i, post] of posts.entries()) {
