@@ -1,0 +1,44 @@
+name: PSE source-verified Tin tong hop category repair (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pse-tin-tong-hop-source-category-repair.yml'
+      - 'scripts/pse-tin-tong-hop-source-category-repair.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  category-repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install pinned browser client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Apply exact-source category repair
+        run: |
+          node --check scripts/pse-tin-tong-hop-source-category-repair.mjs
+          node scripts/pse-tin-tong-hop-source-category-repair.mjs
+      - name: Save exact rollback and skipped-post report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-tin-tong-hop-category-rollback
+          path: docs/reports/pse-tin-tong-hop-category-rollback.json
+          if-no-files-found: ignore
+          retention-days: 7
