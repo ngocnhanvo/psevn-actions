@@ -50,7 +50,7 @@ try{
  await page.waitForTimeout(2000);
  const out=await page.evaluate(()=>({shifts:window.pseShiftSources,
   images:[...document.querySelectorAll('main img')].slice(0,20).map(img=>({
-   path:new URL(img.src).pathname,width:img.width,height:img.height,
+   path:(()=>{try{return new URL(img.currentSrc||img.getAttribute('src')||'',location.href).pathname}catch{return '[unavailable]'}})(),width:img.width,height:img.height,
    naturalWidth:img.naturalWidth,attrWidth:img.getAttribute('width'),
    attrHeight:img.getAttribute('height')}))}));
  writeFileSync('artifacts/pse-org-cls/dom.json',JSON.stringify(out,null,2)+'\n');
