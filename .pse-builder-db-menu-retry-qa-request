@@ -1,0 +1,1 @@
+After PHP FTPS Actions #40443416813 PASS, SHA 5621d9fc; inject single synthetic WordPress database 503 only in Playwright, then verify manual retry recovers. READ ONLY; no CMS writes, no build.
