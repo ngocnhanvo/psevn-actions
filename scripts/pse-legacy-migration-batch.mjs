@@ -49,6 +49,23 @@ const mayRecoverGovernancePdf=(id,v)=>Object.hasOwn(governancePdfBytes,id)&&isGo
  v.reason==="Original media size unsafe; bytes="+governancePdfBytes[id]+"; ext=pdf"&&
  !v.governance_large_pdf_attempted;
 const mayTagAnnual=(id,v)=>isAnnual(id,v)&&Number.isSafeInteger(v.wp_id)&&!v.annual_category_verified&&["existing","imported","draft_needs_date"].includes(v.status);
+// Three exact two-digit Joomla governance source IDs were visited but excluded
+// by the old 3+ digit crawler. Read-only proof: PSE governance run 40524872807.
+// Seed only the source URLs already present in 'seen'; never synthesize documents.
+const verifiedGovernanceTwoDigitSources=Object.freeze({
+ "90":"https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/90-quy-che-quan-tri-cong-ty-14-01-2016.html",
+ "91":"https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/91-quy-trinh-cong-bo-thong-tin.html",
+ "92":"https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/92-dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo.html"
+});
+for(const [id,original] of Object.entries(verifiedGovernanceTwoDigitSources)){
+ if(!state.seen?.includes(original))throw Error("Two-digit governance source absent from original crawler visit "+id);
+ if(state.articles[id]){
+  if(state.articles[id].source_url!==original||state.articles[id].group_hint!=="shareholder")throw Error("Two-digit governance checkpoint identity drift "+id);
+ }else{
+  state.articles[id]={source_url:original,group_hint:"shareholder",status:"pending",attempts:0};
+  console.log("PSE_GOV_TWO_DIGIT_SEEDED=PASS; source_id="+id+"; exact_source_verified=true");
+ }
+}
 const candidates=Object.keys(state.articles).filter(id=>
  mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) ||
  mayRecoverImage(id,state.articles[id]) ||
