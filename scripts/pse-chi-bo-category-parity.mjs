@@ -70,9 +70,19 @@ try{
    const text=root.textContent||"";
    const pager=text.match(/Page\s+\d+\s+of\s+\d+/i)?.[0]||"";
    const headings=[...root.querySelectorAll("h1,h2,h3")].map(el=>el.textContent.trim()).filter(Boolean).slice(0,15);
-   return {article,pages,pager,headings,allAnchors:links.length};
+   const blocks=[...root.querySelectorAll("h2,h3")].slice(0,12).map(h=>{
+    const el=h.closest("article,.leading-0,.leading,.item,.items-row,.item-page,[itemprop='blogPost']");
+    const time=el?.querySelector("time,[itemprop='datePublished'],.published,.createdate");
+    return {heading:h.textContent.trim().slice(0,180),tag:el?.tagName||"",id:el?.id||"",
+      className:String(el?.className||"").slice(0,120),
+      htmlStart:(el?.outerHTML||h.parentElement?.outerHTML||"").slice(0,450),
+      date:time?.getAttribute("datetime")||time?.textContent.trim().slice(0,90)||"",
+      fullTextLength:el?.textContent?.length||0,
+      directLinks:[...el?.querySelectorAll("a[href]")||[]].map(a=>a.href).slice(0,6)};
+   });
+   return {article,pages,pager,headings,blocks,allAnchors:links.length};
   });
-  pages.push({url,pager:extraction.pager,links:extraction.article,heads:extraction.headings,allAnchors:extraction.allAnchors,paginationLinks:extraction.pages});
+  pages.push({url,pager:extraction.pager,links:extraction.article,heads:extraction.headings,blocks:extraction.blocks,allAnchors:extraction.allAnchors,paginationLinks:extraction.pages});
   for(const u of extraction.pages)if(!visited.has(u)&&!queue.includes(u))queue.push(u);
  }
  const listed=[...new Set(pages.flatMap(p=>p.links))];
@@ -83,6 +93,17 @@ try{
   return{sourceId:Number(match[1]),slug:match[2],url,wp:wp.map(p=>({id:p.id,status:p.status,categories:p.categories})),
     childPublished:wp.some(p=>p.status==="publish"&&p.categories.includes(child.id))};
  }).filter(Boolean);
+ // Check the three full-text Joomla items which have no article-detail URL.
+ const unlinkedSourceTitles=pages[0]?.blocks.slice(0,3).map(x=>x.heading)||[];
+ const searched=[];
+ for(const title of unlinkedSourceTitles){
+  const keyword=title.split(/\s+/).slice(0,9).join(" ");
+  const wpResult=await api("/wp-json/wp/v2/posts?context=edit&status=any&search="+
+    encodeURIComponent(keyword)+"&per_page=25&_fields=id,slug,title,status,categories");
+  searched.push({title,keyword,http:wpResult.http,results:
+    (Array.isArray(wpResult.data)?wpResult.data:[]).map(p=>({id:p.id,slug:p.slug,
+      status:p.status,categories:p.categories,title:p.title?.rendered})).slice(0,12)});
+ }
  const checkpoint=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
  const legacy=Object.entries(checkpoint.articles).filter(([id,p])=>
   /^https:\/\/(?:www\.)?pse\.vn\/tin-tuc-su-kien\/tin-cong-ty\/hoat-dong-chi-bo-hdqt-bks\/\d+-/i.test(p.source_url)
@@ -94,7 +115,7 @@ try{
   description:document.querySelector("#posts-grid")?.textContent?.replace(/\s+/g," ").slice(-170)||""
  }));
  const report={categories:{child,parent},wordpress:{publishedChild:publishedChild.total,publishedParent:publishedParent.total,draftsParent:draftsParent.total},
-  joomla:{pageCount:pages.length,pages,foundArticleUrls:listed.length,mapped},
+  joomla:{pageCount:pages.length,pages,foundArticleUrls:listed.length,mapped,unlinkedSearch:searched},
   checkpoint:{total:legacy.length,rows:legacy},
   astro:{http:live?.status(),...display},readonly:true};
  console.log("PSE_CHI_BO_CATEGORY_PARITY="+JSON.stringify(report));
