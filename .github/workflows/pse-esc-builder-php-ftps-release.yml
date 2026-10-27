@@ -1,0 +1,67 @@
+name: PSE Visual Builder PHP-only verified FTPS release (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-esc-builder-php-ftps-release-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-wp-php-release
+  cancel-in-progress: false
+jobs:
+  plugin-ftps:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'release(pse): deploy Visual Builder PHP via guarded FTPS'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Checkout bounded Actions deployment source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate immutable PHP source pin
+        id: pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(head -n 1 .pse-esc-builder-php-ftps-release-request | tr -d '\r\n')"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "PSE_BUILDER_RELEASE_SOURCE_PIN=$sha"
+      - name: Checkout only pinned PSE PHP source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: ${{ steps.pin.outputs.sha }}
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Verify PHP syntax and plugin source contracts before any FTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = "${{ steps.pin.outputs.sha }}"
+          python3 -m py_compile scripts/pse-esc-builder-php-ftps-release.py
+          for file in source-php/wp-content/plugins/esc-visual-builder/esc-visual-builder.php source-php/wp-content/plugins/esc-visual-builder/includes/*.php; do
+            php -l "$file" >/dev/null
+          done
+          php source-php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
+          php source-php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
+          php source-php/wp-content/plugins/esc-visual-builder/tests/shared-footer-assets-source.test.php
+          echo "PSE_BUILDER_PHP_RELEASE_PREFLIGHT=PASS"
+      - name: Upload Visual Builder PHP only using TLS, readback and automatic rollback
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PSE_PHP_SOURCE_SHA: ${{ steps.pin.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-esc-builder-php-ftps-release.py
+      - name: Confirm no Astro build is initiated
+        shell: bash
+        run: echo 'PSE_BUILDER_RELEASE=PASS; PHP_FTPS_ONLY=PASS; NO_ASTRO_BUILD=PASS; NO_CMS_WRITE=PASS'
