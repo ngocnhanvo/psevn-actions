@@ -2279,6 +2279,7 @@
       "status": "quarantined"
     },
     "999": {
+      "annual_category_verified": true,
       "attempts": 2,
       "attribution_cleaned": true,
       "date_precision": "day",
@@ -2289,8 +2290,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/999-bao-cao-thuong-nien-2009.html",
       "status": "imported",
       "verified_date": "2013-12-11T00:00:00",
-      "wp_id": 78943,
-      "annual_category_verified": true
+      "wp_id": 78943
     },
     "1000": {
       "attempts": 1,
@@ -2740,7 +2740,7 @@
       "wp_id": 78017
     },
     "1041": {
-      "attempts": 1,
+      "attempts": 2,
       "attribution_cleaned": true,
       "attribution_error": null,
       "group_hint": "shareholder",
@@ -2749,21 +2749,24 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1041-bao-cao-thuong-nien-2011.html",
       "status": "draft_needs_date",
       "verified_date": null,
-      "wp_id": 78153
+      "wp_id": 78153,
+      "annual_category_verified": true
     },
     "1042": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=49; ext=gif",
+      "reason": "Annual corrupt GIF URL count changed",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1042-bao-cao-thuong-nien-2012.html",
-      "status": "quarantined"
+      "status": "quarantined",
+      "annual_gif_recovery_attempted": true
     },
     "1043": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=49; ext=gif",
+      "reason": "Annual corrupt GIF URL count changed",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1043-bao-cao-thuong-nien-2013.html",
-      "status": "quarantined"
+      "status": "quarantined",
+      "annual_gif_recovery_attempted": true
     },
     "1044": {
       "attempts": 3,
@@ -4482,12 +4485,12 @@
       "wp_id": 79421
     },
     "1188": {
+      "annual_gif_recovery_attempted": true,
       "attempts": 4,
       "group_hint": "shareholder",
       "reason": "Annual corrupt GIF URL count changed",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1188-bao-cao-thuong-nien-2015.html",
-      "status": "quarantined",
-      "annual_gif_recovery_attempted": true
+      "status": "quarantined"
     },
     "1189": {
       "attempts": 3,
@@ -5387,11 +5390,12 @@
       "wp_id": 79584
     },
     "1259": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=49; ext=gif",
+      "reason": "Annual corrupt GIF URL count changed",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1259-bao-cao-thuong-nien-2016.html",
-      "status": "quarantined"
+      "status": "quarantined",
+      "annual_gif_recovery_attempted": true
     },
     "1260": {
       "attempts": 1,
@@ -5973,7 +5977,7 @@
       "wp_id": 78147
     },
     "1307": {
-      "attempts": 3,
+      "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
@@ -5985,7 +5989,8 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1307-bao-cao-thuong-nien-nam-2017.html",
       "status": "imported",
       "verified_date": "2018-03-22T00:00:00",
-      "wp_id": 79259
+      "wp_id": 79259,
+      "annual_category_verified": true
     },
     "1308": {
       "attempts": 1,
@@ -6524,7 +6529,7 @@
       "wp_id": 78916
     },
     "1353": {
-      "attempts": 3,
+      "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
@@ -6536,7 +6541,8 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1353-20190320-cv18-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2018.html",
       "status": "imported",
       "verified_date": "2019-03-21T00:00:00",
-      "wp_id": 79227
+      "wp_id": 79227,
+      "annual_category_verified": true
     },
     "1354": {
       "attempts": 1,
@@ -6925,7 +6931,7 @@
       "wp_id": 77561
     },
     "1386": {
-      "attempts": 3,
+      "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
@@ -6937,7 +6943,8 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1386-20200327-cv18-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2019.html",
       "status": "imported",
       "verified_date": "2020-03-27T00:00:00",
-      "wp_id": 79215
+      "wp_id": 79215,
+      "annual_category_verified": true
     },
     "1387": {
       "attempts": 1,
@@ -7243,6 +7250,7 @@
       "wp_id": 77884
     },
     "1412": {
+      "annual_category_verified": true,
       "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
@@ -7255,8 +7263,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1412-20210331-cv-19-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2020.html",
       "status": "imported",
       "verified_date": "2021-04-01T00:00:00",
-      "wp_id": 79197,
-      "annual_category_verified": true
+      "wp_id": 79197
     },
     "1413": {
       "attempts": 1,
@@ -7892,6 +7899,7 @@
       "wp_id": 79096
     },
     "1511": {
+      "annual_category_verified": true,
       "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
@@ -7904,8 +7912,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1511-20220330-cv-24-dnb-hdqt-cbtt-bao-cao-thuong-nien-nam-2021.html",
       "status": "imported",
       "verified_date": "2022-03-30T00:00:00",
-      "wp_id": 79093,
-      "annual_category_verified": true
+      "wp_id": 79093
     },
     "1512": {
       "attempts": 1,
@@ -8298,6 +8305,7 @@
       "wp_id": 79023
     },
     "1546": {
+      "annual_category_verified": true,
       "attempts": 2,
       "attribution_cleaned": true,
       "attribution_error": null,
@@ -8309,8 +8317,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1546-20230317-cbtt-bao-cao-thuong-nien-2022.html",
       "status": "draft_needs_date",
       "verified_date": null,
-      "wp_id": 77142,
-      "annual_category_verified": true
+      "wp_id": 77142
     },
     "1547": {
       "attempts": 3,
@@ -8681,6 +8688,7 @@
       "wp_id": 77519
     },
     "1578": {
+      "annual_category_verified": true,
       "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
@@ -8693,8 +8701,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1578-20240322-cbtt-bao-cao-thuong-nien-2023.html",
       "status": "imported",
       "verified_date": "2024-03-22T00:00:00",
-      "wp_id": 78977,
-      "annual_category_verified": true
+      "wp_id": 78977
     },
     "1579": {
       "attempts": 1,
@@ -9186,6 +9193,7 @@
       "wp_id": 77398
     },
     "1625": {
+      "annual_category_verified": true,
       "attempts": 4,
       "attribution_cleaned": true,
       "date_precision": "day",
@@ -9198,8 +9206,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1625-20250331-cbtt-bao-cao-thuong-nien-2024.html",
       "status": "imported",
       "verified_date": "2025-04-01T00:00:00",
-      "wp_id": 78846,
-      "annual_category_verified": true
+      "wp_id": 78846
     },
     "1626": {
       "attempts": 3,
@@ -9636,13 +9643,13 @@
       "status": "quarantined"
     },
     "1667": {
-      "attempts": 1,
+      "annual_pdf_2025_attempted": true,
+      "attempts": 2,
       "group_hint": "shareholder",
       "reason": "Original media size unsafe; bytes=33341195; ext=pdf",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1667-20260402-cbtt-bao-cao-thuong-nien-nam-2025.html",
-      "status": "pending",
-      "annual_pdf_2025_attempted": true
+      "status": "pending"
     },
     "1668": {
       "attempts": 1,
@@ -22794,7 +22801,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 219,
+  "runs": 220,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
