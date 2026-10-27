@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   audit:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message != 'audit(pse): diagnose organization CLS without touching layout'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
@@ -32,4 +32,27 @@ jobs:
           name: pse-lighthouse-dom-shard-${{ matrix.shard }}
           path: artifacts/pse-lighthouse-dom/
           if-no-files-found: ignore
+          retention-days: 7
+
+  organization-cls:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message == 'audit(pse): diagnose organization CLS without touching layout'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0 lighthouse@13.0.1
+      - run: node --check scripts/pse-lighthouse-organization-cls.mjs && node scripts/pse-lighthouse-organization-cls.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-organization-cls-readonly
+          path: artifacts/pse-organization-cls/
+          if-no-files-found: warn
           retention-days: 7
