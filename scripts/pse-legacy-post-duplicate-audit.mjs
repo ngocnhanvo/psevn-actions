@@ -122,6 +122,13 @@ try{
    aliasesFromDifferentJoomlaIds:report.canonicalSourceAliases.length,
    aliasesWithDifferentSlugs:report.canonicalSourceAliases.filter(x=>!x.slugMatch).length,
    missingMappedWordPress:report.missingMappedWordPress.length,readonly:true}));
+ for(const group of report.exactContentGroups)
+  console.log("PSE_DUPLICATE_EXACT_CONTENT="+JSON.stringify({hash:group.key,posts:group.posts}));
+ for(const group of report.exactTitleGroups)
+  console.log("PSE_DUPLICATE_MATCHING_TITLE="+JSON.stringify({title:group.key,posts:group.posts}));
+ for(const group of report.canonicalSourceAliases)
+  console.log("PSE_DUPLICATE_JOOMLA_ALIAS="+JSON.stringify({wpId:group.wpId,sourceIds:group.sources.map(s=>s.joomlaId),
+   wpTitle:group.wpTitle,slugMatch:group.slugMatch}));
  console.log("PSE_WORDPRESS_DUPLICATE_AUDIT=READ_ONLY_PASS; manual_review_for_suspicious_groups=true");
 }catch(e){
  report.errors.push(String(e?.message||e).slice(0,260));
