@@ -46,6 +46,39 @@ const perfDiagnostics = (audit.categories.performance?.auditRefs || [])
       display:a.displayValue || '',mode:a.scoreDisplayMode};
   });
 console.log('PSE_LIGHTHOUSE_PERF_METRICS='+JSON.stringify(perfDiagnostics));
+const contributions = (audit.categories.performance?.auditRefs||[])
+  .filter(a=>a.weight>0)
+  .map(ref=>{
+    const a=audit.audits[ref.id]||{};
+    return {id:ref.id,weight:ref.weight,score:a.score,display:a.displayValue,
+      numericValue:a.numericValue,
+      lostPoints:a.score==null?null:Number(((1-a.score)*ref.weight).toFixed(4))};
+  }).sort((a,b)=>(b.lostPoints??-1)-(a.lostPoints??-1));
+const details=['largest-contentful-paint-element','lcp-discovery-insight',
+  'lcp-breakdown-insight','render-blocking-insight','network-dependency-tree-insight',
+  'font-display-insight','image-delivery-insight','unused-javascript','unused-css-rules',
+  'server-response-time','critical-request-chains','total-byte-weight','diagnostics']
+  .map(id=>{
+    const d=audit.audits[id];
+    if(!d)return null;
+    const items=d.details?.items||[];
+    return {id,score:d.score,display:d.displayValue||'',
+      items:items.slice(0,3).map(item=>({
+        urlPath:(()=>{try{return new URL(item.url).pathname}catch{return undefined}})(),
+        wastedMs:item.wastedMs,wastedBytes:item.wastedBytes,
+        nodeSelector:item.node?.selector,nodeSnippet:item.node?.snippet?.slice(0,240),
+        type:item.type,phase:item.phase,duration:item.duration,
+        timespan:item.timespan,subparts:item.subparts,
+        lcpResource:item.lcpResource,doc:item.doc
+      }))};
+  }).filter(Boolean);
+console.log('PSE_LIGHTHOUSE_HOME_DESKTOP_WEIGHTED_LOSSES='+JSON.stringify(contributions));
+console.log('PSE_LIGHTHOUSE_HOME_DESKTOP_EXPLANATION='+JSON.stringify({
+  observedAt:audit.fetchTime,versions:audit.lighthouseVersion,
+  finalPath:new URL(audit.finalUrl).pathname,scores,
+  metrics:contributions,details
+}).slice(0,28000));
+
 
 if(scores.accessibility!==100||scores.seo!==100||scores['best-practices']!==100) {
   console.error('PSE_LIGHTHOUSE_ACCESSIBILITY_SEO_100=NOT_YET');
