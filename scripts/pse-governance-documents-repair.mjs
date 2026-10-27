@@ -64,7 +64,7 @@ try{
  let changed=0;
  for(const [id,r] of rows){
   if(!r.wp_id){manifest.push({id,status:r.status,reason:r.reason,source:r.source_url,wp_id:null,result:'SOURCE_PENDING'});continue}
-  const slug=new URL(r.source_url).pathname.match(/\/\d+-([^/]+)\.html$/i)?.[1];
+  const slug=new URL(r.source_url).pathname.match(/\/\d+-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   if(!slug||!Number.isSafeInteger(r.wp_id))throw Error('Invalid checkpoint slug/WP ID '+id);
   const response=await api('/wp-json/wp/v2/posts/'+r.wp_id+'?context=edit&_fields=id,slug,status,categories,title,content,date,acf');
   const p=response.data;
