@@ -1,0 +1,64 @@
+name: PSE desktop homepage banner network tests (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-homepage-desktop-banner-source-ci-trigger
+      - .github/workflows/pse-homepage-desktop-banner-source-ci.yml
+permissions:
+  contents: read
+jobs:
+  source-contract:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout isolated PSE Astro source candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: fix/homepage-desktop-inactive-banner-network-20261028
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Confirm exact source ref and no build step
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "fix/homepage-desktop-inactive-banner-network-20261028"
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: Set up pnpm and Node (unit/compile only)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Run existing mobile and new desktop slider guards
+        working-directory: source
+        run: |
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run src/astro/tablepress/Home_00.mobile.test.ts src/astro/tablepress/Home_00.network.test.ts
+      - name: Parse actual Astro source (NO BUILD)
+        working-directory: source
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          const require = createRequire(import.meta.url);
+          const astroRequire = createRequire(require.resolve('astro/package.json'));
+          const { transform } = await import(astroRequire.resolve('@astrojs/compiler'));
+          const path = 'src/astro/tablepress/Home_00.astro';
+          const parsed = await transform(await readFile(path, 'utf8'), {filename:path});
+          if (!parsed.code) throw new Error('Astro parser returned empty code');
+          console.log('PSE_HOME_DESKTOP_ASTRO_PARSE=PASS');
+          NODE
+      - name: Confirm no production build or deployment
+        run: |
+          echo 'NO_ASTRO_BUILD=PASS'
+          echo 'NO_FTP=PASS'
+          echo 'NO_PRODUCTION_DEPLOY=PASS'
