@@ -1,3 +1,4 @@
 Native WordPress Yoast SEO 7 menu descriptions, only verified category name and Page name, 2026-10-27
 Retry after verified native form selector correction; first attempt wrote 0 terms.
 Idempotent continue after WP saved category 1763 while Playwright redirect raced; do not reedit saved row.
+Continue after first term readback confirmed on run 40548357650; allow exact saved Yoast meta in preflight.
