@@ -31,6 +31,7 @@ jobs:
       - name: Install browser automation (no website build)
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Create UpdraftPlus database-only local snapshot and verify listing
+        shell: bash
         run: |
           set -euo pipefail
           node --check scripts/pse-template-updraft-backup.mjs
