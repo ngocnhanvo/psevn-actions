@@ -121,7 +121,55 @@ try{
  const unique=[...new Map(originalPageRows.map(x=>[x.id,x])).values()];
  const unmapped=unique.filter(x=>!rows.some(([id])=>id===x.id));
  console.log('PSE_GOV_SOURCE_ALL_PAGES='+JSON.stringify({pages:visited,discovered:unique.length,checkpoint:rows.length,missing:unmapped}));
+ // Read-only exact source inspection of three two-digit IDs omitted by the
+ // generic Joomla crawler, plus the still-quarantined 2013 governance notice.
+ const inspection=[];
+ const exactIds=new Set(['90','91','92','376']);
+ if(unmapped.some(x=>!exactIds.has(x.id)))throw Error('Additional untracked Joomla governance IDs require separate review');
+ const targets=[...unmapped.map(x=>({id:x.id,slug:x.slug})),{id:'376',slug:'nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2013'}];
+ for(const target of targets){
+  const url='https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/'+target.id+'-'+target.slug+'.html';
+  let result={id:target.id,source_url:url};
+  try{
+   const response=await legacy.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
+   result.http=response?.status()||0;
+   if(result.http===200){
+    const body=await legacy.evaluate(()=>{
+     const root=document.querySelector('[itemprop="articleBody"]');
+     if(!root)return {hasBody:false,title:document.title};
+     const copy=root.cloneNode(true);
+     const extra=[...copy.querySelectorAll('h1,h2,h3,h4,h5,p')].find(x=>x.textContent?.replace(/\s+/g,' ').trim().toLocaleLowerCase('vi')==='các bài viết khác');
+     if(extra){const range=document.createRange();range.setStartBefore(extra);range.setEnd(copy,copy.childNodes.length);range.deleteContents();}
+     const visible=(copy.textContent||'').replace(/\s+/g,' ').trim();
+     const assets=[...new Set([...copy.querySelectorAll('a[href],img[src]')].map(el=>{
+       try{return new URL(el.getAttribute(el.tagName==='IMG'?'src':'href'),location.href).href}catch{return null}
+     }).filter(Boolean))];
+     const attachments=assets.filter(x=>/\.(pdf|docx?|xlsx?|pptx?)(?:[?#]|$)/i.test(x));
+     const pictures=assets.filter(x=>/\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(x));
+     return {hasBody:true,title:document.title,textChars:visible.length,textPreview:visible.slice(0,220),
+      htmlChars:copy.innerHTML.length,attachmentUrls:attachments,pictureUrls:pictures,
+      foreignLinks:assets.filter(x=>!new URL(x).hostname.match(/^(?:www\.)?pse\.vn$/)).slice(0,8)};
+    });
+    result={...result,...body};
+   }
+   const existing=await api('/wp-json/wp/v2/posts?context=edit&status=any&slug='+encodeURIComponent(target.slug.toLowerCase())+'&per_page=5&_fields=id,status,slug,categories');
+   result.wpCandidates=existing.status===200?existing.data.map(x=>({id:x.id,slug:x.slug,status:x.status,cat1759:x.categories?.includes(1759)})):{http:existing.status};
+   if(result.attachmentUrls?.length){
+    result.documentProof=[];
+    for(const asset of result.attachmentUrls.slice(0,5)){
+      const u=new URL(asset);
+      if(u.protocol!=='https:'||u.hostname!=='www.pse.vn'){result.documentProof.push({verified:false,reason:'outside_original_domain'});continue}
+      try{const head=await context.request.head(asset,{timeout:25000,failOnStatusCode:false});
+       result.documentProof.push({file:new URL(asset).pathname.slice(-100),http:head.status(),mime:String(head.headers()['content-type']||'').slice(0,50),length:String(head.headers()['content-length']||'')});
+      }catch(e){result.documentProof.push({error:String(e).slice(0,100)})}
+    }
+   }
+  }catch(e){result.error=String(e).slice(0,175)}
+  inspection.push(result);
+  console.log('PSE_GOV_UNTRACKED_SOURCE='+JSON.stringify(result));
+ }
+
  await mkdir('artifacts/pse-governance-documents',{recursive:true});
- await writeFile('artifacts/pse-governance-documents/manifest.json',JSON.stringify({mode:apply?'apply':'audit',category:cats.data[0],old:originCheck,new:publicInfo,rows:manifest,sourcePages:visited,allSourceItems:unique,notInCheckpoint:unmapped},null,2)+'\n');
+ await writeFile('artifacts/pse-governance-documents/manifest.json',JSON.stringify({mode:apply?'apply':'audit',category:cats.data[0],old:originCheck,new:publicInfo,rows:manifest,sourcePages:visited,allSourceItems:unique,notInCheckpoint:unmapped,untrackedInspection:inspection},null,2)+'\n');
  console.log('PSE_GOV_AUDIT='+JSON.stringify({mode:apply?'apply':'audit',sourceTotal:rows.length,withWp:manifest.filter(x=>x.wp_id).length,alreadyTagged:manifest.filter(x=>x.result==='ALREADY_TAGGED').length,tagged:changed,awaitingOriginal:manifest.filter(x=>!x.wp_id).length,possibleSpam:manifest.filter(x=>x.possibleSpam).map(x=>x.id),noBuild:true}));
 }finally{await browser.close()}
