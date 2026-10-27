@@ -1,5 +1,1 @@
-Read-only WordPress debug/error logs aggregated signatures (no log lines, no credentials, no PHP or WordPress changes). 2026-10-27 DB connection screenshot.
-
-2026-10-27 classify detected database error signatures into non-sensitive categories after first protected FTPS log read.
-
-Next read-only check: SQL error classes, connector failure codes, historical log date range. No log text will be exposed.
+2026-10-27 18:06 Asia/Ho_Chi_Minh: after WordPress /wp-admin/ and /wp-login.php timed out across PSE importer runs #272/#273, rerun existing FTPS read-only DB log signature classification once. No log lines, no credentials, no CMS/FTP writes, no Astro build.
