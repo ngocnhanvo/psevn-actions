@@ -130,17 +130,21 @@ try{
   const path=url.pathname;
   const slug=path.match(/\/\d{3,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   const cat=cats[item.group_hint];
-  const isGeneralNews=item.group_hint==="company" &&
-    /^\/tin-tuc-su-kien\/tin-cong-ty\/tin-tong-hop\/\d+-[^/]+\.html$/i.test(path);
-  let generalNewsCategory=null;
-  if(isGeneralNews){
-    const r=await api("/wp-json/wp/v2/categories?slug=tin-tong-hop&_fields=id,slug,parent");
+  // Preserve legacy child taxonomy from exact Joomla source path, not keywords.
+  const sourceChildSlug=item.group_hint==="company"
+    ? (path.startsWith("/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/")?"tin-tong-hop":
+       path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/")?
+         "hoat-dong-chi-bo-hdqt-bks":null)
+    : null;
+  let sourceChildCategory=null;
+  if(sourceChildSlug && /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path)){
+    const r=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(sourceChildSlug)+"&_fields=id,slug,parent");
     if(r.status!==200||r.data?.length!==1||
-      Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!=="tin-tong-hop")
-      throw Error("Tin tong hop category missing or parent mismatched");
-    generalNewsCategory=Number(r.data[0].id);
+      Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!==sourceChildSlug)
+      throw Error("Source child category missing or parent mismatched "+sourceChildSlug);
+    sourceChildCategory=Number(r.data[0].id);
   }
-  const articleCategories=generalNewsCategory?[cat,generalNewsCategory]:[cat];
+  const articleCategories=sourceChildCategory?[cat,sourceChildCategory]:[cat];
   if(!cat||!slug){
    item.status="quarantined";item.reason="Original Joomla section cannot be mapped to verified WP taxonomy";failed++;continue;
   }
@@ -159,16 +163,16 @@ try{
        !String(old.content?.raw||"").trim()){
      item.status="quarantined";item.reason="WP slug occupied by unrelated or empty content";failed++;continue;
     }
-    if(generalNewsCategory && !old.categories.includes(generalNewsCategory)){
+    if(sourceChildCategory && !old.categories.includes(sourceChildCategory)){
       const updated=await api("/wp-json/wp/v2/posts/"+old.id,"POST",
-        {categories:[...new Set([...old.categories,generalNewsCategory])]});
-      if(updated.status!==200||!updated.data?.categories?.includes(generalNewsCategory))
-        throw Error("Existing Tin tong hop category update failed");
+        {categories:[...new Set([...old.categories,sourceChildCategory])]});
+      if(updated.status!==200||!updated.data?.categories?.includes(sourceChildCategory))
+        throw Error("Existing source child category update failed");
       const verify=await api("/wp-json/wp/v2/posts/"+old.id+"?context=edit&_fields=id,slug,status,categories");
       if(verify.status!==200||verify.data?.slug!==slug||
         !verify.data.categories?.includes(cat)||
-        !verify.data.categories?.includes(generalNewsCategory))
-        throw Error("Existing Tin tong hop category readback failed");
+        !verify.data.categories?.includes(sourceChildCategory))
+        throw Error("Existing source child category readback failed");
     }
     item.status="existing";item.wp_id=old.id;existing++;
     console.log("PSE_LEGACY_SKIP_EXISTING=PASS; source_id="+id+"; wp_id="+old.id);
