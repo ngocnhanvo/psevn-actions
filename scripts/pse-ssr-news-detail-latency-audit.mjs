@@ -23,7 +23,7 @@ async function time(label,url,trial) {
 const archiveUrl=new URL('/tin-tuc-su-kien/tin-tong-hop',web);
 const archive=await time('Published news archive',archiveUrl,1);
 const results=[archive.data];
-const hrefs=[...archive.body.matchAll(/<a\\b[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*flex-grow\\s+flex\\s+flex-col\\s+cursor-pointer[^"']*["']/gi)]
+const hrefs=[...archive.body.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*class=["'][^"']*flex-grow\s+flex\s+flex-col\s+cursor-pointer[^"']*["']/gi)]
  .map(match=>match[1]).slice(0,5);
 const seen=new Set();
 let publicArticleFound=false;
@@ -32,7 +32,7 @@ for(const href of hrefs){
   let url;
   try{url=new URL(href,archiveUrl)}catch{continue}
   if(url.origin!==web || url.pathname===archiveUrl.pathname || seen.has(url.href)
-     || /\\/wp-admin\\/|\\/wp-json\\//.test(url.pathname))continue;
+     || /\/wp-admin\/|\/wp-json\//.test(url.pathname))continue;
   seen.add(url.href);
   const candidate=await time('Published article link validation',url,1);
   results.push(candidate.data);
@@ -60,7 +60,7 @@ for(const href of hrefs){
 const output={checkedAt:new Date().toISOString(),articleFound:publicArticleFound,
   articlePath:selectedPath,inspectedRenderedLinks:hrefs.length,results,
   note:'All candidate article paths derived from rendered public archive links and status checked. Read-only serial requests; network/PHP/DB mixed timing, not a SQL-only profile.'};
-writeFileSync('artifacts/pse-ssr-post-detail/report.json',JSON.stringify(output,null,2)+'\\n');
+writeFileSync('artifacts/pse-ssr-post-detail/report.json',JSON.stringify(output,null,2)+'\n');
 console.log('PSE_NEWS_DETAIL_AUDIT='+JSON.stringify({
  articleFound:output.articleFound,articlePath:output.articlePath,
  inspectedRenderedLinks:output.inspectedRenderedLinks,results
