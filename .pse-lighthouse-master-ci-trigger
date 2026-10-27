@@ -2,3 +2,4 @@
 2026-10-27 verify production #96 related quote CTA localized contact with product context; full Vitest and syntax, NO BUILD
 2026-10-27 verify PSE Astro master e43ba66: post-content thumbnail fallback 3-file isolated PR #101, full Vitest; NO WEBSITE BUILD.
 2026-10-27 verify Astro master 2e077df: isolated legacy news WordPress image source proxy PR #102; full Vitest NO BUILD.
+2026-10-28 verify PSE Astro master f448728b2588384ec9b21a400d3118c4a021bc29: news archive SSR category registry reuse and parallel loading; full Vitest, no Astro build or FTP.
