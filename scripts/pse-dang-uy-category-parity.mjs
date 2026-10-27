@@ -128,8 +128,15 @@ try{
     b.tag==="DIV"&&!b.directLinks.some(h=>
       /\/tin-tuc-su-kien\/tin-cong-ty\/dang-uy\/\d+-[^/]+\.html$/i.test(h))).map(b=>({title:b.heading,length:b.fullTextLength})))
  }));
- if(pages.length<1||oldCount<1||live?.status()!==200)
-  throw Error("Original Joomla category or Astro not readable");
+ if(pages.length!==1||oldCount!==2||legacy.length!==2||mapped.length!==2||
+    mapped.some(x=>!x.childPublished)||publishedChild.total!==2||
+    live?.status()!==200||display.count!==2||displayed!==2)
+  throw Error("Dang uy source-to-WP/Astro parity mismatch: "+JSON.stringify({
+    sourcePages:pages.length,sourceCount:oldCount,manifest:legacy.length,
+    wp:publishedChild.total,astro:displayed,astroCards:display.count,
+    missing:mapped.filter(x=>!x.childPublished).map(x=>x.sourceId)
+  }));
+ console.log("PSE_DANG_UY_DATA_PARITY=PASS; legacy=2; wordpress=2; astro=2; no_build=true");
  console.log("PSE_DANG_UY_PARITY_READ_ONLY=PASS; pages="+pages.length+
   "; source_article_urls="+listed.length+"; child_published="+publishedChild.total+
   "; astro_cards="+display.count);
