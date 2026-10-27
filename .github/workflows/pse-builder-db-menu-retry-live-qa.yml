@@ -1,0 +1,35 @@
+name: PSE Visual Builder Menu DB error manual retry live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-builder-db-menu-retry-qa-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-builder-menu-retry-readonly
+  cancel-in-progress: false
+jobs:
+  qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Reproduce synthetic database error and test manual recovery
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-builder-db-menu-retry-live-qa.mjs
+          node scripts/pse-builder-db-menu-retry-live-qa.mjs
+          echo 'PSE_MENU_DB_RETRY_QA=PASS NO_CMS_WRITE=PASS NO_ASTRO_BUILD=PASS'
