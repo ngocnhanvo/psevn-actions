@@ -69,9 +69,12 @@ try{
   const response=await api('/wp-json/wp/v2/posts/'+r.wp_id+'?context=edit&_fields=id,slug,status,categories,title,content,date,acf');
   const p=response.data;
   if(response.status!==200||p.id!==r.wp_id||p.slug!==slug||
-   !['publish','draft'].includes(p.status)||!p.categories.includes(1744)||
-   (r.status==='draft_needs_date'&&p.status!=='draft')||
-   (r.status==='imported'&&p.status!=='publish'))throw Error('Source/WP ID, slug, status, category drift '+id);
+   !['publish','draft'].includes(p.status)||!p.categories.includes(1744))
+    throw Error('Source/WP ID, slug, category drift '+id+' http='+response.status+' wp_id='+p?.id+' slug='+p?.slug+' status='+p?.status);
+  // An independent, verified date-backfill worker may already have published a
+  // checkpoint draft. Preserve LIVE WordPress status/date; do not infer either.
+  const statusDivergence=(r.status==='draft_needs_date'&&p.status==='publish')||
+   (r.status==='imported'&&p.status==='draft');
   const content=p.content?.raw||'';
   const hasSpam=/(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:ru|com)(?:\/|\b)/i.test(content);
   const hasUntrustedHost=[...content.matchAll(/https?:\/\/([^\/\s"'<>]+)/g)].some(m=>!['www.pse.vn','pse.vn',new URL(wp).hostname, new URL(frontend).hostname].includes(m[1]));
@@ -79,7 +82,7 @@ try{
   const docs=(content.match(/\.pdf(?:["'?#]|<|$)/gi)||[]).length;
   const already=p.categories.includes(child);
   const rec={id,wp_id:r.wp_id,source:r.source_url,slug,status:p.status,originalStatus:r.status,originalDate:r.verified_date,
-   hasCategory:already,htmlChars:content.length,images:imgs,pdfMentions:docs,possibleSpam:hasSpam||hasUntrustedHost};
+   hasCategory:already,statusDivergence,htmlChars:content.length,images:imgs,pdfMentions:docs,possibleSpam:hasSpam||hasUntrustedHost};
   if(apply&&!already){
    const update=await api('/wp-json/wp/v2/posts/'+r.wp_id,'POST',{categories:[...new Set([...p.categories,child])]});
    if(update.status!==200||update.data?.id!==r.wp_id)throw Error('Governance category update failed '+id);
