@@ -3653,13 +3653,20 @@
       "wp_id": 80198
     },
     "1129": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "company",
       "last_failure_reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1129-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html",
-      "status": "pending",
-      "verified_pdf_notice_source": true
+      "status": "imported",
+      "verified_pdf_notice_source": true,
+      "wp_id": 82240,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2015-07-01T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2015-07-01"
     },
     "1130": {
       "attempts": 1,
@@ -3894,13 +3901,20 @@
       "status": "quarantined"
     },
     "1150": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "company",
       "last_failure_reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1150-nghi-quyet-ve-viec-thuc-hien-tam-ung-chi-tra-co-tuc-dot-12015.html",
-      "status": "pending",
-      "verified_pdf_notice_source": true
+      "status": "imported",
+      "verified_pdf_notice_source": true,
+      "wp_id": 82237,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2015-10-22T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2015-10-22"
     },
     "1151": {
       "attempts": 1,
@@ -22492,11 +22506,21 @@
       "id": 77078,
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
+    },
+    "https://www.pse.vn/images/NQ_tam_ung_co_tuc_dot_1.2015.pdf": {
+      "id": 82236,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-839dc7b704500104.pdf",
+      "sha256": "feddbcaf70063b2e82afbea29992db3d6b3289fa2b177762a7554865474f92f7"
+    },
+    "https://www.pse.vn/images/tai-lieu-quan-tri/15-87-NQ-DNB-QD.pdf": {
+      "id": 82239,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-6c6a510f35db5a7e.pdf",
+      "sha256": "00fd786408d21999398fab052564eef0f757e7f6b3b68033cdf227d7b9002bc1"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 208,
+  "runs": 209,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
