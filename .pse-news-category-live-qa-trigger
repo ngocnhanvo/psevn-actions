@@ -1,3 +1,4 @@
 2026-10-25: WordPress CMS routes #40172868035 PASS (81056/81057), Header 18 category canonical links #40173081084 PASS; no-build CI #40173050727 PASS 405/405; Astro master bf2041e8539db8e220276027eb1fabc8813b90be deployed by signed WordPress/PHP normal Build Website #40173451123 and signed Astro FTPS #40173508398 SUCCESS. READ ONLY Playwright at 390/768/1440; News category routes/H1/canonical/active Header and Post detail. Do not alter CMS or build.
 
 2026-10-25: rerun same READ ONLY 390/768/1440 QA after #40173629015 showed HTTP200/canonical correct, but QA assumed WordPress category display H1 must equal menu label Tin Công ty; actual WP category name Tin PVFCCo-PSE. Compare heading to actual selected category dropdown text; no Astro source edits, build or WordPress writes.
+2026-10-27 verify PSE official WordPress-built Astro e43ba66 post thumbnail fallback release; news categories and post details public SSR smoke, READ ONLY.
