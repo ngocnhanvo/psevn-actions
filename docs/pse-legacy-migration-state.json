@@ -1,10 +1,11 @@
 {
   "articles": {
     "86": {
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/86-doan-thanh-nien-pse-day-manh-hoat-dong.html",
+      "attempts": 1,
       "group_hint": "company",
-      "status": "pending",
-      "attempts": 0
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/86-doan-thanh-nien-pse-day-manh-hoat-dong.html",
+      "status": "quarantined",
+      "reason": "Original Joomla section cannot be mapped to verified WP taxonomy"
     },
     "110": {
       "attempts": 1,
@@ -189,13 +190,17 @@
       "status": "quarantined"
     },
     "200": {
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/200-pvfcco-se-dong-hanh-cung-mua-he-xanh-2011.html",
-      "group_hint": "company",
-      "status": "pending",
-      "attempts": 0,
-      "source_created_date": "2011-08-15",
+      "attempts": 1,
+      "date_precision": "day",
       "date_source": "joomla_com_search_created",
-      "date_precision": "day"
+      "group_hint": "company",
+      "source_created_date": "2011-08-15",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/200-pvfcco-se-dong-hanh-cung-mua-he-xanh-2011.html",
+      "status": "imported",
+      "wp_id": 82244,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2011-08-15T00:00:00"
     },
     "201": {
       "attempts": 1,
@@ -3985,18 +3990,18 @@
     },
     "1155": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "category_repaired_at": "2026-10-27",
       "category_repaired_source": "PSE Chi bo 2015 verified existing PDF notice binding GitHub Actions #40468467174",
       "group_hint": "company",
       "last_failure_reason": "WP slug occupied by unrelated or empty content",
+      "seo_cleaned": true,
+      "seo_error": null,
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1155-chi-tra-co-tuc-dot-1-nam-2015.html",
       "status": "existing",
-      "wp_id": 79462,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 79462
     },
     "1156": {
       "attempts": 2,
@@ -7909,13 +7914,17 @@
       "wp_id": 79070
     },
     "1520": {
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1520-chi-doan-pvfcco-se-to-chuc-chuong-trinh-trai-nghiem-lam-gom-thu-cong-cho-con-cbnv-cong-ty.html",
-      "group_hint": "company",
-      "status": "pending",
-      "attempts": 0,
-      "source_created_date": "2022-06-15",
+      "attempts": 1,
+      "date_precision": "day",
       "date_source": "joomla_com_search_created",
-      "date_precision": "day"
+      "group_hint": "company",
+      "source_created_date": "2022-06-15",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1520-chi-doan-pvfcco-se-to-chuc-chuong-trinh-trai-nghiem-lam-gom-thu-cong-cho-con-cbnv-cong-ty.html",
+      "status": "imported",
+      "wp_id": 82249,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2022-06-15T00:00:00"
     },
     "1521": {
       "attempts": 1,
@@ -8313,13 +8322,18 @@
       "wp_id": 82231
     },
     "1553": {
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1553-pvfcco-pse-to-chuc-hoat-dong-ky-niem-ngay-quoc-te-phu-nu-8-3.html",
-      "group_hint": "company",
-      "status": "pending",
-      "attempts": 0,
-      "source_created_date": "2023-04-23",
+      "attempts": 1,
+      "date_precision": "day",
       "date_source": "joomla_com_search_created",
-      "date_precision": "day"
+      "group_hint": "company",
+      "source_created_date": "2023-04-23",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1553-pvfcco-pse-to-chuc-hoat-dong-ky-niem-ngay-quoc-te-phu-nu-8-3.html",
+      "status": "existing",
+      "wp_id": 77485,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "1555": {
       "attempts": 1,
@@ -9224,22 +9238,24 @@
       "wp_id": 77354
     },
     "1637": {
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1637-pvfcco-pse-cung-nhau-huong-ung-huong-ve-ngay-le-trong-dai-ky-niem-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc-30-4-1975-30-4-2025.html",
-      "group_hint": "company",
-      "status": "pending",
-      "attempts": 0,
-      "source_created_date": "2025-04-28",
+      "attempts": 1,
+      "date_precision": "day",
       "date_source": "joomla_com_search_created",
-      "date_precision": "day"
+      "group_hint": "company",
+      "source_created_date": "2025-04-28",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1637-pvfcco-pse-cung-nhau-huong-ung-huong-ve-ngay-le-trong-dai-ky-niem-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc-30-4-1975-30-4-2025.html",
+      "status": "pending",
+      "reason": "Source HTTP 500"
     },
     "1638": {
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1638-ky-niem-21-nam-cong-doan-pvfcco-a-huong-ve-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc.html",
-      "group_hint": "company",
-      "status": "pending",
-      "attempts": 0,
-      "source_created_date": "2025-04-28",
+      "attempts": 1,
+      "date_precision": "day",
       "date_source": "joomla_com_search_created",
-      "date_precision": "day"
+      "group_hint": "company",
+      "source_created_date": "2025-04-28",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/1638-ky-niem-21-nam-cong-doan-pvfcco-a-huong-ve-50-nam-ngay-giai-phong-mien-nam-thong-nhat-dat-nuoc.html",
+      "status": "pending",
+      "reason": "Source HTTP 500"
     },
     "1639": {
       "attempts": 1,
@@ -22574,11 +22590,31 @@
       "id": 77078,
       "sha256": "18535eab861fd0504c5a0be4d676a730e443699a277f90b3985f5d885eaf0cd0",
       "url": "/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png"
+    },
+    "https://www.pse.vn/images/web/quanhe-codong/2011%2008%2006%20tcbc%20pvfcco%20se%20dong%20hanh%20cung%20chien%20dich%20mua%20he%20xanh.pdf": {
+      "id": 82243,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-ec84e6483dd3b167.pdf",
+      "sha256": "e4462857f22103ddfae4f72f2ae2eca73a9dacddc904d37d360e459bb168d720"
+    },
+    "https://www.pse.vn/images/h%C3%ACnh_1_1-6.jpg": {
+      "id": 82246,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-90490ab2ac92040b.jpg",
+      "sha256": "ae9a2ff45bbff562e0b8d787fb657d6126b80fc2cb0aab09d5980fdc3f3c7779"
+    },
+    "https://www.pse.vn/images/h%C3%ACnh_2_1-6.jpg": {
+      "id": 82247,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-410d08d2a542073f.jpg",
+      "sha256": "515135d1f8e09fc35ab9c1cca1064c7aee26eb5f0a900e384855a1897d3cfeb4"
+    },
+    "https://www.pse.vn/images/h%C3%ACnh_3_1-6.jpg": {
+      "id": 82248,
+      "url": "/wp-content/uploads/2026/10/pse-legacy-87714ed528dd9813.jpg",
+      "sha256": "355157ff0206b78fe5f346b14903c54cbd195b521a4bb1d594ae52346ff0109c"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 210,
+  "runs": 211,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
