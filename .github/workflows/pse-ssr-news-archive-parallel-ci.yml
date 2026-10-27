@@ -39,9 +39,13 @@ jobs:
           pnpm exec vitest run src/lib/seo/pseNewsCategorySsr.test.ts src/lib/wordpress/categories/pseArchive.test.ts src/lib/wordpress/posts/index.test.ts
           node --input-type=module <<'NODE'
           import { readFile } from 'node:fs/promises';
-          import { transform } from '@astrojs/compiler';
+          import { createRequire } from 'node:module';
+          import { pathToFileURL } from 'node:url';
+          const require=createRequire(import.meta.url);
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
           const f='src/pages/ssr/posts/[slug]/[page].astro';
-          const result=await transform(await readFile(f,'utf8'), {filename:f});
+          const result=await compiler.transform(await readFile(f,'utf8'), {filename:f});
           if(result.errors?.length)throw Error(JSON.stringify(result.errors));
           console.log('PSE_NEWS_SSR_ASTRO_PARSE=PASS');
           NODE
