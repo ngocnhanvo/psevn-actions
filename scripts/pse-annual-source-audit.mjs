@@ -37,7 +37,10 @@ try{
      byExtension:countBy("ext"),byHost:countBy("host"),
      pdfLinks:items.filter(x=>x.ext==="pdf").length,
      htmlChars:root.innerHTML.length,
-     firstLinkLabels:[...root.querySelectorAll("a[href]")].slice(0,5).map(x=>(x.textContent||"").trim().slice(0,90))};
+     firstLinkLabels:[...root.querySelectorAll("a[href]")].slice(0,5).map(x=>(x.textContent||"").trim().slice(0,90)),
+     firstLinkTargets:[...root.querySelectorAll("a[href]")].slice(0,5).map(x=>{
+       try{const u=new URL(x.getAttribute("href"),location.href);return {host:u.hostname,path:u.pathname.slice(0,180),protocol:u.protocol}}catch{return null}
+     })};
    });
   }catch(e){detail={error:String(e).slice(0,180)};}
   report.push({id,http,status:state.articles[id]?.status,reason:state.articles[id]?.reason,...detail});
