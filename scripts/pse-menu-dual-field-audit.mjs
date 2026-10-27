@@ -42,6 +42,10 @@ try{
  // READ-ONLY AJAX UX: simulate a menu save; every potential write request is
  // intercepted and either mocked (AJAX) or aborted (native navigation).
  if(!(await p.evaluate(()=>typeof window.escPseMenuEditorRefresh==="function")))throw Error("Native menu AJAX partial refresher not installed");
+ const existingId=Number((await p.locator("#menu-to-edit > li.menu-item").first().getAttribute("id")||"").replace("menu-item-",""));
+ if(!existingId) throw Error("No existing menu item for read-only fragment QA");
+ await p.evaluate(id=>window.escPseMenuEditorRefresh({itemId:id}),existingId);
+ console.log("PSE_NATIVE_MENU_AJAX_FRAGMENT_READONLY=PASS");
  let ajaxSave=0,legacyPost=0,navigations=0;
  const beforeUrl=p.url();
  const beforeItems=await p.locator("#menu-to-edit > li.menu-item").count();
