@@ -4,3 +4,4 @@ No edit, no WP save, no FTP, no build.
 2026-10-27 Rerun PSE native Menu AJAX READ-ONLY QA: prior attempt verified real fragment AJAX PASS; browser test used hidden header Save button and timed out before mocked save. Use click DOM dispatch to test WordPress events without server writes. Production PHP unchanged.
 
 2026-10-27 PSE native Menu AJAX compact POST + fixed sticky 409 notification mock-only production browser QA after PHP FTPS run 40452448382. Intercept all menu save requests, assert role=alert, computed position fixed, dismissal, no page navigation, zero WP writes.
+2026-10-27 Post-FTPS single menu URL browser QA: PHP release run 40455644877 PASS, source c55f5f7acd8e3718ac415af255bfa89f02321dc2; assert only PSE custom URL visible, hidden WordPress URL synchronized on input, Page/Post only reference select, mock-only sticky 409. No WordPress writes, NO ASTRO BUILD.
