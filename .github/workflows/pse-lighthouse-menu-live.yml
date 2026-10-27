@@ -1,0 +1,38 @@
+name: PSE Lighthouse all Header menu pages - mobile and desktop (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-lighthouse-menu-trigger]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      PSE_MENU_SHARD: ${{ matrix.shard }}
+      PSE_MENU_SHARDS: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Lighthouse and Playwright
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0 lighthouse@13.0.1
+      - name: Discover menu and audit assigned destinations (no CMS changes)
+        run: node --check scripts/pse-lighthouse-menu-live.mjs && node scripts/pse-lighthouse-menu-live.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-menu-lighthouse-shard-${{ matrix.shard }}
+          path: artifacts/pse-lighthouse-menu/shard-${{ matrix.shard }}/
+          if-no-files-found: warn
+          retention-days: 14
