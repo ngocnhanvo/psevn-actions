@@ -60,7 +60,7 @@ try{
  if(matches.length!==1)throw Error('Missing or duplicated verified PSE panorama media attachment');
  const media=matches[0],altText=String(media.alt_text||'').trim()||'Toàn cảnh nhà máy và hệ thống bồn chứa';
  const imageUrl=String(media.source_url||media.guid?.rendered||'');
- if(new URL(imageUrl).origin!==wp||new URL(imageUrl).pathname!==filePath)throw Error('PSE panorama WordPress attachment URL mismatch');
+ if(new URL(imageUrl,wp).origin!==wp||new URL(imageUrl,wp).pathname!==filePath)throw Error('PSE panorama WordPress attachment URL mismatch');
  report={...report,table,attachment_id:media.id,before:existingStructured?'structured':'bare_admin_url',rows:cells.length,backgroundOnly:true};
  console.log('PSE_PANORAMA_NATIVE_PREFLIGHT='+JSON.stringify(report));
  if(existingStructured){console.log('PSE_PANORAMA_NATIVE_IMAGE=ALREADY_STRUCTURED; cms_write=false');process.exit(0)}
