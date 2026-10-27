@@ -1,7 +1,7 @@
 {
   "schema": "pse-legacy-date-backfill-v1",
   "tracker_issue": 3,
-  "runs": 31,
+  "runs": 32,
   "records": {
     "110": {
       "wp_id": 77067,
@@ -213,6 +213,12 @@
       "source_created_day": "2013-07-03",
       "date_precision": "day",
       "date_source": "joomla_com_search_created"
+    },
+    "379": {
+      "wp_id": 82119,
+      "attempts": 1,
+      "status": "unverified",
+      "reason": "No exact Joomla ID/title created day evidence"
     },
     "1016": {
       "wp_id": 78123,
@@ -1565,5 +1571,5 @@
     }
   },
   "notes": "Separate date-only checkpoint. WordPress publish dates already set by the owner are never rewritten; Joomla com_search proves created DAY only. Import checkpoint remains a separate independent writer.",
-  "last_migration_batch_observed": 198
+  "last_migration_batch_observed": 218
 }
