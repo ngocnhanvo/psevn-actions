@@ -67,7 +67,7 @@ try{
    const root=document.querySelector(".blog");
    if(!root)throw Error("Original Joomla blog DOM unavailable");
    const links=[...new Set([...root.querySelectorAll("a[href]")].map(a=>a.href))];
-   const article=links.filter(h=>{try{const u=new URL(h);return ["pse.vn","www.pse.vn"].includes(u.hostname)&&/^\/tin-tuc-su-kien\/tin-cong-ty\/thong-tin-thi-truong\/\d+-[a-z0-9-]+\.html$/i.test(u.pathname)}catch{return false}});
+   const article=links.filter(h=>{try{const u=new URL(h);return ["pse.vn","www.pse.vn"].includes(u.hostname)&&/^\/hoat-dong-kinh-doanh\/thong-tin-thi-truong\/\d+-[a-z0-9-]+\.html$/i.test(u.pathname)}catch{return false}});
    const pages=links.filter(h=>{try{const u=new URL(h);return ["pse.vn","www.pse.vn"].includes(u.hostname)&&u.pathname==="/hoat-dong-kinh-doanh/thong-tin-thi-truong.html"&&/^\d+$/.test(u.searchParams.get("start")||"")}catch{return false}});
    const text=root.textContent||"";
    const pager=text.match(/Page\s+\d+\s+of\s+\d+/i)?.[0]||"";
@@ -97,7 +97,7 @@ try{
  }).filter(Boolean);
  const checkpoint=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
  const legacy=Object.entries(checkpoint.articles).filter(([id,p])=>
-  /^https:\/\/(?:www\.)?pse\.vn\/tin-tuc-su-kien\/tin-cong-ty\/thong-tin-thi-truong\/\d+-/i.test(p.source_url)
+  /^https:\/\/(?:www\.)?pse\.vn\/hoat-dong-kinh-doanh\/thong-tin-thi-truong\/\d+-/i.test(p.source_url)
  ).map(([id,p])=>({sourceId:id,wpId:p.wp_id||null,status:p.status,reason:p.reason||null,sourceUrl:p.source_url}));
  const site=await browser.newPage();
  const live=await site.goto("https://pse.webnvn.com/tin-tuc-su-kien/thong-tin-thi-truong",{waitUntil:"domcontentloaded",timeout:60000});
@@ -129,7 +129,11 @@ try{
   manifestRecords:legacy.length,wordpressPublished:publishedChild.total,
   astroCards:display.count,astroTotal:totalDisplayed,missingSourceIds:missingSources.map(x=>x.sourceId),
   orphaned:legacy.filter(x=>!mapped.some(p=>String(p.sourceId)===x.sourceId)).map(x=>x.sourceId),
-  wpCategoryId:child.id,wpCategoryParent:child.parent
+  wpCategoryId:child.id,wpCategoryParent:child.parent,
+  wordpressPosts:publishedChild.rows.map(p=>({id:p.id,slug:p.slug,categories:p.categories})),
+  sourceGroups:pages.map(p=>({url:p.url,heads:p.blocks.filter(b=>/\bitem\b/.test(b.className)).map(b=>({
+   title:b.heading,urls:b.directLinks.filter(u=>/\/hoat-dong-kinh-doanh\/thong-tin-thi-truong\/\d+-[^/]+\.html/i.test(u))
+  }))}))
  }));
  console.log("PSE_MARKET_PARITY_READ_ONLY=PASS; pages="+pages.length+
   "; source_article_urls="+listed.length+"; child_published="+publishedChild.total+
