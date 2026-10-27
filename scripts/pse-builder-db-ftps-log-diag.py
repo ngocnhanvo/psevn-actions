@@ -76,6 +76,33 @@ def main():
                     " ".join(k+"="+str(v) for k,v in details.items())+
                     " today_or_yesterday_hour_bins="+','.join(f'{k}:{v}' for k,v in sorted(hours.items())))
 
+                query_patterns={
+                    "table_missing":r"(?:Table|Base table|doesn't exist)",
+                    "table_exists":r"already exists",
+                    "unknown_column":r"Unknown column",
+                    "duplicate_entry":r"Duplicate entry",
+                    "syntax":r"syntax.*SQL|SQL syntax",
+                    "deadlock":r"Deadlock found",
+                    "lock_timeout":r"Lock wait timeout",
+                    "connect_refused":r"Connection refused|Can't connect to local MySQL server",
+                    "socket_missing":r"No such file or directory.*mysql|mysqli_real_connect\(\).+No such file",
+                    "connect_timeout":r"Connection timed out|Connect timed out",
+                    "code_2002":r"\b(?:HY000/2002|SQLSTATE\[HY000\] \[2002\]|\(2002\))",
+                    "code_1040":r"\b(?:HY000/1040|SQLSTATE\[HY000\] \[1040\]|\(1040\))",
+                    "code_1045":r"\b(?:HY000/1045|SQLSTATE\[HY000\] \[1045\]|\(1045\))",
+                    "connection_reset":r"Connection reset by peer|server has gone away",
+                    "wp_tablepress":r"tablepress|esc_vb_",
+                    "wp_hook_queue":r"action_scheduler|as_actions|wp_actionscheduler",
+                    "wp_cache":r"cache|transient",
+                }
+                classes={k:len(re.findall(p,content,re.I)) for k,p in query_patterns.items()}
+                print("PSE_WP_DB_QUERY_CLASSES "+name.replace("/","_")+"="+
+                      " ".join(k+"="+str(v) for k,v in classes.items()))
+                timestamps=re.findall(r"\[(\d\d-[A-Za-z]+-\d{4})\s+\d\d:\d\d:\d\d(?:\s+UTC)?\]",content)
+                print("PSE_WP_DB_LOG_RANGE "+name.replace("/","_")+"="+
+                    ("count="+str(len(timestamps))+" last_date="+timestamps[-1] if timestamps else "unknown"))
+
+
             except (ftplib.error_perm,ftplib.error_temp):
                 print("PSE_WP_DB_LOG "+name.replace("/","_")+"=UNAVAILABLE")
         print("PSE_WP_DB_FTPS_NO_WRITES=PASS")
