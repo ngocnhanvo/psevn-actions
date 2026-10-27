@@ -1,0 +1,1 @@
+G0 isolated restore rehearsal for the DB-only UpdraftPlus backup created by #40426535851 at 2026-10-27 00:28 UTC. Metadata time-window + SHA pin, local MariaDB Unix socket only, drop after QA, no CMS writes or exports.
