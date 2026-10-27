@@ -20,7 +20,21 @@ function origin(name){
 }
 const wp=origin("WC_URL"),source=new URL(state.source);
 const GROUPS=["company","agriculture-market","shareholder"];
+// Explicit owner-approved exception: ONLY these 5 audited market source images
+// may be removed, after a fresh failure probe. Never omit PDFs or source text.
+const BROKEN_MARKET_IMAGES=Object.freeze({
+ "343":"http://nongnghiep.vn/Upload/Image/2013/3/12/12032013144852.jpg",
+ "346":"http://nongnghiep.vn/Upload/Image/2013/3/17/17032013164111.JPG",
+ "347":"http://nongnghiep.vn/Upload/Image/2013/3/14/14032013150031.jpg",
+ "352":"http://www.bttv.org.vn/userfiles/image/bap%20lai%201.jpg",
+ "360":"http://tinphanbon.com/wp-content/uploads/2013/04/san-xuat-phan-bon.jpg"
+});
+const mayRecoverImage=(id,v)=>Object.hasOwn(BROKEN_MARKET_IMAGES,id) &&
+ v?.status==="quarantined" && v.reason==="Article contains non-local mandatory media" &&
+ !v.wp_id && !v.broken_image_recovery_attempted &&
+ new RegExp("^https://(?:www\\.)?pse\\.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/"+id+"-[^/]+\\.html$","i").test(v.source_url||"");
 const candidates=Object.keys(state.articles).filter(id=>
+ mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
     (state.articles[id].attempts||0)<3) ||
    (state.articles[id].status==="quarantined" &&
@@ -125,6 +139,8 @@ try{
     break;
   }
   const item=state.articles[id];
+  const brokenImageUrl=mayRecoverImage(id,item)?BROKEN_MARKET_IMAGES[id]:null;
+  if(brokenImageUrl){item.broken_image_recovery_attempted=true;await persist();}
   // One bounded second look for source pages that are legitimate short PDF/link notices.
   // Legacy 100-character minimum was too strict for investor disclosures.
   if(item.status==="quarantined" && item.reason==="Source content incomplete or oversized" &&
@@ -194,6 +210,26 @@ try{
     console.log("PSE_LEGACY_SKIP_EXISTING=PASS; source_id="+id+"; wp_id="+old.id);
     await persist();continue;
    }
+   // An image may have recovered since the original audit. Never drop a
+   // currently valid picture to make the migration succeed.
+   if(brokenImageUrl){
+    try{
+     const r=await context.request.get(brokenImageUrl,{timeout:18000});
+     if(r.ok()){
+      const bytes=await r.body(),h=bytes.subarray(0,16);
+      const signature=h.subarray(0,3).toString("hex")==="ffd8ff"||
+       h.subarray(0,8).toString("hex")==="89504e470d0a1a0a"||
+       ["GIF89a","GIF87a"].includes(h.subarray(0,6).toString("latin1"))||
+       (h.subarray(0,4).toString("latin1")==="RIFF"&&h.subarray(8,12).toString("latin1")==="WEBP");
+      if(signature&&String(r.headers()["content-type"]||"").toLowerCase().startsWith("image/"))
+       throw Error("Original image recovered; preserve it");
+     }
+     console.log("PSE_MARKET_BAD_IMAGE_PROOF=PASS; source_id="+id+"; http="+r.status());
+    }catch(e){
+     if(String(e?.message||e).includes("Original image recovered;"))throw e;
+     console.log("PSE_MARKET_BAD_IMAGE_PROOF=PASS; source_id="+id+"; error=NETWORK");
+    }
+   }
    const original=await context.newPage();
    let article;
    try{
@@ -221,7 +257,7 @@ try{
      console.log("PSE_LEGACY_INLINE_SOURCE=VERIFIED; source_id="+id+
        "; detail_http=500; category_http=200; source_created_day="+item.source_created_date);
     }
-    article=await original.evaluate(expectedTitle=>{
+    article=await original.evaluate(({expectedTitle,brokenImageUrl})=>{
      let root;
      if(expectedTitle){
       const rows=[...document.querySelectorAll('.blog [itemprop="blogPost"]')].filter(e=>
@@ -233,6 +269,27 @@ try{
      if(!root)throw Error("Verified Joomla source article body missing");
      const copy=root.cloneNode(true);
      if(expectedTitle)copy.querySelector(".page-header")?.remove();
+     const omittedImages=[];
+     if(brokenImageUrl){
+      const originalText=(copy.textContent||"").replace(/\s+/g," ").trim();
+      const images=[...copy.querySelectorAll("img[src]")];
+      if(images.length!==1)throw Error("Market source photo count changed");
+      const img=images[0],u=new URL(img.getAttribute("src"),location.href).href;
+      if(u!==brokenImageUrl)throw Error("Market source photo URL changed");
+      const parentLink=img.closest("a");
+      img.remove();
+      if(parentLink && !parentLink.textContent.trim()&&!parentLink.querySelector("img,svg,video"))
+       parentLink.remove();
+      for(const link of [...copy.querySelectorAll("a[href]")]){
+       try{
+        if(new URL(link.getAttribute("href"),location.href).href===brokenImageUrl)
+         link.replaceWith(...link.childNodes);
+       }catch{}
+      }
+      if((copy.textContent||"").replace(/\s+/g," ").trim()!==originalText)
+       throw Error("Source text changed by photo omission");
+      omittedImages.push(brokenImageUrl);
+     }
      // Remove the Joomla related-articles tail before collecting text or linked media.
      const related=[...copy.querySelectorAll("h1,h2,h3,h4,h5,p")].find(el=>
        String(el.textContent||"").replace(/[\u00a0\s]+/g," ").trim().toLocaleLowerCase("vi")==="các bài viết khác");
@@ -274,9 +331,16 @@ try{
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
-     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets};
-    },inlineTitle);
+     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages};
+    },{expectedTitle:inlineTitle,brokenImageUrl});
    }finally{await original.close()}
+   if(brokenImageUrl){
+    if(article.omittedImages?.length!==1||article.chars<200||article.assets.includes(brokenImageUrl)||article.html.includes(brokenImageUrl))
+     throw Error("Approved photo exclusion not verified");
+    item.omitted_broken_source_images=[brokenImageUrl];
+    console.log("PSE_MARKET_BAD_IMAGE_REMOVED=PASS; source_id="+id+"; text_chars="+article.chars);
+    await persist();
+   }
    // Short source notices are valid when they have substantial text (65+ chars)
    // or 20+ chars backed by actual linked media. Never synthesize an article body.
    // A genuine Joomla document notice may consist solely of "Download" and a PDF.
@@ -462,6 +526,7 @@ try{
      finalStatus="publish";
    }
    item.status=originalDate?"imported":"draft_needs_date";
+   if(brokenImageUrl)delete item.reason;
    item.seo_cleaned=true;
    item.attribution_cleaned=true; // New imported posts do not contain a source footer.
    item.verified_date=originalDate||null;
