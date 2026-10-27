@@ -32,4 +32,6 @@
 - Nếu sau này phát hiện ảnh thực sự hỏng: chỉ bỏ ảnh *tùy chọn* đã chứng minh hỏng, **luôn giữ văn bản và PDF**, không xóa scan nghị quyết chính là nội dung.
 - Check current Actions jobs and SHA-leased migration checkpoint before every new step. Tests are read-only, Astro builds only triggered by WordPress/PHP Build Website if genuinely needed.
 
+- **Final independent serialized read-only source/WordPress audit:** [#40527349915](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40527349915) PASS, `PSE_GOV_SOURCE_ALL_PAGES={discovered:24,checkpoint:24,missing:[]}`, `PSE_GOV_AUDIT={sourceTotal:24,withWp:24,alreadyTagged:24,tagged:0,awaitingOriginal:0,possibleSpam:[],noBuild:true}`; confirms all 24 distinct Joomla source pages are represented by existing WordPress posts with correct native category, with no extra writes. This PASS is separate from earlier 23/23 public-page browser PASS because post 92 deliberately remains draft.
+
 **Trạng thái cuối:** `SOURCE_IDS_PARITY_PASS=24/24`, `WORDPRESS_RECORD_PARITY_PASS=24/24`, `PUBLIC_PUBLISHED_QA_PASS=23/23`, `DRAFT_PENDING_VERIFIED_DATE=1`, `BROKEN_IMAGES=0`, `DOCUMENTS_PRESERVED=true`, `ASTRO_BUILD_NOT_REQUIRED`.
