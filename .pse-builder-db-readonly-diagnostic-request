@@ -1,1 +1,1 @@
-2026-10-27 17:58 Asia/Ho_Chi_Minh: after migration importer #272/#273 and market taxonomy #3 timed out loading /wp-admin/ and /wp-login.php, rerun existing bounded DB/network diagnostic READ ONLY. No CMS/FTP/Astro build writes. Do not retry importer POST on uncertain response.
+2026-10-27: bounded WP backend health recheck after failed diagnostics #40493422763 and legacy import #40491023802. Fast REST/login/admin GET only, 8s each, hard cap 180s. Do not write CMS, retry importer, FTP deploy, or build Astro. This is the single corrected diagnostic run.
