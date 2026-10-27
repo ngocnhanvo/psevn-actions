@@ -70,3 +70,28 @@
 - Không khởi động Astro build từ Actions. Mọi build/deploy frontend chỉ được khởi phát từ WordPress/PHP Build Website theo mode `auto-build`.
 - CSV/JSON và danh sách URL của 6 shard nằm trong Artifacts của workflow gốc (14 ngày); 3 retry nằm trong Artifacts workflow retry.
 - **CODE MODE:** auto-build. **Trạng thái:** AUDIT_COMPLETE 78/78; READ_ONLY; không yêu cầu fix/deploy trong nhiệm vụ này.
+
+---
+
+## Checkpoint hoàn tất tối ưu — 2026-10-28
+
+**Trạng thái:** `CODE_MERGED / CMS_VERIFIED / DEPLOYED_PRODUCTION / POSTDEPLOY_QA_PASS`.
+Bảng 39 trang ở trên là **baseline đo trước sửa**, được giữ nguyên để đối chiếu; không thay điểm lịch sử bằng điểm đo mới.
+
+### Những bước đã hoàn thành, KHÔNG chạy lại
+
+1. WordPress Editor ACF `cssmore` chỉnh độ tương phản chữ tại 6 trang theo selector được Lighthouse chỉ ra; chỉnh đúng ARIA cho trang Khiếu nại, lưu và kiểm tra lại, không sửa ESC Table: [#40545934781](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40545934781) PASS.
+2. Các lỗi heading Tầm nhìn và semantic header bảng Định hướng được sửa tại lớp Astro nhưng giữ nguyên style và nội dung WordPress: [PR #103](https://github.com/ngocnhanvo/psevn-astro/pull/103), merge production source `07e8bbb20a83ee68daf1865895723e37ab1f5f93`; CI [#40546484223](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40546484223) PASS.
+3. Bảy mô tả SEO Yoast tại nguồn WordPress (6 danh mục và Page Sơ đồ tổ chức) đã lưu chính xác qua editor; retry chỉ tiếp tục bản ghi chưa hoàn thành, kiểm tra sau lưu: [#40548976081](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40548976081) PASS.
+4. Build/deploy thông qua WordPress/PHP chính thức [#40549407741](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40549407741) → [#40549539533](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40549539533) PASS, FTP-TLS/signed activation/smoke đều thành công.
+5. Sau deploy, 9 trang có cảnh báo đã kiểm tra lại [#40549884321](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40549884321) PASS; toàn bộ 39 trang × 2 thiết bị được đo lại: 73 lượt đo hợp lệ từ [#40549910858](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40549910858), 5 lỗi trace tạm thời được đo bù **đúng 5** ở [#40550808779](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40550808779) PASS. Tổng **78/78 lượt hợp lệ**, toàn bộ **Accessibility, Best Practices, SEO đều đạt 100** ở các phép đo này. Workflow gốc thất bại chỉ vì 5 lỗi trace; KHÔNG chạy lại 73 kết quả thành công.
+6. Trang `/so-do-to-chuc` desktop từng có Performance 88 và CLS ~0.223. Browser xác định lần tải nguội thiếu kích thước nội tại của ảnh WordPress; các phần tử bên dưới bị đẩy khi ảnh có kích thước. WordPress Page **79300** đã bổ sung **duy nhất** `width="1439" height="665"` vào thẻ ảnh, backup và read-after-write PASS [#40552070716](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40552070716). **Không** đổi CSS, layout cuối, data/section ESC Table, Yoast hoặc nội dung khác.
+7. Build thông thường [#40552322627](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40552322627) nhận `pending_count=0` nên **không dispatch**; vì vậy đã dùng **Build ngoại lệ một lần trong chính PHP/WordPress** [#40552643451](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40552643451), tạo build thực tế [#40552782542](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40552782542) PASS với source `master` SHA `07e8bbb20a83ee68daf1865895723e37ab1f5f93`, signed activation và smoke PASS. Không có build Astro độc lập.
+8. **Xác minh cuối cùng sau deploy:** [#40553290350](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40553290350) PASS. Trang `/so-do-to-chuc` desktop Lighthouse **Performance 100, CLS 0**; DOM ảnh nguồn `/api/images/1536/jpg/wp-content/uploads/2026/10/pse-corp-so-do-to-chuc-31117d66a995.webp`, `naturalWidth=1439`, `width="1439"`, `height="665"`, rendered **1376×636** tại viewport desktop; browser PerformanceObserver không có layout shifts ở lượt đo này. Chỉ fix parser URL trong script read-only bị hỏng từ workflow chẩn đoán cũ; không có sửa UI mới.
+
+### Chốt bàn giao
+
+- Layout được bảo toàn tại nguồn: chỉ màu chữ theo accessibility, semantic heading/ARIA/header bảng, metadata SEO và kích thước nội tại ảnh; không thay bố cục section, Tailwind ESC Table hoặc kiến trúc build/cache.
+- **Không cần rerun build, merge, 39-page Lighthouse hoặc sửa WordPress** chỉ vì tiếp tục phiên. Nếu có thay đổi code/CMS mới, kiểm tra SHA và nguồn dữ liệu trước.
+- Lighthouse là lab measurement nên điểm Performance có thể dao động giữa các lần chạy; CLS=0 / Performance=100 là kết quả được đo tại thời điểm [#40553290350](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40553290350), không bảo đảm mọi thiết bị/mạng luôn 100.
+- Chế độ code: **auto-build**.
