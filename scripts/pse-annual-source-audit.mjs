@@ -5,7 +5,7 @@ import {chromium} from "playwright";
 import {readFile,mkdir,writeFile} from "node:fs/promises";
 const state=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
 if(state.schema!=="pse-legacy-article-migration-v1")throw Error("Unexpected PSE state");
-const refs=["998","1000","1092"];
+const refs=["998","1000","1092","1042","1043","1188","1259"];
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1366,height:900}});
 const report=[];
