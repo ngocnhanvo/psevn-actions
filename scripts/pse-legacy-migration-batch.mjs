@@ -148,7 +148,9 @@ try{
        path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/")?
          "hoat-dong-chi-bo-hdqt-bks":
        path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/")?
-         "hoat-dong-cong-doan-doan-tn-nu-cong":null)
+         "hoat-dong-cong-doan-doan-tn-nu-cong":
+       path.startsWith("/tin-tuc-su-kien/tin-cong-ty/dang-uy/")?
+         "dang-uy":null)
     : null;
   let sourceChildCategory=null;
   if(sourceChildSlug && /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path)){
