@@ -442,7 +442,10 @@ try{
    }
    const outstanding=article.assets.filter(x=>!state.media[x]);
    if(outstanding.length){
-    const subset=outstanding.slice(0,6);
+    // Four verified annual booklets have 52-67 indispensable images/docs each.
+    // Advance their media checkpoints faster, still serial and within 14-min budget.
+    const annualBookletMedia=isAnnual(id,item) && ["1042","1043","1188","1259"].includes(id) && item.status==="media" && item.annual_valid_gif_recovery_attempted===true;
+    const subset=outstanding.slice(0,annualBookletMedia?12:6);
     for(const assetUrl of subset){
      const download=await context.request.get(assetUrl,{timeout:45000});
      if(!download.ok())throw Error("Original media HTTP "+download.status());
