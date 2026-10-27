@@ -19,6 +19,17 @@
 8. 2014 `1092` text is an abbreviated disclosure with original document link `https://www.pse.vn/images/web/news/qhcd/ThongTinCongBo/BCTN2014`; independent HEAD returned **HTTP 404**, evidenced [#40508317036](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40508317036). Do not present it as an accessible report or synthesize a PDF. Preserve the original disclosure text in any future draft; find a verified original report file before publishing.
 9. Existing code path naturally renders public archive from WP taxonomy `category=1758`, so frontend hardcoding or rebuilding Astro is not needed for CMS imports.
 
+## Additional media audit and bounded continuation
+- Verified [#40508897325](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40508897325): four reports blocked by a 49-byte GIF are actually booklets with many substantive pages:
+  - 2012 source `1042`: 26 JPG, 26 GIF.
+  - 2013 source `1043`: 26 JPG, 26 GIF.
+  - 2015 source `1188`: 33 JPG, 33 GIF.
+  - 2016 source `1259`: 32 JPG, 32 GIF, 1 PNG and 1 PDF.
+  These images cannot all be dropped without destroying the report. 49-byte valid GIFs are retained; WordPress media attachments are imported in source order using the idempotent serialized queue.
+- Batches 222 and 223 already uploaded 48 report media, with zero duplicate WordPress article creation. Four source IDs remained at `media` in batch 223. See [#40507032810](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40507032810) and [#40507969642](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40507969642).
+- Importer commit `e4f6556a66d800dfb4e18ec4705d9fefb8d5d3ed` increases **only these four verified annual booklet media** from 6 to 12 sequential files per record/batch within existing 14-minute safety budget; all other posts remain at 6. No parallel WP uploads.
+- After the current running/queued job completes, confirm that each source is actually in `imported` or `draft_needs_date`, with verified WordPress post ID and exact media readback. Upload success alone is not publication success.
+
 ## Resume procedure (do not duplicate)
 1. **First check existing run(s)**: [#40507969642](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40507969642) was in progress and [#40508185351](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40508185351) queued/pending at the time of this note. Verify current runs and statuses, and read actual importer logs and checkpoint; do not manually dispatch while the serialized runner is active.
 2. Continue upload of the four GIF reports from `media` status and verify publication, native category, no duplicate slug, original body text/media link read-after-write. Any WP timeout: inspect logs and checkpoint before retry.
