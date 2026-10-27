@@ -10,7 +10,14 @@ if(process.env.PSE_IMPORT_AUTO_NEXT!=="yes")throw Error("Handoff gate not approv
 const data=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
 if(data.schema!=="pse-legacy-article-migration-v1"||data.tracker_issue!==3 ||
   !Number.isSafeInteger(data.runs) || data.runs>=250)throw Error("Invalid migration state or budget");
-const pending=data.queue.length>0 || Object.values(data.articles).some(row=>
+const annualOutstanding=Object.entries(data.articles).some(([id,row])=>{
+ const annual=new Set(["998","999","1000","1041","1042","1043","1092","1188","1259","1307","1353","1386","1412","1511","1546","1578","1625","1667"]);
+ if(!annual.has(id)||row.group_hint!=="shareholder"||!new RegExp("^https://(?:www\\.)?pse\\.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/"+id+"-[^/]+\\.html$","i").test(row.source_url||""))return false;
+ return (row.wp_id&&["imported","existing","draft_needs_date"].includes(row.status)&&!row.annual_category_verified)||
+  (["1042","1043","1188","1259"].includes(id)&&row.status==="quarantined"&&row.reason==="Original media size unsafe; bytes=49; ext=gif"&&!row.annual_gif_recovery_attempted&&!row.wp_id)||
+  (id==="1667"&&row.status==="quarantined"&&row.reason==="Original media size unsafe; bytes=33341195; ext=pdf"&&!row.annual_pdf_2025_attempted&&!row.wp_id);
+});
+const pending=annualOutstanding || data.queue.length>0 || Object.values(data.articles).some(row=>
   (["pending","media"].includes(row.status)&&Number(row.attempts||0)<3) ||
   (row.status==="quarantined" && row.reason==="Source content incomplete or oversized" && !row.short_content_rechecked) ||
   (row.status==="quarantined" && row.reason==="WP slug occupied by unrelated content" &&
