@@ -49,6 +49,9 @@ try{
  if(candidates.some(t=>!t||!t.name||!t.slug||String(t.description||'').trim()||
   String(t.yoast_head_json?.description||'').trim()))
   throw Error('Term identity or original metadata is unexpected; stop all writes');
+ const liveTerms=await get('/wp-json/astro/v1/get-product-categories?_esc_preview='+Date.now());
+ if(liveTerms.status!==200||!Array.isArray(liveTerms.value))throw Error('Cannot verify current native taxonomy SEO metadata');
+ const currentMeta=new Map(liveTerms.value.map(x=>[Number(x.id),String(x.seoDescription||'').trim()]));
  const pageRes=await get('/wp-json/wp/v2/pages/79300?context=edit&_fields=id,slug,title,content,acf,yoast_head_json,status');
  const sourcePage=pageRes.value;
  if(pageRes.status!==200||sourcePage?.slug!=='so-do-to-chuc'||
@@ -72,6 +75,19 @@ try{
   draftDescription:x.next
  }))));
  for(const record of seoRecords){
+  // Previous native WP form submission may have succeeded before a runner lost
+  // its navigation context. Read exact current metadata before any retry.
+  const existing=record.type==='product_cat'?currentMeta.get(record.id)||'':
+    String(sourcePage.yoast_head_json?.description||'').trim();
+  if(existing===record.next){
+   const result={id:record.id,slug:record.slug,type:record.type,status:200,
+    expected:record.next,actual:existing,pass:true,alreadySaved:true};
+   report.push(result);dump();
+   console.log('PSE_YOAST_NATIVE_ALREADY_SAVED='+JSON.stringify({
+    id:record.id,slug:record.slug,verified:true}));
+   continue;
+  }
+  if(existing)throw Error('SEO metadata changed unexpectedly for '+record.slug);
   const path=record.type==='product_cat'
    ?'/wp-admin/term.php?taxonomy=product_cat&tag_ID='+record.id+'&post_type=product'
    :'/wp-admin/post.php?post='+record.id+'&action=edit';
@@ -94,20 +110,24 @@ try{
    const val=await hidden.inputValue();
    if(val!==record.next)throw Error('Yoast hidden field not synced; do not save '+record.slug);
   }
+  // Arm the real navigation waiter first to avoid racing the browser redirect.
+  const redirect=page.waitForNavigation({waitUntil:'domcontentloaded',timeout:60000});
   if(record.type==='product_cat'){
-   // WordPress taxonomy update uses the already-verified native #edittag form.
-   // requestSubmit follows the browser's actual submit + nonce path, not REST/DB bypass.
-   await page.locator('#edittag').evaluate(f=>{
-    if(!(f instanceof HTMLFormElement))throw Error('Not a WordPress form');
-    f.requestSubmit();
-   });
-   await page.waitForLoadState('domcontentloaded',{timeout:60000});
+   // Native WordPress form submit preserves taxonomy nonce and Yoast field hooks.
+   try{
+    await page.locator('#edittag').evaluate(f=>{
+     if(!(f instanceof HTMLFormElement))throw Error('Not a WordPress form');
+     f.requestSubmit();
+    });
+   }catch(error){
+    if(!/Execution context was destroyed|navigation/i.test(String(error)))throw error;
+   }
   }else{
    const saveButton=page.locator('#publish').first();
    if(!await saveButton.count())throw Error('Native Update button absent '+record.slug);
    await saveButton.click();
-   await page.waitForLoadState('domcontentloaded',{timeout:60000});
   }
+  await redirect;
   const verify=record.type==='product_cat'
     ? await get('/wp-json/astro/v1/get-product-categories?_esc_preview='+Date.now())
     : await get('/wp-json/wp/v2/pages/79300?context=edit&_fields=id,slug,yoast_head_json');
