@@ -2,3 +2,5 @@
 2026-10-27 repeat desktop Lighthouse run to check Performance score stability (previous 99 vs provided 100; SEO/A11y both 100); READ ONLY, no build.\n2026-10-27 performance trace weighted Lighthouse metrics after two 99 scores; read-only. No build.
 2026-10-28 desktop homepage Lighthouse after final PHP build #40552782542: investigate measured score 99 vs 100 and weighted performance audit losses; GET-only, no deploy.\n
 2026-10-28 postdeploy homepage Desktop: WordPress/PHP controlled signed deploy #40559824616 source master f797eb2fb0da82146eebe923332c919df2cc3e80, measure real Performance/FCP/LCP/SI/TBT/CLS and A11y/BP/SEO; no build or admin writes.
+
+2026-10-28 post corrected actual Pse_00 hero release Astro master 029834d737af0998f7c8811751fbb35b406adf9b, signed deploy #40561470854. Desktop real Lighthouse evaluate SI and performance, plus SEO/BP/A11y; read-only; no build.
