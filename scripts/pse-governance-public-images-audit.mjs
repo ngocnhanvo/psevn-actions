@@ -5,7 +5,7 @@ const state=JSON.parse(await readFile('docs/pse-legacy-migration-state.json','ut
 if(state.schema!=='pse-legacy-article-migration-v1')throw Error('Wrong PSE source');
 const target='/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/';
 const rows=Object.entries(state.articles).filter(([id,r])=>r.wp_id&&r.source_url?.startsWith('https://www.pse.vn'+target+id+'-')).sort((a,b)=>Number(b[0])-Number(a[0]));
-if(rows.length!==20)throw Error('Governance post checkpoint changed; expected 20 after two verified PDFs, got '+rows.length);
+if(rows.length!==24)throw Error('Governance source parity changed; expected 24 WordPress records, got '+rows.length);
 const origin='https://pse.webnvn.com';
 const browser=await chromium.launch({headless:true});
 const context=await browser.newContext({viewport:{width:1366,height:850}});
@@ -17,6 +17,13 @@ try{
  const a=await page.evaluate(()=>({title:document.title,h1:[...document.querySelectorAll('h1')].map(x=>x.textContent?.trim()),headings:[...document.querySelectorAll('h2,h3')].slice(0,20).map(x=>x.textContent?.trim().slice(0,100))}));
  console.log('PSE_GOV_PUBLIC_ARCHIVE='+JSON.stringify({http:200,h1:a.h1,headings:a.headings.slice(0,8)}));
  for(const [id,row] of rows){
+  // Original source 92 has a verified PDF but no independently verified Joomla
+  // publish day; its WordPress draft must not be presented as public content.
+  if(id==='92'&&row.status==='draft_needs_date'){
+   manifest.push({sourceId:id,wpId:row.wp_id,status:'DRAFT_WAITING_SOURCE_DATE'});
+   console.log('PSE_GOV_PUBLIC_POST='+JSON.stringify({id,wpId:row.wp_id,status:'DRAFT_WAITING_SOURCE_DATE',noFakePublication:true}));
+   continue;
+  }
   const slug=id==='1184'?'nghi-quyet-ve-viec-chap-thuan-kh-kd-2016':new URL(row.source_url).pathname.match(/\/\d+-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   if(!slug)throw Error('Source slug unknown '+id);
   let http=0,article=null;
@@ -57,7 +64,8 @@ try{
  console.log('PSE_GOV_PUBLIC_AUDIT='+JSON.stringify({tested:manifest.length,
   http200:manifest.filter(x=>x.http===200&&x.article?.found).length,
   broken:manifest.flatMap(x=>(x.article?.imageResults||[]).filter(y=>!y.loaded).map(y=>({id:x.sourceId,i:y.i,src:x.article?.imgs?.[y.i]?.src}))),
-  noArticle:manifest.filter(x=>!x.article?.found).map(x=>x.sourceId),
+  noArticle:manifest.filter(x=>x.status!=='DRAFT_WAITING_SOURCE_DATE'&&!x.article?.found).map(x=>x.sourceId),
+  drafts:manifest.filter(x=>x.status==='DRAFT_WAITING_SOURCE_DATE').map(x=>x.sourceId),
   suspicious:manifest.filter(x=>x.article?.suspicious).map(x=>x.sourceId),
   noWrites:true,noBuild:true}));
 }finally{await browser.close()}
