@@ -130,45 +130,51 @@ def main() -> int:
             raise ValueError("Frontend root mismatch")
         # Already inside the verified Astro public_html root above.
         ensure_http_guard(ftp, frontend)
+        web_env = domain_root + "/public_html/" + NAME
 
         expected = hashlib.sha256(payload).hexdigest()
-        if file_present(ftp, NAME) and ftp_digest(ftp, NAME) == expected:
-            ftp.sendcmd("SITE CHMOD 600 " + NAME)
+        if file_present(ftp, web_env) and ftp_digest(ftp, web_env) == expected:
+            ftp.sendcmd("SITE CHMOD 600 " + web_env)
             print("PSE_RUNTIME_ENV_FTPS=PASS state=unchanged webroot=guarded")
             return 0
 
+        # Never leave temporary credentials or .env backups under public_html;
+        # only the exact .env path has been verified as HTTP-inaccessible.
+        ftp.cwd(domain_root)
         suffix = secrets.token_hex(8)
-        temp = NAME + "." + suffix + ".tmp"
-        backup = NAME + "." + suffix + ".rollback"
+        temp = domain_root + "/.pse-env." + suffix + ".tmp"
+        backup = domain_root + "/.pse-env." + suffix + ".rollback"
         if file_present(ftp, temp) or file_present(ftp, backup):
             raise ValueError("Unexpected staging file collision")
         ftp.storbinary("STOR " + temp, io.BytesIO(payload))
         ftp.sendcmd("SITE CHMOD 600 " + temp)
         if ftp_digest(ftp, temp) != expected:
             raise ValueError("Env staging verification failed")
-        if file_present(ftp, NAME):
-            ftp.rename(NAME, backup)
+        if file_present(ftp, web_env):
+            ftp.rename(web_env, backup)
             original_moved = True
             ftp.sendcmd("SITE CHMOD 600 " + backup)
-        ftp.rename(temp, NAME)
+        ftp.rename(temp, web_env)
         temp = None
         installed = True
-        if ftp_digest(ftp, NAME) != expected:
+        ftp.sendcmd("SITE CHMOD 600 " + web_env)
+        if ftp_digest(ftp, web_env) != expected:
             raise ValueError("Env activation verification failed")
         if not http_denies_env(frontend):
             raise ValueError("Webroot env no longer HTTP-denied after activation")
         print("PSE_RUNTIME_ENV_FTPS=PASS state=updated webroot=guarded rollback_kept=" + str(original_moved).lower())
         return 0
     except ftplib.all_errors + (OSError, ValueError, KeyError) as exc:
-        # Restore the original private runtime config if staging/activation failed.
+        # Restore the original guarded .env if staging/activation failed.
         if ftp is not None:
             try:
+                web_env = "/domains/" + frontend + "/public_html/" + NAME
                 if original_moved and backup:
-                    if installed and file_present(ftp, NAME):
-                        ftp.delete(NAME)
-                    ftp.rename(backup, NAME)
-                elif installed and file_present(ftp, NAME):
-                    ftp.delete(NAME)
+                    if installed and file_present(ftp, web_env):
+                        ftp.delete(web_env)
+                    ftp.rename(backup, web_env)
+                elif installed and file_present(ftp, web_env):
+                    ftp.delete(web_env)
                 if temp and file_present(ftp, temp):
                     ftp.delete(temp)
             except ftplib.all_errors + (OSError,):
