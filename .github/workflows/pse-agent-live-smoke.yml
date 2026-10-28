@@ -1,0 +1,25 @@
+name: PSE AI Agent live secure conversation smoke (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-live-smoke.yml
+      - scripts/pse-agent-live-smoke.py
+permissions:
+  contents: read
+jobs:
+  synthetic-pse-conversation:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check live REST security and one synthetic two-topic session
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-live-smoke.py
+          python3 scripts/pse-agent-live-smoke.py
