@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser()
 mode = parser.add_mutually_exclusive_group()
 mode.add_argument("--deploy", action="store_true", help="Explicitly publish guarded Agent code")
 mode.add_argument("--check-only", action="store_true", help="Read-only PSE FTPS identity/source audit")
+parser.add_argument("--security-only", action="store_true", help="Release only security-hardened esc-agent.php")
 args = parser.parse_args()
 
 source = Path("source-php")
@@ -35,6 +36,8 @@ files = [
     Path("wp-content/mu-plugins/esc-agent/src/Skills/ProductSkill.php"),
 ]
 assert len(files) == 6 and len(files) == len(set(files))
+if args.security_only:
+    files = files[:1]
 assert all((source / p).is_file() and (source / p).stat().st_size > 0 for p in files)
 
 
