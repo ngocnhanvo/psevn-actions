@@ -1,1 +1,3 @@
 2026-10-28 PSE stale Blue Sea business data production fix: PHP master PR #8 squash fad9d4104b37368fbbf25c84569ef4a813abbd04; standalone source QA #40645314843 PASS. Approved two-file-only Agent.php and CompanySkill.php FTPS with checksum/rollback; run one fresh synthetic tenant audit after deploy and cleanup. Do not change .env, other PHP files, or build Astro.
+
+2026-10-28 exact PSE legal-name intent fix PR #16 merged PHP master 583184d3d48234e2cc2aac63f55f55b97ae4c21b; source branch only Agent.php/CompanySkill.php plus offline test. Run existing tenant-fix FTPS scoped release with preflight and private rollback, then fresh synthetic identity QA --only-identity. Preserve Astro build/cache and user histories.
