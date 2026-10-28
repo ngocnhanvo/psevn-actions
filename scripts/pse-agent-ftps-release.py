@@ -54,7 +54,7 @@ audited_live_blobs = {
     "wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php":
         "870da847795a5d0c1e59cf6426ba1d786f520af1",
     "wp-content/mu-plugins/esc-agent/src/Skills/PolicySkill.php":
-        "2effe295a633c3b9825463ebf04d927c154442e",
+        "2effe295a633c3b9825463ebf04d927c154442e6",
 }
 
 
