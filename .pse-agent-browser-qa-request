@@ -3,3 +3,5 @@
 2026-10-28 rerun only browser test after shell correction PR #25 (2685e317). Initial QA #40639416624 failed immediately on sh pipefail before network, no website bug proven. Astro production source 3c99e3d deploy #40639171016 PASS.
 
 2026-10-28 PSE browser cookie diagnostic, metadata-only flags, no cookie values. Previous live QA #40639594338 passed zero-load launcher but failed cookie guard; investigate before any more deployment. No build.
+
+2026-10-28 browser run to inspect chat/history/mobile beyond identified missing Secure flag; test still fails closed at end until cookie fixed; no Astro build.
