@@ -53,6 +53,13 @@ jobs:
           assert 'KHÔNG PHỤ THUỘC TRANG ĐANG MỞ' in planner
           print('PSE_AGENT_SECURITY_SOURCE=PASS')
           PY
+      - name: Run PSE global conversation cross-topic regression (isolated PHP)
+        working-directory: php
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l wp-content/mu-plugins/esc-agent/tests/pse-global-cross-topic-contract.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-global-cross-topic-contract.php
       - run: echo 'PSE_AGENT_PHP_QA=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS; NO_WORDPRESS_WRITE=PASS'
 
   astro-release-candidate:
