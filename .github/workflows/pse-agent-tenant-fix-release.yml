@@ -50,3 +50,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/pse-agent-tenant-audit.py
+          # Regression for the owner's exact question; one synthetic session,
+          # with automatic history cleanup. No full 10-question quota-heavy QA.
+          python3 scripts/pse-agent-history-founding-live-qa.py --only-identity
