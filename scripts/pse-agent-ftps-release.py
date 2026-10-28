@@ -55,7 +55,7 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     # The archived FTPS snapshot normalizes CRLF to LF before storing the
     # private Git blob. Compare that SAME canonical form; do not permit any
     # other text changes or waive the immutable baseline fingerprint.
-    canonical = live.replace(b"\\r\\n", b"\\n")
+    canonical = live.replace(b"\r\n", b"\n")
     git_blob = hashlib.sha1(
         b"blob " + str(len(canonical)).encode("ascii") + bytes([0]) + canonical
     ).hexdigest()
@@ -194,7 +194,7 @@ try:
                   + " similarity=" + format(ratio, ".3f"))
             if not args.deploy and str(rel) in audited_live_blobs:
                 expected = audited_live_blobs[str(rel)]
-                canonical = remote.replace(b"\\r\\n", b"\\n")
+                canonical = remote.replace(b"\r\n", b"\n")
                 actual = hashlib.sha1(
                     b"blob " + str(len(canonical)).encode("ascii") + bytes([0]) + canonical
                 ).hexdigest()
