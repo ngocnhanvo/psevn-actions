@@ -24,6 +24,7 @@ jobs:
         with: { persist-credentials: false }
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Audit WooCommerce API keys page without writes or credential disclosure
+        shell: bash
         run: |
           set -euo pipefail
           node --check scripts/pse-agent-woo-key-admin-audit.mjs
