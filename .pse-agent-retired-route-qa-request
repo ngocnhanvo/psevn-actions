@@ -1,0 +1,1 @@
+2026-10-28 PSE Agent full source PHP release #40652271723 PASS, live browser #40653216213 PASS, orphan WordPress Page 53390 moved to draft with private backup #40654150209 PASS. Run read-only public REST /published index + frontend navigation + /ve-chung-toi direct route QA to decide whether WordPress-controlled Astro rebuild is necessary. Do not repeat PHP FTP/Agent chat tests.
