@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-astro
-          ref: github
+          ref: feat/pse-public-env-path-20261028
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: astro
           persist-credentials: false
