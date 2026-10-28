@@ -23,6 +23,7 @@ mode = parser.add_mutually_exclusive_group()
 mode.add_argument("--deploy", action="store_true", help="Explicitly publish guarded Agent code")
 mode.add_argument("--check-only", action="store_true", help="Read-only PSE FTPS identity/source audit")
 parser.add_argument("--security-only", action="store_true", help="Release only security-hardened esc-agent.php")
+parser.add_argument("--tenant-fix-only", action="store_true", help="Release only reviewed PSE CompanySkill and Agent tenant-isolation fixes")
 args = parser.parse_args()
 
 source = Path("source-php")
@@ -70,8 +71,15 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
 
 
 assert len(files) == 6 and len(files) == len(set(files))
-if args.security_only:
+assert not (args.security_only and args.tenant_fix_only)
+if args.tenant_fix_only:
+    files = [
+        Path("wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/Agent.php"),
+    ]
+elif args.security_only:
     files = files[:1]
+assert len(files) == len(set(files))
 assert all((source / p).is_file() and (source / p).stat().st_size > 0 for p in files)
 
 
