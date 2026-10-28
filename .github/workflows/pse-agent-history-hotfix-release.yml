@@ -1,0 +1,83 @@
+name: PSE AI Agent history privacy hotfix via verified FTPS (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-history-hotfix-release-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  php-security-hotfix:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout restricted FTPS publisher
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout PSE PHP master only (reviewed security hotfix)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Verify security guards in exact release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-ftps-release.py
+          php -l source-php/wp-content/mu-plugins/esc-agent.php
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('source-php/wp-content/mu-plugins/esc-agent.php').read_text()
+          assert "'permission_callback' => 'esc_agent_rest_authorize'" in s
+          assert "'methods' => ['POST', 'DELETE']" in s
+          assert 'function esc_agent_valid_session' in s
+          print('PSE_AGENT_PRIVACY_HOTFIX_SOURCE=PASS')
+          PY
+      - name: Deploy ONLY esc-agent.php through reviewed FTPS script
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --check-only --security-only
+          python3 scripts/pse-agent-ftps-release.py --deploy --security-only
+          python3 scripts/pse-agent-ftps-release.py --check-only --security-only
+      - name: Verify protected history and POST-only clear on real WordPress
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, uuid
+          from urllib.parse import urlsplit
+          from urllib.request import Request, urlopen
+          from urllib.error import HTTPError
+          origins=[x.split('=',1)[1].strip().strip("'\"") for x in os.environ['ENV_FILE'].splitlines() if x.strip().startswith('WC_URL=')]
+          assert len(origins)==1
+          p=urlsplit(origins[0])
+          assert p.scheme=='https' and p.hostname=='admin-pse.webnvn.com'
+          base=p.geturl().rstrip('/')
+          new_id=str(uuid.uuid4())
+          cases=[
+              ('history', '/wp-json/esc/v1/chat-history?session_id='+new_id, (401,403)),
+              ('GET_clear', '/wp-json/esc/v1/clear-chat-history?session_id='+new_id, (404,405))
+          ]
+          for label,path,allowed in cases:
+              try:
+                  with urlopen(Request(base+path,headers={'User-Agent':'PSE-Agent-Hotfix-Verify'}),timeout=30) as response:
+                      status=response.status
+              except HTTPError as err:status=err.code
+              print('PSE_AGENT_SECURITY_'+label+'_STATUS='+str(status))
+              assert status in allowed, 'Unexpected live Agent security HTTP status'
+          print('PSE_AGENT_PRIVACY_HOTFIX_LIVE=PASS')
+          PY
