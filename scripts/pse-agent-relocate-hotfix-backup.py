@@ -48,7 +48,7 @@ try:
     assert ftp.size("esc-agent.php") is not None
 
     names = [x.rsplit("/", 1)[-1] for x in ftp.nlst()]
-    match = re.compile(r"^\\.pse-agent-[a-f0-9]{16}-esc-agent\\.php\\.backup$")
+    match = re.compile(r"^\.pse-agent-[a-f0-9]{16}-esc-agent\.php\.backup$")
     rollback_files = sorted(set(x for x in names if match.fullmatch(x)))
     assert len(rollback_files) <= 1, "Multiple rollback sources need manual review"
     if not rollback_files:
