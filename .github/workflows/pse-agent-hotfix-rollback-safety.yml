@@ -1,0 +1,31 @@
+name: PSE AI Agent hotfix rollback backup webroot safety (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-hotfix-rollback-safety.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  relocate-hotfix-backup:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify exact PSE security hotfix, then relocate only its rollback outside public_html
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-relocate-hotfix-backup.py
+          python3 scripts/pse-agent-relocate-hotfix-backup.py
+          echo 'PSE_AGENT_ROLLBACK_SAFETY=PASS; NO_ACTIVE_PHP_WRITE=PASS; NO_ASTRO_BUILD=PASS'
