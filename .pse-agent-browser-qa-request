@@ -7,3 +7,5 @@
 2026-10-28 browser run to inspect chat/history/mobile beyond identified missing Secure flag; test still fails closed at end until cookie fixed; no Astro build.
 
 2026-10-28 retry affected real PSE browser QA ONLY after Astro master HTTPS proxy fix PR #119 commit 3ff95a077bcfe7a81f70a5bcdd34a442ae2920ed successfully deployed through official WordPress Build Website run #40642188592. Original #40640077291 had Secure=false and CHAT_HTTP200 FAIL on old 3c99e3 source. Updated test script PR #28 records only status codes and deterministic history, no secrets. No new website build.
+
+2026-10-28 PSE tenant/Markdown final browser QA: PHP `CompanySkill` & `Agent` guarded FTPS #40645528862 PASS, fresh company profile PSE/fertilizer/no Blue Sea; Astro master bfd76fe56ed2c174e82dceba676b22a125af5ed5 deployed by official WP/PHP Build Website #40646009656 PASS with guarded .env unchanged. Re-test exact user prompt 'công ty làm về gì', strong DOM without literal `**`, no old tenant, session/history/mobile/clear. Synthetic only; no build/deploy.
