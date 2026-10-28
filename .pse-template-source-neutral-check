@@ -9,3 +9,5 @@
 2026-10-27 PSE news card legacy WP admin URL source fix: full Astro github Vitest + parser CI NO BUILD; ensure existing featured source converted to same-origin image API.
 2026-10-27 Lighthouse menu remediation: Astro DEV headings and semantic WordPress metrics headers, source SHA 12e8ae50e56ef05b31682a099721c4023151c5c0, full Vitest/parser no build.
 2026-10-28 PSE global zero-load agent chat on Astro github: run existing Vitest, Astro parser and import resolver (NO ASTRO BUILD, NO FTP); cross-page cookie, no URL context, no pre-click agent API.
+
+2026-10-28 PSE Agent activation dev source PR #116 merged github 108721e15dd3cc2a3de2fb87f1be78b2aecb1271; verify full Vitest and Astro parser for default-on zero-load launcher after PHP production backend smoke PASS. No Astro build, no FTP.
