@@ -13,3 +13,4 @@
 2026-10-28 PSE Agent activation dev source PR #116 merged github 108721e15dd3cc2a3de2fb87f1be78b2aecb1271; verify full Vitest and Astro parser for default-on zero-load launcher after PHP production backend smoke PASS. No Astro build, no FTP.
 
 2026-10-28 PSE Agent browser reverse proxy fix dev PR #118 merged github 76ce5450963e9f947c32bb895ce7b5acd8838c58, run existing full Vitest import syntax/parser no-build. Verify HttpOnly Secure cookie and configured public HTTPS Origin; no standalone build/FTP.
+2026-10-28 PSE Agent skeleton PR #122 after master->github sync: full Astro DEV Vitest, import resolver and parser. NO BUILD.
