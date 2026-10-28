@@ -123,17 +123,14 @@ try {
   // Go back to WP authenticated page before mutation.
   await page.goto(wp.origin + "/wp-admin/", {waitUntil:"domcontentloaded",timeout:60000});
   const updated=await api("POST","/wp-json/wp/v2/pages/53390",{status:"draft"});
-  if (updated.http !== 200 || updated.payload?.id !== 53390 || updated.payload?.status !== "draft") {
-    throw Error("Draft transition failed HTTP "+updated.http);
-  }
-  changed=true;
+  changed = updated.http === 200 && updated.payload?.id === 53390 && updated.payload?.status === "draft";
+  if (!changed) throw Error("Draft transition failed HTTP "+updated.http);
   const after=await api("GET","/wp-json/wp/v2/pages/53390?context=edit");
   if (after.http !== 200 || after.payload?.status !== "draft"
       || after.payload?.slug !== "ve-chung-toi" || String(after.payload?.content?.raw ?? "") !== raw) {
     throw Error("Read-after-write did not confirm unchanged content and draft state");
   }
-  const unauthed = await context.request.get(wp.origin + "/wp-json/wp/v2/pages/53390", {headers:{"Accept":"application/json"}});
-  // Browser context has WP cookies; public test requires independent unauthenticated request.
+  // Browser context has WP cookies; public test requires an independent unauthenticated request.
   const publicContext = await browser.newContext();
   const publicResponse=await publicContext.request.get(wp.origin + "/wp-json/wp/v2/pages/53390");
   await publicContext.close();
