@@ -53,3 +53,46 @@ jobs:
           print('PSE_AGENT_SECURITY_SOURCE=PASS')
           PY
       - run: echo 'PSE_AGENT_PHP_QA=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS; NO_WORDPRESS_WRITE=PASS'
+
+  astro-release-candidate:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout only isolated PSE Astro agent release candidate
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: feat/pse-agent-zero-load-release-20261028
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Run complete source regression tests without build
+        working-directory: source
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = 'feat/pse-agent-zero-load-release-20261028'
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { createRequire } from 'node:module';
+          import { pathToFileURL } from 'node:url';
+          const require=createRequire(import.meta.url);
+          const astroRequire=createRequire(require.resolve('astro/package.json'));
+          const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
+          for(const file of ['src/astro/components/Tool/PseAgentLauncher.astro','src/astro/components/Layout/Layout.astro']) {
+            await compiler.transform(await readFile(file,'utf8'),{filename:file});
+            console.log('ASTRO_AGENT_PARSE_PASS '+file);
+          }
+          NODE
+          echo 'PSE_AGENT_ASTRO_RELEASE_QA=PASS; NO_BUILD=PASS; NO_FTP=PASS'
