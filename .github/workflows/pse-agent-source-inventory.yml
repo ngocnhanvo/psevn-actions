@@ -1,0 +1,22 @@
+name: PSE Agent current WP public source inventory (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-source-inventory-request]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Audit published public CMS sources read-only
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-source-inventory.py
+          python3 scripts/pse-agent-source-inventory.py
