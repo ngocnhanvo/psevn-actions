@@ -128,10 +128,7 @@ def main() -> int:
         ftp.cwd("public_html")
         if ftp.pwd().rstrip("/") != domain_root + "/public_html":
             raise ValueError("Frontend root mismatch")
-        # Upload into the existing Astro public_html root, as requested.
-        ftp.cwd("public_html")
-        if ftp.pwd().rstrip("/") != domain_root + "/public_html":
-            raise ValueError("Frontend public_html mismatch")
+        # Already inside the verified Astro public_html root above.
         ensure_http_guard(ftp, frontend)
 
         expected = hashlib.sha256(payload).hexdigest()
