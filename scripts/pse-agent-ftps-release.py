@@ -2,13 +2,14 @@
 """PSE Agent-only FTPS preflight and guarded release. No Astro build, no CMS edits.
 
 Release is opt-in with --deploy. Default --check-only makes no FTP mutations.
-Only mu-plugin esc-agent.php, esc-agent/DEPLOY_VERSION and esc-agent/src/*.php.
+Only the six PHP files changed in the reviewed PSE Agent PR; never overwrite the other 48 live Agent files.
 """
 from __future__ import annotations
 
 import argparse
 import ftplib
 import hashlib
+import difflib
 import io
 import os
 import re
@@ -24,19 +25,18 @@ mode.add_argument("--check-only", action="store_true", help="Read-only PSE FTPS 
 args = parser.parse_args()
 
 source = Path("source-php")
-agent_dir = Path("wp-content/mu-plugins/esc-agent")
+# Immutable allowlist from PSE PHP PR #5. Other live Agent files MUST remain untouched.
 files = [
     Path("wp-content/mu-plugins/esc-agent.php"),
-    agent_dir / "DEPLOY_VERSION",
-    *sorted((source / agent_dir / "src").rglob("*.php"))
+    Path("wp-content/mu-plugins/esc-agent/src/Core/AgentSynthesisPrompt.php"),
+    Path("wp-content/mu-plugins/esc-agent/src/Core/KnowledgeAwarePlanner.php"),
+    Path("wp-content/mu-plugins/esc-agent/src/Core/Planner.php"),
+    Path("wp-content/mu-plugins/esc-agent/src/Skills/KnowledgeSearchSkill.php"),
+    Path("wp-content/mu-plugins/esc-agent/src/Skills/ProductSkill.php"),
 ]
-# rglob returns SOURCE-prefixed paths; normalize once against the checkout.
-files = [p.relative_to(source) if p.is_relative_to(source) else p for p in files]
-assert len(files) >= 25 and len(files) == len(set(files)), "Unexpected PSE Agent source inventory"
-assert all(p.parts[:3] == ("wp-content", "mu-plugins", "esc-agent")
-           or str(p) == "wp-content/mu-plugins/esc-agent.php" for p in files)
+assert len(files) == 6 and len(files) == len(set(files))
 assert all((source / p).is_file() and (source / p).stat().st_size > 0 for p in files)
-assert not any("tests" in p.parts or "__pycache__" in p.parts for p in files)
+
 
 raw_host = os.environ.get("FTP_SERVER", "").strip()
 if "://" not in raw_host:
@@ -87,6 +87,11 @@ def remove_if_exists(name: str) -> None:
     if exists(name):
         ftp.delete(name)
 
+def remote_bytes(name: str) -> bytes:
+    buffer = io.BytesIO()
+    ftp.retrbinary("RETR " + name, buffer.write)
+    return buffer.getvalue()
+
 try:
     ftp.connect(ftp_url.hostname, ftp_url.port or 21)
     ftp.auth()
@@ -110,9 +115,26 @@ try:
         found = exists(name)
         if not found:
             missing += 1
-        elif digest(name) == expected:
-            matched += 1
-            continue
+            print("PSE_AGENT_FTPS_DIFF missing=" + str(rel))
+            if args.deploy:
+                raise RuntimeError("Reviewed Agent file missing remotely")
+        else:
+            remote = remote_bytes(name)
+            if hashlib.sha256(remote).hexdigest() == expected:
+                matched += 1
+                continue
+            ours = (source / rel).read_bytes()
+            remote_lines = remote.replace(b"\\r\\n", b"\\n").splitlines()
+            source_lines = ours.replace(b"\\r\\n", b"\\n").splitlines()
+            ratio = difflib.SequenceMatcher(None, remote_lines, source_lines, autojunk=False).ratio()
+            print("PSE_AGENT_FTPS_DIFF file=" + str(rel)
+                  + " remote_lines=" + str(len(remote_lines))
+                  + " reviewed_lines=" + str(len(source_lines))
+                  + " similarity=" + format(ratio, ".3f"))
+            # Existing production may be customized. Refuse automated replacement
+            # of a substantially divergent file, even if the PR itself is reviewed.
+            if args.deploy and ratio < 0.85:
+                raise RuntimeError("Unreviewed live Agent drift: release stopped before overwriting this file")
         if not args.deploy:
             continue
 
