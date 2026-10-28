@@ -1,1 +1,3 @@
 2026-10-28 PSE Agent real browser desktop/mobile synthetic smoke after Astro production source 3c99e3dbe275db52d6e6601288fe036e7dac6441 build/deploy via authenticated WordPress trigger Actions #40639171016 PASS; backend 3-turn history clear live PASS; no Astro build, no FTP, no other customer data.
+
+2026-10-28 rerun only browser test after shell correction PR #25 (2685e317). Initial QA #40639416624 failed immediately on sh pipefail before network, no website bug proven. Astro production source 3c99e3d deploy #40639171016 PASS.
