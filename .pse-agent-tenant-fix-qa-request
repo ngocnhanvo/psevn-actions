@@ -1,0 +1,1 @@
+2026-10-28 PSE inherited Blue Sea company.get source correction: PHP feature fix/pse-agent-company-profile-source-20261028 and Astro safe Markdown fix/pse-agent-safe-markdown-20261028. Run read-only offline PHP unit and full Astro Vitest before any merge/deploy. No WordPress writes, FTP or Astro build.
