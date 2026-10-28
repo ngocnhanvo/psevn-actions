@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Deploy PSE Astro runtime env via FTPS outside the public document root.
+"""Deploy PSE Astro runtime .env into public_html via FTPS with HTTP deny check.
 
 The source is the existing protected Actions ENV_FILE secret. This program
-never prints, checks in, or stages env contents in a web-accessible archive.
-No public_html file is read, uploaded, removed or overwritten.
+never prints, checks in, or stages env contents in a public ZIP.
+The HTTP deny probe MUST pass before any secret is placed in webroot.
 """
 from __future__ import annotations
 
@@ -16,8 +16,10 @@ import secrets
 import ssl
 import sys
 from urllib.parse import urlsplit
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
-NAME = ".pse-astro-runtime.env"
+NAME = ".env"
 MAX_BYTES = 65536
 
 
@@ -55,6 +57,34 @@ def file_present(ftp: ftplib.FTP_TLS, name: str) -> bool:
         if str(exc).startswith("550"):
             return False
         raise
+
+
+def http_denies_env(frontend: str) -> bool:
+    # Never inspect/log the HTTP response body. Redirects and HTTP 200 fail closed.
+    url = "https://" + frontend + "/.env?__pse_guard=" + secrets.token_hex(8)
+    request = Request(url, headers={"Cache-Control": "no-store"}, method="GET")
+    try:
+        with urlopen(request, timeout=20) as response:
+            return response.status in (403, 404)
+    except HTTPError as exc:
+        return exc.code in (403, 404)
+
+
+def ensure_http_guard(ftp: ftplib.FTP_TLS, frontend: str) -> None:
+    if file_present(ftp, NAME):
+        if not http_denies_env(frontend):
+            raise ValueError("HTTP access to webroot .env is not blocked")
+        return
+    # A harmless .env probe proves the exact path is denied BEFORE uploading
+    # any credentials. Never replace a live .env with a probe.
+    marker = b"PSE_HTTP_DENY_PROBE=1\\n"
+    ftp.storbinary("STOR " + NAME, io.BytesIO(marker))
+    try:
+        ftp.sendcmd("SITE CHMOD 600 " + NAME)
+        if not http_denies_env(frontend):
+            raise ValueError("HTTP guard did not deny webroot .env")
+    finally:
+        ftp.delete(NAME)
 
 
 def main() -> int:
@@ -98,12 +128,16 @@ def main() -> int:
         ftp.cwd("public_html")
         if ftp.pwd().rstrip("/") != domain_root + "/public_html":
             raise ValueError("Frontend root mismatch")
-        ftp.cwd(domain_root)
+        # Upload into the existing Astro public_html root, as requested.
+        ftp.cwd("public_html")
+        if ftp.pwd().rstrip("/") != domain_root + "/public_html":
+            raise ValueError("Frontend public_html mismatch")
+        ensure_http_guard(ftp, frontend)
 
         expected = hashlib.sha256(payload).hexdigest()
         if file_present(ftp, NAME) and ftp_digest(ftp, NAME) == expected:
             ftp.sendcmd("SITE CHMOD 600 " + NAME)
-            print("PSE_RUNTIME_ENV_FTPS=PASS state=unchanged private=PASS")
+            print("PSE_RUNTIME_ENV_FTPS=PASS state=unchanged webroot=guarded")
             return 0
 
         suffix = secrets.token_hex(8)
@@ -124,7 +158,9 @@ def main() -> int:
         installed = True
         if ftp_digest(ftp, NAME) != expected:
             raise ValueError("Env activation verification failed")
-        print("PSE_RUNTIME_ENV_FTPS=PASS state=updated private=PASS rollback_kept=" + str(original_moved).lower())
+        if not http_denies_env(frontend):
+            raise ValueError("Webroot env no longer HTTP-denied after activation")
+        print("PSE_RUNTIME_ENV_FTPS=PASS state=updated webroot=guarded rollback_kept=" + str(original_moved).lower())
         return 0
     except ftplib.all_errors + (OSError, ValueError, KeyError) as exc:
         # Restore the original private runtime config if staging/activation failed.
