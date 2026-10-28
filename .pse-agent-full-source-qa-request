@@ -1,0 +1,1 @@
+2026-10-28 validate PSE full source cleanup from PHP feature fix/pse-agent-full-tenant-isolation-20261028. CMS read-only inventory #40647627276: old About page id53390 published 58 chars, PSE history/business pages live. Run PHP lint and three isolated source regressions; NO FTP, NO WordPress mutation, NO Astro build.
