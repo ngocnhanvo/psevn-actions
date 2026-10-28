@@ -6,3 +6,5 @@
 2026-10-28 verify PSE Astro master 62a92abc2f2c7b1910a7c72fb8bd161f8b0b4b3e: source contract test updated PR #108 after 546/547 full Vitest; rerun full regression, NO BUILD.
 
 2026-10-28 Agent production source PR #115 -> master 39dddbbf77cd037a06ca2616a73f5eb67a0ea96c; run offline full Vitest/parser and SSR origin checks before any Astro build. PHP Agent FTPS release #40638099537 PASS, postdeploy cross-topic backend smoke #40636762048 PASS latest attempt. No Astro build or deploy from this check.
+
+2026-10-28 PSE reverse-proxy Agent cookie/CSRF source verification for Astro master 3ff95a077bcfe7a81f70a5bcdd34a442ae2920ed (PR #119, same files as DEV #118). Development regression #40640343026 PASS. Run master isolated Vitest before one official WordPress-controlled rebuild, no deploy from this CI.
