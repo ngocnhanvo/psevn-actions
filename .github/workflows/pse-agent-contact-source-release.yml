@@ -1,0 +1,53 @@
+name: PSE Agent contact single-file guarded FTPS and live QA (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-contact-source-release-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Verify PSE contact source contract and FTP release script
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-ftps-release.py scripts/pse-agent-contact-live-qa.py
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-contact-current-source.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+      - name: Deploy only ContactSkill after exact remote Git blob and rollback preflight
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --contact-source-only --check-only
+          python3 scripts/pse-agent-ftps-release.py --contact-source-only --deploy
+          python3 scripts/pse-agent-ftps-release.py --contact-source-only --check-only
+      - name: Verify two fresh contact chats use PSE-only evidence and clear sessions
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-contact-live-qa.py
