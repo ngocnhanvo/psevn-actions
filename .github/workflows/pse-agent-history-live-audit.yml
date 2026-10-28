@@ -20,4 +20,4 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/pse-agent-history-founding-live-qa.py scripts/pse-agent-ftps-release.py
-          python3 scripts/pse-agent-history-founding-live-qa.py --audit-only
+          python3 scripts/pse-agent-history-founding-live-qa.py --only-founding-date
