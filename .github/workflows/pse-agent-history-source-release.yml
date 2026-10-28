@@ -1,0 +1,57 @@
+name: PSE Agent published history ESC Table guarded FTPS and live QA (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-history-source-release-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 6b4c9caea8038ad1c511f8e6a5702f963e5b8395
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Pin reviewed PHP master and verify current PSE source tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = '6b4c9caea8038ad1c511f8e6a5702f963e5b8395'
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-history-esc-table-source.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-global-cross-topic-contract.php
+          python3 -m py_compile scripts/pse-agent-ftps-release.py scripts/pse-agent-history-founding-live-qa.py
+          echo 'PSE_HISTORY_SOURCE_APPROVED=PASS'
+      - name: Deploy only CompanySkill through verified FTPS, immutable source check and rollback
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --company-history-only --check-only
+          python3 scripts/pse-agent-ftps-release.py --company-history-only --deploy
+          python3 scripts/pse-agent-ftps-release.py --company-history-only --check-only
+      - name: Validate exact PSE founding questions using fresh synthetic sessions
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-history-founding-live-qa.py
