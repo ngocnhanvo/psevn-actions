@@ -87,8 +87,6 @@ for page in range(1,13):
     for item in items:
         if not isinstance(item,dict):fail("public_catalog_invalid_item")
         # Store API cannot expose draft/private products; it has no status field.
-        if item.get("is_purchasable") is False:
-            pass  # A public informational fertilizer product may not be for sale.
         seen+=1
         raw=" ".join(str(item.get(k,"")) for k in ("name","description","short_description","slug"))
         if legacy.search(raw):legacy_products+=1
