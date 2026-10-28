@@ -1,0 +1,43 @@
+name: PSE Agent retire verified orphan legacy About page (REVERSIBLE CMS ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-orphan-about-retire-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-orphan-about-retire
+  cancel-in-progress: false
+jobs:
+  retire:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_RETIRE_LEGACY_ABOUT: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright and use the established PSE WP admin login
+        shell: bash
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify actual orphan and safely transition only Page 53390 to draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-agent-orphan-about-retire.mjs
+          node scripts/pse-agent-orphan-about-retire.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-agent-page-53390-before-private-backup
+          path: artifacts/pse-agent-orphan-about-retirement/
+          if-no-files-found: ignore
+          retention-days: 30
