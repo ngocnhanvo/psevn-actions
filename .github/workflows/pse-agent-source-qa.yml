@@ -96,3 +96,31 @@ jobs:
           }
           NODE
           echo 'PSE_AGENT_ASTRO_RELEASE_QA=PASS; NO_BUILD=PASS; NO_FTP=PASS'
+
+  agent-ftps-readonly-preflight:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout review candidate PHP Agent (not production)
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: feat/pse-ai-agent-secure-20261028
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Check exact Agent source inventory and FTPS scope without writes
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-ftps-release.py
+          python3 scripts/pse-agent-ftps-release.py --check-only
+          echo 'PSE_AGENT_FTPS_SOURCE_READONLY=PASS; NO_FTP_WRITES=PASS'
