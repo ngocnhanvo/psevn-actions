@@ -1,0 +1,39 @@
+name: PSE AI Agent safe request LLM diagnostics source QA (NO DEPLOY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-llm-diagnostics-source-qa.yml
+permissions:
+  contents: read
+jobs:
+  php-diagnostics:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: fix/pse-agent-request-scoped-llm-qa-diagnostics-20261028
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Lint QA source and regression diagnostic PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Core/EscAgentLogger.php
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Core/Agent.php
+          php -l source-php/wp-content/mu-plugins/esc-agent/tests/pse-agent-llm-regression-diagnostics.php
+          python3 -m py_compile scripts/pse-agent-company-group-qa.py
+      - name: Assert request-local, bounded, no-secret diagnostic events
+        shell: bash
+        run: |
+          set -euo pipefail
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-agent-llm-regression-diagnostics.php
+          echo 'PSE_AGENT_LLM_DIAGNOSTIC_SOURCE_QA=PASS; NO_FTP=PASS; NO_WORDPRESS_WRITE=PASS; NO_ASTRO_BUILD=PASS'
