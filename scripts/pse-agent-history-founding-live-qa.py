@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 parser=argparse.ArgumentParser()
 parser.add_argument("--audit-only",action="store_true")
 parser.add_argument("--only-founding-date",action="store_true")
+parser.add_argument("--only-identity",action="store_true")
 args=parser.parse_args()
 config={}
 for line in os.environ.get("ENV_FILE","").splitlines():
@@ -42,6 +43,7 @@ questions=[
     ("founding_date","PSE được thành lập ngày nào?"),
 ]
 if args.only_founding_date:questions=[item for item in questions if item[0]=="founding_date"]
+if args.only_identity:questions=[("identity","PSE là viết tắt của tên công ty nào?")]
 failures=[]
 for label,question in questions:
     session=str(uuid.uuid4())
@@ -68,7 +70,13 @@ for label,question in questions:
                  "source_has_2008":("2008" in raw),"has_2008":founded,"has_18_years":age,
                  "has_day_07_08_2008":date,"missing_or_retired_source":bad,"legacy_tenant":old}
         print("PSE_HISTORY_"+label.upper()+"_QA="+json.dumps(payload,ensure_ascii=False))
-        if bad or old or not (founded or age) or (label=="founding_date" and not date):
+        if label=="identity":
+            normalized="".join(c for c in __import__("unicodedata").normalize("NFKD",reply.casefold()) if not __import__("unicodedata").combining(c)).replace("đ","d")
+            grounded=("cong ty co phan phan bon va hoa chat dau khi dong nam bo" in normalized)
+            no_domain_identity=("doanh nghiep: pse.vn" not in normalized)
+            print("PSE_COMPANY_IDENTITY_QA="+json.dumps({"http":code,"grounded_legal_name":grounded,"no_site_title_as_company":no_domain_identity,"legacy":old,"actions":actions},ensure_ascii=False))
+            if bad or old or not grounded or not no_domain_identity:failures.append(label+":wrong_answer")
+        elif bad or old or not (founded or age) or (label=="founding_date" and not date):
             failures.append(label+":ungrounded")
     except (ValueError,UnicodeError) as exc:
         print("PSE_HISTORY_"+label.upper()+"_PARSE_ERROR="+type(exc).__name__)
