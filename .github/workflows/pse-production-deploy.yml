@@ -366,11 +366,12 @@ jobs:
       - name: Upload compiled staging archive by FTP-TLS
         shell: bash
         run: bash actions-hub/scripts/pse-resumable-ftp.sh
-      - name: Publish private Node SSR environment via certificate-verified FTPS
+      - name: Publish HTTP-denied public_html .env via certificate-verified FTPS
         shell: bash
         run: |
           set -euo pipefail
-          # Only protected Actions ENV_FILE; no .env in deploy ZIP or public_html.
+          # Protected Actions ENV_FILE; no .env in the deploy ZIP.
+          # Probe that HTTP denies .env BEFORE storing any credentials.
           # Must finish BEFORE activating the newly built server entry.
           python3 -m py_compile actions-hub/scripts/pse-runtime-env-ftps.py
           python3 actions-hub/scripts/pse-runtime-env-ftps.py

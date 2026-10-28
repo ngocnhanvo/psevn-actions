@@ -1,7 +1,7 @@
 name: PSE private runtime env contract (NO DEPLOY)
 on:
   push:
-    branches: [feat/pse-runtime-env-ftps-20261028]
+    branches: [feat/pse-public-env-ftps-20261028]
     paths:
       - .github/workflows/pse-runtime-env-ci.yml
       - .github/workflows/pse-production-deploy.yml
@@ -41,11 +41,14 @@ jobs:
           values=module.env_values('WC_URL=https://admin-pse.webnvn.com\nWC_URL_CLIENT=https://pse.webnvn.com\nWOO_KEY=synthetic\nWOO_SECRET=synthetic\n')
           assert values['WOO_SECRET']=='synthetic'
           assert module.origin('https://pse.webnvn.com')=='pse.webnvn.com'
-          assert '../' not in module.NAME and '/' not in module.NAME
+          assert module.NAME == '.env'
           source=path.read_text()
           assert 'ftp.prot_p()' in source
           assert 'SITE CHMOD 600' in source
           assert 'public_html' in source and 'ftp.cwd(domain_root)' in source
+          assert 'ensure_http_guard(ftp, frontend)' in source
+          assert 'http_denies_env(frontend)' in source
+          assert 'PSE_HTTP_DENY_PROBE' in source
           workflow=Path('.github/workflows/pse-production-deploy.yml').read_text()
           upload=workflow.index('python3 actions-hub/scripts/pse-runtime-env-ftps.py')
           activate=workflow.index('Verify provenance and activate staging bundle')
@@ -70,7 +73,7 @@ jobs:
           node - <<'JS'
           const fs=require('node:fs');
           const s=fs.readFileSync('astro/scripts/patch-entry.mjs','utf8');
-          if(!s.includes('new URL("../../.pse-astro-runtime.env", import.meta.url)') ||
+          if(!s.includes('new URL("../.env", import.meta.url)') ||
              !s.includes('code = privateRuntimeEnvBootstrap + code;') ||
              !s.includes('__PSE_PRIVATE_RUNTIME_ENV_V1__'))process.exit(1);
           if(typeof process.loadEnvFile!=='function')process.exit(1);
