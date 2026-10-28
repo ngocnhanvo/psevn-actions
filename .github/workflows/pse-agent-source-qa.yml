@@ -82,6 +82,7 @@ jobs:
           set -euo pipefail
           test "$(git branch --show-current)" = 'feat/pse-agent-zero-load-release-20261028'
           pnpm install --frozen-lockfile --prefer-offline
+          test -f src/astro/components/Tool/ContactWidget.agentCompat.test.ts
           pnpm exec vitest run
           node --input-type=module <<'NODE'
           import { readFile } from 'node:fs/promises';
