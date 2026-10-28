@@ -188,6 +188,18 @@ try:
                   + " remote_lines=" + str(len(remote_lines))
                   + " reviewed_lines=" + str(len(source_lines))
                   + " similarity=" + format(ratio, ".3f"))
+            if not args.deploy and str(rel) in audited_live_blobs:
+                expected = audited_live_blobs[str(rel)]
+                actual = hashlib.sha1(
+                    b"blob " + str(len(remote)).encode("ascii") + bytes([0]) + remote
+                ).hexdigest()
+                print("PSE_AGENT_AUDIT_STATUS file=" + str(rel)
+                      + " exact_blob=" + str(actual == expected).lower()
+                      + " candidate_marker=" + str(
+                          approved_audited_drift(rel, remote, ours)
+                          or ("pse" in ours.decode("utf-8").casefold()
+                              and b"blue sea" not in ours.lower())
+                      ).lower())
             # Existing production may be customized. Refuse automated replacement
             # of a substantially divergent file, even if the PR itself is reviewed.
             if args.deploy and ratio < 0.85 and not approved_audited_drift(rel, remote, ours):
