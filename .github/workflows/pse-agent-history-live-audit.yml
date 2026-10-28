@@ -1,0 +1,23 @@
+name: PSE Agent exact founding question live audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-history-live-audit-request]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Audit two synthetic history questions and clear sessions
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-history-founding-live-qa.py scripts/pse-agent-ftps-release.py
+          python3 scripts/pse-agent-history-founding-live-qa.py --audit-only
