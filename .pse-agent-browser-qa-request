@@ -5,3 +5,5 @@
 2026-10-28 PSE browser cookie diagnostic, metadata-only flags, no cookie values. Previous live QA #40639594338 passed zero-load launcher but failed cookie guard; investigate before any more deployment. No build.
 
 2026-10-28 browser run to inspect chat/history/mobile beyond identified missing Secure flag; test still fails closed at end until cookie fixed; no Astro build.
+
+2026-10-28 retry affected real PSE browser QA ONLY after Astro master HTTPS proxy fix PR #119 commit 3ff95a077bcfe7a81f70a5bcdd34a442ae2920ed successfully deployed through official WordPress Build Website run #40642188592. Original #40640077291 had Secure=false and CHAT_HTTP200 FAIL on old 3c99e3 source. Updated test script PR #28 records only status codes and deterministic history, no secrets. No new website build.
