@@ -1,0 +1,32 @@
+name: PSE AI Agent live browser postdeploy QA (SYNTHETIC ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-agent-browser-qa-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-browser-qa
+  cancel-in-progress: false
+jobs:
+  browser:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright wrapper
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Check actual PSE chat on desktop/mobile and cross-route synthetic session
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-agent-browser-live-qa.mjs
+          node scripts/pse-agent-browser-live-qa.mjs
