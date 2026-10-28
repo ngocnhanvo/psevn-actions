@@ -1,0 +1,30 @@
+name: PSE AI Agent Woo API key admin audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-woo-key-admin-audit.yml
+      - scripts/pse-agent-woo-key-admin-audit.mjs
+permissions:
+  contents: read
+jobs:
+  verify-woo-key-identity:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Audit WooCommerce API keys page without writes or credential disclosure
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-agent-woo-key-admin-audit.mjs
+          node scripts/pse-agent-woo-key-admin-audit.mjs
