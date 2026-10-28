@@ -26,6 +26,7 @@ jobs:
       - name: Install pinned Playwright wrapper
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Check actual PSE chat on desktop/mobile and cross-route synthetic session
+        shell: bash
         run: |
           set -euo pipefail
           node --check scripts/pse-agent-browser-live-qa.mjs
