@@ -1,0 +1,22 @@
+name: PSE AI Agent legacy tenant data origin audit (SYNTHETIC NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-tenant-audit-request]
+permissions:
+  contents: read
+jobs:
+  tenant-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Diagnose PSE WordPress name, agent skill and fresh response
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          python3 -m py_compile scripts/pse-agent-tenant-audit.py
+          python3 scripts/pse-agent-tenant-audit.py
