@@ -53,15 +53,16 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     if expected is None:
         return False
     git_blob = hashlib.sha1(
-        b"blob " + str(len(live)).encode("ascii") + b"\\0" + live
+        b"blob " + str(len(live)).encode("ascii") + bytes([0]) + live
     ).hexdigest()
     if git_blob != expected:
         return False
-    lower = candidate.lower()
-    return (b"blue sea" not in lower
-            and b"xuongmunonbaohiem" not in lower
-            and (b"kh\xc3\xb4ng ph\xe1\xbb\xa5 thu\xe1\xbb\x99c trang" in lower
-                 or b"ph\xe1\xba\xa1m vi chung pse" in lower))
+    candidate_text = candidate.decode("utf-8").casefold()
+    if "blue sea" in candidate_text or "xuongmunonbaohiem" in candidate_text:
+        return False
+    if str(rel).endswith("/Planner.php"):
+        return "không phụ thuộc trang đang mở" in candidate_text
+    return "phạm vi chung pse" in candidate_text
 
 
 assert len(files) == 6 and len(files) == len(set(files))
