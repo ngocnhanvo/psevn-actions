@@ -36,11 +36,12 @@ if not config.get("WOO_SECRET") or not config.get("WOO_KEY"):
 base=wp.geturl().rstrip("/")
 session=str(uuid.uuid4())
 
-def request(path, method="GET", json_body=None, credentials=False, timeout=40):
+def request(path, method="GET", json_body=None, credentials=False, timeout=40, omit_key=False):
     headers={"User-Agent":"PSE-Agent-Synthetic-Smoke/1.0","Accept":"application/json"}
     if credentials:
         headers["Authorization"]="Bearer "+config["WOO_SECRET"]
-        headers["X-ESC-Woo-Key"]=config["WOO_KEY"]
+        if not omit_key:
+            headers["X-ESC-Woo-Key"]=config["WOO_KEY"]
     data=None
     if json_body is not None:
         data=json.dumps(json_body,ensure_ascii=False).encode("utf-8")
@@ -62,6 +63,13 @@ status,_=request("/wp-json/esc/v1/clear-chat-history?session_id="+session)
 print("PSE_AGENT_GET_CLEAR_HTTP="+str(status))
 if status not in (404,405):
     error("clear_get_is_not_blocked")
+
+keyed_status,_=request(history,credentials=True)
+legacy_status,_=request(history,credentials=True,omit_key=True)
+print("PSE_AGENT_AUTH_KEYED_HISTORY_HTTP="+str(keyed_status))
+print("PSE_AGENT_AUTH_LEGACY_HISTORY_HTTP="+str(legacy_status))
+if keyed_status!=200:
+    error("woo_consumer_key_and_secret_not_authorized_on_live_backend")
 
 bad=re.compile(r"xuongmunonbaohiem|nghiencuukhoahoc|blue[ -]?sea|mũ bảo hiểm|nongshim",re.I)
 questions=(
