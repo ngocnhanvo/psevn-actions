@@ -1,0 +1,53 @@
+name: PSE Agent remaining live classes private snapshot (READ ONLY FTPS)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-private-source-snapshot-additional.yml
+      - scripts/pse-agent-private-source-snapshot-additional.py
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-private-runtime-audit
+  cancel-in-progress: false
+jobs:
+  preserve-remaining-live-classes:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Checkout exact PSE snapshot script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact private PSE PHP master
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Preserve three remaining live Agent classes (read only FTP)
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-private-source-snapshot-additional.py
+          cat > "$RUNNER_TEMP/pse_git_askpass.sh" <<'EOS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$SOURCE_REPO_PAT" ;;
+            *) exit 1 ;;
+          esac
+          EOS
+          chmod 700 "$RUNNER_TEMP/pse_git_askpass.sh"
+          export GIT_ASKPASS="$RUNNER_TEMP/pse_git_askpass.sh"
+          export GIT_TERMINAL_PROMPT=0
+          python3 scripts/pse-agent-private-source-snapshot-additional.py
