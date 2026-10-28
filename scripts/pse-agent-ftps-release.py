@@ -49,6 +49,12 @@ audited_live_blobs = {
         "3d3ed5f45e6f3ba86f499564ab74ec9ce3bce0d4",
     "wp-content/mu-plugins/esc-agent/src/Core/ProductConstructionKnowledgeResolver.php":
         "9042f17c70487937e77df22db1bc7b93df974dd3",
+    # Existing live counterparts from the last verified production PHP source
+    # (fad9d410) differ substantially from newly reviewed PSE-only policies.
+    "wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php":
+        "870da847795a5d0c1e59cf6426ba1d786f520af1",
+    "wp-content/mu-plugins/esc-agent/src/Skills/PolicySkill.php":
+        "a69fee4dea1aa75163a5c1fdae739714bf1f7b7d",
 }
 
 
@@ -68,6 +74,13 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     candidate_text = candidate.decode("utf-8").casefold()
     if "blue sea" in candidate_text or "xuongmunonbaohiem" in candidate_text:
         return False
+    if str(rel).endswith("/CompanySkill.php"):
+        return ("qua-trinh-hinh-thanh-phat-trien" in candidate_text
+                and "nganh-nghe-kinh-doanh" in candidate_text
+                and "ve-chung-toi" not in candidate_text)
+    if str(rel).endswith("/PolicySkill.php"):
+        return ("quy-che-nha-phan-phoi" in candidate_text
+                and "chinh-sach-doi-tra" not in candidate_text)
     if str(rel).endswith("/ProductConstructionKnowledgeResolver.php"):
         return "return null;" in candidate_text and "mu bao hiem" not in candidate_text
     if str(rel).endswith("/Planner.php"):
