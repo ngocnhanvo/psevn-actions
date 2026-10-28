@@ -35,6 +35,35 @@ files = [
     Path("wp-content/mu-plugins/esc-agent/src/Skills/KnowledgeSearchSkill.php"),
     Path("wp-content/mu-plugins/esc-agent/src/Skills/ProductSkill.php"),
 ]
+# The exact two deployed PSE files audited in the private snapshot are
+# significantly different because they contain Blue Sea-specific LLM prompts.
+# The reviewed PSE release deliberately replaces these. Permit this drift ONLY
+# when the remote bytes still equal the immutable audited Git blob fingerprint.
+# Never relax the guard for arbitrary hosting edits or any other Agent file.
+audited_live_blobs = {
+    "wp-content/mu-plugins/esc-agent/src/Core/Planner.php":
+        "7ae7274782c07a75a3994aba90f5126f13dd9bd8",
+    "wp-content/mu-plugins/esc-agent/src/Core/AgentSynthesisPrompt.php":
+        "3d3ed5f45e6f3ba86f499564ab74ec9ce3bce0d4",
+}
+
+
+def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
+    expected = audited_live_blobs.get(str(rel))
+    if expected is None:
+        return False
+    git_blob = hashlib.sha1(
+        b"blob " + str(len(live)).encode("ascii") + b"\\0" + live
+    ).hexdigest()
+    if git_blob != expected:
+        return False
+    lower = candidate.lower()
+    return (b"blue sea" not in lower
+            and b"xuongmunonbaohiem" not in lower
+            and (b"kh\xc3\xb4ng ph\xe1\xbb\xa5 thu\xe1\xbb\x99c trang" in lower
+                 or b"ph\xe1\xba\xa1m vi chung pse" in lower))
+
+
 assert len(files) == 6 and len(files) == len(set(files))
 if args.security_only:
     files = files[:1]
@@ -117,7 +146,7 @@ try:
             before = remote_bytes(rel.name).replace(b"\r\n", b"\n").splitlines()
             candidate = (source / rel).read_bytes().replace(b"\r\n", b"\n").splitlines()
             similarity = difflib.SequenceMatcher(None, before, candidate, autojunk=False).ratio()
-            if similarity < 0.85:
+            if similarity < 0.85 and not approved_audited_drift(rel, remote_bytes(rel.name), (source / rel).read_bytes()):
                 raise RuntimeError("Unreviewed Agent drift; abort before all FTP writes")
         # Backups must not become downloadable .backup files inside public_html.
         # A backup stored in mu-plugins/ itself as PHP would auto-load, so keep it
@@ -160,7 +189,7 @@ try:
                   + " similarity=" + format(ratio, ".3f"))
             # Existing production may be customized. Refuse automated replacement
             # of a substantially divergent file, even if the PR itself is reviewed.
-            if args.deploy and ratio < 0.85:
+            if args.deploy and ratio < 0.85 and not approved_audited_drift(rel, remote, ours):
                 raise RuntimeError("Unreviewed live Agent drift: release stopped before overwriting this file")
         if not args.deploy:
             continue
