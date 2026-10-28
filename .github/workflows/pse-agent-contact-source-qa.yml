@@ -1,0 +1,32 @@
+name: PSE Agent contact PSE-only source QA (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-contact-source-qa-request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: fix/pse-agent-contact-current-source-20261028
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Verify no old ACF contact source or regression in PSE current source routing
+        shell: bash
+        working-directory: source-php
+        run: |
+          set -euo pipefail
+          php -l wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php
+          php -l wp-content/mu-plugins/esc-agent/tests/pse-contact-current-source.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-contact-current-source.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-global-cross-topic-contract.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+          echo 'PSE_AGENT_CONTACT_SOURCE_QA=PASS'
