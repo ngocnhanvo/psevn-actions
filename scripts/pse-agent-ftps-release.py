@@ -58,6 +58,9 @@ audited_live_blobs = {
 }
 
 
+assert all(re.fullmatch(r"[0-9a-f]{40}", digest) for digest in audited_live_blobs.values()), "Invalid pinned Git blob SHA1"
+
+
 def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     expected = audited_live_blobs.get(str(rel))
     if expected is None:
