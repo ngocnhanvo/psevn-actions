@@ -1,0 +1,24 @@
+name: PSE Agent actual published Contact source audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-current-contact-audit-request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify PSE current published Contact page before retiring legacy Agent metadata
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-contact-page-audit.py
+          python3 scripts/pse-agent-contact-page-audit.py
