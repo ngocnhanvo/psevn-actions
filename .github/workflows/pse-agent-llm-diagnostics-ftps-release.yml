@@ -1,0 +1,77 @@
+name: PSE Agent LLM diagnostics guarded two-file FTPS release (NO ASTRO BUILD)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  diagnostics-release:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout PSE Actions release script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout immutable reviewed diagnostic PHP source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: b949d8746e6303f31c56d3ccf01f97dead425a92
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Verify source SHA, exact two-file scope, syntax and no-secret contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = 'b949d8746e6303f31c56d3ccf01f97dead425a92'
+          python3 -m py_compile scripts/pse-agent-ftps-release.py scripts/pse-agent-company-group-qa.py
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Core/Agent.php
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Core/EscAgentLogger.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-agent-llm-regression-diagnostics.php
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('scripts/pse-agent-ftps-release.py').read_text()
+          assert 'args.llm_diagnostics_only' in src
+          assert '--llm-diagnostics-only' in src
+          block=src.split('if args.llm_diagnostics_only:',1)[1].split('elif args.',1)[0]
+          approved=['wp-content/mu-plugins/esc-agent/src/Core/Agent.php',
+                    'wp-content/mu-plugins/esc-agent/src/Core/EscAgentLogger.php']
+          assert all(repr(x) in block or ('"'+x+'"') in block for x in approved)
+          assert block.count('Path(')==2, 'Diagnostics mode MUST select exactly two files'
+          print('PSE_LLM_DIAGNOSTICS_SOURCE_SCOPE=PASS only=Agent.php,EscAgentLogger.php')
+          PY
+      - name: Guarded FTPS read-only preflight, two PHP files only
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --llm-diagnostics-only --check-only
+      - name: Publish exactly two reviewed diagnostic PHP files with private rollback
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --llm-diagnostics-only --deploy
+          python3 scripts/pse-agent-ftps-release.py --llm-diagnostics-only --check-only
+          echo 'PSE_LLM_DIAGNOSTICS_FTPS_DEPLOY=PASS; NO_ASTRO_BUILD=PASS'
+      - name: Fresh ten-question live QA and safe provider-stage diagnostics
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-company-group-qa.py
+          echo 'PSE_LLM_DIAGNOSTICS_LIVE_QA=AUDITED; CHECK PER_CASE RESULTS'
