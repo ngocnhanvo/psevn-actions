@@ -98,7 +98,7 @@ for page in range(1,13):
         seen+=1
         raw=" ".join(str(item.get(k,"")) for k in ("name","description","short_description","slug"))
         if legacy.search(raw):legacy_products+=1
-        if re.search(r"phân bón|\\bnpk\\b|\\bdap\\b|\\bkali\\b|\\burea\\b",raw,re.I):fertilizer_terms+=1
+        if re.search(r"phân bón|\bnpk\b|\bdap\b|\bkali\b|\burea\b",raw,re.I):fertilizer_terms+=1
     if page>=totalpages:break
 else:
     fail("products_pagination_incomplete")
