@@ -52,7 +52,13 @@ try:
     data=json.loads(body.decode("utf-8"))
     answer=data.get("message") or data.get("reply") or ""
     print("PSE_TENANT_CHAT_FLAGS="+json.dumps(flags(answer),ensure_ascii=False))
-    results=data.get("data") or []
+    print("PSE_TENANT_RESPONSE_KEYS="+json.dumps(sorted(data.keys()) if isinstance(data,dict) else [],ensure_ascii=False))
+    raw_data=data.get("data")
+    print("PSE_TENANT_RESPONSE_DATA_TYPE="+type(raw_data).__name__)
+    if isinstance(raw_data,dict):
+        print("PSE_TENANT_RESPONSE_DATA_KEYS="+json.dumps(sorted(raw_data.keys()),ensure_ascii=False))
+        print("PSE_TENANT_RESPONSE_DATA_FLAGS="+json.dumps(flags(json.dumps(raw_data,ensure_ascii=False,default=str)),ensure_ascii=False))
+    results=raw_data or []
     print("PSE_TENANT_SKILL_COUNT="+str(len(results) if isinstance(results,list) else -1))
     if isinstance(results,list):
         for i,result in enumerate(results[:5]):
