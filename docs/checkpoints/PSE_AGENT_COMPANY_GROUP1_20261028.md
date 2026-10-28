@@ -65,3 +65,5 @@ New, observed **run attempts after the user request**:
 
 **App status:** production PHP `master` still `5cc990ddd9005e6a875b92740ab6df8a2f7c1f3a`; proposed more natural company evidence sourcing is only in **draft PR #14** and **not deployed**. No PHP source changes, merge, FTPS, or Astro build occurred in this testing task. Need proper production all-ten test before declaring Group 1 complete or releasing source changes.
 
+
+**QA correctness follow-up:** The ten-question workflow was tightened at commit `a81e6fddf7d74bfdd76f6c428129d02147daf851` to invoke `scripts/pse-agent-company-group-qa.py --strict`. Future group runs now fail their job if any answer lacks expected evidence/routing or a synthetic session fails cleanup; they cannot silently mark a failed case as a green workflow. The strict workflow has not yet been executed, so no test outcome is claimed from this edit.
