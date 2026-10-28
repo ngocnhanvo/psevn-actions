@@ -57,7 +57,7 @@ try {
   check(Boolean(tokenCookie && tokenCookie.httpOnly), "HTTPONLY_COOKIE");
   const secureCookie = Boolean(tokenCookie?.secure);
   if (!secureCookie) console.log("PSE_AGENT_BROWSER_SECURE_COOKIE=FAIL_PENDING_FIX");
-  const question = "PSE có những loại phân bón nào? Chỉ dùng thông tin đã công bố.";
+  const question = "công ty làm về gì";
   await panel.locator("[data-pse-agent-input]").fill(question);
   const responsePending = page.waitForResponse(
     response => new URL(response.url()).pathname === "/api/agent/chat" && response.request().method() === "POST",
@@ -75,6 +75,12 @@ try {
     ), null, { timeout: 15000 }
   );
   check(true, "CHAT_RENDERED");
+  const answerText = await panel.locator(".pse-agent-bot").last().innerText();
+  check(!/blue[\\s-]?sea|xuongmunonbaohiem|(?:nón|mũ) bảo hiểm/iu.test(answerText), "NO_LEGACY_COMPANY_REPLY");
+  check(/pse/i.test(answerText), "VERIFIED_PSE_IDENTITY_REPLY");
+  check(!answerText.includes("**"), "MARKDOWN_NO_LITERAL_BOLD");
+  check((await panel.locator(".pse-agent-bot strong").count()) > 0, "MARKDOWN_BOLD_DOM");
+
   const countBefore = await panel.locator(".pse-agent-user").count();
   check(countBefore === 1, "USER_TURN_RENDERED");
   await page.goto(base + "/tin-tuc-su-kien", { waitUntil: "domcontentloaded", timeout: 60000 });
