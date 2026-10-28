@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only PSE ContactSkill input audit; never display source content or secrets."""
 import json, os, re
+from html import unescape
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 env={}
@@ -23,6 +24,12 @@ rows=json.loads(data)
 assert isinstance(rows,list) and len(rows)==1,"Expected exactly one current PSE published Contact page"
 row=rows[0]
 value=str(row.get("content",{}).get("rendered",""))
+# Aggregate evidence only. Do not print company names, raw WordPress HTML or PII.
+published_text=unescape(re.sub(r"<[^>]*>", " ", value))
+legal_name_present=bool(re.search(
+    r"công\s+ty\s+cổ\s+phần\s+phân\s+bón\s+và\s+hóa\s+chất\s+dầu\s+khí\s+đông\s+nam\s+bộ",
+    published_text, re.I))
+print("PSE_CONTACT_PUBLISHED_LEGAL_NAME_PRESENT="+str(legal_name_present).lower())
 print("PSE_CONTACT_CURRENT_PAGE_META="+json.dumps({
   "id":row.get("id"),"slug":row.get("slug"),"status":row.get("status"),
   "content_chars":len(value),
