@@ -25,6 +25,7 @@ mode.add_argument("--check-only", action="store_true", help="Read-only PSE FTPS 
 parser.add_argument("--security-only", action="store_true", help="Release only security-hardened esc-agent.php")
 parser.add_argument("--tenant-fix-only", action="store_true", help="Release only reviewed PSE CompanySkill and Agent tenant-isolation fixes")
 parser.add_argument("--full-source-fix-only", action="store_true", help="Release only exact PSE tenant source cleanup files")
+parser.add_argument("--contact-source-only", action="store_true", help="Release only published-PSE ContactSkill no inherited ACF")
 args = parser.parse_args()
 
 source = Path("source-php")
@@ -55,6 +56,8 @@ audited_live_blobs = {
         "870da847795a5d0c1e59cf6426ba1d786f520af1",
     "wp-content/mu-plugins/esc-agent/src/Skills/PolicySkill.php":
         "2effe295a633c3b9825463ebf04d927c154442e6",
+    "wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php":
+        "f7ff91461e3c818b3289e7a830471a2d1a3ed344",
 }
 
 
@@ -83,6 +86,11 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
         str(rel).endswith("/CompanySkill.php") and "preg_match(" in candidate_text
     ):
         return False
+    if str(rel).endswith("/ContactSkill.php"):
+        return ("'name' => 'lien-he'" in candidate_text
+                and "'post_type' => 'page'" in candidate_text
+                and "get_post_meta(" not in candidate_text
+                and "thong-tin-tieng-viet" not in candidate_text)
     if str(rel).endswith("/CompanySkill.php"):
         return ("qua-trinh-hinh-thanh-phat-trien" in candidate_text
                 and "nganh-nghe-kinh-doanh" in candidate_text
@@ -98,8 +106,10 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
 
 
 assert len(files) == 6 and len(files) == len(set(files))
-assert sum((args.security_only, args.tenant_fix_only, args.full_source_fix_only)) <= 1
-if args.full_source_fix_only:
+assert sum((args.security_only, args.tenant_fix_only, args.full_source_fix_only, args.contact_source_only)) <= 1
+if args.contact_source_only:
+    files = [Path("wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php")]
+elif args.full_source_fix_only:
     files = [
         Path("wp-content/mu-plugins/esc-agent/src/Core/AgentSynthesisPrompt.php"),
         Path("wp-content/mu-plugins/esc-agent/src/Core/ContactIntentResolver.php"),
