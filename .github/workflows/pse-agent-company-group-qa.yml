@@ -1,0 +1,27 @@
+name: PSE AI Agent company conversation QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-company-group-qa-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-company-group-qa
+  cancel-in-progress: false
+jobs:
+  qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test ten company questions in synthetic sessions; clean history
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-company-group-qa.py
+          python3 scripts/pse-agent-company-group-qa.py
