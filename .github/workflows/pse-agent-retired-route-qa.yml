@@ -1,0 +1,23 @@
+name: PSE old About public route postretirement verification (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-retired-route-qa-request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify Page 53390 is not published or routable from live frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-agent-retired-route-qa.mjs
+          node scripts/pse-agent-retired-route-qa.mjs
