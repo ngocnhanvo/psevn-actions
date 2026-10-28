@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""10 independent live company prompts, synthetic chat sessions; no raw answer or secret logging."""
+import json, os, re, sys, uuid, time, unicodedata
+from urllib.parse import urlsplit
+from urllib.request import Request,urlopen
+from urllib.error import HTTPError
+
+CASES=[
+ ("01-identity","PSE là công ty gì?","identity"),
+ ("02-full-name","PSE là viết tắt của tên công ty nào?","full"),
+ ("03-founded","Công ty PSE được thành lập khi nào?","founded"),
+ ("04-age","PSE thành lập được bao nhiêu năm rồi?","age"),
+ ("05-operations","PSE bắt đầu hoạt động từ năm nào?","operations"),
+ ("06-not-2011","PSE có phải được thành lập năm 2011 không?","correction"),
+ ("07-two-dates","Tại sao lịch sử PSE có cả mốc 2008 và 2011?","distinction"),
+ ("08-timeline","Hãy tóm tắt quá trình hình thành và phát triển của PSE.","timeline"),
+ ("09-industries","PSE hiện đang kinh doanh trong những lĩnh vực nào?","industry"),
+ ("10-advantages","PSE có những lợi thế gì so với các doanh nghiệp khác?","advantage"),
+]
+def norm(s):
+ return "".join(x for x in unicodedata.normalize("NFKD",str(s).casefold()) if not unicodedata.combining(x))
+def assess(reply,source,skills,kind):
+ text=norm(reply); raw=norm(json.dumps(source,ensure_ascii=False,default=str))
+ legacy=bool(re.search(r"blue sea|xuongmunonbaohiem|mu bao hiem|non bao hiem",text+" "+raw))
+ date=bool(re.search(r"0?7\s*[/.-]\s*0?8\s*[/.-]\s*2008|ngay\s+0?7\s+thang\s+0?8\s+nam\s+2008",text))
+ operations=bool(re.search(r"0?1\s*[/.-]\s*0?9\s*[/.-]\s*2008|thang\s+0?9\s+nam\s+2008",text))
+ stock=bool(re.search(r"co phan|chuyen doi|chuyen thanh|mo hinh",text))
+ company=bool(re.search(r"cong ty|doanh nghiep|co phan",text))
+ fertil="phan bon" in text
+ have2008="2008" in text; have2011="2011" in text
+ full="phan bon va hoa chat dau khi dong nam bo" in text
+ age=bool(re.search(r"\b18\s*(?:nam|tuoi)\b",text))
+ advantage=bool(re.search(r"loi the|uu diem|diem manh|he thong|phan phoi|kinh nghiem|uy tin|doi ngu|hop tac|thi truong",text))
+ unknown=bool(re.search(r"chua (co|tim thay|xac minh)|khong (co|tim thay|duoc)|khong the xac minh",text))
+ matches={
+ "identity":company and fertil,"full":full,"founded":have2008 and date,
+ "age":have2008 and age,"operations":have2008 and operations,
+ "correction":have2008 and have2011 and stock,
+ "distinction":have2008 and have2011 and stock,
+ "timeline":have2008 and have2011 and (date or operations),
+ "industry":fertil and (company or "kinh doanh" in text or "hoa chat" in text),
+ "advantage":advantage and not unknown,
+ }
+ routes={
+ "identity":["company:get","contact:get"],"full":["company:get","contact:get","knowledge:search"],
+ "founded":["company:about","knowledge:search"],"age":["company:about","knowledge:search"],
+ "operations":["company:about","knowledge:search"],"correction":["company:about","knowledge:search"],
+ "distinction":["company:about","knowledge:search"],"timeline":["company:about","knowledge:search"],
+ "industry":["company:about","knowledge:search"],"advantage":["company:advantages","knowledge:search"],
+ }
+ route=any(s in routes[kind] for s in skills)
+ flags={"answer_matches":bool(matches[kind]),"route_matches":route,"legacy_tenant":legacy,
+ "source_has_2008":"2008" in raw,"source_has_2011":"2011" in raw,
+ "reply_has_2008":have2008,"reply_has_2011":have2011,"founding_date":date,
+ "operation_date":operations,"full_name":full,"fertilizer":fertil,"advantages":advantage,
+ "unknown_claim":unknown}
+ return bool(matches[kind] and route and not legacy), flags
+
+env={}
+for line in os.getenv("ENV_FILE","").splitlines():
+ line=line.strip().removeprefix("export ").strip()
+ if "=" in line:
+  k,v=line.split("=",1)
+  if k in ("WC_URL","WOO_KEY","WOO_SECRET"):env[k]=v.strip().strip("'\"")
+url=urlsplit(env.get("WC_URL",""))
+assert url.scheme=="https" and url.hostname=="admin-pse.webnvn.com" and url.port in (None,443) and url.path in ("","/") and not url.username and not url.password and not url.query and not url.fragment
+assert env.get("WOO_KEY") and env.get("WOO_SECRET")
+base=url.geturl().rstrip("/")
+def req(path,method="GET",data=None):
+ headers={"Accept":"application/json","User-Agent":"PSE-company-QA",
+ "Authorization":"Bearer "+env["WOO_SECRET"],"X-ESC-Woo-Key":env["WOO_KEY"]}
+ payload=None if data is None else json.dumps(data,ensure_ascii=False).encode()
+ if payload is not None:headers["Content-Type"]="application/json"
+ request=Request(base+path,data=payload,headers=headers,method=method)
+ try:
+  with urlopen(request,timeout=65) as response:return response.status,response.read(180000)
+ except HTTPError as error:return error.code,error.read(1000)
+
+failed=[]
+for idx,(case,question,kind) in enumerate(CASES):
+ session=str(uuid.uuid4()); diagnostic={"case":case}
+ try:
+  status,body=req("/wp-json/esc-agent/v1/chat","POST",{"sessionId":session,"message":question})
+  diagnostic["http"]=status
+  if status!=200: diagnostic["result"]="FAIL";diagnostic["reason"]="http"
+  else:
+   response=json.loads(body.decode("utf8")); reply=response.get("message") or ""
+   source=response.get("data")
+   steps=list(source.values()) if isinstance(source,dict) else []
+   skills=[str(s.get("skill",""))+":"+str(s.get("action","")) for s in steps[:6] if isinstance(s,dict)]
+   passed,flags=assess(reply,source,skills,kind)
+   diagnostic.update({"result":"PASS" if passed else "REVIEW","chars":len(reply),"skills":skills,"flags":flags})
+ except Exception as error: diagnostic.update({"result":"FAIL","reason":type(error).__name__})
+ finally:
+  try: cleared,_=req("/wp-json/esc/v1/clear-chat-history?session_id="+session,"POST",{})
+  except Exception:cleared=0
+  diagnostic["cleared"]=cleared==200
+  if not diagnostic["cleared"]:diagnostic["result"]="FAIL";diagnostic["reason"]="cleanup"
+ if diagnostic["result"]!="PASS":failed.append(case)
+ print("PSE_COMPANY_QA_CASE="+json.dumps(diagnostic,ensure_ascii=False),flush=True)
+ if idx<9:time.sleep(1)
+print("PSE_COMPANY_QA_RESULT="+json.dumps({"pass":10-len(failed),"total":10,"review":failed,"no_raw_answers":True,"no_cms_writes":True}),flush=True)
+if "--strict" in sys.argv and failed:sys.exit(1)
