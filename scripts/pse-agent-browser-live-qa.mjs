@@ -49,7 +49,9 @@ try {
     secure: Boolean(tokenCookie?.secure),
     sameSiteLax: tokenCookie?.sameSite === "Lax",
   }));
-  check(Boolean(tokenCookie && tokenCookie.httpOnly && tokenCookie.secure), "HTTPONLY_COOKIE");
+  check(Boolean(tokenCookie && tokenCookie.httpOnly), "HTTPONLY_COOKIE");
+  const secureCookie = Boolean(tokenCookie?.secure);
+  if (!secureCookie) console.log("PSE_AGENT_BROWSER_SECURE_COOKIE=FAIL_PENDING_FIX");
   const question = "PSE có những loại phân bón nào? Chỉ dùng thông tin đã công bố.";
   await panel.locator("[data-pse-agent-input]").fill(question);
   const responsePending = page.waitForResponse(
@@ -100,6 +102,7 @@ try {
   await mobile.press("Escape");
   check(await mobile.isHidden(), "KEYBOARD_ESCAPE");
   check(errors.length === 0, "NO_PAGE_ERRORS");
+  check(secureCookie, "SECURE_COOKIE");
   console.log("PSE_AGENT_BROWSER_QA=PASS desktop_mobile_global_history_clear");
   await context.close();
 } finally {
