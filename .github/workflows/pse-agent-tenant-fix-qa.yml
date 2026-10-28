@@ -1,0 +1,56 @@
+name: PSE AI Agent tenant data and Markdown source QA (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-tenant-fix-qa-request]
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: fix/pse-agent-company-profile-source-20261028
+          path: php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Lint and test source-based PSE identity
+        working-directory: php
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php
+          php -l wp-content/mu-plugins/esc-agent/src/Core/Agent.php
+          php -l wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+  astro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: fix/pse-agent-safe-markdown-20261028
+          path: source
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Validate full Astro contracts without build/deploy
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run
+          echo 'PSE_AGENT_MARKDOWN_QA=PASS'
