@@ -35,14 +35,33 @@ try {
   const launcher = page.locator("#pse-agent-open");
   await launcher.waitFor({ state: "visible", timeout: 10000 });
   check(agentRequests === 0, "NO_PRECLICK_AGENT_API");
+  // Observe the first-click shell even if a warm JS module removes it within
+  // one frame. Keep real history pending briefly to assert the second skeleton.
+  await page.evaluate(() => {
+    const dialog = document.getElementById("pse-agent-dialog");
+    window.__pseBootSkeletonObserved = false;
+    new MutationObserver(() => {
+      if (dialog?.querySelector(".pse-agent-boot")) window.__pseBootSkeletonObserved = true;
+    }).observe(dialog, { childList: true, subtree: true });
+  });
+  await page.route("**/api/agent/history", async route => {
+    await page.unroute("**/api/agent/history");
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    await route.continue();
+  });
   const initialHistory = page.waitForResponse(
     response => new URL(response.url()).pathname === "/api/agent/history",
     {timeout: 15000},
   );
   await launcher.click();
   const panel = page.locator("#pse-agent-dialog");
+  check(await page.evaluate(() => window.__pseBootSkeletonObserved === true), "INSTANT_BOOT_SKELETON");
+  await panel.locator(".pse-agent-history-skeleton").waitFor({ state: "visible", timeout: 15000 });
+  check(true, "HISTORY_LOADING_SKELETON");
   await panel.locator("[data-pse-agent-input]").waitFor({ state: "visible", timeout: 15000 });
   const history = await initialHistory;
+  await panel.locator(".pse-agent-history-skeleton").waitFor({ state: "detached", timeout: 15000 });
+  check(true, "HISTORY_SKELETON_CLEARED");
   console.log("PSE_AGENT_BROWSER_INITIAL_HISTORY_HTTP=" + history.status());
   check(agentRequests > 0, "ONCLICK_ONLY_API");
 
