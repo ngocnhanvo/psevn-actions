@@ -114,8 +114,8 @@ try:
             enter(root + "/" + str(rel.parent))
             if not exists(rel.name):
                 raise RuntimeError("Reviewed Agent file missing remotely")
-            before = remote_bytes(rel.name).replace(b"\\r\\n", b"\\n").splitlines()
-            candidate = (source / rel).read_bytes().replace(b"\\r\\n", b"\\n").splitlines()
+            before = remote_bytes(rel.name).replace(b"\r\n", b"\n").splitlines()
+            candidate = (source / rel).read_bytes().replace(b"\r\n", b"\n").splitlines()
             similarity = difflib.SequenceMatcher(None, before, candidate, autojunk=False).ratio()
             if similarity < 0.85:
                 raise RuntimeError("Unreviewed Agent drift; abort before all FTP writes")
@@ -151,8 +151,8 @@ try:
                 matched += 1
                 continue
             ours = (source / rel).read_bytes()
-            remote_lines = remote.replace(b"\\r\\n", b"\\n").splitlines()
-            source_lines = ours.replace(b"\\r\\n", b"\\n").splitlines()
+            remote_lines = remote.replace(b"\r\n", b"\n").splitlines()
+            source_lines = ours.replace(b"\r\n", b"\n").splitlines()
             ratio = difflib.SequenceMatcher(None, remote_lines, source_lines, autojunk=False).ratio()
             print("PSE_AGENT_FTPS_DIFF file=" + str(rel)
                   + " remote_lines=" + str(len(remote_lines))
