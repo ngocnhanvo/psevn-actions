@@ -1,0 +1,47 @@
+name: PSE AI Agent read-only public content and installed PHP baseline audit
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-agent-readiness-audit.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-pse-sources:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - name: Check published PSE pages and posts for inherited-tenant markers without writes
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-public-source-audit.py
+          python3 scripts/pse-agent-public-source-audit.py
+  installed-agent-master-baseline:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Compare currently deployed 54 Agent files with baseline PHP master
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --check-only
+          echo 'PSE_AGENT_INSTALLED_MASTER_BASELINE=CHECKED_NO_WRITES'
