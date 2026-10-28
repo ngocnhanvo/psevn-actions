@@ -2,7 +2,7 @@ name: PSE AI Agent read-only public content and installed PHP baseline audit
 on:
   push:
     branches: [main]
-    paths: [.github/workflows/pse-agent-readiness-audit.yml]
+    paths: [.github/workflows/pse-agent-readiness-audit.yml, scripts/pse-agent-public-source-audit.py]
   workflow_dispatch:
 permissions:
   contents: read
