@@ -28,7 +28,7 @@ def request(path, method="GET", data=None, auth=False):
         headers["Content-Type"]="application/json"
     req=Request(base+path, data=body,headers=headers,method=method)
     try:
-        with urlopen(req,timeout=60) as resp:return resp.status,resp.read(120000)
+        with urlopen(req,timeout=60) as resp:return resp.status,resp.read(2000000)
     except HTTPError as exc:return exc.code,exc.read(6000)
 def flags(value):
     s=str(value).casefold()
