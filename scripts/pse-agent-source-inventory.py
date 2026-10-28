@@ -40,3 +40,25 @@ for term in ("Về chúng tôi","giới thiệu","báo cáo thường niên","Bl
     status,rows,total=get("/wp-json/wp/v2/search?search="+quote(term)+"&per_page=100")
     sample=[{"id":row.get("id"),"title":re.sub(r"<[^>]+>","",row.get("title",""))[:90],"type":row.get("subtype")} for row in rows[:20]] if isinstance(rows,list) else []
     print("PSE_SOURCE_PUBLIC_SEARCH="+json.dumps({"term":term,"http":status,"total":total,"sample":sample},ensure_ascii=False))
+
+print("PSE_SOURCE_SELECTED_PAGE_DETAIL_BEGIN")
+for pageid in (53390,79301,79279,79303,79270,248):
+    st,data,_=get(f"/wp-json/wp/v2/pages/{pageid}?_fields=id,slug,title,link,content,status")
+    if st != 200 or not isinstance(data,dict):
+        print("PSE_SOURCE_PAGE_DETAIL="+json.dumps({"id":pageid,"http":st}))
+        continue
+    content=data.get("content",{}).get("rendered","")
+    title=data.get("title",{}).get("rendered","")
+    print("PSE_SOURCE_PAGE_DETAIL="+json.dumps({
+        "id":pageid,"slug":data.get("slug"),"status":data.get("status"),
+        "title":re.sub(r"<[^>]+>","",title)[:90],
+        "link":data.get("link","")[:160],
+        "content_chars":len(content),
+        "has_blue_sea":bool(bad.search(content)),
+        "has_pse":bool(re.search(r"pse|pvfcco|đông nam bộ|phú mỹ",content,re.I)),
+        "mentions_founding_year":bool(re.search(r"(?:19|20)\\d{2}",content)),
+    },ensure_ascii=False))
+for key in ("thong-tin-chung","thong_tin_chung"):
+    st,rows,total=get("/wp-json/wp/v2/"+key+"?per_page=50&_fields=id,slug,title,status")
+    print("PSE_SOURCE_LEGACY_CPT="+json.dumps({"type":key,"http":st,"total":total,
+        "rows":[{"id":x.get("id"),"slug":x.get("slug"),"title":re.sub(r"<[^>]+>","",x.get("title",{}).get("rendered",""))[:90]} for x in rows[:20]] if isinstance(rows,list) else []},ensure_ascii=False))
