@@ -1,4 +1,5 @@
-PSE_AGENT_HISTORY_LIVE_AUDIT=1
-questions=exact_duration,founding_date
+PSE_AGENT_HISTORY_LIVE_AUDIT=2
+question=founding_date_only
+source_routing_metadata=true
 read_only=true
 no_deploy=true
