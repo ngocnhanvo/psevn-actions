@@ -58,7 +58,7 @@ jobs:
               ftp.cwd(root)
               assert ftp.pwd().rstrip('/')==root
               print('PSE_NODE_FTP=PASS')
-              # Metadata-only audit: never RETR, print, store, or checksum .env contents.
+              # Metadata only. Never retrieve, print, checksum or publish .env contents.
               for label,where in (
                   ('PUBLIC_HTML',root),
                   ('DOMAIN_PARENT','/domains/'+front.hostname),
@@ -80,46 +80,11 @@ jobs:
                   stripped=line.strip()
                   if stripped.startswith('export '):
                       stripped=stripped[7:].strip()
-                  match=re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\\s*=(.*)              for item in ('server','server/entry.mjs','client','client/index.html',
-                           '.htaccess','app.js','server.js','package.json','node_modules',
-                           'tmp','tmp/restart.txt','pm2-reload.txt','pse-staging-build.json'):
-                  try:
-                      status=ftp.size(item)
-                      ok=status is not None
-                  except (ftplib.error_perm,ftplib.error_temp):
-                      # For directories SIZE often returns 550 even if present.
-                      try:
-                          ftp.cwd(root+'/'+item)
-                          ok=True
-                      except ftplib.all_errors:
-                          ok=False
-                  finally:
-                      ftp.cwd(root)
-                  print('PSE_NODE_MARKER '+item.replace('/','_').replace('.','_')+'='+('PRESENT' if ok else 'MISSING_OR_UNVERIFIED'))
-              try:
-                  size=ftp.size('.htaccess')
-                  if size and size<=32768:
-                      output=io.BytesIO()
-                      ftp.retrbinary('RETR .htaccess',output.write)
-                      rawtxt=output.getvalue().decode('utf8','replace')
-                      for directive in ('PassengerEnabled','PassengerAppRoot','PassengerBaseURI','PassengerStartupFile',
-                                        'PassengerNodejs','PassengerAppType','PassengerFriendlyErrorPages',
-                                        'RewriteEngine','RewriteRule','ProxyPass','SetHandler'):
-                          print('PSE_NODE_CONFIG '+directive+'='+('SET' if re.search(r'(?im)^\s*'+directive+r'\b',rawtxt) else 'ABSENT'))
-                  else:print('PSE_NODE_CONFIG htaccess=NOT_READABLE')
-              except ftplib.all_errors:
-                  print('PSE_NODE_CONFIG htaccess=NOT_AVAILABLE')
-              print('PSE_NODE_AUDIT=READ_ONLY_PASS')
-          except Exception as e:
-              print('PSE_NODE_AUDIT=FAIL_'+type(e).__name__)
-              raise SystemExit(1)
-          finally:
-              try:ftp.close()
-              except Exception:pass
-          PY
-,stripped)
-                  if match:
-                      configured[match.group(1)]=bool(match.group(2).strip().strip('\\"\\\''))
+                  if '=' not in stripped:
+                      continue
+                  name,value=stripped.split('=',1)
+                  if re.fullmatch('[A-Za-z_][A-Za-z0-9_]*',name):
+                      configured[name]=bool(value.strip().strip(chr(34)).strip(chr(39)))
               for key in ('WC_URL','WC_URL_CLIENT','WOO_KEY','WOO_SECRET','PUBLIC_PSE_AGENT_ENABLED'):
                   print('PSE_BUILD_SECRET '+key+'='+('PRESENT' if configured.get(key) else 'MISSING_OR_EMPTY'))
               for item in ('server','server/entry.mjs','client','client/index.html',
