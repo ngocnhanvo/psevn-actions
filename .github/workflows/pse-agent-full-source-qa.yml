@@ -1,0 +1,35 @@
+name: PSE Agent complete current-site source QA (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-full-source-qa-request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: fix/pse-agent-full-tenant-isolation-20261028
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: PHP syntax checks for complete Agent source
+        shell: bash
+        run: |
+          set -euo pipefail
+          find source-php/wp-content/mu-plugins/esc-agent/src -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
+          php -l source-php/wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+          echo 'PSE_AGENT_FULL_LINT=PASS'
+      - name: Isolated PSE source, tenant identity and cross-topic contracts
+        working-directory: source-php
+        shell: bash
+        run: |
+          set -euo pipefail
+          php wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-global-cross-topic-contract.php
+          echo 'PSE_AGENT_FULL_SOURCE_QA=PASS'

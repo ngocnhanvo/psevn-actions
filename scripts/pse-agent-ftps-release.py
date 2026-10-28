@@ -24,6 +24,7 @@ mode.add_argument("--deploy", action="store_true", help="Explicitly publish guar
 mode.add_argument("--check-only", action="store_true", help="Read-only PSE FTPS identity/source audit")
 parser.add_argument("--security-only", action="store_true", help="Release only security-hardened esc-agent.php")
 parser.add_argument("--tenant-fix-only", action="store_true", help="Release only reviewed PSE CompanySkill and Agent tenant-isolation fixes")
+parser.add_argument("--full-source-fix-only", action="store_true", help="Release only exact PSE tenant source cleanup files")
 args = parser.parse_args()
 
 source = Path("source-php")
@@ -46,6 +47,8 @@ audited_live_blobs = {
         "7ae7274782c07a75a3994aba90f5126f13dd9bd8",
     "wp-content/mu-plugins/esc-agent/src/Core/AgentSynthesisPrompt.php":
         "3d3ed5f45e6f3ba86f499564ab74ec9ce3bce0d4",
+    "wp-content/mu-plugins/esc-agent/src/Core/ProductConstructionKnowledgeResolver.php":
+        "9042f17c70487937e77df22db1bc7b93df974dd3",
 }
 
 
@@ -65,14 +68,33 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     candidate_text = candidate.decode("utf-8").casefold()
     if "blue sea" in candidate_text or "xuongmunonbaohiem" in candidate_text:
         return False
+    if str(rel).endswith("/ProductConstructionKnowledgeResolver.php"):
+        return "return null;" in candidate_text and "mu bao hiem" not in candidate_text
     if str(rel).endswith("/Planner.php"):
         return "không phụ thuộc trang đang mở" in candidate_text
     return "phạm vi chung pse" in candidate_text
 
 
 assert len(files) == 6 and len(files) == len(set(files))
-assert not (args.security_only and args.tenant_fix_only)
-if args.tenant_fix_only:
+assert sum((args.security_only, args.tenant_fix_only, args.full_source_fix_only)) <= 1
+if args.full_source_fix_only:
+    files = [
+        Path("wp-content/mu-plugins/esc-agent/src/Core/AgentSynthesisPrompt.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/ContactIntentResolver.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/PricingIntentResolver.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/ProductConstructionKnowledgeResolver.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/ProductDiscoveryResolver.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/SkillRegistry.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Data/ProductMaterialExtractor.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Knowledge/ArticleKnowledgeRetriever.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Knowledge/KnowledgeIndex.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Knowledge/KnowledgeRetriever.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Skills/PaymentSkill.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Skills/PolicySkill.php"),
+    ]
+elif args.tenant_fix_only:
     files = [
         Path("wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php"),
         Path("wp-content/mu-plugins/esc-agent/src/Core/Agent.php"),
