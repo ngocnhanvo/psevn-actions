@@ -176,6 +176,8 @@ jobs:
           # Unit tests run separately in non-deploy CI, not in every build.
           pnpm run build-git
           node --check dist/server/entry.mjs
+          # Private runtime env loader must be part of the same compiled release.
+          grep -q "__PSE_PRIVATE_RUNTIME_ENV_V1__" dist/server/entry.mjs
           test -s dist/client/index.html
           test -s dist/server/entry.mjs
           ! grep -q 'xuongmunonbaohiem' dist/client/index.html
@@ -364,6 +366,14 @@ jobs:
       - name: Upload compiled staging archive by FTP-TLS
         shell: bash
         run: bash actions-hub/scripts/pse-resumable-ftp.sh
+      - name: Publish private Node SSR environment via certificate-verified FTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Only protected Actions ENV_FILE; no .env in deploy ZIP or public_html.
+          # Must finish BEFORE activating the newly built server entry.
+          python3 -m py_compile actions-hub/scripts/pse-runtime-env-ftps.py
+          python3 actions-hub/scripts/pse-runtime-env-ftps.py
       - name: Verify provenance and activate staging bundle using signed PHP rollback
         shell: bash
         run: python3 actions-hub/scripts/pse-remote-unzip.py unpack
