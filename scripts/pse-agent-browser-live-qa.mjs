@@ -35,10 +35,15 @@ try {
   const launcher = page.locator("#pse-agent-open");
   await launcher.waitFor({ state: "visible", timeout: 10000 });
   check(agentRequests === 0, "NO_PRECLICK_AGENT_API");
+  const initialHistory = page.waitForResponse(
+    response => new URL(response.url()).pathname === "/api/agent/history",
+    {timeout: 15000},
+  );
   await launcher.click();
   const panel = page.locator("#pse-agent-dialog");
   await panel.locator("[data-pse-agent-input]").waitFor({ state: "visible", timeout: 15000 });
-  await page.waitForResponse(resp => new URL(resp.url()).pathname === "/api/agent/history", {timeout: 15000}).catch(() => {});
+  const history = await initialHistory;
+  console.log("PSE_AGENT_BROWSER_INITIAL_HISTORY_HTTP=" + history.status());
   check(agentRequests > 0, "ONCLICK_ONLY_API");
 
   const cookies = await context.cookies(base);
@@ -60,6 +65,7 @@ try {
   );
   await panel.locator(".pse-agent-form button[type=submit]").click();
   const chat = await responsePending;
+  console.log("PSE_AGENT_BROWSER_CHAT_HTTP=" + chat.status());
   check(chat.status() === 200, "CHAT_HTTP200");
   await page.waitForFunction(() =>
     [...document.querySelectorAll("#pse-agent-dialog .pse-agent-bot")].some(node =>
