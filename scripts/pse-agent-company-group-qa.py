@@ -18,7 +18,8 @@ CASES=[
  ("10-advantages","PSE có những lợi thế gì so với các doanh nghiệp khác?","advantage"),
 ]
 def norm(s):
- return "".join(x for x in unicodedata.normalize("NFKD",str(s).casefold()) if not unicodedata.combining(x))
+ # Unicode NFKD does not decompose Vietnamese đ/Đ; normalize these too.
+ return "".join(x for x in unicodedata.normalize("NFKD",str(s).casefold()) if not unicodedata.combining(x)).replace("đ","d")
 def assess(reply,source,skills,kind):
  text=norm(reply); raw=norm(json.dumps(source,ensure_ascii=False,default=str))
  # Classify actual production fallback text; an HTTP 200 with this text is NOT
