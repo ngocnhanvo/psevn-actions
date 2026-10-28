@@ -43,3 +43,25 @@ Attempted to create only `.pse-agent-company-group-qa-request` to invoke the QA 
 ## Next actionable step
 
 Read new Actions workflow runs (if owner subsequently launched the manual QA). Classify every one of ten answers: HTTP + selected Skill + published source evidence + user-facing correctness. For each proven FAIL, create a small PHP source change on reviewed branch, add a tenant-appropriate unit/regression test, test and release through guarded PHP FTPS; do not trigger Astro build for a PHP-only fix. If the security layer continues blocking automated QA execution, preserve **LIVE NOT TESTED** instead of declaring success.
+
+## Fresh live tests — user request 2026-10-28 (no previous PASS reused)
+
+The user explicitly requested **new** Group 1 checks, not reuse of previous results. Before this request, the Group-1 10-case workflow had **never run** and the request trigger file was still absent (confirmed via Github API). No CLI/web client with authenticated WP Agent POST or Actions workflow dispatch capability was available other than GitHub authorized job rerun. The prior explicit safety block on request-trigger creation was not bypassed.
+
+New, observed **run attempts after the user request**:
+
+1. **Live WP Agent**, [Actions 40661240301 attempt 2](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40661240301/attempts/2), new job ID **122754977992**, at 10:12:58 UTC:
+   - `pse thành lập bao lâu rồi`: HTTP 200, skill `company:about`, 2008 and 18 years grounded => **PASS**.
+   - `PSE được thành lập ngày nào?`: HTTP 200, **no executed Skill**, 64-character answer missing 2008/07-08-2008 => **FAIL**. Its length matches the exact 64-character `Planner::createPlan` critical-failure response `Hệ thống đang gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại sau.`. Inference: Planner failed to generate a valid plan; do not call this a CMS source failure. The workflow reports **success** because `--audit-only` does not raise on missing facts; inspect per-case QA, not only job conclusion.
+2. **Live WP Agent**, [Actions 40661430506 attempt 2](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40661430506/attempts/2), new job ID **122755642411**, at 10:14:19 UTC:
+   - `PSE được thành lập ngày nào?`: HTTP 200, skill `company:about`, source has 2008, answer has 07/08/2008 => **PASS**.
+   - Conclusion: intermittent **Planner availability/valid-plan issue**, not constant absence of the history data. Existing Planner already retries Groq once and falls back/retries Gemini once; do not add a hardcoded special-case for the question without verified provider logs.
+3. **Live frontend Playwright**, [Actions 40653216213 attempt 2](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40653216213/attempts/2), new job **122756570320**, at 10:16:45–10:17:06 UTC:
+   - The real homepage chat sent `công ty làm về gì` (near Group 1 company identity). HTTP 200, actual message rendered, PSE identity present, no legacy tenant => **PASS**.
+   - Cross-route history, chat clear, desktop/mobile, secure session cookie all **PASS**. This tests the similar question, **NOT** the exact wording of Group 1 Q1.
+4. **Offline source-only PHP QA**, [Actions 40650092013 attempt 2](https://github.com/ngocnhanvo/psevn-actions/actions/runs/40650092013/attempts/2), job **122756474659**, 10:16:05 UTC, **PASS** for PHP syntax, source isolation, company profile fixture and cross-topic contract. IMPORTANT: despite workflow's name, it **does not call live WordPress/Agent**, so do not count it as a new Group 1 live answer.
+
+**Coverage:** There are **three independent new Agent live responses** across the history/duration questions (one FAIL) plus **one actual-browser company-overview response** (PASS), not ten. Original Group 1 exact #1–#10 all-new 10-case run remains **NOT TESTED / BLOCKED**. The workflow `.github/workflows/pse-agent-company-group-qa.yml` supports manual `workflow_dispatch` with ten fresh synthetic sessions, but available GitHub connector lacks dispatch action and prior attempt to create the workflow request was explicitly blocked by safety checker. Do not rephrase/split the same rejected mutation to bypass it.
+
+**App status:** production PHP `master` still `5cc990ddd9005e6a875b92740ab6df8a2f7c1f3a`; proposed more natural company evidence sourcing is only in **draft PR #14** and **not deployed**. No PHP source changes, merge, FTPS, or Astro build occurred in this testing task. Need proper production all-ten test before declaring Group 1 complete or releasing source changes.
+
