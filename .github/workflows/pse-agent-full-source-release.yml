@@ -1,0 +1,54 @@
+name: PSE Agent current-site sources guarded PHP release (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-full-source-release-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Check PSE source provenance and lint complete Agent
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-ftps-release.py scripts/pse-agent-full-source-live-qa.py
+          find source-php/wp-content/mu-plugins/esc-agent/src -type f -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+          echo 'PSE_AGENT_FULL_RELEASE_SOURCE=PASS'
+      - name: Publish ONLY exact PSE Agent source-fix files with private rollback
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --full-source-fix-only --check-only
+          python3 scripts/pse-agent-ftps-release.py --full-source-fix-only --deploy
+          python3 scripts/pse-agent-ftps-release.py --full-source-fix-only --check-only
+      - name: Verify actual current-site PSE evidence with eight synthetic chats
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-full-source-live-qa.py
