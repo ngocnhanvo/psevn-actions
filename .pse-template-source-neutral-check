@@ -8,3 +8,4 @@
 2026-10-27 post content thumbnail fallback: Astro github images from first real WP body image, same-origin API, related cards + no-image guard; full Vitest/parser NO BUILD.
 2026-10-27 PSE news card legacy WP admin URL source fix: full Astro github Vitest + parser CI NO BUILD; ensure existing featured source converted to same-origin image API.
 2026-10-27 Lighthouse menu remediation: Astro DEV headings and semantic WordPress metrics headers, source SHA 12e8ae50e56ef05b31682a099721c4023151c5c0, full Vitest/parser no build.
+2026-10-28 PSE global zero-load agent chat on Astro github: run existing Vitest, Astro parser and import resolver (NO ASTRO BUILD, NO FTP); cross-page cookie, no URL context, no pre-click agent API.
