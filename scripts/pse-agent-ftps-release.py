@@ -52,8 +52,12 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     expected = audited_live_blobs.get(str(rel))
     if expected is None:
         return False
+    # The archived FTPS snapshot normalizes CRLF to LF before storing the
+    # private Git blob. Compare that SAME canonical form; do not permit any
+    # other text changes or waive the immutable baseline fingerprint.
+    canonical = live.replace(b"\\r\\n", b"\\n")
     git_blob = hashlib.sha1(
-        b"blob " + str(len(live)).encode("ascii") + bytes([0]) + live
+        b"blob " + str(len(canonical)).encode("ascii") + bytes([0]) + canonical
     ).hexdigest()
     if git_blob != expected:
         return False
@@ -190,16 +194,13 @@ try:
                   + " similarity=" + format(ratio, ".3f"))
             if not args.deploy and str(rel) in audited_live_blobs:
                 expected = audited_live_blobs[str(rel)]
+                canonical = remote.replace(b"\\r\\n", b"\\n")
                 actual = hashlib.sha1(
-                    b"blob " + str(len(remote)).encode("ascii") + bytes([0]) + remote
+                    b"blob " + str(len(canonical)).encode("ascii") + bytes([0]) + canonical
                 ).hexdigest()
                 print("PSE_AGENT_AUDIT_STATUS file=" + str(rel)
-                      + " exact_blob=" + str(actual == expected).lower()
-                      + " candidate_marker=" + str(
-                          approved_audited_drift(rel, remote, ours)
-                          or ("pse" in ours.decode("utf-8").casefold()
-                              and b"blue sea" not in ours.lower())
-                      ).lower())
+                      + " canonical_blob=" + str(actual == expected).lower()
+                      + " candidate_approved=" + str(approved_audited_drift(rel, remote, ours)).lower())
             # Existing production may be customized. Refuse automated replacement
             # of a substantially divergent file, even if the PR itself is reviewed.
             if args.deploy and ratio < 0.85 and not approved_audited_drift(rel, remote, ours):
