@@ -1,0 +1,5 @@
+PSE_HISTORY_ESC_TABLE_SOURCE_QA=1
+php_repo=ngocnhanvo/psevn-php
+php_ref=fix/pse-agent-history-esc-table-source-20261028
+checks=lint,cli_history_source,prior_pse_isolation
+no_deploy=true
