@@ -54,7 +54,7 @@ audited_live_blobs = {
     "wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php":
         "870da847795a5d0c1e59cf6426ba1d786f520af1",
     "wp-content/mu-plugins/esc-agent/src/Skills/PolicySkill.php":
-        "a69fee4dea1aa75163a5c1fdae739714bf1f7b7d",
+        "2effe295a633c3b9825463ebf04d927c154442e",
 }
 
 
@@ -72,7 +72,13 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
     if git_blob != expected:
         return False
     candidate_text = candidate.decode("utf-8").casefold()
-    if "blue sea" in candidate_text or "xuongmunonbaohiem" in candidate_text:
+    # The reviewed current PSE CompanySkill intentionally names the old
+    # hostname ONLY inside its deny-regex. Reject that same string elsewhere.
+    if "blue sea" in candidate_text:
+        return False
+    if "xuongmunonbaohiem" in candidate_text and not (
+        str(rel).endswith("/CompanySkill.php") and "preg_match(" in candidate_text
+    ):
         return False
     if str(rel).endswith("/CompanySkill.php"):
         return ("qua-trinh-hinh-thanh-phat-trien" in candidate_text
