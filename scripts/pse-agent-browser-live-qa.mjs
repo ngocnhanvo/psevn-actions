@@ -43,6 +43,12 @@ try {
 
   const cookies = await context.cookies(base);
   const tokenCookie = cookies.find((cookie) => cookie.name === "pse_agent_session");
+  console.log("PSE_AGENT_SESSION_COOKIE_META=" + JSON.stringify({
+    present: Boolean(tokenCookie),
+    httpOnly: Boolean(tokenCookie?.httpOnly),
+    secure: Boolean(tokenCookie?.secure),
+    sameSiteLax: tokenCookie?.sameSite === "Lax",
+  }));
   check(Boolean(tokenCookie && tokenCookie.httpOnly && tokenCookie.secure), "HTTPONLY_COOKIE");
   const question = "PSE có những loại phân bón nào? Chỉ dùng thông tin đã công bố.";
   await panel.locator("[data-pse-agent-input]").fill(question);
