@@ -1,0 +1,45 @@
+name: PSE Agent live policy exact private source audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-policy-live-audit-request]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: audit/pse-policy-live-20261028
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: true
+      - name: Read policy from exact PSE WordPress root and preserve in private repo
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-live-policy-audit.py
+          cat > "$RUNNER_TEMP/pse_git_askpass.sh" <<'EOS'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$SOURCE_REPO_PAT" ;;
+            *) exit 1 ;;
+          esac
+          EOS
+          chmod 700 "$RUNNER_TEMP/pse_git_askpass.sh"
+          export GIT_ASKPASS="$RUNNER_TEMP/pse_git_askpass.sh"
+          export GIT_TERMINAL_PROMPT=0
+          python3 scripts/pse-agent-live-policy-audit.py
