@@ -1,0 +1,1 @@
+2026-10-28 read-only snapshot of current PSE PolicySkill to private PHP audit branch before altering its 180-line live source. Two guarded comprehensive releases (#40650572244, #40651094948) stopped BEFORE writes, rollback PASS. Do not bypass unknown policy source drift. No Astro build, no CMS mutation, no source logging.
