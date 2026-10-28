@@ -1,0 +1,52 @@
+name: PSE AI Agent exact tenant source correction FTPS (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-tenant-fix-release-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  tenant-source-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Verify isolated PHP source and prior tenant isolation contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-ftps-release.py
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Core/Agent.php
+          php -l source-php/wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php
+          php source-php/wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+      - name: Checked FTPS rollout of ONLY CompanySkill and Agent with rollback
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --tenant-fix-only --check-only
+          python3 scripts/pse-agent-ftps-release.py --tenant-fix-only --deploy
+          python3 scripts/pse-agent-ftps-release.py --tenant-fix-only --check-only
+      - name: Verify new isolated synthetic company answer on live backend
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-tenant-audit.py
