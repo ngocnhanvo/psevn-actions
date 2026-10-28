@@ -176,6 +176,8 @@ jobs:
           # Unit tests run separately in non-deploy CI, not in every build.
           pnpm run build-git
           node --check dist/server/entry.mjs
+          # Private runtime env loader must be part of the same compiled release.
+          grep -q "__PSE_PRIVATE_RUNTIME_ENV_V1__" dist/server/entry.mjs
           test -s dist/client/index.html
           test -s dist/server/entry.mjs
           ! grep -q 'xuongmunonbaohiem' dist/client/index.html
