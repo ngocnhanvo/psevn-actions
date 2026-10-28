@@ -1,0 +1,55 @@
+name: PSE AI Agent PHP source security QA (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-source-qa.yml
+permissions:
+  contents: read
+jobs:
+  agent-security:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout PSE PHP isolated agent feature branch
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: feat/pse-ai-agent-secure-20261028
+          path: php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Verify exact source and syntax without FTP or WordPress writes
+        working-directory: php
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = 'feat/pse-ai-agent-secure-20261028'
+          git rev-parse HEAD
+          for f in \
+            wp-content/mu-plugins/esc-agent.php \
+            wp-content/mu-plugins/esc-agent/src/Core/Planner.php \
+            wp-content/mu-plugins/esc-agent/src/Core/AgentSynthesisPrompt.php \
+            wp-content/mu-plugins/esc-agent/src/Core/KnowledgeAwarePlanner.php \
+            wp-content/mu-plugins/esc-agent/src/Skills/ProductSkill.php \
+            wp-content/mu-plugins/esc-agent/src/Skills/KnowledgeSearchSkill.php; do
+            php -l "$f"
+          done
+      - name: Assert history auth, POST-only clear and PSE-wide retrieval contract
+        working-directory: php
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('wp-content/mu-plugins/esc-agent.php').read_text()
+          assert "'permission_callback' => 'esc_agent_rest_authorize'" in s
+          assert "'methods' => ['POST', 'DELETE']" in s
+          assert "['GET', 'POST', 'DELETE']" not in s
+          assert 'default_session' not in s
+          planner=Path('wp-content/mu-plugins/esc-agent/src/Core/Planner.php').read_text()
+          assert 'KHÔNG PHỤ THUỘC TRANG ĐANG MỞ' in planner
+          print('PSE_AGENT_SECURITY_SOURCE=PASS')
+          PY
+      - run: echo 'PSE_AGENT_PHP_QA=PASS; NO_ASTRO_BUILD=PASS; NO_FTP=PASS; NO_WORDPRESS_WRITE=PASS'
