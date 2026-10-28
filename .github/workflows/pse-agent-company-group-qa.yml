@@ -1,5 +1,6 @@
 name: PSE AI Agent company conversation QA (READ ONLY)
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths: [.pse-agent-company-group-qa-request]
