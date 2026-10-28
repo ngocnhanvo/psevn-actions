@@ -11,6 +11,7 @@ from urllib.error import HTTPError
 
 parser=argparse.ArgumentParser()
 parser.add_argument("--audit-only",action="store_true")
+parser.add_argument("--only-founding-date",action="store_true")
 args=parser.parse_args()
 config={}
 for line in os.environ.get("ENV_FILE","").splitlines():
@@ -40,6 +41,7 @@ questions=[
     ("duration","pse thành lập bao lâu rồi"),
     ("founding_date","PSE được thành lập ngày nào?"),
 ]
+if args.only_founding_date:questions=[item for item in questions if item[0]=="founding_date"]
 failures=[]
 for label,question in questions:
     session=str(uuid.uuid4())
@@ -59,7 +61,11 @@ for label,question in questions:
         date=bool(re.search(r"07\s*[/.-]\s*08\s*[/.-]\s*2008|ngày\s*0?7\s+tháng\s*0?8\s+năm\s+2008",s))
         bad=bool(re.search(r"blue\s*sea|về chúng tôi|không\s+(?:nêu|có|thể xác minh)|chưa\s+(?:nêu|xác minh|có)|không\s+tìm\s+thấy",s))
         old=bool(re.search(r"blue\s*sea|xuongmunonbaohiem",s+" "+raw,re.I))
-        payload={"http":code,"chars":len(reply),"has_2008":founded,"has_18_years":age,
+        steps=list(source.values()) if isinstance(source,dict) else []
+        actions=[str(x.get("skill",""))+":"+str(x.get("action",""))
+                 for x in steps[:4] if isinstance(x,dict)]
+        payload={"http":code,"chars":len(reply),"skills":actions,
+                 "source_has_2008":("2008" in raw),"has_2008":founded,"has_18_years":age,
                  "has_day_07_08_2008":date,"missing_or_retired_source":bad,"legacy_tenant":old}
         print("PSE_HISTORY_"+label.upper()+"_QA="+json.dumps(payload,ensure_ascii=False))
         if bad or old or not (founded or age) or (label=="founding_date" and not date):
