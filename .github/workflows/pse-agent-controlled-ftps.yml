@@ -1,0 +1,72 @@
+name: PSE AI Agent guarded WordPress FTPS release (NO ASTRO BUILD)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.pse-agent-live-release-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-agent-wordpress-release
+  cancel-in-progress: false
+jobs:
+  agent-php-release:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout PSE-scoped release script
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout reviewed PHP production master only
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Validate PHP Agent files and release script
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-agent-ftps-release.py
+          find source-php/wp-content/mu-plugins/esc-agent/src -name '*.php' -type f -print0 | xargs -0 -n1 php -l >/dev/null
+          php -l source-php/wp-content/mu-plugins/esc-agent.php
+          echo 'PSE_AGENT_PHP_SOURCE_LINT=PASS'
+      - name: Verify target, preview remote Agent delta, then publish ONLY Agent files
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-agent-ftps-release.py --check-only
+          python3 scripts/pse-agent-ftps-release.py --deploy
+          python3 scripts/pse-agent-ftps-release.py --check-only
+      - name: Production unauthenticated history access must be rejected
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, urllib.request, urllib.error
+          from urllib.parse import urlsplit
+          values=[line.split('=',1)[1].strip().strip("'\"") for line in os.environ['ENV_FILE'].splitlines() if line.strip().startswith('WC_URL=')]
+          assert len(values)==1
+          base=urlsplit(values[0])
+          assert base.scheme=='https' and base.hostname=='admin-pse.webnvn.com'
+          url=base.geturl().rstrip('/')+'/wp-json/esc/v1/chat-history?session_id=00000000-0000-4000-8000-000000000001'
+          try:
+              with urllib.request.urlopen(url,timeout=25) as response:
+                  status=response.status
+          except urllib.error.HTTPError as err:
+              status=err.code
+          print('PSE_AGENT_UNAUTH_HISTORY_STATUS='+str(status))
+          assert status in (401,403)
+          print('PSE_AGENT_POSTDEPLOY_HISTORY_SECURITY=PASS')
+          PY
