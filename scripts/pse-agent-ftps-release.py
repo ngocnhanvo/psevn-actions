@@ -110,7 +110,7 @@ assert len(files) == 6 and len(files) == len(set(files))
 assert sum((args.security_only, args.tenant_fix_only, args.full_source_fix_only, args.contact_source_only, args.company_history_only)) <= 1
 if args.company_history_only:
     files = [Path("wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php")]
-elf args.contact_source_only:
+elif args.contact_source_only:
     files = [Path("wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php")]
 elif args.full_source_fix_only:
     files = [
