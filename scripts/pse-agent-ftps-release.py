@@ -54,8 +54,11 @@ audited_live_blobs = {
     "wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php":
         "870da847795a5d0c1e59cf6426ba1d786f520af1",
     "wp-content/mu-plugins/esc-agent/src/Skills/PolicySkill.php":
-        "2effe295a633c3b9825463ebf04d927c154442e",
+        "2effe295a633c3b9825463ebf04d927c154442e6",
 }
+
+
+assert all(re.fullmatch(r"[0-9a-f]{40}", digest) for digest in audited_live_blobs.values()), "Invalid pinned Git blob SHA1"
 
 
 def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
