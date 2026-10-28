@@ -25,4 +25,4 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/pse-agent-company-group-qa.py
-          python3 scripts/pse-agent-company-group-qa.py
+          python3 scripts/pse-agent-company-group-qa.py --strict
