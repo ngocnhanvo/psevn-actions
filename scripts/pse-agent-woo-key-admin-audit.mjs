@@ -32,10 +32,12 @@ try{
    const body=document.body.innerText;
    const keysPage=body.includes("REST API")||body.includes("API keys")||body.includes("Khóa API")||body.includes("API Keys");
    const rows=[...document.querySelectorAll("table.wp-list-table tbody tr, table.wc_keys tbody tr")];
-   const matched=rows.some(r=>r.innerText.includes(suffix));
-   return {keysPage,rows:rows.length,matched,permissionDenied:/not allowed|không có quyền|not sufficient permissions/i.test(body)};
+   const matched=rows.some(r=>!r.classList.contains("no-items")&&r.innerText.includes(suffix));
+   const emptyRows=rows.filter(r=>r.classList.contains("no-items")||r.querySelector("td.colspanchange")).length;
+   const count=rows.length-emptyRows;
+   return {keysPage,rows:count,emptyRows,matched,permissionDenied:/not allowed|không có quyền|not sufficient permissions/i.test(body)};
  },key.slice(-7));
- console.log("PSE_AGENT_WOO_KEYS_PAGE="+(info.keysPage?"PASS":"UNVERIFIED")+" rows="+info.rows+" configured_key_suffix_visible="+info.matched+" permission_denied="+info.permissionDenied);
+ console.log("PSE_AGENT_WOO_KEYS_PAGE="+(info.keysPage?"PASS":"UNVERIFIED")+" rows="+info.rows+" empty_rows="+info.emptyRows+" configured_key_suffix_visible="+info.matched+" permission_denied="+info.permissionDenied);
  if(info.permissionDenied)throw Error("WordPress admin lacks WooCommerce key management permission");
  if(!info.keysPage)throw Error("WooCommerce API keys page unavailable");
  console.log("PSE_AGENT_WOO_KEY_IDENTITY_AUDIT=PASS read_only=true; KEY_MATCH="+(info.matched?"YES":"NO_OR_NOT_LISTED"));
