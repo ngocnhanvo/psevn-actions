@@ -108,6 +108,30 @@ try:
     enter(root)
     print("PSE_AGENT_FTPS tls=PASS identity=PASS source_files=" + str(len(files)))
 
+    # Check all candidate paths before any mutation; fail closed on live drift.
+    if args.deploy:
+        for rel in files:
+            enter(root + "/" + str(rel.parent))
+            if not exists(rel.name):
+                raise RuntimeError("Reviewed Agent file missing remotely")
+            before = remote_bytes(rel.name).replace(b"\\r\\n", b"\\n").splitlines()
+            candidate = (source / rel).read_bytes().replace(b"\\r\\n", b"\\n").splitlines()
+            similarity = difflib.SequenceMatcher(None, before, candidate, autojunk=False).ratio()
+            if similarity < 0.85:
+                raise RuntimeError("Unreviewed Agent drift; abort before all FTP writes")
+        # Backups must not become downloadable .backup files inside public_html.
+        # A backup stored in mu-plugins/ itself as PHP would auto-load, so keep it
+        # outside the webroot, under the verified PSE account's domain directory.
+        private_root = f"/domains/{wp.hostname}/.pse-agent-rollback"
+        try:
+            enter(private_root)
+        except ftplib.error_perm:
+            ftp.mkd(private_root)
+            enter(private_root)
+        enter(root)
+    else:
+        private_root = None
+
     matched = 0
     missing = 0
     for rel in files:
@@ -143,7 +167,7 @@ try:
 
         payload = (source / rel).read_bytes()
         tmp = f".pse-agent-{release_id}-{name}.tmp"
-        bak = f".pse-agent-{release_id}-{name}.backup"
+        bak = f"{private_root}/{release_id}-{name}.backup"
         assert not exists(tmp) and not exists(bak), "Temporary/backup name collision"
         entry = dict(directory=directory, name=name, tmp=tmp, bak=bak,
                      original=found, activated=False)
