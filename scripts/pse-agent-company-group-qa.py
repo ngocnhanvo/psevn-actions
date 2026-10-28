@@ -21,6 +21,12 @@ def norm(s):
  return "".join(x for x in unicodedata.normalize("NFKD",str(s).casefold()) if not unicodedata.combining(x))
 def assess(reply,source,skills,kind):
  text=norm(reply); raw=norm(json.dumps(source,ensure_ascii=False,default=str))
+ # Classify actual production fallback text; an HTTP 200 with this text is NOT
+ # a valid factual answer. The same string length alone cannot distinguish
+ # Planner failure from failed LLM synthesis.
+ planner_unavailable=text==norm("Hệ thống đang gặp sự cố khi xử lý yêu cầu. Vui lòng thử lại sau.")
+ synthesis_unavailable=text==norm("Hiện chưa thể tổng hợp dữ liệu đã tra cứu. Vui lòng thử lại sau.")
+ service_error=planner_unavailable or synthesis_unavailable or not text.strip()
  legacy=bool(re.search(r"blue sea|xuongmunonbaohiem|mu bao hiem|non bao hiem",text+" "+raw))
  date=bool(re.search(r"0?7\s*[/.-]\s*0?8\s*[/.-]\s*2008|ngay\s+0?7\s+thang\s+0?8\s+nam\s+2008",text))
  operations=bool(re.search(r"0?1\s*[/.-]\s*0?9\s*[/.-]\s*2008|thang\s+0?9\s+nam\s+2008",text))
@@ -34,7 +40,10 @@ def assess(reply,source,skills,kind):
  unknown=bool(re.search(r"chua (co|tim thay|xac minh)|khong (co|tim thay|duoc)|khong the xac minh",text))
  matches={
  "identity":company and fertil,"full":full,"founded":have2008 and date,
- "age":have2008 and age,"operations":have2008 and operations,
+ "age":have2008 and age,
+ # The question asks which YEAR operations began. A reply may correctly say
+ # "năm 2008" without spelling the date 01/09; check operation semantics.
+ "operations":have2008 and bool(re.search(r"hoat dong|bat dau|di vao",text)),
  "correction":have2008 and have2011 and stock,
  "distinction":have2008 and have2011 and stock,
  "timeline":have2008 and have2011 and (date or operations),
@@ -46,15 +55,17 @@ def assess(reply,source,skills,kind):
  "founded":["company:about","knowledge:search"],"age":["company:about","knowledge:search"],
  "operations":["company:about","knowledge:search"],"correction":["company:about","knowledge:search"],
  "distinction":["company:about","knowledge:search"],"timeline":["company:about","knowledge:search"],
- "industry":["company:about","knowledge:search"],"advantage":["company:advantages","knowledge:search"],
+ "industry":["company:get","company:about","knowledge:search"],"advantage":["company:advantages","knowledge:search"],
  }
  route=any(s in routes[kind] for s in skills)
- flags={"answer_matches":bool(matches[kind]),"route_matches":route,"legacy_tenant":legacy,
+ flags={"answer_matches":bool(matches[kind]) and not service_error,
+ "route_matches":route,"legacy_tenant":legacy,
+ "planner_unavailable":planner_unavailable,"synthesis_unavailable":synthesis_unavailable,
  "source_has_2008":"2008" in raw,"source_has_2011":"2011" in raw,
  "reply_has_2008":have2008,"reply_has_2011":have2011,"founding_date":date,
  "operation_date":operations,"full_name":full,"fertilizer":fertil,"advantages":advantage,
  "unknown_claim":unknown}
- return bool(matches[kind] and route and not legacy), flags
+ return bool(matches[kind] and route and not legacy and not service_error), flags
 
 env={}
 for line in os.getenv("ENV_FILE","").splitlines():
@@ -89,7 +100,13 @@ for idx,(case,question,kind) in enumerate(CASES):
    steps=list(source.values()) if isinstance(source,dict) else []
    skills=[str(s.get("skill",""))+":"+str(s.get("action","")) for s in steps[:6] if isinstance(s,dict)]
    passed,flags=assess(reply,source,skills,kind)
-   diagnostic.update({"result":"PASS" if passed else "REVIEW","chars":len(reply),"skills":skills,"flags":flags})
+   reason=("planner_unavailable" if flags["planner_unavailable"] else
+           "synthesis_unavailable" if flags["synthesis_unavailable"] else
+           "legacy_tenant" if flags["legacy_tenant"] else
+           "wrong_or_missing_answer" if not flags["answer_matches"] else
+           "skill_routing" if not flags["route_matches"] else "ok")
+   diagnostic.update({"result":"PASS" if passed else "REVIEW","reason":reason,
+                      "chars":len(reply),"skills":skills,"flags":flags})
  except Exception as error: diagnostic.update({"result":"FAIL","reason":type(error).__name__})
  finally:
   try: cleared,_=req("/wp-json/esc/v1/clear-chat-history?session_id="+session,"POST",{})
