@@ -77,9 +77,11 @@ url=urlsplit(env.get("WC_URL",""))
 assert url.scheme=="https" and url.hostname=="admin-pse.webnvn.com" and url.port in (None,443) and url.path in ("","/") and not url.username and not url.password and not url.query and not url.fragment
 assert env.get("WOO_KEY") and env.get("WOO_SECRET")
 base=url.geturl().rstrip("/")
-def req(path,method="GET",data=None):
+def req(path,method="GET",data=None,extra_headers=None):
  headers={"Accept":"application/json","User-Agent":"PSE-company-QA",
  "Authorization":"Bearer "+env["WOO_SECRET"],"X-ESC-Woo-Key":env["WOO_KEY"]}
+ if extra_headers:
+  headers.update(extra_headers)
  payload=None if data is None else json.dumps(data,ensure_ascii=False).encode()
  if payload is not None:headers["Content-Type"]="application/json"
  request=Request(base+path,data=payload,headers=headers,method=method)
@@ -91,7 +93,11 @@ failed=[]
 for idx,(case,question,kind) in enumerate(CASES):
  session=str(uuid.uuid4()); diagnostic={"case":case}
  try:
-  status,body=req("/wp-json/esc-agent/v1/chat","POST",{"sessionId":session,"message":question})
+  status,body=req("/wp-json/esc-agent/v1/chat","POST",
+      {"sessionId":session,"message":question},
+      {"X-ESC-Debug":"regression",
+       "X-ESC-Run-Id":str(os.getenv("GITHUB_RUN_ID","manual"))[:70],
+       "X-ESC-Test-Case":case,"X-ESC-Test-Turn":"1"})
   diagnostic["http"]=status
   if status!=200: diagnostic["result"]="FAIL";diagnostic["reason"]="http"
   else:
@@ -107,6 +113,28 @@ for idx,(case,question,kind) in enumerate(CASES):
            "skill_routing" if not flags["route_matches"] else "ok")
    diagnostic.update({"result":"PASS" if passed else "REVIEW","reason":reason,
                       "chars":len(reply),"skills":skills,"flags":flags})
+   # The PHP Agent adds diagnostics only to authenticated regression requests
+   # after the diagnostic PHP change has been deployed. Defensively allowlist
+   # every logged field again; never emit raw answers, prompts, session IDs,
+   # request IDs, provider error messages or credentials in CI output.
+   server_diagnostics=response.get("diagnostics")
+   if isinstance(server_diagnostics,dict):
+    events=server_diagnostics.get("events")
+    if isinstance(events,list):
+     safe_str={"event","stage","provider","model","resource_id","from","to",
+               "from_model","to_model","reason","error_type","finish_reason",
+               "result","skill","action"}
+     safe_int={"attempt","http_status","latency_ms","cooldown_until"}
+     diagnostic["llm_events"]=[]
+     for event in events[:64]:
+      if not isinstance(event,dict):continue
+      clean={k:v for k,v in event.items()
+             if ((k in safe_str and isinstance(v,str) and
+                  len(v)<=100 and re.fullmatch(r"[A-Za-z0-9_.:/@-]+",v))
+                 or (k in safe_int and type(v) is int))}
+      diagnostic["llm_events"].append(clean)
+   else:
+    diagnostic["llm_diagnostics"]="UNAVAILABLE_PHP_NOT_DEPLOYED_OR_DISABLED"
  except Exception as error: diagnostic.update({"result":"FAIL","reason":type(error).__name__})
  finally:
   try: cleared,_=req("/wp-json/esc/v1/clear-chat-history?session_id="+session,"POST",{})
