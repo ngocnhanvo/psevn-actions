@@ -1,0 +1,32 @@
+name: PSE Agent published history ESC Table source QA (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-agent-history-evidence-qa-request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: fix/pse-agent-history-esc-table-source-20261028
+          path: source-php
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - name: Test the published Page and its linked native ESC Table
+        working-directory: source-php
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php
+          php -l wp-content/mu-plugins/esc-agent/tests/pse-history-esc-table-source.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-history-esc-table-source.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-current-source-isolation.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-global-cross-topic-contract.php
+          php wp-content/mu-plugins/esc-agent/tests/pse-tenant-company-profile-contract.php
+          echo 'PSE_HISTORY_SOURCE_QA=PASS; NO_DEPLOY=PASS'
