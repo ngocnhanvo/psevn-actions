@@ -74,7 +74,8 @@ if keyed_status!=200:
 bad=re.compile(r"xuongmunonbaohiem|nghiencuukhoahoc|blue[ -]?sea|mũ bảo hiểm|nongshim",re.I)
 questions=(
     "PSE đang có những sản phẩm phân bón nào? Chỉ nêu dữ liệu đã công bố.",
-    "Báo cáo thường niên PSE và thông tin cổ đông có thể xem ở đâu? Cho nguồn công khai."
+    "Báo cáo thường niên PSE và thông tin cổ đông có thể xem ở đâu? Cho nguồn công khai.",
+    "Báo cáo đó có tài liệu gốc nào đã được công bố không? Chỉ dùng nguồn xác minh."
 )
 for index,question in enumerate(questions,1):
     code,body=request("/wp-json/esc-agent/v1/chat","POST",
@@ -89,4 +90,33 @@ for index,question in enumerate(questions,1):
     if bad.search(reply):
         error("legacy_tenant_brand_in_reply")
     print("PSE_AGENT_CHAT_TURN_"+str(index)+"_PASS chars="+str(len(reply)))
-print("PSE_AGENT_LIVE_SMOKE=PASS provider_and_cross_topic_response; KNOWLEDGE_GROUNDING_REQUIRES_SOURCE_REVIEW=TRUE")
+# Verify the same random session retained all three turns across unrelated topics,
+# while never exposing user prompts/responses in logs.
+history_status,history_body=request(history,credentials=True)
+print("PSE_AGENT_PERSISTED_HISTORY_HTTP="+str(history_status))
+if history_status!=200:error("history_after_chat_http_"+str(history_status))
+try:records=json.loads(history_body.decode("utf-8"))
+except (UnicodeError,ValueError):error("history_invalid_json")
+if not isinstance(records,list):error("history_not_list")
+user_turns=[row.get("message") for row in records if isinstance(row,dict) and row.get("sender")=="user"]
+bot_turns=[row.get("message") for row in records if isinstance(row,dict) and row.get("sender")=="bot"]
+if user_turns!=list(questions) or len(bot_turns)!=len(questions):
+    error("cross_topic_session_history_mismatch")
+print("PSE_AGENT_CROSS_TOPIC_HISTORY=PASS turns="+str(len(user_turns))+" persisted=PASS")
+
+# Deletion must require the configured Bearer credential; avoid touching any
+# customer session (this test creates and clears only a fresh random UUID).
+clear_path="/wp-json/esc/v1/clear-chat-history?session_id="+session
+status,_=request(clear_path,"POST",json_body={},credentials=False)
+print("PSE_AGENT_UNAUTH_POST_CLEAR_HTTP="+str(status))
+if status not in (401,403):error("clear_allowed_without_auth")
+status,_=request(clear_path,"POST",json_body={},credentials=True)
+print("PSE_AGENT_AUTH_POST_CLEAR_HTTP="+str(status))
+if status!=200:error("authorized_clear_failed")
+status,body=request(history,credentials=True)
+if status!=200:error("post_clear_history_unavailable")
+try:cleared=json.loads(body.decode("utf-8"))
+except (UnicodeError,ValueError):error("post_clear_history_invalid_json")
+if cleared!=[]:error("post_clear_history_not_empty")
+print("PSE_AGENT_CLEAR_HISTORY=PASS synthetic_session_only=PASS")
+print("PSE_AGENT_LIVE_SMOKE=PASS auth_history_clear_cross_topic; KNOWLEDGE_GROUNDING_REQUIRES_SOURCE_REVIEW=TRUE")
