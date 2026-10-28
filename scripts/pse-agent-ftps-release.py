@@ -27,6 +27,7 @@ parser.add_argument("--tenant-fix-only", action="store_true", help="Release only
 parser.add_argument("--full-source-fix-only", action="store_true", help="Release only exact PSE tenant source cleanup files")
 parser.add_argument("--contact-source-only", action="store_true", help="Release only published-PSE ContactSkill no inherited ACF")
 parser.add_argument("--company-history-only", action="store_true", help="Release only verified PSE CompanySkill history ESC Table fix")
+parser.add_argument("--llm-diagnostics-only", action="store_true", help="Publish only two reviewed LLM diagnostic PHP files")
 args = parser.parse_args()
 
 source = Path("source-php")
@@ -107,8 +108,13 @@ def approved_audited_drift(rel: Path, live: bytes, candidate: bytes) -> bool:
 
 
 assert len(files) == 6 and len(files) == len(set(files))
-assert sum((args.security_only, args.tenant_fix_only, args.full_source_fix_only, args.contact_source_only, args.company_history_only)) <= 1
-if args.company_history_only:
+assert sum((args.security_only, args.tenant_fix_only, args.full_source_fix_only, args.contact_source_only, args.company_history_only, args.llm_diagnostics_only)) <= 1
+if args.llm_diagnostics_only:
+    files = [
+        Path("wp-content/mu-plugins/esc-agent/src/Core/Agent.php"),
+        Path("wp-content/mu-plugins/esc-agent/src/Core/EscAgentLogger.php"),
+    ]
+elif args.company_history_only:
     files = [Path("wp-content/mu-plugins/esc-agent/src/Skills/CompanySkill.php")]
 elif args.contact_source_only:
     files = [Path("wp-content/mu-plugins/esc-agent/src/Skills/ContactSkill.php")]
