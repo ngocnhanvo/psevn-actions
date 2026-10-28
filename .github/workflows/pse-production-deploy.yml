@@ -364,6 +364,14 @@ jobs:
       - name: Upload compiled staging archive by FTP-TLS
         shell: bash
         run: bash actions-hub/scripts/pse-resumable-ftp.sh
+      - name: Publish private Node SSR environment via certificate-verified FTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Only protected Actions ENV_FILE; no .env in deploy ZIP or public_html.
+          # Must finish BEFORE activating the newly built server entry.
+          python3 -m py_compile actions-hub/scripts/pse-runtime-env-ftps.py
+          python3 actions-hub/scripts/pse-runtime-env-ftps.py
       - name: Verify provenance and activate staging bundle using signed PHP rollback
         shell: bash
         run: python3 actions-hub/scripts/pse-remote-unzip.py unpack
