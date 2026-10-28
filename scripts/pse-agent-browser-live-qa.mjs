@@ -44,9 +44,12 @@ try {
       if (dialog?.querySelector(".pse-agent-boot")) window.__pseBootSkeletonObserved = true;
     }).observe(dialog, { childList: true, subtree: true });
   });
+  let delayedFirstHistory = false;
   await page.route("**/api/agent/history", async route => {
-    await page.unroute("**/api/agent/history");
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    if (!delayedFirstHistory) {
+      delayedFirstHistory = true;
+      await new Promise(resolve => setTimeout(resolve, 1200));
+    }
     await route.continue();
   });
   const initialHistory = page.waitForResponse(
