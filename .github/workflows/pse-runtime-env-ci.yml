@@ -49,6 +49,10 @@ jobs:
           assert 'ensure_http_guard(ftp, frontend)' in source
           assert 'http_denies_env(frontend)' in source
           assert 'PSE_HTTP_DENY_PROBE' in source
+          assert 'temp = domain_root + "/.pse-env."' in source
+          assert 'backup = domain_root + "/.pse-env."' in source
+          assert 'ftp.rename(web_env, backup)' in source
+          assert 'ftp.rename(temp, web_env)' in source
           workflow=Path('.github/workflows/pse-production-deploy.yml').read_text()
           upload=workflow.index('python3 actions-hub/scripts/pse-runtime-env-ftps.py')
           activate=workflow.index('Verify provenance and activate staging bundle')
