@@ -1,0 +1,1 @@
+2026-10-28 PSE stale Blue Sea business data production fix: PHP master PR #8 squash fad9d4104b37368fbbf25c84569ef4a813abbd04; standalone source QA #40645314843 PASS. Approved two-file-only Agent.php and CompanySkill.php FTPS with checksum/rollback; run one fresh synthetic tenant audit after deploy and cleanup. Do not change .env, other PHP files, or build Astro.
