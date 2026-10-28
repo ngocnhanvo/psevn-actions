@@ -126,7 +126,7 @@ def main() -> int:
             raise ValueError("Env activation verification failed")
         print("PSE_RUNTIME_ENV_FTPS=PASS state=updated private=PASS rollback_kept=" + str(original_moved).lower())
         return 0
-    except (ftplib.all_errors, OSError, ValueError, KeyError) as exc:
+    except ftplib.all_errors + (OSError, ValueError, KeyError) as exc:
         # Restore the original private runtime config if staging/activation failed.
         if ftp is not None:
             try:
@@ -138,7 +138,7 @@ def main() -> int:
                     ftp.delete(NAME)
                 if temp and file_present(ftp, temp):
                     ftp.delete(temp)
-            except (ftplib.all_errors, OSError):
+            except ftplib.all_errors + (OSError,):
                 print("PSE_RUNTIME_ENV_ROLLBACK=MANUAL_REVIEW_REQUIRED")
         print("PSE_RUNTIME_ENV_FTPS=FAIL error_class=" + type(exc).__name__)
         return 1
@@ -146,7 +146,7 @@ def main() -> int:
         if ftp is not None:
             try:
                 ftp.quit()
-            except (ftplib.all_errors, OSError):
+            except ftplib.all_errors + (OSError,):
                 ftp.close()
 
 
