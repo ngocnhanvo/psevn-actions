@@ -1,0 +1,32 @@
+name: PSE AI Agent admin permanent-delete UI audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-agent-admin-delete-ui-audit.yml
+      - scripts/pse-agent-admin-delete-ui-audit.mjs
+permissions:
+  contents: read
+jobs:
+  admin-delete-ui:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify admin permanent-delete controls without deleting production data
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-agent-admin-delete-ui-audit.mjs
+          node scripts/pse-agent-admin-delete-ui-audit.mjs
