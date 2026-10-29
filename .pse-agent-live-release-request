@@ -1,3 +1,5 @@
 2026-10-28 PSE AI Agent tenant-neutral prompt release. Reviewed PHP master e4e230ef429a95287f2c1c61e62178f587070b43, source QA #40637337102 PASS; exact audited Blue Sea prompt fingerprints verified by PSE Actions script 0e3dd3f87073f7a08f35b52e4fc62cabab834310. Only six Agent PHP files, no Astro build, guarded FTPS and rollback; verify synthetic history/chat after deploy.
 
 2026-10-28 retry only after exact canonical source audit: read-only QA #40637996074 PASS; both audited Planner and AgentSynthesisPrompt remote blobs canonical_blob=true candidate_approved=true. Original #40637617213 failed with rollback PASS and zero writes; pinned LF-normalized snapshot reconciled by PR #22. PHP master remains e4e230ef. No independent Astro build.
+
+2026-10-29 Planner fail-closed backend contract release. Deploy reviewed psevn-php/master 71fafce4c46e85a6c9b22092b40b450ca6c1533c via guarded Agent-only FTPS. Preserve public sentinel compatibility; no Astro build.
