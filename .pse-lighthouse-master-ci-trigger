@@ -11,3 +11,5 @@
 
 2026-10-28 PSE Agent inline Markdown safe renderer production backport PR #121 source master bfd76fe56ed2c174e82dceba676b22a125af5ed5; dev Vitest #40645314843 PASS. Verify master entire Vitest/parser before WP-controlled Astro build. PHP company tenant correction FTPS #40645528862 PASS, no re-deploy PHP.
 2026-10-28 PSE Agent chat skeleton open/history source master b79f0a4268a4fd700071195d9be2eafc891692b8 PR #122. 4-file scoped UI only; DEV Vitest 564/564 #40694278409 PASS. Verify production source FULL Vitest NO BUILD before WordPress-controlled release.
+
+2026-10-29 verify PSE Astro master 53844958a420f05500702161f1007dab99684af1 PR #124: Planner outage sentinel fails closed at proxy/UI; run full Vitest and source checks, NO BUILD, NO FTP.
