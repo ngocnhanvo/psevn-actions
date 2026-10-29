@@ -65,6 +65,10 @@ jobs:
       - name: Install wrapper only (Chromium already in image)
         shell: bash
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Authorize build-performance force-once for this exact owner request
+        if: "${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for build performance optimization' }}"
+        shell: bash
+        run: echo "PSE_FORCE_BUILD_ONCE=true" >> "$GITHUB_ENV"
       - name: Trigger exactly one WordPress Build Website via authenticated PSE admin
         shell: bash
         run: node imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
