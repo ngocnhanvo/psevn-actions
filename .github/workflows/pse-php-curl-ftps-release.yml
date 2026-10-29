@@ -69,15 +69,13 @@ jobs:
           manifest="$RUNNER_TEMP/pse-php-release-files.txt"
           case "$scope" in
             agent-chat-soft-clear)
-              cat > "$manifest" <<'EOF'
-wp-content/mu-plugins/esc-agent.php
-wp-content/mu-plugins/esc-agent/src/Core/Context.php
-EOF
+              printf '%s\n' \
+                'wp-content/mu-plugins/esc-agent.php' \
+                'wp-content/mu-plugins/esc-agent/src/Core/Context.php' > "$manifest"
               ;;
             deploy-trigger)
-              cat > "$manifest" <<'EOF'
-wp-content/plugins/github-trigger/vcs-build-trigger.php
-EOF
+              printf '%s\n' \
+                'wp-content/plugins/github-trigger/vcs-build-trigger.php' > "$manifest"
               ;;
             *)
               echo "::error::Unsupported PHP release scope"
