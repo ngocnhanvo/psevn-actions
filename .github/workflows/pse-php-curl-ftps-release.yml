@@ -1,6 +1,10 @@
 name: PSE PHP scoped FTPS upload via curl (NO ASTRO BUILD)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-php-curl-ftps-bootstrap
   workflow_dispatch:
     inputs:
       release_scope:
@@ -24,7 +28,8 @@ jobs:
   php-ftps:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
-      (github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch' ||
        (github.event_name == 'repository_dispatch' && github.event.action == 'wp_deploy_php'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -53,7 +58,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            scope="deploy-trigger"
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             scope="$MANUAL_SCOPE"
           else
             scope="$DISPATCH_SCOPE"
