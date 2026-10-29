@@ -1,0 +1,81 @@
+name: PSE Build Website status PHP+JS guarded FTPS release (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-build-status-php-ftps-release-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-wp-php-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'release(pse): deploy Build Website status PHP and JS via guarded FTPS'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - name: Checkout bounded PSE release source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify immutable source SHA from owner-approved request
+        id: pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(head -n 1 .pse-build-status-php-ftps-release-request | tr -d '\r\n')"
+          [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - name: Checkout exactly pinned PSE PHP production source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: ${{ steps.pin.outputs.sha }}
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Test scoped PHP and JS release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = '${{ steps.pin.outputs.sha }}'
+          python3 -m py_compile scripts/pse-build-status-php-ftps-release.py
+          php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          php -l source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
+          php source-php/wp-content/plugins/github-trigger/tests/build-status-regression.php
+          node --check source-php/wp-content/plugins/github-trigger/vcs-build-trigger.js
+          echo 'PSE_BUILD_STATUS_RELEASE_SOURCE_QA=PASS'
+      - name: Preflight real PSE WordPress FTPS and detect unexpected drift without writing
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PSE_PHP_SOURCE_SHA: ${{ steps.pin.outputs.sha }}
+        run: python3 scripts/pse-build-status-php-ftps-release.py --check-only
+      - name: Back up outside web root and release exactly two reviewed Build Website files
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PSE_PHP_SOURCE_SHA: ${{ steps.pin.outputs.sha }}
+        run: python3 scripts/pse-build-status-php-ftps-release.py --deploy
+      - name: Verify live FTPS files match tested source (read only)
+        shell: bash
+        env:
+          ENV_FILE: ${{ secrets.ENV_FILE }}
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PSE_PHP_SOURCE_SHA: ${{ steps.pin.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-build-status-php-ftps-release.py --check-only | tee /tmp/pse-build-status-readback.log
+          grep -q 'PSE_BUILD_STATUS_FTPS_CHECK=PASS changed=0' /tmp/pse-build-status-readback.log
+          echo 'PSE_BUILD_STATUS_PHP_FTPS=PASS; NO_ASTRO_BUILD=PASS'
