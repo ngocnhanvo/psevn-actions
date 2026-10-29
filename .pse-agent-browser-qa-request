@@ -15,3 +15,5 @@
 2026-10-28 retry scoped PSE chat skeleton browser QA after test-only route-handler race fix 8a92fc02b3eb952a8e12eb5fce2e0c00c1e2c342. Previous #40695577160 proved instant boot/history skeleton PASS, then failed `Route is already handled` in injected network delay; unchanged production build #40695234346, no new deploy.
 
 2026-10-29 postdeploy browser QA for Planner fail-closed Astro master 53844958a420f05500702161f1007dab99684af1; production deploy #40822499168 PASS. Observe actual /api/agent/chat status and UI after current Planner state. No build, no FTP, synthetic session only.
+
+2026-10-29 post-PHP Planner source release QA. psevn-php/master 71fafce4c46e85a6c9b22092b40b450ca6c1533c; guarded FTPS #40824817842 PASS. Re-check healthy live chat/session/history/mobile after Planner.php deployment; no Astro build, synthetic only.
