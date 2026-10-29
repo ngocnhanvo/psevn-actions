@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .pse-php-curl-ftps-bootstrap
+      - .pse-php-agent-chat-release-request
   workflow_dispatch:
     inputs:
       release_scope:
@@ -59,7 +60,14 @@ jobs:
           set -euo pipefail
 
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            scope="deploy-trigger"
+            if jq -e '.head_commit.added[]?, .head_commit.modified[]? | select(. == ".pse-php-agent-chat-release-request")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              scope="agent-chat-soft-clear"
+            elif jq -e '.head_commit.added[]?, .head_commit.modified[]? | select(. == ".pse-php-curl-ftps-bootstrap")' "$GITHUB_EVENT_PATH" >/dev/null; then
+              scope="deploy-trigger"
+            else
+              echo "::error::Push trigger did not contain an approved PHP release marker"
+              exit 1
+            fi
           elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             scope="$MANUAL_SCOPE"
           else
@@ -115,6 +123,22 @@ jobs:
           fi
 
           echo "PSE_PHP_RELEASE_SOURCE_PREFLIGHT=PASS scope=$PSE_PHP_RELEASE_SCOPE files=$count"
+
+      - name: Run Agent Chat soft-clear regressions before FTPS
+        if: steps.scope.outputs.scope == 'agent-chat-soft-clear'
+        working-directory: source-php
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l wp-content/mu-plugins/esc-agent.php >/dev/null
+          php -l wp-content/mu-plugins/esc-agent/src/Core/Context.php >/dev/null
+          php -l wp-content/mu-plugins/esc-agent/tests/pse-chat-soft-clear.php >/dev/null
+          php -l wp-content/mu-plugins/esc-agent/tests/context-window.php >/dev/null
+          php -l wp-content/mu-plugins/esc-agent/tests/conversation-memory.php >/dev/null
+          php wp-content/mu-plugins/esc-agent/tests/pse-chat-soft-clear.php
+          php wp-content/mu-plugins/esc-agent/tests/context-window.php
+          php wp-content/mu-plugins/esc-agent/tests/conversation-memory.php
+          echo "PSE_AGENT_CHAT_SOFT_CLEAR_REGRESSIONS=PASS"
 
       - name: Validate PSE WordPress and FTPS target
         shell: bash
