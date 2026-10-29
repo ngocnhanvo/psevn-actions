@@ -144,6 +144,8 @@ for idx,(case,question,kind) in enumerate(CASES):
   if not diagnostic["cleared"]:diagnostic["result"]="FAIL";diagnostic["reason"]="cleanup"
  if diagnostic["result"]!="PASS":failed.append(case)
  print("PSE_COMPANY_QA_CASE="+json.dumps(diagnostic,ensure_ascii=False),flush=True)
- if idx<9:time.sleep(1)
+ # Keep live provider traffic deliberately sparse to reduce burst/rate-limit pressure.
+ # This is QA pacing only; it does not change production Agent behavior.
+ if idx<9:time.sleep(10)
 print("PSE_COMPANY_QA_RESULT="+json.dumps({"pass":10-len(failed),"total":10,"review":failed,"no_raw_answers":True,"no_cms_writes":True}),flush=True)
 if "--strict" in sys.argv and failed:sys.exit(1)
