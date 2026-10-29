@@ -35,6 +35,7 @@ jobs:
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       MANUAL_SCOPE: ${{ inputs.release_scope }}
       DISPATCH_SCOPE: ${{ github.event.client_payload.scope }}
+      DISPATCH_SITE_DOMAIN: ${{ github.event.client_payload.site_domain }}
 
     steps:
       - name: Checkout reviewed PSE PHP production source
@@ -144,6 +145,37 @@ EOF
           ')"
           test "$wp_origin" = "https://admin-pse.webnvn.com"
           echo "PSE_WP_ORIGIN=$wp_origin" >> "$GITHUB_ENV"
+
+          client_host="$(php -r '
+            $text = getenv("ENV_FILE") ?: "";
+            $urls = [];
+            foreach (preg_split("/\\R/", $text) as $line) {
+                $line = trim($line);
+                if (str_starts_with($line, "export ")) {
+                    $line = trim(substr($line, 7));
+                }
+                if (str_starts_with($line, "WC_URL_CLIENT=")) {
+                    $urls[] = trim(trim(substr($line, 14)), "\"\\x27");
+                }
+            }
+            if (count($urls) !== 1) exit(2);
+            $p = parse_url($urls[0]);
+            if (!is_array($p)
+                || ($p["scheme"] ?? "") !== "https"
+                || empty($p["host"])
+                || isset($p["user"]) || isset($p["pass"])
+                || isset($p["query"]) || isset($p["fragment"])
+                || (isset($p["port"]) && (int) $p["port"] !== 443)
+                || (($p["path"] ?? "") !== "" && ($p["path"] ?? "") !== "/")) {
+                exit(3);
+            }
+            echo $p["host"];
+          ')"
+          test -n "$client_host"
+          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" ]]; then
+            test "$DISPATCH_SITE_DOMAIN" = "$client_host"
+          fi
+          echo "PSE_CLIENT_HOST=$client_host" >> "$GITHUB_ENV"
 
           raw="$FTP_SERVER"
           raw="${raw#ftp://}"
@@ -277,7 +309,7 @@ EOF
           {
             echo "### PSE PHP FTPS release"
             echo "- Scope: $PSE_PHP_RELEASE_SCOPE"
-            echo "- Source: `$PSE_PHP_RELEASE_SOURCE_SHA` from `ngocnhanvo/psevn-php@master`"
+            echo "- Source: $PSE_PHP_RELEASE_SOURCE_SHA from ngocnhanvo/psevn-php@master"
             echo "- Transport: curl explicit FTPS (TLS required)"
             echo "- Readback SHA-256: required"
             echo "- Rollback copy: outside public_html"
