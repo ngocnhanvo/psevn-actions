@@ -1,0 +1,285 @@
+name: PSE PHP scoped FTPS upload via curl (NO ASTRO BUILD)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_scope:
+        description: PHP release scope
+        required: true
+        type: choice
+        options:
+          - agent-chat-soft-clear
+          - deploy-trigger
+  repository_dispatch:
+    types: [wp_deploy_php]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pse-wp-php-release
+  cancel-in-progress: false
+
+jobs:
+  php-ftps:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'repository_dispatch' && github.event.action == 'wp_deploy_php'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      MANUAL_SCOPE: ${{ inputs.release_scope }}
+      DISPATCH_SCOPE: ${{ github.event.client_payload.scope }}
+
+    steps:
+      - name: Checkout reviewed PSE PHP production source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+
+      - name: Resolve exact allowlisted PHP release scope
+        id: scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            scope="$MANUAL_SCOPE"
+          else
+            scope="$DISPATCH_SCOPE"
+          fi
+
+          manifest="$RUNNER_TEMP/pse-php-release-files.txt"
+          case "$scope" in
+            agent-chat-soft-clear)
+              cat > "$manifest" <<'EOF'
+wp-content/mu-plugins/esc-agent.php
+wp-content/mu-plugins/esc-agent/src/Core/Context.php
+EOF
+              ;;
+            deploy-trigger)
+              cat > "$manifest" <<'EOF'
+wp-content/plugins/github-trigger/vcs-build-trigger.php
+EOF
+              ;;
+            *)
+              echo "::error::Unsupported PHP release scope"
+              exit 1
+              ;;
+          esac
+
+          echo "PSE_PHP_RELEASE_SCOPE=$scope" >> "$GITHUB_ENV"
+          echo "PSE_PHP_RELEASE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+          echo "scope=$scope" >> "$GITHUB_OUTPUT"
+
+      - name: Validate source, syntax and release contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          source_sha="$(git -C source-php rev-parse HEAD)"
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "PSE_PHP_RELEASE_SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+
+          count=0
+          while IFS= read -r rel; do
+            [[ -n "$rel" ]]
+            [[ "$rel" != /* && "$rel" != *".."* ]]
+            test -s "source-php/$rel"
+            php -l "source-php/$rel" >/dev/null
+            count=$((count + 1))
+          done < "$PSE_PHP_RELEASE_MANIFEST"
+
+          (( count >= 1 && count <= 2 ))
+
+          if [[ "$PSE_PHP_RELEASE_SCOPE" == "agent-chat-soft-clear" ]]; then
+            grep -Fq "esc_chat_clears" source-php/wp-content/mu-plugins/esc-agent/src/Core/Context.php
+            grep -Fq "Hội thoại AI PSE" source-php/wp-content/mu-plugins/esc-agent.php
+          elif [[ "$PSE_PHP_RELEASE_SCOPE" == "deploy-trigger" ]]; then
+            grep -Fq "wp_deploy_php" source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          fi
+
+          echo "PSE_PHP_RELEASE_SOURCE_PREFLIGHT=PASS scope=$PSE_PHP_RELEASE_SCOPE files=$count"
+
+      - name: Validate PSE WordPress and FTPS target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ENV_FILE"
+          test -n "$FTP_SERVER" && test -n "$FTP_USERNAME" && test -n "$FTP_PASSWORD"
+
+          wp_origin="$(php -r '
+            $text = getenv("ENV_FILE") ?: "";
+            $urls = [];
+            foreach (preg_split("/\\R/", $text) as $line) {
+                $line = trim($line);
+                if (str_starts_with($line, "export ")) {
+                    $line = trim(substr($line, 7));
+                }
+                if (str_starts_with($line, "WC_URL=")) {
+                    $urls[] = trim(trim(substr($line, 7)), "\"\x27");
+                }
+            }
+            if (count($urls) !== 1) exit(2);
+            $p = parse_url($urls[0]);
+            if (!is_array($p)
+                || ($p["scheme"] ?? "") !== "https"
+                || ($p["host"] ?? "") !== "admin-pse.webnvn.com"
+                || isset($p["user"]) || isset($p["pass"])
+                || isset($p["query"]) || isset($p["fragment"])
+                || (isset($p["port"]) && (int) $p["port"] !== 443)
+                || (($p["path"] ?? "") !== "" && ($p["path"] ?? "") !== "/")) {
+                exit(3);
+            }
+            echo "https://admin-pse.webnvn.com";
+          ')"
+          test "$wp_origin" = "https://admin-pse.webnvn.com"
+          echo "PSE_WP_ORIGIN=$wp_origin" >> "$GITHUB_ENV"
+
+          raw="$FTP_SERVER"
+          raw="${raw#ftp://}"
+          raw="${raw#ftps://}"
+          raw="${raw%/}"
+          [[ "$raw" != *"/"* && "$raw" != *"@"* && "$raw" != *"?"* && "$raw" != *"#"* ]]
+
+          if [[ "$raw" == *:* ]]; then
+            ftp_host="${raw%%:*}"
+            ftp_port="${raw##*:}"
+            test "$ftp_port" = "21"
+          else
+            ftp_host="$raw"
+            ftp_port="21"
+          fi
+
+          [[ "$ftp_host" =~ ^[A-Za-z0-9.-]+$ ]]
+          test -n "$ftp_host"
+
+          echo "PSE_FTP_HOST=$ftp_host" >> "$GITHUB_ENV"
+          echo "PSE_FTP_PORT=$ftp_port" >> "$GITHUB_ENV"
+          echo "PSE_FTP_ROOT=/domains/admin-pse.webnvn.com/public_html" >> "$GITHUB_ENV"
+
+          curl --fail --show-error --silent --ssl-reqd             --connect-timeout 20 --max-time 60             --user "$FTP_USERNAME:$FTP_PASSWORD"             "ftp://$ftp_host:$ftp_port/domains/admin-pse.webnvn.com/public_html/wp-load.php"             --output "$RUNNER_TEMP/pse-wp-load.php"
+
+          test -s "$RUNNER_TEMP/pse-wp-load.php"
+          echo "PSE_PHP_FTPS_IDENTITY=PASS"
+
+      - name: Upload exact PHP files with readback and rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ftp_base="ftp://$PSE_FTP_HOST:$PSE_FTP_PORT"
+          curl_common=(
+            --fail
+            --show-error
+            --silent
+            --ssl-reqd
+            --connect-timeout 20
+            --max-time 90
+            --user "$FTP_USERNAME:$FTP_PASSWORD"
+          )
+
+          fetch_remote() {
+            local remote="$1"
+            local out="$2"
+            curl "${curl_common[@]}" "$ftp_base$remote" --output "$out"
+          }
+
+          upload_remote() {
+            local local_file="$1"
+            local remote="$2"
+            curl "${curl_common[@]}" --ftp-create-dirs               --upload-file "$local_file" "$ftp_base$remote"
+          }
+
+          restore_original() {
+            local before="$1"
+            local remote="$2"
+            local verify="$3"
+            upload_remote "$before" "$remote"
+            fetch_remote "$remote" "$verify"
+            test "$(sha256sum "$before" | awk '{print $1}')" = "$(sha256sum "$verify" | awk '{print $1}')"
+          }
+
+          installed=0
+          matched=0
+
+          while IFS= read -r rel; do
+            src="source-php/$rel"
+            remote="$PSE_FTP_ROOT/$rel"
+            safe="${rel//\//__}"
+            before="$RUNNER_TEMP/$safe.before"
+            verify="$RUNNER_TEMP/$safe.verify"
+            rollback_verify="$RUNNER_TEMP/$safe.rollback-verify"
+            backup="/domains/admin-pse.webnvn.com/.pse-php-rollback/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${safe}.backup"
+
+            fetch_remote "$remote" "$before"
+
+            expected="$(sha256sum "$src" | awk '{print $1}')"
+            current="$(sha256sum "$before" | awk '{print $1}')"
+
+            if [[ "$current" == "$expected" ]]; then
+              matched=$((matched + 1))
+              echo "PSE_PHP_FTPS_MATCH file=$rel"
+              continue
+            fi
+
+            # Keep the exact pre-release bytes outside public_html.
+            upload_remote "$before" "$backup"
+
+            if ! upload_remote "$src" "$remote"; then
+              echo "::error::FTPS upload failed for $rel; restoring original"
+              restore_original "$before" "$remote" "$rollback_verify" || true
+              exit 1
+            fi
+
+            if ! fetch_remote "$remote" "$verify"; then
+              echo "::error::FTPS readback failed for $rel; restoring original"
+              restore_original "$before" "$remote" "$rollback_verify" || true
+              exit 1
+            fi
+
+            installed_sha="$(sha256sum "$verify" | awk '{print $1}')"
+            if [[ "$installed_sha" != "$expected" ]]; then
+              echo "::error::FTPS checksum mismatch for $rel; restoring original"
+              restore_original "$before" "$remote" "$rollback_verify"
+              exit 1
+            fi
+
+            installed=$((installed + 1))
+            echo "PSE_PHP_FTPS_INSTALLED file=$rel sha256=PASS"
+          done < "$PSE_PHP_RELEASE_MANIFEST"
+
+          echo "PSE_PHP_FTPS_RELEASE=PASS installed=$installed matched=$matched rollback_backups_outside_webroot=PASS"
+          echo "NO_ASTRO_BUILD=PASS"
+
+      - name: Verify chat history remains protected when Agent chat scope is released
+        if: steps.scope.outputs.scope == 'agent-chat-soft-clear'
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}'             "$PSE_WP_ORIGIN/wp-json/esc/v1/chat-history?session_id=00000000-0000-4000-8000-000000000001")"
+          echo "PSE_AGENT_UNAUTH_HISTORY_STATUS=$status"
+          [[ "$status" == "401" || "$status" == "403" ]]
+          echo "PSE_AGENT_POSTDEPLOY_HISTORY_SECURITY=PASS"
+
+      - name: Release summary
+        shell: bash
+        run: |
+          {
+            echo "### PSE PHP FTPS release"
+            echo "- Scope: $PSE_PHP_RELEASE_SCOPE"
+            echo "- Source: `$PSE_PHP_RELEASE_SOURCE_SHA` from `ngocnhanvo/psevn-php@master`"
+            echo "- Transport: curl explicit FTPS (TLS required)"
+            echo "- Readback SHA-256: required"
+            echo "- Rollback copy: outside public_html"
+            echo "- Astro build: not triggered"
+          } >> "$GITHUB_STEP_SUMMARY"
