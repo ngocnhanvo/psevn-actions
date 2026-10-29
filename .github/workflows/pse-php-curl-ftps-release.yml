@@ -155,7 +155,7 @@ EOF
                     $line = trim(substr($line, 7));
                 }
                 if (str_starts_with($line, "WC_URL_CLIENT=")) {
-                    $urls[] = trim(trim(substr($line, 14)), "\"\\x27");
+                    $urls[] = trim(trim(substr($line, 14)), "\"" . chr(39));
                 }
             }
             if (count($urls) !== 1) exit(2);
