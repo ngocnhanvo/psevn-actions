@@ -39,7 +39,7 @@ try{
  const c=await wp('/wp-json/wp/v2/categories/1758?_fields=id,slug,count,parent');
  if(c.status!==200||c.data?.slug!=='bao-cao-thuong-nien')throw Error('CMS annual category mismatch');
  r.cmsCategory=c.data;
- const all=await wp('/wp-json/wp/v2/posts?categories=1758&context=edit&per_page=100&status=publish,draft,pending,private,future&_fields=id,slug,title,status,date,categories');
+ const all=await wp('/wp-json/wp/v2/posts?categories=1758&context=edit&per_page=100&status=any&_fields=id,slug,title,status,date,categories');
  if(all.status!==200||!Array.isArray(all.data))throw Error('WP annual listing '+all.status);
  r.cmsList=all.data.map(x=>({id:x.id,slug:x.slug,status:x.status,date:x.date}));
  const workers=2;let next=0;
