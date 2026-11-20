@@ -66,21 +66,47 @@ try{
  const buf=await original.body();
  if(buf.length<100||buf.length>24_000_000||buf.subarray(0,4).toString("hex")!=="504b0304")
   throw Error("Original ZIP binary signature/length invalid, preserve original source");
- const slug="pse-legacy-"+createHash("sha256").update(sourceZip).digest("hex").slice(0,16);
- const check=await api("/wp-json/wp/v2/media?context=edit&slug="+slug+"&per_page=3&_fields=id,slug,source_url");
- if(check.status!==200||!Array.isArray(check.data)||check.data.length>1)throw Error("Ambiguous ZIP media identity");
- let media=check.data[0];
+ const sourceFilename=decodeURIComponent(new URL(sourceZip).pathname.split("/").at(-1));
+ if(sourceFilename!=="2016_04_26_CBTT_-_UY_QUYEN_CBTT.zip")
+  throw Error("Unexpected original ZIP filename");
+ // Preserve existing hashed media identity from a previous interrupted run.
+ const legacySlug="pse-legacy-"+createHash("sha256").update(sourceZip).digest("hex").slice(0,16);
+ const check=await api("/wp-json/wp/v2/media?context=edit&slug="+legacySlug+"&per_page=3&_fields=id,slug,source_url,mime_type");
+ if(check.status!==200||!Array.isArray(check.data)||check.data.length>1)
+  throw Error("Ambiguous previous ZIP media identity");
+ const originals=await api("/wp-json/wp/v2/media?context=edit&search=2016_04_26_CBTT&per_page=100&_fields=id,slug,source_url,mime_type");
+ if(originals.status!==200||!Array.isArray(originals.data))
+  throw Error("Cannot check existing original-filename media; refuse duplicates");
+ const exact=originals.data.filter(m=>{
+  try{return decodeURIComponent(new URL(m.source_url,wp).pathname.split("/").at(-1)).toLowerCase()===sourceFilename.toLowerCase()}
+  catch{return false}
+ });
+ if(exact.length>1)throw Error("Multiple original-name ZIP media detected; refuse duplicates");
+ let media=check.data[0]||exact[0];
  if(!media){
   const up=await context.request.post(wp+"/wp-json/wp/v2/media",{
-   headers:{"X-WP-Nonce":nonce,"Content-Type":"application/zip","Content-Disposition":'attachment; filename="'+slug+'.zip"'},
+   headers:{"X-WP-Nonce":nonce,"Content-Type":"application/zip","Content-Disposition":'attachment; filename="'+sourceFilename+'"'},
    data:buf,timeout:180000
   });
-  if(up.status()!==201)throw Error("WordPress ZIP import rejected HTTP "+up.status());
+  if(up.status()!==201)throw Error("WordPress original-name ZIP import rejected HTTP "+up.status());
   media=await up.json();
  }
- if(!media?.id||!media.source_url||!media.source_url.startsWith(wp+"/wp-content/uploads/"))
-  throw Error("Untrusted ZIP media readback source");
- const target=String(media.source_url);
+ if(!media?.id||!media.source_url||media.mime_type&&media.mime_type!=="application/zip")
+  throw Error("Untrusted ZIP media record");
+ const target=new URL(String(media.source_url),wp).href;
+ const parsedTarget=new URL(target);
+ if(parsedTarget.origin!==wp||!parsedTarget.pathname.startsWith("/wp-content/uploads/")||
+    !parsedTarget.pathname.toLowerCase().endsWith(".zip"))
+  throw Error("ZIP destination is not a local WP media upload");
+ const downloaded=await context.request.get(target,{timeout:60000});
+ if(downloaded.status()!==200)throw Error("Local ZIP media cannot be downloaded "+downloaded.status());
+ const localBuf=await downloaded.body();
+ const same=createHash("sha256").update(localBuf).digest("hex")===createHash("sha256").update(buf).digest("hex");
+ if(!same)throw Error("Uploaded ZIP bytes mismatch original source");
+ if(!check.data[0]){
+  const localFilename=decodeURIComponent(parsedTarget.pathname.split("/").at(-1));
+  if(localFilename!==sourceFilename)throw Error("WP media filename changed from original: "+localFilename);
+ }
  const current=await api("/wp-json/wp/v2/posts/79397?context=edit&_fields=id,slug,status,categories,content");
  if(current.status!==200||current.data?.id!==79397||current.data.status!=="publish"||
   String(current.data.content?.raw||"")!==before)throw Error("Source post changed concurrently, do not overwrite");
