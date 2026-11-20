@@ -1,0 +1,48 @@
+name: PSE 190 disclosure articles reconciled media parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-disclosure-190-reconcile.yml"
+      - "scripts/pse-disclosure-190-reconcile.mjs"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  reconcile:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-disclosure-190-media-parity
+          run-id: 44705310926
+          github-token: ${{ github.token }}
+          path: artifacts/pse-reconcile/full
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-disclosure-targeted-media-recheck
+          run-id: 44708531929
+          github-token: ${{ github.token }}
+          path: artifacts/pse-reconcile/targeted
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-disclosure-final-190-parity
+          run-id: 44705981776
+          github-token: ${{ github.token }}
+          path: artifacts/pse-reconcile/final
+      - name: Reconcile all 190 sources against final WordPress SSR + attachments
+        run: node --check scripts/pse-disclosure-190-reconcile.mjs && node scripts/pse-disclosure-190-reconcile.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-disclosure-190-complete-parity
+          path: artifacts/pse-reconcile/summary/report.json
+          if-no-files-found: warn
+          retention-days: 14
