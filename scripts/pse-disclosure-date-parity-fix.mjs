@@ -21,7 +21,7 @@ try {
  const proof=await source.evaluate(()=>{
   const root=document.querySelector(".blog"); if(!root)return null;
   const links=[...root.querySelectorAll('a[href]')].map(a=>a.href);
-  return {older:links.findIndex(x=>/\\/1742-20260813-/.test(x)),newer:links.findIndex(x=>/\\/1740-20261112-/.test(x))};
+  return {older:links.findIndex(x=>x.includes("/1742-20260813-")),newer:links.findIndex(x=>x.includes("/1740-20261112-"))};
  });
  if(!proof||proof.older<0||proof.newer<0||proof.newer>=proof.older)
   throw Error("Source date order changed; refuse publication-date mutation "+JSON.stringify(proof));
