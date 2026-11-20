@@ -119,6 +119,26 @@ jobs:
       - name: Fresh verified WordPress DB backup for the five new source posts
         if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Đồng bộ năm bài Tin tổng hợp đã xác minh'
         run: node scripts/pse-template-updraft-backup.mjs
+      - name: Verify unique 2024 Joomla article before WordPress mutation
+        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Đồng bộ riêng bài cán bộ 2024 trùng slug'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          s=json.load(open('docs/pse-legacy-migration-state.json',encoding='utf-8'))
+          pending={id for id,row in s['articles'].items() if row['status'] in ('pending','media')}
+          a=s['articles']['1601'];b=s['articles']['1616']
+          if pending!={'1601'} or s['runs']!=250 or s.get('backup_verified') is not True or \
+              a.get('distinct_source_verified') is not True or a.get('conflict_wp_id')!=77405 or \
+              a.get('unique_slug_suffix')!='2024' or a.get('alias_audit_run')!=44773915965 or \
+              b.get('wp_id')!=77405:
+              raise SystemExit('Source 1601 scope or historical collision proof changed')
+          print('PSE_1601_DISTINCT_ARTICLE_SCOPE=PASS; source_id=1601; existing_wp_id=77405')
+          PY
+      - name: Fresh verified DB backup before correcting 2024/2025 slug collision
+        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Đồng bộ riêng bài cán bộ 2024 trùng slug'
+        run: node scripts/pse-template-updraft-backup.mjs
       - name: Confirm local Updraft DB backup before first migration write
         if: env.PSE_IMPORT_WORK == 'yes'
         shell: bash

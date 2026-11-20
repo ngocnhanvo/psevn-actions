@@ -9283,15 +9283,14 @@
       "wp_id": 77421
     },
     "1601": {
-      "attempts": 1,
+      "attempts": 0,
       "group_hint": "company",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1601-pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html",
-      "status": "existing",
-      "wp_id": 77405,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "status": "pending",
+      "distinct_source_verified": true,
+      "conflict_wp_id": 77405,
+      "unique_slug_suffix": "2024",
+      "alias_audit_run": 44773915965
     },
     "1602": {
       "attempts": 3,

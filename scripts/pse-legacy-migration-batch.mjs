@@ -270,7 +270,15 @@ try{
    item.status="quarantined";item.reason="Unsafe or mismatched original source URL";failed++;continue;
   }
   const path=url.pathname;
-  const slug=path.match(/\/\d{2,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
+  const sourceSlug=path.match(/\/\d{2,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
+  // Two distinct Joomla news items #1601 (2024) and #1616 (2025) share a
+  // headline/slug. Source and live WP body identities were proven in QA #44773915965.
+  const distinct1601=id==="1601" && item.source_url==="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1601-pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html" &&
+    item.distinct_source_verified===true && item.conflict_wp_id===77405 &&
+    item.unique_slug_suffix==="2024" && state.articles["1616"]?.wp_id===77405 &&
+    state.articles["1616"]?.source_url==="https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1616-pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html";
+  if(id==="1601" && !distinct1601)throw Error("1601 unique alias proof missing");
+  const slug=distinct1601?sourceSlug+"-2024":sourceSlug;
   const cat=cats[item.group_hint];
   const disclosureSource=item.group_hint==="shareholder" &&
     /^\/quan-he-nha-dau-tu\/tin-tuc-co-dong\/ban-cong-bo-thong-tin\/\d{2,6}-[^/]+[.]html$/i.test(path);
@@ -305,11 +313,49 @@ try{
    item.status="quarantined";item.reason="Original Joomla section cannot be mapped to verified WP taxonomy";failed++;continue;
   }
   try{
+   if(distinct1601){
+     // Check the conflicting live post really is the different March 2025
+     // Joomla event. Correct only its mistakenly added Tin tong hop tag;
+     // preserve its slug, content, date, publish status and root taxonomy.
+     const oldAlias=await api("/wp-json/wp/v2/posts?status=any&context=edit&slug="+encodeURIComponent(sourceSlug)+
+       "&per_page=10&_fields=id,slug,status,date,title,content,categories");
+     const existingAlias=oldAlias.data?.[0];
+     if(oldAlias.status!==200||oldAlias.data?.length!==1||existingAlias?.id!==77405||
+       existingAlias.slug!==sourceSlug||existingAlias.status!=="publish"||
+       !String(existingAlias.date||"").startsWith("2025-03-03")||
+       !existingAlias.categories?.includes(cat)||sourceChildCategory!==1746||
+       ![1,2].includes(existingAlias.categories.length)||
+       existingAlias.categories.some(c=>![cat,sourceChildCategory].includes(c))||
+       !String(existingAlias.content?.raw||"").includes("3/3/2025"))
+       throw Error("1601/1616 historical collision identity cannot be verified; no write");
+     if(existingAlias.categories.includes(sourceChildCategory)){
+       const reclassified=await api("/wp-json/wp/v2/posts/77405","POST",{categories:[cat]});
+       const verify=await api("/wp-json/wp/v2/posts/77405?context=edit&_fields=id,slug,status,date,title,content,categories");
+       if(reclassified.status!==200||verify.status!==200||verify.data?.id!==77405||
+         verify.data.slug!==sourceSlug||verify.data.status!==existingAlias.status||
+         verify.data.date!==existingAlias.date||
+         String(verify.data.content?.raw||"")!==String(existingAlias.content?.raw||"")||
+         JSON.stringify(verify.data.categories)!==JSON.stringify([cat]))
+         throw Error("Cannot verify safe restoration of March 2025 taxonomy");
+       console.log("PSE_1616_CORRECT_CATEGORY=PASS; wp_id=77405; removed_tin_tong_hop=true; content_date_unchanged=true");
+     } else console.log("PSE_1616_CORRECT_CATEGORY=ALREADY_DONE; wp_id=77405");
+   }
    const before=await api("/wp-json/wp/v2/posts?status=any&context=edit&slug="+encodeURIComponent(slug)+"&per_page=100&_fields=id,status,slug,title,content,categories");
    if(before.status!==200||!Array.isArray(before.data))throw Error("Cannot verify existing WP slug");
    if(before.data.length>1)throw Error("WP duplicate slug, human review required");
    if(before.data.length===1){
     const old=before.data[0];
+    if(distinct1601){
+      const existingText=String(old.content?.raw||"");
+      if(old.slug!==slug||old.status!=="publish"||!old.categories?.includes(cat)||
+        !old.categories?.includes(sourceChildCategory)||
+        !existingText.includes("30/12/2024"))throw Error("2024 alias slug occupied by unrelated content");
+      item.status="imported";item.wp_id=old.id;
+      item.seo_cleaned=true;item.attribution_cleaned=true;
+      existing++;await persist();
+      console.log("PSE_1601_DISTINCT_EXISTING=PASS; wp_id="+old.id+"; no_duplicate=true");
+      continue;
+    }
     if(annualTagOnly&&old.id!==item.wp_id)throw Error("Annual checkpoint WP identity mismatch");
     if(mayRetagDisclosure1127(id,item)){
      const matching=state.articles["1129"];
