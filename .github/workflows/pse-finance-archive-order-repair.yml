@@ -1,0 +1,79 @@
+name: PSE finance restore 2024 PDF and source archive order (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-finance-archive-order-repair.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-finance-source-order-writer
+  cancel-in-progress: false
+jobs:
+  deploy-order-plugin:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: cf3e333c4e9149dbbab31412b9b4d11c56353df8
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Verify PHP plugin identity, syntax and deployment script
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = cf3e333c4e9149dbbab31412b9b4d11c56353df8
+          php -l source-php/wp-content/mu-plugins/pse-finance-source-order.php
+          python3 -m py_compile scripts/pse-finance-order-ftps.py
+          node --check scripts/pse-finance-archive-order-repair.mjs
+      - name: Install exact archive order plugin over FTPS and verify SHA256
+        run: python3 scripts/pse-finance-order-ftps.py
+  repair-cms:
+    needs: deploy-order-plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-financial-report-parity
+          run-id: 44712477709
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-financial-original
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh local DB-only rollback backup before source document and rank modification
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Correct one original blank-anchor PDF and source archive order with readback
+        run: node --check scripts/pse-finance-archive-order-repair.mjs && node scripts/pse-finance-archive-order-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-archive-order-repair
+          path: artifacts/pse-finance-order-repair/report.json
+          if-no-files-found: warn
+          retention-days: 14
