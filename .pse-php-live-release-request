@@ -7,3 +7,5 @@ PSE Visual Builder: source-only schema CI PASS (run 40275484196). Deploy PHP plu
 
 2026-10-27 PSE native WordPress menu AJAX fail-closed/sticky notice repair: PHP source psevn-php/master e61640e781db7f01757416cffd5109dec7c236dd. Verify menu.php PHP syntax, tests/pse-menu-ajax-source.php regression and compact serialized payload before guarded FTPS release; preserve existing items and avoid Astro build. Sticky notices stay visible on failure.
 2026-10-27 PSE Menu Manager single editable URL: release PHP master c55f5f7acd8e3718ac415af255bfa89f02321dc2 via verified FTPS. Hide core duplicate URL visually but retain and synchronize its native value with ESC custom link. Run PHP syntax/source regression, protect menu data and verify admin UI. No Astro build.
+
+PSE_DELTA_RELEASE_SHA=4080899b55b3c26e0a3dfb92672303663244662c
