@@ -1,0 +1,45 @@
+name: PSE restore original SEO titles for 15 annual posts (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-annual-15-seo-sync.mjs
+      - .github/workflows/pse-annual-15-seo-sync.yml
+      - .pse-annual-seo-apply
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-annual-15-seo-single-writer
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-annual-18-parity
+          run-id: 44729950280
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-annual-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-annual-15-seo-sync.mjs && node scripts/pse-annual-15-seo-sync.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-seo-readback
+          path: artifacts/pse-annual-seo/report.json
+          if-no-files-found: warn
+          retention-days: 30
