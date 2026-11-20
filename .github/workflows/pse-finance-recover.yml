@@ -1,0 +1,107 @@
+name: PSE recover source-verified missing financial reports (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-finance-recover.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  recovery:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 29
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install pinned Playwright client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate scripts and original nine source pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-legacy-migration-batch.mjs
+          node --check scripts/pse-finance-recovery-prepare.mjs
+          node --check scripts/pse-finance-recovery-next.mjs
+          node scripts/pse-finance-9-source.mjs
+          python3 - <<'PY'
+          import json
+          data=json.load(open('artifacts/pse-finance-9-source/report.json'))
+          found={x['id']:x for x in data['items']}
+          expect={'1738':1,'1666':2,'1650':2,'1480':1,'1148':2,'337':1,'199':1}
+          assert data['status']=='SOURCE_PROBED' and len(found)==9
+          for i,n in expect.items():
+            row=found[i]
+            assert row['htmlHttp']==200 and len(row['sourceAssets'])==n
+            assert not row['foreignAssets']
+            assert all(x.get('http')==200 for x in row['sourceAssets'])
+          assert len(found['1137']['sourceAssets'])==0
+          assert len(found['298']['foreignAssets'])==1
+          print('PSE_FINANCE_NINE_SOURCE_GATE=PASS; original_pdf_sources=7; deferred_sources=2')
+          PY
+      - name: Verify current WordPress count and provenance without mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pse-financial-fast-diff.mjs || true
+          python3 - <<'PY'
+          import json,os
+          a=json.load(open('artifacts/pse-financial-fast-diff/report.json'))
+          allowed={'1738','1666','1650','1480','1148','1137','337','298','199'}
+          missing={x['id'] for x in a['missing']}
+          assert a['status'] in ('PARTIAL','IDENTITY_PASS') and len(a['sourceEntries'])==76
+          assert a['category']['id']==1754 and len(a['wpExtra'])==0
+          assert missing.issubset(allowed) and not a['outsideFinanceCategory']
+          s=json.load(open('docs/pse-legacy-migration-state.json'))
+          active=[i for i in missing if i=='1738' and i not in s['articles'] or i in s['articles'] and
+               not s['articles'][i].get('finance_scope_terminal') and s['articles'][i].get('attempts',0)<3]
+          with open(os.environ['GITHUB_ENV'],'a') as env:env.write('FINANCE_HAS_ACTIONABLE='+('yes' if active else 'no')+'\n')
+          print('PSE_FINANCE_CMS_PREFLIGHT=PASS; total='+str(a['wordpressCount'])+'; missing='+str(len(missing))+'; actionable='+str(len(active)))
+          PY
+      - name: Fresh local DB-only UpdraftPlus backup before WordPress modification
+        if: env.FINANCE_HAS_ACTIONABLE == 'yes'
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Scope and advance conflict-aware migration checkpoint
+        if: env.FINANCE_HAS_ACTIONABLE == 'yes'
+        run: |
+          node scripts/pse-finance-recovery-prepare.mjs
+          echo "FINANCE_PREPARED=yes" >> "$GITHUB_ENV"
+      - name: Recover verified posts and original media using existing bounded importer
+        if: env.FINANCE_PREPARED == 'yes'
+        env:
+          PSE_FINANCE_RECOVERY_SCOPE: verified-nine-2026-11-20
+        run: node scripts/pse-legacy-migration-batch.mjs
+      - name: Save WordPress write checkpoint via SHA lease
+        if: always() && env.FINANCE_PREPARED == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/pse-legacy-migration-save.mjs
+      - name: Continue only actionable finance records under bounded run budget
+        if: success() && env.FINANCE_PREPARED == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/pse-finance-recovery-next.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-recovery-progress
+          path: |
+            artifacts/pse-finance-9-source/report.json
+            artifacts/pse-financial-fast-diff/report.json
+            docs/pse-legacy-migration-state.json
+          if-no-files-found: warn
+          retention-days: 14
