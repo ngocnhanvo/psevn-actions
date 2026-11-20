@@ -52,6 +52,22 @@ try{
   }catch(e){entry.error=String(e).slice(0,160)}
   report.candidates.push(entry);
  }
+ const mediaMeta=await ctx.request.get(wp+"/wp-json/wp/v2/media/82544?_fields=id,date,slug,post,source_url,title,mime_type",{timeout:30000});
+ report.attachment82544=mediaMeta.status()===200?await mediaMeta.json():{http:mediaMeta.status()};
+ report.attachmentReferences=[];
+ let pageNo=1,totalPages=1;
+ do{
+  const p=await ctx.request.get(wp+"/wp-json/wp/v2/posts?status=publish&per_page=100&page="+pageNo+"&_fields=id,slug,content",{timeout:45000});
+  if(p.status()!==200)throw Error("Cannot audit all posted references: HTTP "+p.status());
+  totalPages=Number(p.headers()["x-wp-totalpages"]||1);
+  if(totalPages>20)throw Error("Unbounded WordPress post pagination");
+  const posts=await p.json();
+  for(const post of posts)if(String(post.content?.rendered||"").includes("CBTT_BCTC_ban_nien.pdf"))
+   report.attachmentReferences.push({id:post.id,slug:post.slug});
+  pageNo++;
+ }while(pageNo<=totalPages);
+ console.log("PSE_FINANCE_ATTACHMENT_82544="+JSON.stringify({media:report.attachment82544,
+   referenceCount:report.attachmentReferences.length,references:report.attachmentReferences}));
  console.log("PSE_FINANCE_MEDIA_COLLISION="+JSON.stringify({source:report.source,
   candidates:report.candidates.filter(x=>x.matchedSource?.length||/cbtt_bctc_ban_nien/i.test(x.url)),
   candidateScanned:report.candidates.length,errors:report.errors}));
