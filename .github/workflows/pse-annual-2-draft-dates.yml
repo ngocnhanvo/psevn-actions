@@ -1,0 +1,30 @@
+name: PSE original annual draft dates evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-annual-2-draft-dates.mjs
+      - .github/workflows/pse-annual-2-draft-dates.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-date:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-annual-2-draft-dates.mjs && node scripts/pse-annual-2-draft-dates.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-draft-date-evidence
+          path: artifacts/pse-annual-date/report.json
+          if-no-files-found: warn
+          retention-days: 14
