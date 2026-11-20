@@ -34,7 +34,7 @@ async function getArchive(page,idx=1){
      const match=/\/(\d{3,6})-([a-z0-9-]+)\.html$/i.exec(u.pathname);
      if(!match||!['pse.vn','www.pse.vn'].includes(u.hostname))return [null,null];
      return [match[1],{id:match[1],slug:match[2].toLowerCase(),url:u.href,title:x.label}];
-   }).filter(x=>x[0]))].values()];
+   }).filter(x=>x[0])).values()];
    const pageInfo=(root.textContent||'').match(/Page\s+(\d+)\s+of\s+(\d+)/i);
    const starts=[...new Set(urls.map(x=>{try{return new URL(x.href).searchParams.get('start')}catch{return null}})
     .filter(x=>x!==null&&/^\d+$/.test(x)).map(Number))].sort((a,b)=>a-b);
