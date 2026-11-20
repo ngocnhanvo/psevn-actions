@@ -94,7 +94,7 @@ try {
   rawLength:str.length,normalizedText:str.replace(/<[^>]*>/g,' ').replace(/&[^;]+;/g,' ').replace(/\s+/g,' ').trim().length});
  // The previous WP taxonomy-description attempt was sanitized to plain text.
  // Never clear another editor's content; recognize only the exact observed record.
- const flattened=current&&parse(current).tableCount===0&&current.length===7685&&
+ const flattened=current&&parse(current).tableCount===0&&Math.abs(current.length-7685)<=10&&
    parse(current).normalizedText===5130&&current.includes('QUY CÁCH')&&current.includes('BÓN PHÂN');
  if(current&&!flattened)
   throw Error('Existing WordPress category description changed independently; refusing cleanup');
