@@ -67,10 +67,10 @@ try{
   const wpPosts=response.body.map(p=>{
    const html=String(p.content?.raw||'');
    const text=html.replace(/<[^>]+>/g,' ');
-   const urls=[...html.matchAll(/href\\s*=\\s*(?:"([^"]+)"|'([^']+)')/gi)].map(m=>m[1]||m[2]).filter(Boolean);
+   const urls=[...html.matchAll(/href\s*=\s*(?:"([^"]+)"|'([^']+)')/gi)].map(m=>m[1]||m[2]).filter(Boolean);
    return {id:p.id,slug:p.slug,status:p.status,date:p.date,title:clean(p.title?.raw||p.title?.rendered),
     categories:p.categories,bodyChars:clean(text).length,bodyHash:digest(text),bodyPreview:clean(text).slice(0,400),
-    fileUrls:urls.filter(x=>/\\.(?:pdf|docx?|xlsx?)(?:[?#]|$)/i.test(x)).slice(0,15),htmlImageUrls:[...html.matchAll(/<img\\b[^>]*src=["']([^"']+)/gi)].map(m=>m[1]).slice(0,15)};
+    fileUrls:urls.filter(x=>/\.(?:pdf|docx?|xlsx?)(?:[?#]|$)/i.test(x)).slice(0,15),htmlImageUrls:[...html.matchAll(/<img\b[^>]*src=["']([^"']+)/gi)].map(m=>m[1]).slice(0,15)};
   });
   report.items.push({sourceId:id,url,slug,original,wpPosts,titleExact:wpPosts.map(p=>fold(p.title)===fold(original.title)),
    excerptOverlap:wpPosts.map(p=>{
