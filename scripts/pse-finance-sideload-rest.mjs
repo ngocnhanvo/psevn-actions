@@ -8,13 +8,15 @@ const allowed=[
  ["1738",0,"https://www.pse.vn/images/20261104-CV-26-83-%C4%90NB-H%C4%90QT-%C4%90%C3%ADnh_ch%C3%ADnh_th%C3%B4ng_tin_%C4%91%C3%A3_c%C3%B4ng_b%E1%BB%91_trong_BCTC_qu%C3%BD_3.2026.pdf"],
  ["1666",0,"https://www.pse.vn/images/20260320-CV-26-16-%C4%90NB-H%C4%90QT-CBTT_BCTC_%C4%91%C3%A3_ki%E1%BB%83m_to%C3%A1n_n%C4%83m_2025.pdf"],
  ["1666",1,"https://www.pse.vn/images/20260320-CV-26-17-%C4%90NB-H%C4%90QT-gi%E1%BA%A3i_tr%C3%ACnh_l%E1%BB%A3i_nhu%E1%BA%ADn_sau_thu%E1%BA%BF_ch%C3%AAnh_l%E1%BB%87ch_so_v%E1%BB%9Bi_th%E1%BB%B1c_hi%E1%BB%87n_c%C3%B9ng_k%E1%BB%B3.pdf"],
+ ["1650",0,"https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf"],
+ ["1650",1,"https://www.pse.vn/images/CV-69-DNB-HDQT-giai-trinh-loi-nhuan-sau-thue-chenh-lech.pdf"]
 ];
 for(const [id] of allowed)if(!state.articles[id]?.source_url?.includes("/bao-cao-tai-chinh/"+id+"-"))throw Error("Source provenance mismatch "+id);
 const v=String(process.env.ENV_FILE||"").split(/\r?\n/).find(x=>x.trim().startsWith("WC_URL="));
 if(!v||v.split("=",2)[1].replace(/['"]/g,"").trim().replace(/\/$/,"")!=="https://admin-pse.webnvn.com")throw Error("Wrong WordPress environment");
 const root="https://admin-pse.webnvn.com";
 const browser=await chromium.launch({headless:true}),p=await browser.newPage();
-let changed=0,conflictsMarked=0;const errors=[];
+let changed=0,conflictsMarked=0,conflictsResolved=0,quarantined=0;const errors=[];
 const collision=JSON.parse(await readFile("artifacts/pse-finance-media-collision/report.json","utf8"));
 const original="https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf";
 const source=collision.source.find(x=>x.url===original);
@@ -59,6 +61,30 @@ try{
   return r.ok()?(await r.text()).trim():"";
  });
  if(!/^[a-z0-9]{8,24}$/i.test(nonce))throw Error("No WP API nonce");
+ // Reconcile exactly seven unreferenced Media records left by this migration's
+ // own timed-out uploads. They are moved to a PRIVATE rollback folder, never deleted.
+ const cleanup=await p.evaluate(async nonce=>{
+  const r=await fetch("/wp-json/pse-finance/v1/quarantine-failed-uploads",{
+   method:"POST",credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json"},
+  });
+  return {http:r.status,body:await r.json().catch(()=>null)};
+ },nonce);
+ if(cleanup.http!==200||cleanup.body?.result!=="verified_reversible_quarantine"||
+    cleanup.body?.count!==7||cleanup.body?.items?.length!==7||
+    cleanup.body.items.some(x=>!["trashed_with_private_binary_backup","already_quarantined"].includes(x.state)))
+  throw Error("PSE reversible orphan cleanup not verified: HTTP "+cleanup.http+" code "+String(cleanup.body?.code||"unknown"));
+ quarantined=cleanup.body.items.length;
+ console.log("PSE_FINANCE_ORPHAN_CLEANUP=PASS; records=7; reversible=true");
+ for(const id of ["1480","1650"]){
+  const rec=state.articles[id];
+  if(rec?.finance_asset_conflict?.source_url!==original)throw Error("Finance collision checkpoint changed "+id);
+  rec.finance_asset_conflict={...rec.finance_asset_conflict,status:"RESOLVED_FAILED_UPLOADS_QUARANTINED",
+     rollback:"private verified file backup + Media status trash",cleanup_count:7};
+  delete rec.finance_scope_terminal;
+  rec.status="pending";rec.attempts=0;delete rec.reason;
+  conflictsResolved++;
+ }
+
  for(const [id,index,source] of allowed){
   const entry=state.media[source];
   if(entry?.url){
@@ -76,18 +102,24 @@ try{
    if(r.http!==200||a.source_url!==source||!Number.isSafeInteger(a.id)||!Number.isSafeInteger(a.bytes)||
       !/^[0-9a-f]{64}$/i.test(a.sha256||"")||u.origin!==root||!u.pathname.startsWith("/wp-content/uploads/"))
     throw Error("Sideload readback rejected HTTP "+r.http+" code "+(a.code||"unknown"));
+   const expected={
+    "1738:0":"7f8a32ee037f26b7a26c11b61c7def96b1e6da46ce43019be0a3891ae7fc271d",
+    "1666:0":"8ceb96fc07f7e2cc737d31b0f0b4d17ced53df349baed2713a1c3f0b27aad6f9",
+    "1650:0":"aba7bf51f204ab167dbef22b2c35fe262aab3f43b5a5308ff448b83453a4309d"
+   }[id+":"+index];
+   if(expected&&a.sha256!==expected)throw Error("Original PSE PDF binary changed unexpectedly "+id);
    state.media[source]={id:a.id,url:u.href,sha256:a.sha256,source_filename:a.source_filename,source_bytes:a.bytes};
    changed++;
    console.log("PSE_FINANCE_SIDELOAD_OK="+JSON.stringify({id,index,mediaId:a.id,bytes:a.bytes,reused:a.status==="reused"}));
   }catch(e){errors.push({id,index,error:String(e).slice(0,170)})}
  }
 }finally{
- if(changed||conflictsMarked){
+ if(changed||conflictsMarked||conflictsResolved||quarantined){
   // Media is already source-verified: reset only the exact nine financial
   // source IDs for a post-only importer pass; never reopen unrelated records.
   const mediaById={
    "1738":[allowed[0][2]],"1666":[allowed[1][2],allowed[2][2]],
-
+   "1650":[allowed[3][2],allowed[4][2]],"1480":[allowed[3][2]]
   };
   for(const [id,urls] of Object.entries(mediaById)){
    const rec=state.articles[id];
@@ -108,9 +140,9 @@ try{
   state.runs=Number(state.runs||0)+1;
   await writeFile(filename,JSON.stringify(state,null,2)+"\n");
  }
- if(process.env.GITHUB_ENV)await appendFile(process.env.GITHUB_ENV,"PSE_FINANCE_MEDIA_CHECKPOINT_CHANGED="+((changed||conflictsMarked)?"yes":"no")+"\n");
+ if(process.env.GITHUB_ENV)await appendFile(process.env.GITHUB_ENV,"PSE_FINANCE_MEDIA_CHECKPOINT_CHANGED="+((changed||conflictsMarked||conflictsResolved||quarantined)?"yes":"no")+"\n");
  await writeFile("pse-finance-sideload-report.json",JSON.stringify({changed,errors},null,2)+"\n");
  await browser.close();
 }
-console.log("PSE_FINANCE_SIDELOAD_SUMMARY="+JSON.stringify({changed,conflictsMarked,errors}));
+console.log("PSE_FINANCE_SIDELOAD_SUMMARY="+JSON.stringify({changed,conflictsMarked,conflictsResolved,quarantined,errors}));
 if(errors.length)process.exitCode=1;
