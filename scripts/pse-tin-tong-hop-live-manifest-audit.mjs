@@ -30,9 +30,12 @@ const root='artifacts/pse-tin-tong-hop-live-manifest';
 await mkdir(root,{recursive:true});
 const report={schema:'pse-tin-tong-hop-live-manifest-v1',readonly:true,root:wp,legacy:{},wordpress:{},missing:[],extras:[],draftDateEvidence:[],status:'STARTED'};
 try{
- const source=Object.entries(state.articles).filter(([id,row])=>
-  /^https:\/\/(?:www\.)?pse\.vn\/tin-tuc-su-kien\/tin-cong-ty\/tin-tong-hop\/\d+-[a-z0-9-]+\.html$/i.test(row.source_url||''))
-  .map(([id,row])=>({id,sourceUrl:row.source_url,status:row.status,wpId:row.wp_id||null,
+ const source=Object.entries(state.articles).filter(([id,row])=>{
+  let u;try{u=new URL(row.source_url)}catch{return false}
+  const m=/^\/tin-tuc-su-kien\/tin-cong-ty\/tin-tong-hop\/(\d+)-([^/]+)\.html$/i.exec(u.pathname);
+  return u.protocol==='https:'&&['pse.vn','www.pse.vn'].includes(u.hostname)&&
+    m?.[1]===id&&!!m[2]&&!u.search&&!u.hash;
+ }).map(([id,row])=>({id,sourceUrl:row.source_url,status:row.status,wpId:row.wp_id||null,
    dateRecord:dateState.records?.[id]||null}));
  if(source.length<300||source.length>400)throw Error('Unexpected source count '+source.length);
  const category=await get('/wp-json/wp/v2/categories?slug=tin-tong-hop&hide_empty=false&_fields=id,parent,slug,count');
