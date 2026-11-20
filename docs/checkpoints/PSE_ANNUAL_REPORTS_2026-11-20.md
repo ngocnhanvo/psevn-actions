@@ -1,3 +1,17 @@
+# CẬP NHẬT TIẾP TỤC — Báo cáo thường niên PSE, 20/11/2026
+
+> **CHƯA HOÀN TẤT — 16/18 bài, còn hai booklet 2008 và 2010 đang nhập.** Không nhầm kết quả QA 16/18 với nghiệm thu cuối. Phần ghi nhận bên dưới là checkpoint lịch sử.
+
+- **2014 hoàn tất:** [run #44735517705](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44735517705) PASS: Post **82777**, PDF WordPress Media **82776**, **6.637.821 bytes**, mirror HNX/CafeF, SHA-256 readback và public SSR PASS. Joomla gốc file 404, bài mới công khai nguồn mirror và *không nhận trùng byte* với file gốc đã mất. WordPress category lúc này **16/18**.
+- **Ảnh 2008/2010, lượt đầu:** [run #44732363469](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44732363469) PARTIAL vì API Media trả đường dẫn **tương đối** `/wp-content/uploads/...`, kiểm tra cũ dùng `new URL(path)` nên lỗi `Invalid URL` dù WordPress đã nhận nhiều ảnh. Số media ghi nhận trong checkpoint cũ 0 không có nghĩa server không có file. Read-only [run #44735231273](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44735231273) xác nhận các ảnh đầu/cuối cả hai báo cáo đã lưu ở WP, chẳng hạn 2008 IDs **82568**, **82654** và 2010 IDs **82655**, **82775**.
+- **Fix idempotency:** `scripts/pse-annual-early-booklet-import.mjs` chuẩn hóa Media URL tương đối bằng origin WordPress; tra cứu exact filename, kiểm SHA theo bytes nguồn trước khi tái sử dụng, không upload trùng. Bài nháp tra bằng `wp_id` trong checkpoint, tránh REST status unsupported. [Lượt nhập lại #44735533454](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44735533454) đang chạy.
+- **Thứ tự 16 bài:** PHP order v2 đã triển khai, [run #44735804845](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44735804845) xác nhận `PASS_PUBLISHED_SUBSET`, 12+4 bài, ngày đăng không sửa; workflow kết thúc failure **đúng chủ ý** do yêu cầu chốt cuối phải đủ 18. Workflow v2 đã được đổi trigger theo kết quả **importer 2008/2010**, không theo 2014, để rank 18 và QA cuối sau khi đủ nội dung.
+- Các bước SEO 15/15 và thứ tự 15 bài ban đầu đã PASS, **không chạy lại**. Không build Astro vì SSR đọc WordPress trực tiếp.
+
+**Trạng thái: PARTIAL — đang đợi importer 2008/2010 hoàn thành; chỉ chốt FINAL khi QA 18/18 PASS.**
+
+---
+
 # PSE Báo cáo thường niên — đồng bộ 20/11/2026
 
 ## Quy tắc và dữ liệu nguồn
