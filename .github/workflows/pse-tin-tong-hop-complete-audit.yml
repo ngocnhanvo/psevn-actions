@@ -1,0 +1,37 @@
+name: PSE Tin tong hop complete source archive and WP parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-tin-tong-hop-complete-audit.yml
+      - scripts/pse-tin-tong-hop-complete-audit.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-tin-tong-hop-complete-audit
+  cancel-in-progress: false
+jobs:
+  source-to-target:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare every old archive page, all published WP posts and Astro SSR
+        run: node --check scripts/pse-tin-tong-hop-complete-audit.mjs && node scripts/pse-tin-tong-hop-complete-audit.mjs
+      - name: Upload manifest and source/target screenshots for parity review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-tin-tong-hop-complete-audit
+          path: artifacts/pse-tin-tong-hop-complete-audit/
+          if-no-files-found: warn
+          retention-days: 21
