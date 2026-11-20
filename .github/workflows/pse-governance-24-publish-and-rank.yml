@@ -1,0 +1,53 @@
+name: PSE publish final source-dated governance document and rank 24 (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-governance-24-publish-and-rank.mjs
+      - .github/workflows/pse-governance-24-publish-and-rank.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-governance-rank-writer
+  cancel-in-progress: false
+jobs:
+  publish-rank:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-governance-2026-independent-parity
+          run-id: 44744504960
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-governance-source-proof
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-governance-92-legacy-feed-proof
+          run-id: 44747738951
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-governance-feed-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Create new verified WordPress DB-only backup before final Joomla dated publish
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Publish exact Joomla article and rank all 24 using the already verified native PHP plugin
+        run: node --check scripts/pse-governance-24-publish-and-rank.mjs && node scripts/pse-governance-24-publish-and-rank.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-governance-24-publish-rank-proof
+          path: artifacts/pse-governance-24-publish/report.json
+          if-no-files-found: warn
+          retention-days: 30
