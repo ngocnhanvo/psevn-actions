@@ -4,6 +4,15 @@ import {createHash} from "node:crypto";
 import {chromium} from "playwright";
 const source=JSON.parse(await readFile("artifacts/pse-financial-original/report.json","utf8"));
 const state=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
+const proof=JSON.parse(await readFile("docs/pse-finance-1737-verified-media-map.json","utf8"));
+if(proof.schema!=="pse-finance-1737-verified-media-map-v1"||
+ proof.sourcePostId!=="1737"||proof.wordpressPostId!==76977||
+ proof.evidence?.runId!==44726181875||proof.files?.length!==2||
+ !proof.files.every(x=>x.source?.startsWith("https://www.pse.vn/images/")&&
+  x.target?.startsWith("https://admin-pse.webnvn.com/wp-content/uploads/2026/10/")&&
+  /^[a-f0-9]{64}$/.test(x.sha256||"")&&Number.isSafeInteger(x.bytes)&&x.bytes>1000))
+ throw Error("Independent SHA source/target PDF mapping proof incomplete");
+
 if(source.schema!=="pse-financial-report-source-parity-v1"||state.schema!=="pse-legacy-article-migration-v1"||
   source.sourceArticles?.length!==76)throw Error("Original source snapshot identity changed");
 const env=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""));
@@ -36,6 +45,8 @@ const htmlDocs=html=>{
  }
  return unique(found);
 };
+const verified1737=new Map(proof.files.map(x=>[canon(x.source),x]));
+if(verified1737.size!==2)throw Error("Original 1737 PDF proof has duplicate source URLs");
 const stateMediaByPath=new Map();
 for(const [original,media] of Object.entries(state.media||{})){
  if(!media?.url)continue;
@@ -89,7 +100,9 @@ try{
    const same=targetDocs.filter(d=>{
     if(used.has(d.url))return false;
     const lower=decodeURIComponent(new URL(d.url).pathname).toLowerCase();
-    return mapped.some(m=>canon(m.url)===canon(d.url))||
+    const independentlyProven=row.id==="1737"?verified1737.get(k):null;
+    return (independentlyProven&&canon(independentlyProven.target)===canon(d.url))||
+      mapped.some(m=>canon(m.url)===canon(d.url))||
       slugs.some(h=>lower.includes("pse-legacy-"+h))||
       name(d.url)===oldName;
    });
