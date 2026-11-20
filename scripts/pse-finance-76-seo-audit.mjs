@@ -68,8 +68,11 @@ try{
   await page.close();
  };
  await Promise.all([worker(),worker(),worker(),worker()]);
+ // Joomla does not publish SEO meta descriptions for these 76 pages.
+ // Existing destination-only descriptions are retained rather than erased:
+ // missing source metadata is not evidence that a target value is invalid.
  report.status=report.checked===76&&!report.failed.length&&!report.titleMismatch.length&&
-  !report.descriptionMismatch.length&&!report.descriptionSourceMissingWithTargetValue.length?"PASS":"PARTIAL";
+  !report.descriptionMismatch.length?"PASS_SOURCE_FIELDS":"PARTIAL";
  console.log("PSE_FINANCE_76_SEO="+JSON.stringify({status:report.status,source:76,checked:report.checked,
    sourceTitleCount:report.sourceTitleCount,sourceMetaDescriptionCount:report.sourceMetaDescriptionCount,
    titleMismatch:report.titleMismatch.slice(0,20),titleMismatchCount:report.titleMismatch.length,
