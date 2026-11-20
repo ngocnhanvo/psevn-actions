@@ -14,7 +14,8 @@ const ctx=await browser.newContext({viewport:{width:1366,height:900}});
 await ctx.route(/\.(?:png|jpe?g|gif|webp|woff2?|ttf)(?:\?.*)?$/i,route=>route.abort());
 const page=await ctx.newPage();
 async function nav(p,url){let err='';for(let i=0;i<2;i++){try{const x=await p.goto(url,{waitUntil:'domcontentloaded',timeout:37000});if(x?.status()===200)return;err='HTTP '+x?.status()}catch(e){err=String(e).slice(0,180)}}throw Error(url+' '+err)}
-async function wp(path){return page.evaluate(async path=>{const x=await fetch(path,{credentials:'same-origin',headers:{Accept:'application/json'}});return {status:x.status,data:await x.json().catch(()=>null)}},path)}
+let nonce='';
+async function wp(path){return page.evaluate(async ({path,nonce})=>{const x=await fetch(path,{credentials:'same-origin',headers:{Accept:'application/json','X-WP-Nonce':nonce}});return {status:x.status,data:await x.json().catch(()=>null)}},{path,nonce})}
 try{
  const archive=await ctx.newPage();
  for(const offset of [0,16]){
@@ -36,11 +37,13 @@ try{
  }
  await nav(page,cms+'/wp-admin/post.php?post=248&action=edit');
  if(!await page.locator('#adminmenu').count())throw Error('Admin login missing after navigation');
+ nonce=await page.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;const r=await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'same-origin'});return r.ok()?(await r.text()).trim():''});
+ if(!/^[a-z0-9]{8,24}$/i.test(nonce))throw Error('WordPress REST nonce unavailable');
  const c=await wp('/wp-json/wp/v2/categories/1758?_fields=id,slug,count,parent');
  if(c.status!==200||c.data?.slug!=='bao-cao-thuong-nien')throw Error('CMS annual category mismatch');
  r.cmsCategory=c.data;
  const all=await wp('/wp-json/wp/v2/posts?categories=1758&context=edit&per_page=100&status=any&_fields=id,slug,title,status,date,categories');
- if(all.status!==200||!Array.isArray(all.data))throw Error('WP annual listing '+all.status);
+ if(all.status!==200||!Array.isArray(all.data))throw Error('WP annual listing '+all.status+' '+JSON.stringify(all.data).slice(0,240));
  r.cmsList=all.data.map(x=>({id:x.id,slug:x.slug,status:x.status,date:x.date}));
  const workers=2;let next=0;
  async function scan(){const p=await ctx.newPage();try{while(next<ids.length){
