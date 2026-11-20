@@ -8832,6 +8832,12 @@
       "verified_date": null,
       "wp_id": 77548
     },
+    "1565": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1565-pvfcco-pse-chuoi-hoat-dong-y-nghia-ky-niem-15-nam-thanh-lap-cong-ty-18-08-2008-18-08-2023.html",
+      "status": "pending"
+    },
     "1566": {
       "attempts": 3,
       "attribution_cleaned": true,
@@ -9092,6 +9098,12 @@
       "verified_date": "2024-07-09T00:00:00",
       "wp_id": 78955
     },
+    "1586": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1586-pvfcco-pse-to-chuc-khoa-dao-tao-noi-bo-kiem-soat-rui-ro-trong-boi-canh-moi.html",
+      "status": "pending"
+    },
     "1587": {
       "attempts": 3,
       "attribution_cleaned": true,
@@ -9230,6 +9242,12 @@
       "verified_date": null,
       "wp_id": 77428
     },
+    "1599": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1599-pvfcco-pse-to-chuc-hoi-nghi-tong-ket-cong-tac-dang-hoat-dong-kinh-doanh-nam-2024-trien-khai-ke-hoach-cong-tac-nam-2025-va-hoi-nghi-nguoi-lao-dong-nam-2025.html",
+      "status": "pending"
+    },
     "1600": {
       "attempts": 1,
       "attribution_attempts": 1,
@@ -9242,6 +9260,12 @@
       "status": "draft_needs_date",
       "verified_date": null,
       "wp_id": 77421
+    },
+    "1601": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1601-pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html",
+      "status": "pending"
     },
     "1602": {
       "attempts": 3,
@@ -9257,6 +9281,12 @@
       "status": "imported",
       "verified_date": "2025-01-02T00:00:00",
       "wp_id": 78929
+    },
+    "1603": {
+      "attempts": 0,
+      "group_hint": "company",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1603-chuong-trinh-xuan-yeu-thuong-tet-se-chia-trao-tang-100-phan-qua-den-cac-ho-dan-co-hoan-canh-kho-khan-tren-dia-ban-phuong-6-thanh-pho-tan-an.html",
+      "status": "pending"
     },
     "1608": {
       "attempts": 1,
