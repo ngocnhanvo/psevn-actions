@@ -83,9 +83,15 @@ const mayRetagDisclosure1127=(id,r)=>
  id==="1127" && r?.status==="quarantined" && !r.wp_id &&
  r.reason==="WP slug occupied by unrelated or empty content" &&
  r.source_url==="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1127-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html";
+// A fresh source binary audit independently proved all four #1670 PDFs;
+// the old quarantined reason only reflects the previous 24-MB limit.
+const mayRetryVerifiedDisclosure1670=(id,r)=>id==="1670" && r?.group_hint==="shareholder" &&
+ r.source_url==="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1670-20260403-cbtt-thu-moi-tai-lieu-dhdcd-va-thong-bao-de-cu-ung-cu-thanh-vien-hdqt-bks-nhiem-ky-2026-2031.html" &&
+ !r.wp_id && r.status==="quarantined" && r.reason==="Unexpected oversized disclosure asset" &&
+ !r.disclosure_four_pdf_retry_attempted;
 const candidates=Object.keys(state.articles).filter(id=>
  mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) || canVerifyGovernance376(id,state.articles[id]) ||
- mayRetagDisclosure1127(id,state.articles[id]) || mayRecoverImage(id,state.articles[id]) ||
+ mayRetryVerifiedDisclosure1670(id,state.articles[id]) || mayRetagDisclosure1127(id,state.articles[id]) || mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
     (state.articles[id].attempts||0)<3) ||
    (state.articles[id].status==="quarantined" &&
@@ -192,6 +198,12 @@ try{
     break;
   }
   const item=state.articles[id];
+  if(mayRetryVerifiedDisclosure1670(id,item)){
+   item.disclosure_four_pdf_retry_attempted=true;
+   item.status="pending";item.attempts=0;delete item.reason;
+   console.log("PSE_DISCLOSURE_1670_RETRY=SOURCE_VERIFIED; four_pdf_binary_audit=PASS; reset_old_limit_only=true");
+   await persist();
+  }
   const brokenImageUrl=mayRecoverImage(id,item)?BROKEN_MARKET_IMAGES[id]:null;
   const annualTagOnly=mayTagAnnual(id,item);
   const recoverAnnualGif=mayRecoverAnnualGif(id,item);
