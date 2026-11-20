@@ -1,0 +1,42 @@
+name: PSE synchronize original Dam Phu My technical description into existing WP category (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-dam-phu-my-category-content-sync.mjs
+      - .github/workflows/pse-dam-phu-my-category-content-sync.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-dam-phu-my-category-editor
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate strictly scoped source-to-category importer
+        run: node --check scripts/pse-dam-phu-my-category-content-sync.mjs
+      - name: Create verified UpdraftPlus local DB-only backup before editing category
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Write the ten original technical tables ONLY into product category 1763 and verify
+        run: node scripts/pse-dam-phu-my-category-content-sync.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-dam-phu-my-category-sync-result
+          path: artifacts/pse-dam-phu-my-sync/report.json
+          retention-days: 21
+          if-no-files-found: warn
