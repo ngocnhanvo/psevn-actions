@@ -1,0 +1,41 @@
+name: PSE disclosure archive source versus WordPress parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/pse-disclosure-parity.mjs"
+      - ".github/workflows/pse-disclosure-parity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-disclosure-parity-readonly
+  cancel-in-progress: false
+jobs:
+  disclosure-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 32
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate script and independently compare disclosure archives
+        run: node --check scripts/pse-disclosure-parity.mjs && node scripts/pse-disclosure-parity.mjs
+      - name: Upload source and CMS discrepancy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-disclosure-parity-report
+          path: artifacts/pse-disclosure-parity/audit.json
+          if-no-files-found: warn
+          retention-days: 14
