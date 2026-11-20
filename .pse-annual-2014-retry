@@ -1,0 +1,1 @@
+Retry HNX/CafeF 2014 PDF restore: prior run 44732515147 failed because WordPress media source_url is relative. Reuse existing WordPress Media by verified filename and SHA; no duplicate. Exact original 404 documented. Idempotent source-checkpoint scope. 2026-11-20.
