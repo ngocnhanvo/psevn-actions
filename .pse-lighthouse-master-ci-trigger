@@ -17,3 +17,4 @@
 2026-11-20 Validate Astro master 9748eb98387c77a751f6f99177ef49fcd73ce7e0: TablePress cache v2, Product Logs cursor/snapshot, product/image timing; full source Vitest only, NO DEPLOY.
 2026-11-20 verify WordPress-managed category technical description rendering for PSE Astro master 6ac75b9a9a36f1015cf78ff6b4f94b1ea6475b4b, NO BUILD.
 2026-11-20 Verify PSE modern WordPress-managed fertilizer category UI: Astro master 835c5048d7738298b281c84ba420f9b8f3cf6ad3; source regression FULL Vitest, no build/deploy. Retain ten CMS technical tables and four real product cards.
+2026-11-20 Recheck PSE modern fertilizer category UI, Astro master 85ae9d60a6457f1bca05444c889139bc6f41014e: corrected responsive contract after CI #44764608565 (587/588 PASS, previous test expected old breakpoint); run full Vitest, NO BUILD.
