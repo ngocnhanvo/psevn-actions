@@ -22,10 +22,14 @@ jobs:
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - run: node --check scripts/pse-native-product-row-audit.mjs && node scripts/pse-native-product-row-audit.mjs
+      - name: Verify published SOP category and detail at three widths
+        run: node --check scripts/pse-sop-live-qa.mjs && node scripts/pse-sop-live-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pse-verified-product-source-rows
-          path: artifacts/pse-native-products/verified-rows.json
+          path: |
+            artifacts/pse-native-products/verified-rows.json
+            artifacts/pse-sop-live-qa
           retention-days: 14
           if-no-files-found: warn
