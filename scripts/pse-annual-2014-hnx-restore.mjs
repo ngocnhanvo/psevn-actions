@@ -118,10 +118,14 @@ try{
   'trên HNX ngày 18/03/2015, được CafeF lưu trữ. Không thể xác minh tệp này trùng byte với đường dẫn gốc đã mất.</p></section>';
  const dateStr='2015-03-16T00:00:00';
  const postQuery='/wp-json/wp/v2/posts?context=edit&slug='+slug+'&per_page=100&_fields=id,slug,status,content,date,categories,title';
- const publishedLookup=await rest(postQuery),draftLookup=await rest(postQuery+'&status=draft');
- if(publishedLookup.http!==200||draftLookup.http!==200||!Array.isArray(publishedLookup.data)||!Array.isArray(draftLookup.data))
-  throw Error('2014 WordPress slug lookup failed '+publishedLookup.http+'/'+draftLookup.http);
- const found=[...new Map([...publishedLookup.data,...draftLookup.data].map(x=>[x.id,x])).values()];
+ const publishedLookup=await rest(postQuery);
+ const stagedId=state.articles[id]?.wp_id;
+ const staged=Number.isSafeInteger(stagedId)
+  ?await rest('/wp-json/wp/v2/posts/'+stagedId+'?context=edit&_fields=id,slug,status,content,date,categories,title')
+  :null;
+ if(publishedLookup.http!==200||!Array.isArray(publishedLookup.data)||(staged&&staged.http!==200))
+  throw Error('2014 WordPress slug or staged ID lookup failed '+publishedLookup.http+'/'+(staged?.http||''));
+ const found=[...new Map([...publishedLookup.data,...(staged?[staged.data]:[])].map(x=>[x.id,x])).values()];
  if(found.length>1)throw Error('2014 WordPress slug ambiguous');
  let post=found[0]||null;
  if(post){
