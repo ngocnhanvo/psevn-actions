@@ -4,7 +4,7 @@ import {writeFile,mkdir} from 'node:fs/promises';
 const env=Object.fromEntries(String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,'')).filter(s=>/^(WC_URL|WC_URL_CLIENT)=/.test(s)).map(s=>{let p=s.indexOf('=');return[s.slice(0,p),s.slice(p+1).trim().replace(/^['"]|['"]$/g,'')]}));
 function origin(v){const u=new URL(v);if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash||u.port||!['','/'].includes(u.pathname))throw Error('Unexpected configured origin');return u.origin}
 const wp=origin(env.WC_URL),frontend=origin(env.WC_URL_CLIENT);
-const ids=[82801,82805,82817,82820,82828];
+const ids=[82801,82805,82817,82820,82828,82834];
 const report={schema:'pse-tin-tong-hop-imported-media-live-qa-v1',wp,frontend,posts:[],status:'STARTED',errors:[]};
 const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1366,height:860}});
