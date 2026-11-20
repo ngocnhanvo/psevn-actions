@@ -1,0 +1,37 @@
+name: PSE disclosure 1213 original ZIP restoration (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-disclosure-1213-zip.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  restore-zip:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install Playwright client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify fixed source article patch script
+        run: node --check scripts/pse-disclosure-1213-zip.mjs
+      - name: Fresh Updraft local DB backup
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Replace the single original ZIP link after verifying binary
+        run: node scripts/pse-disclosure-1213-zip.mjs
