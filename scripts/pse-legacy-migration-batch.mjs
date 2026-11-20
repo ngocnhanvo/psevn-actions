@@ -651,6 +651,15 @@ try{
    // created days were independently verified in audit #40488038617.
    // Refuse any extra/different external URL; do not generalize to all hosts.
    const recoveredRemoteBySource={
+    "1363":{
+     day:"2019-07-16",
+     urls:[
+      "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam_1.jpg",
+      "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.jpg",
+      "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam_3.jpg",
+      "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam_2.jpg"
+     ]
+    },
     "342":{
      day:"2013-03-13",
      urls:["http://giacaphe.com/wp-content/uploads/2013/03/85362_cf1.jpg"]
@@ -665,8 +674,12 @@ try{
     }
    };
    const verifiedRemote=recoveredRemoteBySource[id];
-   const remoteAllowed=!!verifiedRemote&&
-      item.source_url.startsWith("https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/"+id+"-")&&
+   // #1363 has independent source-date + four JPEG byte/signature proof in
+   // GitHub Actions run 44835072340. This does not authorize other external hosts.
+   const verified1363=id==="1363" && item.source_url==="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1363-khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.html" &&
+      item.remote_verified_proof_run===44835072340;
+   const marketExternalCase=item.source_url.startsWith("https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/"+id+"-");
+   const remoteAllowed=!!verifiedRemote&&(verified1363||marketExternalCase)&&
       item.source_created_date===verifiedRemote.day&&
       item.date_source==="joomla_com_search_created"&&item.date_precision==="day";
    const expectedRemote=remoteAllowed?new Set(verifiedRemote.urls):new Set();
@@ -776,7 +789,8 @@ try{
       if(!validImage||!String(download.headers()["content-type"]||"").toLowerCase().startsWith("image/"))
        throw Error("Verified external source image rejected id="+id);
       const finalUrl=new URL(download.url());
-      if(!["http:","https:"].includes(finalUrl.protocol)||!["giacaphe.com","www.giacaphe.com"].includes(finalUrl.hostname))
+      const hosts=verified1363?["petrovietnam.petrotimes.vn"]:["giacaphe.com","www.giacaphe.com"];
+      if(!["http:","https:"].includes(finalUrl.protocol)||!hosts.includes(finalUrl.hostname))
        throw Error("Verified source asset redirected outside approved host");
      }
      const types={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",webp:"image/webp",

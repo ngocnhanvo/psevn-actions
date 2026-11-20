@@ -139,6 +139,27 @@ jobs:
       - name: Fresh verified DB backup before correcting 2024/2025 slug collision
         if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Đồng bộ riêng bài cán bộ 2024 trùng slug'
         run: node scripts/pse-template-updraft-backup.mjs
+      - name: Verify the exact Joomla 1363 migration scope
+        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Nhập bài dầu khí năm 2019 kèm bốn ảnh gốc'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          s=json.load(open('docs/pse-legacy-migration-state.json',encoding='utf-8'))
+          x=s['articles']['1363']
+          pending={id for id,row in s['articles'].items() if row['status'] in ('pending','media')}
+          if pending!={'1363'} or s['runs']!=252 or not s.get('backup_verified') or \
+            x['status']!='pending' or x['attempts']!=0 or x['group_hint']!='company' or \
+            x.get('source_created_date')!='2019-07-16' or \
+            x.get('date_source')!='joomla_com_search_created' or \
+            x.get('remote_verified_proof_run')!=44835072340:
+            raise SystemExit('PSE 1363 exact source/remote media proof mismatch')
+          print('PSE_1363_MIGRATION_SCOPE=PASS; source=1363; required_images=4')
+          PY
+      - name: Fresh verified WordPress DB-only backup before source 1363 import
+        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Nhập bài dầu khí năm 2019 kèm bốn ảnh gốc'
+        run: node scripts/pse-template-updraft-backup.mjs
       - name: Confirm local Updraft DB backup before first migration write
         if: env.PSE_IMPORT_WORK == 'yes'
         shell: bash

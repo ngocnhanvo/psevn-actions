@@ -6939,11 +6939,14 @@
       "wp_id": 79362
     },
     "1363": {
-      "attempts": 1,
+      "attempts": 0,
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1363-khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.html",
-      "status": "quarantined"
+      "status": "pending",
+      "source_created_date": "2019-07-16",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "remote_verified_proof_run": 44835072340
     },
     "1364": {
       "attempts": 3,
