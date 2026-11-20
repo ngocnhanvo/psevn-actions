@@ -59,6 +59,7 @@ try{
        throw Error(device+' PDF document card not vector-safe '+link+': '+JSON.stringify(card));
      }
    }
+   if(cards.filter(x=>x.hasPdfTile).length<5) throw Error(device+' expected multiple PDF vector cards across archived records');
    const missingImageCard=cards.find(x=>x.href?.includes('20200728-bc42'));
    if(!missingImageCard||missingImageCard.image!=='/images/posts/no-image.svg')
      throw Error(device+' no-image card fallback changed: '+JSON.stringify(missingImageCard));
