@@ -15,9 +15,10 @@ try{
   if(m){const a=+m[1],b=+m[3],v=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];const f=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();if(!await f.count())throw Error("WP math input missing");await f.fill(String(v))}
   await Promise.all([admin.waitForLoadState("domcontentloaded"),admin.locator("#wp-submit").click()]);
  }
- if(admin.url().includes("wp-login"))throw Error("WP admin session missing");
- const nonce=await admin.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});if(!r.ok)throw Error("nonce rejected");return(await r.text()).trim()});
- const wp=async(path,method="GET")=>admin.evaluate(async({path,method,nonce})=>{const r=await fetch(path,{credentials:"same-origin",method,headers:{"X-WP-Nonce":nonce,Accept:"application/json"}});return{http:r.status,data:await r.json().catch(()=>({}))}},{path,method,nonce});
+ const publicOnly=admin.url().includes("wp-login");
+ if(publicOnly)console.log("PSE_PRODUCT_AUTH_FALLBACK=public WordPress REST; no session used; read-only");
+ const nonce=publicOnly?null:await admin.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});if(!r.ok)throw Error("nonce rejected");return(await r.text()).trim()});
+ const wp=async(path,method="GET")=>admin.evaluate(async({path,method,nonce})=>{const r=await fetch(path,{credentials:"same-origin",method,headers:{...(nonce?{"X-WP-Nonce":nonce}:{}),Accept:"application/json"}});return{http:r.status,data:await r.json().catch(()=>({}))}},{path,method,nonce});
  const endpoints=await wp("/wp-json/");
  if(endpoints.http!==200||!endpoints.data.routes)throw Error("Cannot inspect WP route index");
  const routes=Object.keys(endpoints.data.routes).filter(k=>/(product|product_cat|woocommerce)/i.test(k)).sort();
@@ -74,13 +75,13 @@ try{
   if(p)collisions.push({id:item.legacyId,firstGroup:p.group,otherGroup:group.family,firstTitle:p.title,otherTitle:item.title});
   else ids.set(item.legacyId,{group:group.family,title:item.title});
  }
- const wpProducts=await wp("/wp-json/wp/v2/product?context=edit&status=publish&per_page=100&_fields=id,slug,title,excerpt,content,acf,featured_media");
+ const wpProducts=await wp("/wp-json/wp/v2/product?status=publish&per_page=100&_fields=id,slug,title,excerpt,content,acf,featured_media");
  if(wpProducts.http!==200||!Array.isArray(wpProducts.data))throw Error("Cannot audit existing native products");
 
  // Independent full inventory audit. The fertilizer "Mã số" is not a source Joomla ID.
- const catResult=await wp("/wp-json/wp/v2/product_cat?context=edit&per_page=100&hide_empty=false&_fields=id,slug,parent,name");
+ const catResult=await wp("/wp-json/wp/v2/product_cat?per_page=100&hide_empty=false&_fields=id,slug,parent,name");
  if(catResult.http!==200||!Array.isArray(catResult.data))throw Error("Cannot audit live ProductCategory taxonomy");
- const fullWp=await wp("/wp-json/wp/v2/product?context=edit&status=publish&per_page=100&_fields=id,slug,title,excerpt,content,featured_media,product_cat");
+ const fullWp=await wp("/wp-json/wp/v2/product?status=publish&per_page=100&_fields=id,slug,title,excerpt,content,featured_media,product_cat");
  if(fullWp.http!==200||!Array.isArray(fullWp.data))throw Error("Cannot audit full live native Product inventory");
  const normalized=s=>String(s||"").normalize("NFC").replace(/\s+/g," ").trim().toLocaleLowerCase("vi");
  const familyTerms=new Map(catResult.data.map(c=>[c.slug,c]));
