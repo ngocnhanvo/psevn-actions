@@ -1,0 +1,33 @@
+name: PSE disclosure media targeted residual recheck (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-disclosure-media-targeted-recheck.yml"
+      - "scripts/pse-disclosure-media-targeted-recheck.mjs"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recheck:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Retry only 4 source timeouts and verify original PDF alias
+        run: node --check scripts/pse-disclosure-media-targeted-recheck.mjs && node scripts/pse-disclosure-media-targeted-recheck.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-disclosure-targeted-media-recheck
+          path: artifacts/pse-disclosure-media-targeted/report.json
+          if-no-files-found: warn
+          retention-days: 14
