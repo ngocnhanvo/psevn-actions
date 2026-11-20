@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .pse-php-agent-chat-release-request
+      - .pse-php-product-log-pagination-request
   workflow_dispatch:
     inputs:
       release_scope:
@@ -14,6 +15,7 @@ on:
         options:
           - agent-chat-soft-clear
           - deploy-trigger
+          - product-log-pagination
   repository_dispatch:
     types: [wp_deploy_php]
 
@@ -59,7 +61,11 @@ jobs:
           set -euo pipefail
 
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            scope="agent-chat-soft-clear"
+            if [[ "${{ github.event.head_commit.message }}" == "release(pse): product log pagination" ]]; then
+              scope="product-log-pagination"
+            else
+              scope="agent-chat-soft-clear"
+            fi
           elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             scope="$MANUAL_SCOPE"
           else
@@ -76,6 +82,10 @@ jobs:
             deploy-trigger)
               printf '%s\n' \
                 'wp-content/plugins/github-trigger/vcs-build-trigger.php' > "$manifest"
+              ;;
+            product-log-pagination)
+              printf '%s\n' \
+                'wp-content/plugins/github-trigger/products/endpoint.php' > "$manifest"
               ;;
             *)
               echo "::error::Unsupported PHP release scope"
@@ -112,6 +122,14 @@ jobs:
             grep -Fq "Hội thoại AI PSE" source-php/wp-content/mu-plugins/esc-agent.php
           elif [[ "$PSE_PHP_RELEASE_SCOPE" == "deploy-trigger" ]]; then
             grep -Fq "wp_deploy_php" source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          elif [[ "$PSE_PHP_RELEASE_SCOPE" == "product-log-pagination" ]]; then
+            php -l source-php/wp-content/plugins/github-trigger/products/endpoint.php >/dev/null
+            php source-php/wp-content/plugins/github-trigger/products/tests/product-log-pagination.php
+            grep -Fq "vcs_snapshot_changed" source-php/wp-content/plugins/github-trigger/products/endpoint.php
+            if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+              expected="$(cat .pse-php-product-log-pagination-request)"
+              test "$source_sha" = "$expected" || { echo "::error::PHP master SHA differs from reviewed release"; exit 1; }
+            fi
           fi
 
           echo "PSE_PHP_RELEASE_SOURCE_PREFLIGHT=PASS scope=$PSE_PHP_RELEASE_SCOPE files=$count"
