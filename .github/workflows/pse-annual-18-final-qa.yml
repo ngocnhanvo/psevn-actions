@@ -1,0 +1,39 @@
+name: PSE verify all 18 annual reports after source-order sync (READ ONLY)
+on:
+  workflow_run:
+    workflows:
+      - "PSE finalize exact 18-article annual source order (NO ASTRO BUILD)"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  final-audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-annual-18-parity
+          run-id: 44729950280
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-annual-parity-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Independently check all original titles, source rank, galleries and local PDF on desktop/mobile
+        run: node --check scripts/pse-annual-18-final-qa.mjs && node scripts/pse-annual-18-final-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-18-final-independent-parity
+          path: artifacts/pse-annual-final-qa/report.json
+          if-no-files-found: warn
+          retention-days: 30
