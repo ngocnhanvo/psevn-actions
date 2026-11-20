@@ -59,6 +59,34 @@ try{
   report.checks.push('live_'+width+'_10_tables_4_cards_no_overflow');
   if(context!==desktop)await context.close();
  }
+ // The rich description is editable in the existing WooCommerce category screen.
+ // Verify the real administrator form is hydrated; do not submit or mutate.
+ const adm=await desktop.newPage();
+ const categoryEditor='/wp-admin/term.php?taxonomy=product_cat&tag_ID=1763&post_type=product';
+ await adm.goto(wp+categoryEditor,{waitUntil:'domcontentloaded',timeout:60000});
+ if(await adm.locator('#user_login').count()){
+  await adm.locator('#user_login').fill(process.env.WP_ADMIN_USERNAME||'');
+  await adm.locator('#user_pass').fill(process.env.WP_ADMIN_PASSWORD||'');
+  const loginText=await adm.locator('#loginform').innerText();
+  const match=loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/);
+  if(match){
+   const a=Number(match[1]),b=Number(match[3]);
+   const answer=match[2]==='+'?a+b:match[2]==='-'?a-b:a*b;
+   const field=adm.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
+   if(!await field.count())throw Error('Admin verification captcha input unavailable');
+   await field.fill(String(answer));
+  }
+  await adm.locator('#wp-submit').click();
+ }
+ await adm.goto(wp+categoryEditor,{waitUntil:'domcontentloaded',timeout:60000});
+ if(!await adm.locator('#adminmenu').count())throw Error('WordPress taxonomy editor requires admin session');
+ const richField=adm.locator('textarea[name="vcs_category_rich_description"]');
+ if(!await richField.count())throw Error('WooCommerce category rich text editor not present');
+ const richHTML=await richField.inputValue();
+ if((richHTML.match(/<table\b/gi)||[]).length!==10)throw Error('WooCommerce admin rich editor is missing original ten tables');
+ report.checks.push('wordpress_category_native_editor_readonly_verified');
+ await adm.close();
+
  report.status='PASS';
  console.log('PSE_DAM_FINAL_QA='+JSON.stringify(report));
 }catch(e){report.status='FAIL';report.errors.push(String(e).slice(0,650));process.exitCode=1;
