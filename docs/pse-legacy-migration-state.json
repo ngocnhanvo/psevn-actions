@@ -7790,11 +7790,11 @@
       "wp_id": 77351
     },
     "1480": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1480-20210812-cv53-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
-      "status": "pending",
+      "status": "imported",
       "finance_asset_conflict": {
         "status": "RESOLVED_FAILED_UPLOADS_QUARANTINED",
         "source_url": "https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf",
@@ -7808,7 +7808,14 @@
         "last_error": "Same filename, different binary; cannot overwrite or rename.",
         "rollback": "private verified file backup + Media status trash",
         "cleanup_count": 7
-      }
+      },
+      "wp_id": 82564,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2021-08-12T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2021-08-12"
     },
     "1481": {
       "attempts": 1,
@@ -9712,10 +9719,10 @@
       "wp_id": 82428
     },
     "1650": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1650-20250814-cbtt-bao-cao-tai-chinh-ban-nien-nam-2025-va-giai-trinh-chenh-lech-lnst-so-voi-cung-ky.html",
-      "status": "pending",
+      "status": "imported",
       "finance_asset_conflict": {
         "status": "RESOLVED_FAILED_UPLOADS_QUARANTINED",
         "source_url": "https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf",
@@ -9729,7 +9736,14 @@
         "last_error": "Same filename, different binary; cannot overwrite or rename.",
         "rollback": "private verified file backup + Media status trash",
         "cleanup_count": 7
-      }
+      },
+      "wp_id": 82562,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2025-08-14T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2025-08-14"
     },
     "1651": {
       "attempts": 1,
@@ -9921,10 +9935,17 @@
       "wp_id": 77218
     },
     "1666": {
-      "attempts": 0,
+      "attempts": 1,
       "group_hint": "shareholder",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1666-20260320-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2025-va-giai-trinh-chenh-lech-lnst.html",
-      "status": "pending"
+      "status": "imported",
+      "wp_id": 82560,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2026-03-20T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2026-03-20"
     },
     "1667": {
       "annual_category_verified": true,
@@ -10194,8 +10215,15 @@
     "1738": {
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1738-20261105-cbtt-dinh-chinh-thong-tin-da-cong-bo-trong-bctc-quy-3-2026.html",
       "group_hint": "shareholder",
-      "status": "pending",
-      "attempts": 0
+      "status": "imported",
+      "attempts": 1,
+      "wp_id": 82558,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2026-11-06T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2026-11-06"
     },
     "1740": {
       "attempts": 1,
@@ -23954,7 +23982,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 242,
+  "runs": 243,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
@@ -24175,5 +24203,5 @@
   ],
   "source": "https://www.pse.vn/",
   "tracker_issue": 3,
-  "finance_scope_runs": 3
+  "finance_scope_runs": 4
 }
