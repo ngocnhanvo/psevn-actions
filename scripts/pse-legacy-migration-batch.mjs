@@ -595,7 +595,9 @@ try{
      if(!obj){
       const up=await context.request.post(wp+"/wp-json/wp/v2/media",{
        headers:{"X-WP-Nonce":nonce,"Content-Disposition":'attachment; filename="'+assetSlug+"."+ext+'"',"Content-Type":types[ext]},
-       data:buf,timeout:80000
+       // Both independently source-verified disclosure PDFs require longer WP processing.
+        // Existing deterministic media-slug readback prevents re-upload duplicates after a timeout.
+        data:buf,timeout:(disclosureSource && ["1670","1742"].includes(id) && ext==="pdf")?240000:80000
       });
       if(up.status()!==201)throw Error("WordPress media upload HTTP "+up.status()+" source "+id);
       obj=await up.json();
