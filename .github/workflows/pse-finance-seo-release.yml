@@ -1,0 +1,64 @@
+name: PSE financial posts original Yoast SEO title sync (NO ASTRO BUILD)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pse-finance-seo-sync
+  cancel-in-progress: false
+jobs:
+  seo-php:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 41b54231d9380c9dec3c25da7f48afc7a23a94d3
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Verify only PSE existing SEO field source and syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = '41b54231d9380c9dec3c25da7f48afc7a23a94d3'
+          php -l source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php
+          grep -Fq "'pse_seo_title'" source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php
+          python3 -m py_compile scripts/pse-finance-seo-ftps.py
+          node --check scripts/pse-finance-seo-sync.mjs
+      - name: Deploy only one PSE Yoast REST field PHP file with private rollback
+        run: python3 scripts/pse-finance-seo-ftps.py
+  seo-posts:
+    needs: seo-php
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-finance-seo-sync.mjs && node scripts/pse-finance-seo-sync.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-seo-sync
+          path: artifacts/pse-finance-seo/report.json
+          if-no-files-found: warn
+          retention-days: 14
