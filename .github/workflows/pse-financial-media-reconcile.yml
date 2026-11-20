@@ -1,0 +1,34 @@
+name: PSE financial reports final source document and SSR parity (READ ONLY)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-financial-report-parity
+          run-id: 44712477709
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-financial-original
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-financial-media-reconcile.mjs && node scripts/pse-financial-media-reconcile.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-financial-final-media
+          path: artifacts/pse-finance-final-media/report.json
+          if-no-files-found: warn
+          retention-days: 14
