@@ -51,6 +51,24 @@ for(const url of toCheck){
  result.assets.push(meta);
  console.log("PSE_EDGE_ASSET="+JSON.stringify(meta));
 }
+const page=await context.newPage();
+await page.goto(state.articles["1670"].source_url,{waitUntil:"domcontentloaded",timeout:30000});
+result.article1670=await page.evaluate(()=>{
+ const root=document.querySelector('[itemprop="articleBody"]');
+ return [...(root?.querySelectorAll("a[href]")||[])].map(el=>({text:el.textContent.trim().replace(/\s+/g," ").slice(0,140),url:new URL(el.getAttribute("href"),location.href).href}));
+});
+console.log("PSE_EDGE_1670_LINKS="+JSON.stringify(result.article1670));
+const sizeResults=[];
+for(const item of result.assets.filter(x=>x.sourceId==="1670" && x.headHttp===200)){
+ try{
+  const resp=await context.request.get(item.url,{timeout:95000});
+  const body=await resp.body(),first=body.subarray(0,8).toString("latin1");
+  const proof={url:item.url,http:resp.status(),size:body.length,signature:first,contentType:resp.headers()["content-type"]||null};
+  sizeResults.push(proof);
+  console.log("PSE_EDGE_1670_BYTES="+JSON.stringify(proof));
+ }catch(e){sizeResults.push({url:item.url,error:String(e).slice(0,200)})}
+}
+result.assetProof1670=sizeResults;
 }finally{
 await mkdir("artifacts/pse-disclosure-edge",{recursive:true});
 await writeFile("artifacts/pse-disclosure-edge/report.json",JSON.stringify(result,null,2)+"\n");
