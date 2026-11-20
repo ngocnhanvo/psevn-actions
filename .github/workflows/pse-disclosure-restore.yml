@@ -1,0 +1,101 @@
+name: PSE recovery of 19 source-verified disclosure articles (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-disclosure-restore.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  source-verified-restore:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 29
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Install pinned browser client
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Static contract and public CMS preflight (no write)
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-disclosure-restore-plan.mjs
+          node --check scripts/pse-legacy-migration-batch.mjs
+          node --check scripts/pse-disclosure-public-cms.mjs
+          node scripts/pse-disclosure-public-cms.mjs
+          python3 - <<'PY'
+          import json
+          s=json.load(open('artifacts/pse-disclosure-cms-public/audit.json',encoding='utf-8'))
+          if s['errors'] or s['category'].get('id')!=1753 or s['categoryTotal']!=171 or \
+             s['postsFetched']!=171 or len(s['unavailable'])!=16 or s['wrongCategory']:
+              raise SystemExit('PSE disclosure CMS changed since source audit; refuse recovery')
+          print('PSE_DISCLOSURE_RESTORE_PREFLIGHT=PASS; original=190; target=171; missing=19')
+          PY
+      - name: Fresh local DB-only Updraft rollback backup before CMS modification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pse-template-updraft-backup.mjs
+          echo "PSE_DISCLOSURE_FRESH_BACKUP=VERIFIED"
+      - name: Prepare exact 19 source-verified pending articles
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pse-disclosure-restore-plan.mjs
+          echo 'PSE_DISCLOSURE_PREPARED=yes' >> "$GITHUB_ENV"
+      - name: Advance migration cursor with existing bounded crawler
+        if: env.PSE_DISCLOSURE_PREPARED == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-legacy-migration-crawl.py
+          python3 scripts/pse-legacy-migration-crawl.py
+      - name: Import first bounded set with source binary and CMS readback verification
+        if: env.PSE_DISCLOSURE_PREPARED == 'yes'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pse-legacy-migration-batch.mjs
+      - name: Persist exact state with conflict-aware GitHub SHA lease
+        if: always() && env.PSE_DISCLOSURE_PREPARED == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-legacy-migration-save.mjs
+          node scripts/pse-legacy-migration-save.mjs
+      - name: Continue next bounded migration batches using existing worker
+        if: success() && env.PSE_IMPORT_AUTO_NEXT == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-legacy-migration-next.mjs
+          node scripts/pse-legacy-migration-next.mjs
+      - name: Upload inspection report and checkpoint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-disclosure-restoration-progress
+          path: |
+            artifacts/pse-disclosure-cms-public/audit.json
+            docs/pse-legacy-migration-state.json
+          if-no-files-found: warn
+          retention-days: 7
