@@ -25,14 +25,16 @@ try:
    raw=data.getvalue().decode("utf-8","replace")
    found=[]
    for x in raw.splitlines():
-    if not re.search(r"finance-temporary-sideload|finance_sideload|php fatal error|uncaught (error|exception)",x,re.I):continue
-    # Only disclose fatal error type and basename:line; never remote paths or messages.
-    m=re.search(r"(?:PHP Fatal error: )?Uncaught ([A-Za-z_\\]+):",x,re.I)
-    src=re.search(r"(?:pse-finance-temporary-sideload\.php|pse-legacy-article-seo-rest\.php)(?::(\d+))?",x,re.I)
-    if m or src:
-     found.append({"class":m.group(1) if m else "UNKNOWN",
-                  "file":"pse-finance-temporary-sideload.php" if src and "finance-temporary" in src.group(0) else "OTHER",
-                  "line":src.group(1) if src else None})
+    if not re.search(r"php fatal error|uncaught (error|exception)",x,re.I):continue
+    kind=re.search(r"Uncaught\s+([A-Za-z_\\]+):",x,re.I)
+    fun=re.search(r"(?:Call to undefined function|Call to undefined method)\s+([A-Za-z0-9_\\:]+)",x,re.I)
+    loc=re.search(r"(?:in\s+)?(?:[A-Za-z0-9_./-]+/)?([A-Za-z0-9_.-]+\.php):(\d+)",x,re.I)
+    stamp=re.search(r"^\[([^\]]+)\]",x)
+    found.append({"class":kind.group(1) if kind else "UNKNOWN",
+                  "missingFunction":fun.group(1) if fun else None,
+                  "file":loc.group(1) if loc else "OTHER",
+                  "line":loc.group(2) if loc else None,
+                  "time":stamp.group(1) if stamp else None})
    print("PSE_FINANCE_ERROR_LOG_PROBE="+str({"log":label,"size":size,"sourceMatches":found[-12:]}))
   except ftplib.all_errors as e:
    print("PSE_FINANCE_ERROR_LOG_UNAVAILABLE="+label+"; reason="+type(e).__name__)
