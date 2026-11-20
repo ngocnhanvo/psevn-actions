@@ -83,7 +83,7 @@ try{
   const lastCount=await pg.locator('#posts-grid h2').count();
   if(first?.status()!==200||last?.status()!==200||
    firstCount!==12||lastCount!==ranks.length-12)throw Error('Annual archive SSR pagination or count invalid');
-  report.front={firstHttp:200,lastHttp:200,firstCount,lastCount,total:rank.length};
+  report.front={firstHttp:200,lastHttp:200,firstCount,lastCount,total:ranks.length};
  }finally{await pg.close()}
  report.status=report.missing.length===0&&ranks.length===18?'PASS_SOURCE_18':'PASS_PUBLISHED_SUBSET';
 }catch(e){report.status='PARTIAL';report.error=String(e).slice(0,380);
