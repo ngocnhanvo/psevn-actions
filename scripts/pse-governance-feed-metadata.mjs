@@ -5,12 +5,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 const base='https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty.html';
 const page92='https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/92-dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo.html';
 const queries=[
- base+'?format=feed&type=rss',
- base+'?format=feed&type=atom',
- base+'?start=20&format=feed&type=rss',
- base+'?start=20&format=feed&type=atom',
- base+'?start=20&type=rss',
- base+'?start=20&type=atom'
+ base+'?start=25&format=feed&type=rss',
+ base+'?start=25&format=feed&type=atom',
+ base+'?start=30&format=feed&type=rss',
+ base+'?start=30&format=feed&type=atom'
 ];
 const output={schema:'pse-governance-92-feed-metadata-v1',readOnly:true,feeds:[],pageMetadata:null,evidence:null};
 const b=await chromium.launch({headless:true});
