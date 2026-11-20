@@ -48,3 +48,5 @@
 2026-10-29 PSE build-performance optimization: Astro master PR #125 merged c5cd00625ac74d0b889726b5e9ccf1f5aeb32dc9; source/control-plane full Vitest 573/573 PASS run #40866962981. Request exactly one authenticated WordPress/PHP Build Website through the existing PHP tool, normal pending-change path first; no direct Astro dispatch. Measure build-git timing against baseline ~36.27s and verify production after deploy.
 
 2026-10-29 PSE build-performance force-once: normal authenticated WordPress/PHP request #40867592224 returned pending_count=0 and NO_PENDING_CHANGES, so authorize exactly one force build through the same PHP tool for Astro master c5cd00625ac74d0b889726b5e9ccf1f5aeb32dc9. No direct Astro dispatch; measure production build timing and verify deployed source.
+
+2026-11-20 PSE utility links Visual Builder: Astro master 43f77f6dd68969bc401930b213e57f8342708458, source-commit-actions validation PASS run 44668712969. Request exactly one normal authenticated WordPress/PHP Build Website via existing production trigger; no force, no second pipeline. Verify production source and Visual Builder item selection/editing/sort afterward.
