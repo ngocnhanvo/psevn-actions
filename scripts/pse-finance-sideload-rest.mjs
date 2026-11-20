@@ -60,7 +60,32 @@ try{
   }catch(e){errors.push({id,index,error:String(e).slice(0,170)})}
  }
 }finally{
- if(changed){state.runs=Number(state.runs||0)+1;await writeFile(filename,JSON.stringify(state,null,2)+"\n")}
+ if(changed){
+  // Media is already source-verified: reset only the exact nine financial
+  // source IDs for a post-only importer pass; never reopen unrelated records.
+  const mediaById={
+   "1738":[allowed[0][2]],"1666":[allowed[1][2],allowed[2][2]],
+   "1650":[allowed[3][2],allowed[4][2]],"1480":[allowed[3][2]]
+  };
+  for(const [id,urls] of Object.entries(mediaById)){
+   const rec=state.articles[id];
+   if(rec&&!rec.wp_id&&urls.every(url=>state.media[url]?.url)){
+    rec.attempts=0;rec.status="pending";delete rec.reason;
+    delete rec.finance_scope_terminal;
+    console.log("PSE_FINANCE_POST_RETRY_READY="+id);
+   }
+  }
+  for(const id of ["1137","298"]){
+   const rec=state.articles[id];
+   if(rec&&!rec.wp_id&&!rec.finance_exception_attempted){
+    rec.attempts=0;rec.status="pending";delete rec.reason;
+    delete rec.finance_scope_terminal;
+    console.log("PSE_FINANCE_ORIGINAL_EXCEPTION_READY="+id);
+   }
+  }
+  state.runs=Number(state.runs||0)+1;
+  await writeFile(filename,JSON.stringify(state,null,2)+"\n");
+ }
  if(process.env.GITHUB_ENV)await appendFile(process.env.GITHUB_ENV,"PSE_FINANCE_MEDIA_CHECKPOINT_CHANGED="+(changed?"yes":"no")+"\n");
  await writeFile("pse-finance-sideload-report.json",JSON.stringify({changed,errors},null,2)+"\n");
  await browser.close();
