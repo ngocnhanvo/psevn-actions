@@ -98,7 +98,10 @@ try{
      body:JSON.stringify({source_id:Number(id),asset_index:index})});
     return{http:res.status,body:await res.json()};
    },{id,index,nonce});
-   const a=r.body,u=new URL(a.url||"/",root);
+   const a=r.body;
+   if(r.http>=500)throw Error("Sideload PHP HTTP "+r.http+" code "+String(a?.code||"unknown")+
+      " diagnostic "+String(a?.message||"").slice(0,140));
+   const u=new URL(a.url||"/",root);
    if(r.http!==200||a.source_url!==source||!Number.isSafeInteger(a.id)||!Number.isSafeInteger(a.bytes)||
       !/^[0-9a-f]{64}$/i.test(a.sha256||"")||u.origin!==root||!u.pathname.startsWith("/wp-content/uploads/"))
     throw Error("Sideload readback rejected HTTP "+r.http+" code "+(a.code||"unknown"));
@@ -111,7 +114,13 @@ try{
    state.media[source]={id:a.id,url:u.href,sha256:a.sha256,source_filename:a.source_filename,source_bytes:a.bytes};
    changed++;
    console.log("PSE_FINANCE_SIDELOAD_OK="+JSON.stringify({id,index,mediaId:a.id,bytes:a.bytes,reused:a.status==="reused"}));
-  }catch(e){errors.push({id,index,error:String(e).slice(0,170)})}
+  }catch(e){
+   errors.push({id,index,error:String(e).slice(0,240)});
+   if(/Sideload PHP HTTP 5\d\d/.test(String(e))){
+    console.error("PSE_FINANCE_SIDELOAD_SERVER_ERROR="+JSON.stringify(errors.at(-1)));
+    break; // Stop repeated server errors; keep independent assets queued.
+   }
+  }
  }
 }finally{
  if(changed||conflictsMarked||conflictsResolved||quarantined){
