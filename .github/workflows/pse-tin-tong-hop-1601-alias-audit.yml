@@ -1,0 +1,34 @@
+name: PSE Tin tong hop source alias 1601/1616 review (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-tin-tong-hop-1601-alias-audit.yml
+      - scripts/pse-tin-tong-hop-1601-alias-audit.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-tin-tong-hop-1601-alias-audit.mjs && node scripts/pse-tin-tong-hop-1601-alias-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-tin-tong-hop-1601-alias
+          path: artifacts/pse-tin-tong-hop-1601-alias/
+          if-no-files-found: warn
+          retention-days: 21
