@@ -6,6 +6,7 @@ on:
     paths:
       - .pse-php-agent-chat-release-request
       - .pse-php-product-log-pagination-request
+      - .pse-php-category-description-request
   workflow_dispatch:
     inputs:
       release_scope:
@@ -16,6 +17,7 @@ on:
           - agent-chat-soft-clear
           - deploy-trigger
           - product-log-pagination
+          - category-description
   repository_dispatch:
     types: [wp_deploy_php]
 
@@ -67,6 +69,8 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             if [[ "${{ github.event.head_commit.message }}" == "release(pse): product log pagination" ]]; then
               scope="product-log-pagination"
+            elif [[ "${{ github.event.head_commit.message }}" == "release(pse): category description API" ]]; then
+              scope="category-description"
             else
               scope="agent-chat-soft-clear"
             fi
@@ -90,6 +94,10 @@ jobs:
             product-log-pagination)
               printf '%s\n' \
                 'wp-content/plugins/github-trigger/products/endpoint.php' > "$manifest"
+              ;;
+            category-description)
+              printf '%s\n' \
+                'wp-content/plugins/github-trigger/product-categories/endpoint.php' > "$manifest"
               ;;
             *)
               echo "::error::Unsupported PHP release scope"
@@ -133,6 +141,14 @@ jobs:
             if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
               expected="$(head -n 1 .pse-php-product-log-pagination-request)"
               test "$source_sha" = "$expected" || { echo "::error::PHP master SHA differs from reviewed release"; exit 1; }
+            fi
+          elif [[ "$PSE_PHP_RELEASE_SCOPE" == "category-description" ]]; then
+            php -l source-php/wp-content/plugins/github-trigger/product-categories/endpoint.php >/dev/null
+            php source-php/tests/product-category-yoast-seo.php
+            grep -Fq "'description' => wp_kses_post" source-php/wp-content/plugins/github-trigger/product-categories/endpoint.php
+            if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+              expected="$(head -n 1 .pse-php-category-description-request)"
+              test "$source_sha" = "$expected" || { echo "::error::Category source SHA differs from reviewed release"; exit 1; }
             fi
           fi
 
