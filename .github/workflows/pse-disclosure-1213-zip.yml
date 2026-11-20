@@ -1,9 +1,11 @@
-name: PSE disclosure 1213 original ZIP restoration (NO ASTRO BUILD)
+name: PSE disclosure date and original ZIP repair (NO ASTRO BUILD)
 on:
   push:
     branches: [main]
     paths:
       - ".github/workflows/pse-disclosure-1213-zip.yml"
+      - "scripts/pse-disclosure-1213-zip.mjs"
+      - "scripts/pse-disclosure-date-parity-fix.mjs"
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,9 +31,13 @@ jobs:
           persist-credentials: false
       - name: Install Playwright client
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Verify fixed source article patch script
-        run: node --check scripts/pse-disclosure-1213-zip.mjs
+      - name: Validate disclosure date and original ZIP update scripts
+        run: |
+          node --check scripts/pse-disclosure-1213-zip.mjs
+          node --check scripts/pse-disclosure-date-parity-fix.mjs
       - name: Fresh Updraft local DB backup
         run: node scripts/pse-template-updraft-backup.mjs
+      - name: Restore verified disclosure chronology without modifying article content
+        run: node scripts/pse-disclosure-date-parity-fix.mjs
       - name: Replace the single original ZIP link after verifying binary
         run: node scripts/pse-disclosure-1213-zip.mjs
