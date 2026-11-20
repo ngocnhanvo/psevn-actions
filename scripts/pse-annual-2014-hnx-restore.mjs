@@ -39,7 +39,7 @@ const rest=async(path,method='GET',body)=>{
  return{http:r.status(),data:await r.json().catch(()=>null)};
 };
 function mediaPath(url){
- const u=new URL(url);
+ const u=new URL(url,wp);
  if(u.origin!==wp||!/^\/wp-content\/uploads\/\d{4}\/\d{2}\/[^/]+\.pdf$/i.test(u.pathname))
   throw Error('PDF not hosted at original tenant WordPress');
  return u.pathname;
@@ -93,7 +93,7 @@ try{
  const list=await rest('/wp-json/wp/v2/media?context=edit&search='+encodeURIComponent(filename.replace(/\.pdf$/i,''))+
   '&per_page=100&_fields=id,source_url,slug,mime_type');
  if(list.http!==200||!Array.isArray(list.data))throw Error('Media lookup unavailable');
- const matches=list.data.filter(m=>{try{return decodeURIComponent(new URL(m.source_url).pathname.split('/').at(-1)||'').toLowerCase()===filename.toLowerCase()}catch{return false}});
+ const matches=list.data.filter(m=>{try{return decodeURIComponent(new URL(m.source_url,wp).pathname.split('/').at(-1)||'').toLowerCase()===filename.toLowerCase()}catch{return false}});
  if(matches.length>1)throw Error('2014 mirror local filename ambiguous');
  let media=matches[0]||null;
  if(!media){
@@ -103,10 +103,10 @@ try{
   media=await r.json();
  }
  if(!Number.isSafeInteger(media.id)||media.mime_type!=='application/pdf'||
-  decodeURIComponent(new URL(media.source_url).pathname.split('/').at(-1)||'').toLowerCase()!==filename.toLowerCase())
+  decodeURIComponent(new URL(media.source_url,wp).pathname.split('/').at(-1)||'').toLowerCase()!==filename.toLowerCase())
   throw Error('Mirror stored under unexpected WordPress filename/mime');
  const local=mediaPath(media.source_url);
- const check=await ctx.request.get(media.source_url,{timeout:90000,failOnStatusCode:false});
+ const check=await ctx.request.get(new URL(media.source_url,wp).href,{timeout:90000,failOnStatusCode:false});
  if(check.status()!==200||hash(await check.body())!==sha)
   throw Error('HNX mirror / WordPress local PDF binary SHA mismatch');
  report.wordpressMedia={id:media.id,source_url:media.source_url,sha256:sha,exactByteCopy:true,
