@@ -22,7 +22,7 @@ try{
   const bytes=await r.body();
   report.source.push({url,http:r.status(),contentType:r.headers()["content-type"]||"",bytes:bytes.length,sha256:hash(bytes),prefix:bytes.subarray(0,8).toString("latin1")});
  }
- const names=["CBTT_BCTC_ban_nien","20261104","20260320","pse-legacy"];
+ const names=["CBTT_BCTC_ban_nien","20261104","20260320",...originals.map(url=>"pse-legacy-"+createHash("sha256").update(url).digest("hex").slice(0,16))];
  const candidates=new Map();
  for(const name of names){
   const r=await ctx.request.get(wp+"/wp-json/wp/v2/media?search="+encodeURIComponent(name)+"&per_page=100&_fields=id,slug,source_url,title,mime_type",{timeout:45000});
@@ -37,13 +37,13 @@ try{
  const filtered=[...candidates.values()].filter(p=>{
   const u=decodeURIComponent(new URL(p.source_url,wp).pathname).toLowerCase();
   return /cbtt_bctc_ban_nien|20261104|20260320|pse-legacy-[a-f0-9]{16}/i.test(u);
- }).slice(0,80);
+ }).slice(0,25);
  let count=0;
  for(const item of filtered){
-  if(++count>60)break;
+  if(++count>25)break;
   const entry={id:item.id,slug:item.slug,url:item.source_url};
   try{
-   const r=await ctx.request.get(item.source_url,{timeout:45000});
+   const r=await ctx.request.get(new URL(item.source_url,wp).href,{timeout:85000});
    const body=await r.body();
    entry.http=r.status();entry.mime=r.headers()["content-type"]||"";
    entry.bytes=body.length;entry.sha256=hash(body);
