@@ -40,7 +40,7 @@ try{
  for(const [sourceId,item] of Object.entries(checkpoint.articles)){
   if(!item.source_url?.startsWith(oldOrigin+"/"))throw Error("Invalid historical source URL for "+sourceId);
   const path=item.source_url.slice(oldOrigin.length).split("?")[0];
-  const match=path.match(/\/(\d+)-([a-z0-9-]+)\.html$/i);
+  const match=path.match(/\/(\d+)-([^/]+)\.html$/i);
   if(!match||Number(match[1])!==Number(sourceId))throw Error("Source checkpoint ID/path mismatch "+sourceId);
   const family=path.slice(0,match.index),slug=match[2];
   const postsExact=item.wp_id?[byId.get(Number(item.wp_id))].filter(Boolean):[];
