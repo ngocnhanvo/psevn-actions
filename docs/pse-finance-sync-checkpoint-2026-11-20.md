@@ -30,3 +30,27 @@
 3. Fetch lại REST category 1754 và các file theo WordPress `/wp-json/wp/v2/posts`, xác minh list/SSR.
 4. Chạy `pse-financial-media-reconcile.yml` sau nhập; dùng snapshot gốc trong run `44712477709`; phân loại thật/giả lỗi tên file.
 5. Nếu `1137`, `298` vẫn thiếu: giữ nguyên nguồn, không sáng tác dữ liệu, báo chính xác trạng thái PARTIAL và chứng cứ cho chủ dự án.
+
+## Cập nhật phục hồi sau đợt đầu
+- Run [44713992575](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44713992575) **success**: mới xuất bản chính xác source **199 → WP 82535**, **1148 → WP 82538**, **337 → WP 82541**; media tương ứng được ghi/readback. Đây là 3 bài phục hồi thành công thực tế, không phải 9.
+- Source **1738** upload timeout 80s; **1480** GET source file timeout 45s; **1666** upload PDF 31,725,319 bytes timeout 240s; **1650** upload PDF 29,305,039 bytes timeout 240s; source **1137** có phần thân thực rỗng và không tài liệu nên importer cũ từ chối; **298** chỉ tham chiếu bên thứ ba MediaFire.
+- Quét giới hạn WP trước đây xác minh mức upload **64 MB** (run `44703791958`); việc 29–32 MB timeout không đủ bằng chứng lỗi kích cỡ. Không nâng giới hạn vô căn cứ.
+- Run tiếp theo [44716701823](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44716701823) đang chạy lúc cập nhật checkpoint. Chỉ đọc log sau khi kết thúc rồi kiểm tra source IDs/WP REST.
+- Bản sửa importer `90f019733dd94dd6398f406d681718b1bfa2414e`: ngoại lệ đúng nguồn #1137 (giữ trang trống, không tạo PDF) và #298 (giữ nguyên MediaFire, không tự tải tài nguyên thuộc bên thứ ba); không tạo SEO description khi nguồn Joomla thiếu meta; chỉ chạy khi `PSE_FINANCE_RECOVERY_SCOPE` đúng.
+- **Chưa hoàn tất:** source 298 và 1137 chưa được ghi trước khi đợt tiếp nhận source mới chạy.
+
+## Tối ưu tài liệu lớn có rollback và dọn endpoint
+- PHP nguồn đã commit tại `psevn-php/master`, `49d0b99bb8d7f24a32defd5f5a7a340b93c26901`: `wp-content/mu-plugins/pse-finance-temporary-sideload.php`. Đây là một **endpoint tạm** và **chưa được triển khai ở thời điểm ghi checkpoint**; API chỉ dành cho quản trị WordPress, chỉ các URL/ID finance 1738/1666/1650/1480 đã xác thực, tự hết hạn sau 22/11/2026.
+- FTPS Python có kiểm chứng SHA-256 và bước thu hồi endpoint ở `scripts/pse-finance-temporary-ftps.py`; REST runner `scripts/pse-finance-sideload-rest.mjs`; workflow `.github/workflows/pse-finance-server-sideload.yml`.
+- Run sideload đầu `44717559598` bị **cancelled khi bị một workflow cùng concurrency group thay thế trong pending**, không được gọi là đã deploy.
+- Lưu ý GitHub Actions concurrency chỉ cho **1 running + 1 pending** với cùng group; **không tự tạo workflow legacy migration/push importer** khi sideload chờ vì pending mới có thể hủy pending cũ.
+- `scripts/pse-finance-recovery-next.mjs` `6df77148bcee63eb89539979d68a4e8c21392431` đã được sửa để không tự chạy lượt mới khi các PDF lớn chưa được sideload; đây là để tránh loop 240s liên tục (có hiệu lực khi runner checkout commit chứa sửa).
+- Sau khi run `44716701823` và mọi runner legacy pending được giải phóng, kích hoạt lại `pse-finance-server-sideload.yml` **đúng một lần** (qua workflow_dispatch hoặc cập nhật workflow file). Cần xác minh job deploy → sideload → checkpoint SHA → **retire plugin FTPS**, không được bỏ bước retire khi fail. Chỉ khi tất cả PASS mới để workflow dispatch `pse-finance-recover.yml`.
+- Môi trường **chưa có bằng chứng đã deploy temporary PHP**, không gọi đã deploy.
+- Sau khi hoàn tất việc sideload và endpoint đã được gỡ khỏi hosting, cần xóa plugin tạm khỏi `psevn-php/master` để tránh deploy lại khi full PHP release.
+
+## Tiêu chí còn thiếu
+1. WordPress đúng **76/76 published** và source URLs/WP slugs tương ứng; bài thiếu media gốc phải được nêu đúng (không gán file giả).
+2. Toàn bộ PDF source-owned được lưu trong WordPress và đường link chạy được; phân loại tài liệu đã đổi tên cũ bằng source URL/hash, không dùng sai 116 file mismatch.
+3. Kiểm tra URL public bài mới, archive SSR trang 1 & cuối, desktop/mobile và metadata SEO theo knowledge.
+4. Chỉ báo DONE khi source/doc/SSR QA đều PASS hoặc có ngoại lệ được chủ dự án phê duyệt rõ.
