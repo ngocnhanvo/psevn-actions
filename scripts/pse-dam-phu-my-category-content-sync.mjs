@@ -79,31 +79,60 @@ try {
   return {http:response.status,data:await response.json().catch(()=>null)};
  },{path,method,body,nonce});
  const uri='/wp-json/wp/v2/product_cat/'+CATEGORY_ID;
- const before=await api(uri+'?context=edit&_fields=id,slug,parent,count,name,description');
+ const fields='?context=edit&_fields=id,slug,parent,count,name,description,meta';
+ const key='_vcs_category_rich_description';
+ const before=await api(uri+fields);
  if(before.http!==200||before.data?.id!==CATEGORY_ID||before.data.slug!=='dam-phu-my'||
   before.data.parent!==1760||before.data.count!==4)throw Error('Unexpected WordPress product_cat identity or count');
+ if(!before.data.meta||typeof before.data.meta!=='object'||
+  !Object.prototype.hasOwnProperty.call(before.data.meta,key))
+  throw Error('Registered native WordPress rich category meta is not deployed');
  const current=String(before.data.description||'').trim();
+ const existingMeta=String(before.data.meta[key]||'');
  result.checks.targetIdentity='PASS';
  const parse=(str)=>({tableCount:(str.match(/<table\b/gi)||[]).length,
   rawLength:str.length,normalizedText:str.replace(/<[^>]*>/g,' ').replace(/&[^;]+;/g,' ').replace(/\s+/g,' ').trim().length});
- if(current&&!(parse(current).tableCount===10 &&
-  current.includes('QUY CÁCH')&&current.includes('BÓN PHÂN')))
-  throw Error('WordPress category already has editorial content; refusing overwrite');
- if(!current) {
-  const updated=await api(uri,'POST',{description:source.html});
+ // The previous WP taxonomy-description attempt was sanitized to plain text.
+ // Never clear another editor's content; recognize only the exact observed record.
+ const flattened=current&&parse(current).tableCount===0&&current.length===7685&&
+   parse(current).normalizedText===5130&&current.includes('QUY CÁCH')&&current.includes('BÓN PHÂN');
+ if(current&&!flattened)
+  throw Error('Existing WordPress category description changed independently; refusing cleanup');
+ if(existingMeta&&parse(existingMeta).tableCount!==10)
+  throw Error('Existing rich category editor content changed independently');
+ if(!existingMeta){
+  const updated=await api(uri,'POST',{meta:{[key]:source.html}});
   if(updated.http!==200||updated.data?.id!==CATEGORY_ID)
-   throw Error('WordPress REST category update failed HTTP '+updated.http);
+   throw Error('WP rich category term-meta update failed HTTP '+updated.http+
+    ' code '+String(updated.data?.code||'unknown'));
   result.changed=true;
  }
- const readback=await api(uri+'?context=edit&_fields=id,slug,parent,count,description');
- if(readback.http!==200||readback.data?.id!==CATEGORY_ID||readback.data.slug!=='dam-phu-my'||
-  readback.data.parent!==1760||readback.data.count!==4)throw Error('WP category identity drift on readback');
- const saved=String(readback.data.description||'');
- const stats=parse(saved);
- if(stats.tableCount!==10||stats.normalizedText<2500||!saved.includes('BÓN PHÂN'))
-  throw Error('WordPress category content readback failed '+JSON.stringify(stats));
+ const richReadback=await api(uri+fields);
+ const rich=String(richReadback.data?.meta?.[key]||'');
+ const stats=parse(rich);
+ if(richReadback.http!==200||stats.tableCount!==10||stats.normalizedText<2500||
+  !rich.includes('BÓN PHÂN')||!rich.includes('QUY CÁCH'))
+  throw Error('WordPress rich editor HTML readback failed '+JSON.stringify(stats));
+ result.checks.richHtmlTermMeta='PASS';
+ if(flattened){
+  const cleaned=await api(uri,'POST',{description:''});
+  if(cleaned.http!==200||cleaned.data?.id!==CATEGORY_ID)
+   throw Error('Could not clear only previously flattened taxonomy description');
+  result.changed=true;
+ }
+ const final=await api(uri+fields);
+ if(final.http!==200||final.data?.id!==CATEGORY_ID||final.data.slug!=='dam-phu-my'||
+  final.data.parent!==1760||final.data.count!==4||
+  String(final.data.description||'').trim()!==''||
+  parse(String(final.data.meta?.[key]||'')).tableCount!==10)
+  throw Error('Category final CMS readback not complete');
+ const pub=await api('/wp-json/astro/v1/get-product-categories');
+ const cat=Array.isArray(pub.data)?pub.data.find(x=>x?.id===CATEGORY_ID&&x.slug==='dam-phu-my'):null;
+ if(pub.http!==200||!cat||parse(String(cat.description||'')).tableCount!==10)
+  throw Error('Public WordPress category API does not expose all ten rich tables');
  result.saved=stats;
  result.checks.wordPressReadback='PASS';
+ result.checks.publicApi='PASS';
  result.status='PASS';
  console.log('PSE_DAM_CATEGORY_SYNC='+JSON.stringify(result));
 } catch(error){
