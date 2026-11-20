@@ -90,13 +90,16 @@ try{
  await Promise.all(Array.from({length:4},worker));
  if(errors.length)throw Error('Legacy archive cannot be fully inventoried: '+JSON.stringify(errors.slice(0,8)));
  const items=byPage.flatMap((p,i)=>p.articles.map((a,index)=>({...a,sourcePage:i+1,order:index})));
- const sourceIds=new Set(items.map(x=>x.id));
+ // Joomla emits both headline and "Xem tiếp..." anchors for the same article.
+ // Keep the occurrence manifest but compare distinct source IDs for data parity.
+ const uniqueItems=[...new Map(items.map(x=>[x.id,x])).values()];
+ const sourceIds=new Set(uniqueItems.map(x=>x.id));
  const duplicateIds=items.filter((x,i)=>items.findIndex(y=>y.id===x.id)!==i).map(x=>x.id);
  report.source.pageCounts=byPage.map((p,i)=>({page:i+1,items:p.articles.length}));
  report.source.articles=items;
  report.source.uniqueArticles=sourceIds.size;
  report.source.duplicates=[...new Set(duplicateIds)];
- report.source.checkpointMatched=items.filter(a=>state.articles[a.id]?.source_url).length;
+ report.source.checkpointMatched=uniqueItems.filter(a=>state.articles[a.id]?.source_url).length;
  const category=await requestJson(wp+'/wp-json/wp/v2/categories?slug=tin-tong-hop&hide_empty=false&_fields=id,parent,slug,count,name');
  if(category.code!==200||category.json?.length!==1||category.json[0].slug!=='tin-tong-hop'||category.json[0].id!==1746)
   throw Error('Live WP child category identity mismatch');
@@ -112,15 +115,15 @@ try{
  if(posts.length!==firstWp.total)throw Error('WordPress published paging truncated');
  report.wordpress={category:cat,total:firstWp.total,pages:firstWp.pages,posts:posts.map(x=>({id:x.id,slug:x.slug,date:x.date,title:x.title?.rendered?.replace(/<[^>]+>/g,'')}))};
  const postIds=new Set(posts.map(p=>p.id));const postSlugs=new Set(posts.map(p=>p.slug));
- report.missing=items.filter(a=>{
+ report.missing=uniqueItems.filter(a=>{
   const mapped=state.articles[a.id];
   return !(mapped?.wp_id&&postIds.has(Number(mapped.wp_id)))&&!postSlugs.has(a.slug);
  }).map(a=>({id:a.id,title:a.title,url:a.url,sourcePage:a.sourcePage,
   checkpointStatus:state.articles[a.id]?.status||'UNTRACKED',
   reason:state.articles[a.id]?.reason||'',
   wpId:state.articles[a.id]?.wp_id||null}));
- report.untracked=items.filter(a=>!state.articles[a.id]).map(a=>({id:a.id,title:a.title,url:a.url,sourcePage:a.sourcePage}));
- report.wordpress.unmatchedInSource=posts.filter(p=>!items.some(a=>
+ report.untracked=uniqueItems.filter(a=>!state.articles[a.id]).map(a=>({id:a.id,title:a.title,url:a.url,sourcePage:a.sourcePage}));
+ report.wordpress.unmatchedInSource=posts.filter(p=>!uniqueItems.some(a=>
   Number(state.articles[a.id]?.wp_id)===p.id||a.slug===p.slug))
   .map(p=>({id:p.id,slug:p.slug,title:p.title?.rendered?.replace(/<[^>]+>/g,'')}));
  // Normalized title comparison catches legacy full-body entries without numeric links.
