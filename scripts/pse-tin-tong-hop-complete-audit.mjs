@@ -41,7 +41,7 @@ async function getArchive(page,idx=1){
    // Some legacy Joomla entries show full body/headline directly and have no article anchor.
    // Retain these independently from numeric article URLs for review.
    const headlines=[...root.querySelectorAll('h2,h3')].map(h=>({
-     title:(h.textContent||'').replace(/\\s+/g,' ').trim(),
+     title:(h.textContent||'').replace(/\s+/g,' ').trim(),
      linked:!!h.querySelector('a[href]'),
    })).filter(x=>x.title.length>=18&&x.title.length<=260);
    return {pageNumber:pageInfo?Number(pageInfo[1]):null,totalPages:pageInfo?Number(pageInfo[2]):null,
@@ -119,7 +119,7 @@ try{
   Number(state.articles[a.id]?.wp_id)===p.id||a.slug===p.slug))
   .map(p=>({id:p.id,slug:p.slug,title:p.title?.rendered?.replace(/<[^>]+>/g,'')}));
  // Normalized title comparison catches legacy full-body entries without numeric links.
- const fold=str=>String(str||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')
+ const fold=str=>String(str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
    .replace(/[đĐ]/g,'d').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
  const wpHeadlineKeys=new Set(posts.map(x=>fold(x.title?.rendered?.replace(/<[^>]+>/g,' '))));
  const seenHeading=new Set();
