@@ -66,9 +66,15 @@ def main():
     if not signed_file.is_file():
         print("PSE_STATIC_DELTA=FULL_ZIP no-signed-inventory")
         return
-    remote = json.loads(signed_file.read_text(encoding="utf-8")).get("static")
+    inventory = json.loads(signed_file.read_text(encoding="utf-8"))
+    remote = inventory.get("static")
     if remote is None:
         print("PSE_STATIC_DELTA=FULL_ZIP php-static-not-supported")
+        return
+    # Legacy PHP includes images/*.json in the static inventory. Until the
+    # new PHP scope is deployed, never emit a mismatched static delta marker.
+    if inventory.get("static_scope") != "exclude-images-v1":
+        print("PSE_STATIC_DELTA=FULL_ZIP php-static-scope-not-verified")
         return
     if not isinstance(remote, dict):
         raise ValueError("Invalid signed static inventory")
