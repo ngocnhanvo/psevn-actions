@@ -20,7 +20,8 @@ MAX_SINGLE = 26214400
 
 def eligible(name):
     return (isinstance(name, str) and 0 < len(name) <= 240
-            and name != "index.html" and EXTENSION.search(name) is not None
+            and name != "index.html" and not name.startswith("images/")
+            and EXTENSION.search(name) is not None
             and all(part not in (".", "..") and SEGMENT.fullmatch(part)
                     for part in name.split("/")))
 
@@ -46,7 +47,8 @@ def collect_local(root):
         if not path.is_file():
             return None
         rel = path.relative_to(root).as_posix()
-        if rel == "index.html" or not EXTENSION.search(rel):
+        # Every file under images/ belongs to image delta, including JSON metadata.
+        if rel == "index.html" or rel.startswith("images/") or not EXTENSION.search(rel):
             continue
         if not eligible(rel) or len(result) >= MAX_FILES:
             return None
@@ -81,9 +83,14 @@ def main():
     marker = Path("deploy/pse-static-delta.json")
     if marker.exists() or marker.is_symlink():
         raise ValueError("Unexpected static delta marker")
-    marker.write_text(json.dumps({
+    payload = json.dumps({
         "format": 1, "files": local, "reuse": reuse,
-    }, sort_keys=True, separators=(",", ":")), encoding="utf-8")
+    }, sort_keys=True, separators=(",", ":"))
+    # Keep the full ZIP if the server cannot consume this private marker.
+    if len(payload.encode("utf-8")) > 1048576:
+        print("PSE_STATIC_DELTA=FULL_ZIP marker-size-limit")
+        return
+    marker.write_text(payload, encoding="utf-8")
     saved = sum(local[name]["size"] for name in reuse)
     for name in reuse:
         path = root / name
