@@ -27,14 +27,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          ref: 4a3bcd27879d7b645dfa88a0288f70ab9560e989
+          ref: 744bec3d8f5aa1f9eaac0c55e98795606523b8f7
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: source-php
           persist-credentials: false
       - name: Validate reviewed PHP source and immutable production identity
         run: |
           set -euo pipefail
-          test "$(git -C source-php rev-parse HEAD)" = "4a3bcd27879d7b645dfa88a0288f70ab9560e989"
+          test "$(git -C source-php rev-parse HEAD)" = "744bec3d8f5aa1f9eaac0c55e98795606523b8f7"
           php -l source-php/wp-content/mu-plugins/pse-finance-temporary-sideload.php
           python3 -m py_compile scripts/pse-finance-temporary-ftps.py
           node --check scripts/pse-finance-sideload-rest.mjs
@@ -76,7 +76,7 @@ jobs:
           import json
           a=json.load(open('artifacts/pse-finance-ftps-collision-report/pse-finance-ftp-collision-report.json'))
           expected={
-            82533:'029a76a8d4cac08cfec3ce8c313504d2ec1a4352493534d9f94545f01a3d888',
+            82533:'029a76a8d4cac08cfec3ce8c313504d2ec1a4352493534d9f94545f01a3d888c',
             82545:'b062c6f7710fad1a907607abf6074942deca5edc7859c1a392f19e29711236fe',
             82547:'559b1dec76615be75b00d95033f616ce464dec7f3c8bfa0f9ed90e3a0d113848',
             82543:'c2687e2259c21474c88f363759240ec3f7d3490c3d8fb5198d74a23f347c4ab5',
@@ -131,7 +131,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          ref: 4a3bcd27879d7b645dfa88a0288f70ab9560e989
+          ref: 744bec3d8f5aa1f9eaac0c55e98795606523b8f7
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: source-php
           persist-credentials: false
