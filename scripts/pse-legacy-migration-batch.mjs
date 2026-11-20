@@ -429,7 +429,7 @@ try{
      if(verifiedScan376)console.log("PSE_GOV_376_SCAN_PROOF=PASS; bytes="+bytes.length+"; text_preserved=true");
    }
    const verifiedDisclosureScan=disclosureSource && Object.hasOwn(disclosureScanCounts,id) &&
-     article.assets.length===disclosureScanCounts[id] && /<img\\b/i.test(article.html) &&
+     article.assets.length===disclosureScanCounts[id] && /<img\b/i.test(article.html) &&
      article.assets.every(x=>{try{const u=new URL(x);return u.protocol==="https:" &&
        ["pse.vn","www.pse.vn"].includes(u.hostname) && u.pathname.startsWith("/images/") &&
        /[.](?:png|jpg|jpeg)$/i.test(u.pathname)}catch{return false}});
