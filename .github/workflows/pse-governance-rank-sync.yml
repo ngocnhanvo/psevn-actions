@@ -1,0 +1,75 @@
+name: PSE restore original governance archive order (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-governance-rank-sync.mjs
+      - scripts/pse-governance-rank-ftps.py
+      - .github/workflows/pse-governance-rank-sync.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-governance-rank-writer
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 725dfa9dadaa8946f5ac9d8b0e4850c7feb1dc16
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Validate pinned WordPress code and FTPS source
+        run: |
+          test "$(git -C source-php rev-parse HEAD)" = 725dfa9dadaa8946f5ac9d8b0e4850c7feb1dc16
+          php -l source-php/wp-content/mu-plugins/pse-governance-source-order.php
+          python3 -m py_compile scripts/pse-governance-rank-ftps.py
+          node --check scripts/pse-governance-rank-sync.mjs
+      - name: Deploy only source-order PHP plugin with SHA verification
+        run: python3 scripts/pse-governance-rank-ftps.py
+  rank:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 21
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-governance-2026-independent-parity
+          run-id: 44744504960
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-governance-source-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh UpdraftPlus database backup before source rank metadata write
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Preserve Joomla post order in native WordPress REST and Astro SSR
+        run: node scripts/pse-governance-rank-sync.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-governance-source-order
+          path: artifacts/pse-governance-rank/report.json
+          if-no-files-found: warn
+          retention-days: 30
