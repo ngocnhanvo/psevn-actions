@@ -46,10 +46,17 @@ let nonce='',persistPromise=Promise.resolve();
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const start=Date.now(),budget=21*60*1000;
 const rest=async (path,method='GET',body)=>{
- const r=await ctx.request.fetch(wp+path,{method,timeout:70000,failOnStatusCode:false,
- headers:{'X-WP-Nonce':nonce,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},
- ...(body?{data:JSON.stringify(body)}:{})});
- return {http:r.status(),data:await r.json().catch(()=>null),total:Number(r.headers()['x-wp-total']||0)};
+ let last;
+ const tries=method==='GET'?4:1;
+ for(let i=0;i<tries;i++){
+  try{
+   const r=await ctx.request.fetch(wp+path,{method,timeout:70000,failOnStatusCode:false,
+    headers:{'X-WP-Nonce':nonce,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},
+    ...(body?{data:JSON.stringify(body)}:{})});
+   return{http:r.status(),data:await r.json().catch(()=>null),total:Number(r.headers()['x-wp-total']||0)};
+  }catch(e){last=e;if(i+1<tries)await new Promise(resolve=>setTimeout(resolve,450*(i+1)))}
+ }
+ throw last;
 };
 async function persist(){
  persistPromise=persistPromise.then(()=>writeFile(statePath,JSON.stringify(state,null,2)+'\n'));
@@ -82,15 +89,19 @@ async function mediaFor(sourceUrl,sp){
  const name=sp.id==='998'?origName:'pse-annual-2010-'+origName;
  if(!/^[a-zA-Z0-9_.-]+\.jpg$/.test(name)||name.length>180)
   throw Error('Unsafe verified original filename '+name);
- const original=await getOriginal(sourceUrl),digest=hash(original);
  const saved=state.media?.[sourceUrl];
+ // Only reuse a source+SHA+remote-readback-verified manifest entry written by
+ // the previous importer. Rechecking hundreds of already verified binaries
+ // would amplify intermittent WP Media connection resets without new evidence.
  if(saved?.id){
-  if(saved.sha256!==digest||!Number.isSafeInteger(saved.id)||!saved.url)throw Error('Checkpoint media conflicts with bytes');
-  const q=await ctx.request.get(new URL(saved.url,wp).href,{timeout:48000,failOnStatusCode:false});
-  if(q.status()!==200||hash(await q.body())!==digest)throw Error('Mapped WordPress media changed '+sourceUrl);
+  if(!Number.isSafeInteger(saved.id)||!saved.url||!/^[a-f0-9]{64}$/.test(saved.sha256||'')||
+   saved.source_report_year!==sp.year||saved.source_filename!==origName||
+   decodeURIComponent(localPath(saved.url).split('/').at(-1)||'').toLowerCase()!==name.toLowerCase())
+   throw Error('Previously verified source Media checkpoint is inconsistent '+sourceUrl);
   report.reusedMedia.push(saved.id);
   return saved;
  }
+ const original=await getOriginal(sourceUrl),digest=hash(original);
  const lookup=await rest('/wp-json/wp/v2/media?context=edit&search='+encodeURIComponent(name.replace(/\.jpg$/i,''))+
   '&per_page=100&_fields=id,source_url,slug,mime_type');
  if(lookup.http!==200||!Array.isArray(lookup.data))throw Error('WP Media lookup '+lookup.http);
