@@ -40,3 +40,5 @@ Verified final fertilizer product description restoration batch 6 (four source-m
 2026-10-25: format Product excerpt lines final batch 6/6 after batch 5 #40165786781 PASS 8/8; four products remaining.
 
 2026-11-21 SOP verification: one Joomla product row Kali Phú Mỹ (SOP), no source ID, absent from native 44 WordPress products. Verify original image and native WP category before any write.
+
+2026-11-21 approved: SOP preflight #44839060275 PASS. Source has no Joomla ID; native WP 44 has no SOP. Create exactly one native Product and verified original PNG in category #1762, no Astro build.
