@@ -113,12 +113,12 @@ jobs:
                   raise SystemExit('Unverified source or status for '+id)
           print('PSE_TIN_TONG_HOP_5_SOURCE_SCOPE=PASS; exact_ids=5')
           PY
-      - name: Fresh verified WordPress DB backup for the five new source posts
-        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Đồng bộ năm bài Tin tổng hợp đã xác minh'
-        run: node scripts/pse-template-updraft-backup.mjs
       - name: Browser tools (container Chromium is pinned)
         if: env.PSE_IMPORT_WORK == 'yes'
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh verified WordPress DB backup for the five new source posts
+        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Đồng bộ năm bài Tin tổng hợp đã xác minh'
+        run: node scripts/pse-template-updraft-backup.mjs
       - name: Confirm local Updraft DB backup before first migration write
         if: env.PSE_IMPORT_WORK == 'yes'
         shell: bash
@@ -151,6 +151,7 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/pse-legacy-migration-crawl.py
           python3 scripts/pse-legacy-migration-crawl.py
+          echo "PSE_IMPORT_CRAWL_RAN=yes" >> "$GITHUB_ENV"
       - name: Import up to 4 verified WordPress articles and four files per source
         if: env.PSE_IMPORT_WORK == 'yes'
         shell: bash
@@ -173,7 +174,7 @@ jobs:
           node --check scripts/pse-legacy-attribution-clean.mjs
           node scripts/pse-legacy-attribution-clean.mjs
       - name: Persist exact migration cursor without overriding another writer
-        if: always() && env.PSE_IMPORT_WORK == 'yes'
+        if: always() && env.PSE_IMPORT_WORK == 'yes' && env.PSE_IMPORT_CRAWL_RAN == 'yes'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
