@@ -87,6 +87,35 @@ try{
   }catch(e){report.errors.push({stage:"frontend_listing",pageNum,error:String(e).slice(0,170)})}
  }
  await listing.close();
+ // Publication date shown in the original Joomla article title overrides its
+ // search-index created date ONLY for source #1742, if original archive and
+ // target both prove 12-Nov precedes 13-Aug. All other differences remain FAIL.
+ report.sourceChronology={verified:false,http:null,newerIndex:-1,olderIndex:-1};
+ const oldArchive=await ctx.newPage();
+ try{
+  const oldUrl="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html";
+  await oldArchive.route(/\\.(?:png|jpe?g|webp|gif|svg)(?:[?#]|$)/i,route=>route.abort());
+  const response=await oldArchive.goto(oldUrl,{waitUntil:"domcontentloaded",timeout:50000});
+  const sourceOrder=await oldArchive.evaluate(()=>{
+   const root=document.querySelector(".blog");
+   if(!root)return{newerIndex:-1,olderIndex:-1};
+   const links=[...root.querySelectorAll("a[href]")].map(a=>a.href);
+   return{newerIndex:links.findIndex(u=>u.includes("/1740-20261112-")),olderIndex:links.findIndex(u=>u.includes("/1742-20260813-"))};
+  });
+  report.sourceChronology={http:response?.status()||null,...sourceOrder,
+    verified:response?.status()===200&&sourceOrder.newerIndex>=0&&
+      sourceOrder.olderIndex>=0&&sourceOrder.newerIndex<sourceOrder.olderIndex};
+ }catch(e){report.sourceChronology.error=String(e).slice(0,200)}
+ finally{await oldArchive.close()}
+ report.approvedDateExceptions=report.dateDifferences.filter(d=>
+  d.id==="1742"&&String(d.date||"").startsWith("2026-08-13")&&
+  report.sourceChronology.verified&&report.frontend.page1?.sourceChronologyCorrect===true
+ );
+ report.unapprovedDateDifferences=report.dateDifferences.filter(d=>!report.approvedDateExceptions.includes(d));
+ console.log("PSE_FINAL_DATE_PROVENANCE="+JSON.stringify({
+  source:report.sourceChronology,dateDifferences:report.dateDifferences,
+  approved:report.approvedDateExceptions,remaining:report.unapprovedDateDifferences
+ }));
  const targets=rows.filter(r=>initialRestoreIds.has(r.id)&&r.wpId).sort((a,b)=>Number(a.id)-Number(b.id));
  let i=0;
  const worker=async()=>{
@@ -119,7 +148,7 @@ finally{
 }
 const pass=report.sourceUnique===190&&report.checkpoint===190&&report.cmsTotal===190&&report.cmsFetched===190&&
  !report.missing.length&&!report.cmsExtra.length&&!report.wrongCategory.length&&!report.wrongSlugs.length&&
- !report.unpublished.length&&!report.empty.length&&!report.dateDifferences.length&&!report.oldLinks.length&&!report.errors.length&&
+ !report.unpublished.length&&!report.empty.length&&!report.unapprovedDateDifferences.length&&!report.oldLinks.length&&!report.errors.length&&
  report.frontend.page1?.sourceChronologyCorrect===true&&
  [1,16].every(n=>report.frontend["page"+n]?.http===200)&&
  report.restoredDetails.length===19&&report.restoredDetails.every(x=>x.http===200&&!x.empty&&!x.error);
