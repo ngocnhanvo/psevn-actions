@@ -17,7 +17,12 @@ import ssl
 from urllib.parse import urlsplit
 
 SOURCE = Path("source-php")
-FILES = (
+# Existing production releaser: optionally restrict a real request to the two
+# signed Delta ZIP PHP contracts; all other authorized releases stay unchanged.
+RELEASE_SCOPE = os.environ.get("PSE_PHP_RELEASE_SCOPE", "full")
+if RELEASE_SCOPE not in ("full", "delta"):
+    raise ValueError("Unsupported PSE PHP release scope")
+ALL_FILES = (
     "esc-tool/image.php",
     "pse-image-delta.php",
     "pse-unzip.php",
@@ -46,6 +51,8 @@ FILES = (
     "wp-content/themes/vibe-code-theme/inc/tools/menu-import.php",
     "wp-content/themes/vibe-code-theme/inc/tools/menu.php",
 )
+DELTA_FILES = ("pse-image-delta.php", "pse-unzip.php")
+FILES = DELTA_FILES if RELEASE_SCOPE == "delta" else ALL_FILES
 raw = os.environ.get("FTP_SERVER", "").strip()
 if "://" not in raw:
     raw = "ftp://" + raw
