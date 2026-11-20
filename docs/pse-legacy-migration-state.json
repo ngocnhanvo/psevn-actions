@@ -9921,11 +9921,10 @@
       "wp_id": 77218
     },
     "1666": {
-      "attempts": 3,
+      "attempts": 0,
       "group_hint": "shareholder",
-      "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1666-20260320-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2025-va-giai-trinh-chenh-lech-lnst.html",
-      "status": "quarantined"
+      "status": "pending"
     },
     "1667": {
       "annual_category_verified": true,
@@ -10195,9 +10194,8 @@
     "1738": {
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1738-20261105-cbtt-dinh-chinh-thong-tin-da-cong-bo-trong-bctc-quy-3-2026.html",
       "group_hint": "shareholder",
-      "status": "quarantined",
-      "attempts": 3,
-      "reason": "apiRequestContext.post: Timeout 80000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ("
+      "status": "pending",
+      "attempts": 0
     },
     "1740": {
       "attempts": 1,
@@ -23917,11 +23915,46 @@
       "url": "/wp-content/uploads/2026/11/bo-co-ti-chnh-nm-2012.pdf",
       "sha256": "31d9b7aee356c792f30ddd833ff3f741868e98252ec423411bab526d771c7288",
       "source_filename": "bo co ti chnh nm 2012.pdf"
+    },
+    "https://www.pse.vn/images/20261104-CV-26-83-%C4%90NB-H%C4%90QT-%C4%90%C3%ADnh_ch%C3%ADnh_th%C3%B4ng_tin_%C4%91%C3%A3_c%C3%B4ng_b%E1%BB%91_trong_BCTC_qu%C3%BD_3.2026.pdf": {
+      "id": 82553,
+      "url": "https://admin-pse.webnvn.com/wp-content/uploads/2026/11/20261104-CV-26-83-DNB-HDQT-Dinh_chinh_thong_tin_da_cong_bo_trong_BCTC_quy_3.2026.pdf",
+      "sha256": "7f8a32ee037f26b7a26c11b61c7def96b1e6da46ce43019be0a3891ae7fc271d",
+      "source_filename": "20261104-CV-26-83-ĐNB-HĐQT-Đính_chính_thông_tin_đã_công_bố_trong_BCTC_quý_3.2026.pdf",
+      "source_bytes": 14415950
+    },
+    "https://www.pse.vn/images/20260320-CV-26-16-%C4%90NB-H%C4%90QT-CBTT_BCTC_%C4%91%C3%A3_ki%E1%BB%83m_to%C3%A1n_n%C4%83m_2025.pdf": {
+      "id": 82554,
+      "url": "https://admin-pse.webnvn.com/wp-content/uploads/2026/11/20260320-CV-26-16-DNB-HDQT-CBTT_BCTC_da_kiem_toan_nam_2025.pdf",
+      "sha256": "8ceb96fc07f7e2cc737d31b0f0b4d17ced53df349baed2713a1c3f0b27aad6f9",
+      "source_filename": "20260320-CV-26-16-ĐNB-HĐQT-CBTT_BCTC_đã_kiểm_toán_năm_2025.pdf",
+      "source_bytes": 31725319
+    },
+    "https://www.pse.vn/images/20260320-CV-26-17-%C4%90NB-H%C4%90QT-gi%E1%BA%A3i_tr%C3%ACnh_l%E1%BB%A3i_nhu%E1%BA%ADn_sau_thu%E1%BA%BF_ch%C3%AAnh_l%E1%BB%87ch_so_v%E1%BB%9Bi_th%E1%BB%B1c_hi%E1%BB%87n_c%C3%B9ng_k%E1%BB%B3.pdf": {
+      "id": 82555,
+      "url": "https://admin-pse.webnvn.com/wp-content/uploads/2026/11/20260320-CV-26-17-DNB-HDQT-giai_trinh_loi_nhuan_sau_thue_chenh_lech_so_voi_thuc_hien_cung_ky.pdf",
+      "sha256": "0ea6138fcbb1270df913c7c8402f8af1dd7fa358ee371e8c75e8f3d4a63f68e4",
+      "source_filename": "20260320-CV-26-17-ĐNB-HĐQT-giải_trình_lợi_nhuận_sau_thuế_chênh_lệch_so_với_thực_hiện_cùng_kỳ.pdf",
+      "source_bytes": 1048856
+    },
+    "https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf": {
+      "id": 82556,
+      "url": "https://admin-pse.webnvn.com/wp-content/uploads/2026/11/CBTT_BCTC_ban_nien.pdf",
+      "sha256": "aba7bf51f204ab167dbef22b2c35fe262aab3f43b5a5308ff448b83453a4309d",
+      "source_filename": "CBTT_BCTC_ban_nien.pdf",
+      "source_bytes": 29305039
+    },
+    "https://www.pse.vn/images/CV-69-DNB-HDQT-giai-trinh-loi-nhuan-sau-thue-chenh-lech.pdf": {
+      "id": 82557,
+      "url": "https://admin-pse.webnvn.com/wp-content/uploads/2026/11/CV-69-DNB-HDQT-giai-trinh-loi-nhuan-sau-thue-chenh-lech.pdf",
+      "sha256": "3e8d0b9425030126bf2a4dc702be37a3e91490e2606b731d301dec92745041c0",
+      "source_filename": "CV-69-DNB-HDQT-giai-trinh-loi-nhuan-sau-thue-chenh-lech.pdf",
+      "source_bytes": 1220479
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 241,
+  "runs": 242,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
