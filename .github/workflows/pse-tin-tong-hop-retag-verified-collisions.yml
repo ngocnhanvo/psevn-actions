@@ -1,0 +1,46 @@
+name: PSE Tin tong hop restore five verified WP taxonomy memberships (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-tin-tong-hop-retag-verified-collisions.yml
+permissions:
+  contents: write
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  restore-categories:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Chuyển đúng năm bài lịch sử về Tin tổng hợp'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - name: Install matching Playwright driver
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify exact five WordPress posts and exact original PDF bytes before any write
+        run: node --check scripts/pse-tin-tong-hop-retag-verified-collisions.mjs && node scripts/pse-tin-tong-hop-retag-verified-collisions.mjs --preflight
+      - name: Fresh verified DB-only WordPress Updraft backup
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Append only verified WP taxonomy and read back all preserved fields
+        run: node scripts/pse-tin-tong-hop-retag-verified-collisions.mjs --apply
+      - name: Persist verified source-to-target checkpoint with SHA lease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/pse-legacy-migration-save.mjs
+      - name: Save source/PDF proof and category rollback record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-tin-tong-hop-retag-verified-collisions
+          path: artifacts/pse-tin-tong-hop-retag/
+          if-no-files-found: warn
+          retention-days: 21
