@@ -179,9 +179,17 @@ def main():
         # The signed PHP inventory may optionally include client-only HTML,
         # CSS, JS and public JSON. Older PHP has no 'static' key: full ZIP fallback.
         static = result.get("static")
+        static_scope = result.get("static_scope")
+        if static_scope is not None and static_scope != "exclude-images-v1":
+            raise RuntimeError("Unsupported signed static inventory scope")
+        if static_scope is not None and static is None:
+            raise RuntimeError("Signed static inventory scope without static data")
         if static is not None:
             if not isinstance(static, dict) or len(static) > 5000:
                 raise RuntimeError("Invalid signed static inventory")
+            if static_scope == "exclude-images-v1" and any(
+                    name.startswith("images/") for name in static):
+                raise RuntimeError("Signed static inventory unexpectedly includes images")
             static_bytes = 0
             for name, meta in static.items():
                 if (not isinstance(name, str) or len(name) > 240 or name == "index.html"
@@ -199,6 +207,8 @@ def main():
                 if static_bytes > 104857600:
                     raise RuntimeError("Signed static inventory too large")
             inventory["static"] = static
+            if static_scope is not None:
+                inventory["static_scope"] = static_scope
             print("PSE_STATIC_DELTA_REMOTE_FILES=%d remote_bytes=%d" %
                   (len(static), static_bytes))
         target_file = Path("source/.pse-remote-image-manifest.json")
