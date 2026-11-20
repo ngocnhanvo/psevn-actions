@@ -7,11 +7,11 @@ if(source.schema!=='pse-governance-24-independent-parity-v1'||source.sourceIds?.
  source.cms?.length!==24||source.category?.id!==1759||source.errors?.length)
  throw Error('Verified independent source audit not available');
 const baseline=new Map(source.cms.map(x=>[x.id,x]));
-const expected=source.sourceIds.filter(id=>id!=='92'),slugs=expected.map(id=>baseline.get(id)?.wp?.slug);
-if(expected.length!==23||slugs.some(s=>!s)||baseline.get('92')?.wp?.status!=='draft')
+const expected=source.sourceIds,slugs=expected.map(id=>baseline.get(id)?.wp?.slug);
+if(expected.length!==24||slugs.some(s=>!s)||baseline.get('92')?.wp?.status!=='draft')
  throw Error('Original source identity changed');
 const report={schema:'pse-governance-24-final-read-only-parity-v1',
- source:24,expectedPublished:23,originalSEO:24,seoMatched:0,sourceRanks:expected,
+ source:24,expectedPublished:24,originalSEO:24,seoMatched:0,sourceRanks:expected,
  wordpress:[],desktop:[],mobile:[],metadata:null,errors:[],status:'STARTED'};
 const cms='https://admin-pse.webnvn.com',front='https://pse.webnvn.com';
 const browser=await chromium.launch({headless:true}),ctx=await browser.newContext({viewport:{width:1366,height:840}});
@@ -36,19 +36,19 @@ try{
   return{http:r.status,total:r.headers.get('x-wp-total'),data:await r.json().catch(()=>null)};
  },{path,nonce});
  const c=await api('/wp-json/wp/v2/categories/1759?_fields=id,slug,parent,count');
- if(c.http!==200||c.data?.id!==1759||c.data.slug!=='tai-lieu-quan-tri-cong-ty'||c.data.parent!==1744||c.data.count!==23)
+ if(c.http!==200||c.data?.id!==1759||c.data.slug!=='tai-lieu-quan-tri-cong-ty'||c.data.parent!==1744||c.data.count!==24)
  throw Error('WordPress governance taxonomy drift');
  const all=await api('/wp-json/wp/v2/posts?categories=1759&per_page=100&status=any&context=edit&_fields=id,slug,status,date,categories');
  if(all.http!==200||Number(all.total)!==24||all.data?.length!==24)throw Error('24 exact WordPress governance records not returned');
  const idsSet=new Set(source.cms.map(r=>r.wpId));
  if(all.data.some(p=>!idsSet.has(p.id))||new Set(all.data.map(p=>p.id)).size!==24)throw Error('WordPress extra/duplicate post detected');
  const rank=await api('/wp-json/pse-governance/v1/original-archive-order');
- if(rank.http!==200||!rank.data?.active||rank.data?.rows?.length!==23)throw Error('Native source order plugin not active');
+ if(rank.http!==200||!rank.data?.active||rank.data?.rows?.length!==24)throw Error('Native source order plugin not active');
  if(rank.data.rows.some((r,i)=>r.id!==baseline.get(expected[i]).wpId||r.rank!==i+1))
   throw Error('Rank metadata differs from original Joomla source');
  report.metadata={ranked:rank.data.rows.length,active:true,checksum:rank.data.source_checksum};
  const list=await api('/wp-json/wp/v2/posts?categories=1759&per_page=100&status=publish&context=edit&_fields=id,slug,date');
- if(list.http!==200||list.data?.length!==23||
+ if(list.http!==200||list.data?.length!==24||
   list.data.some((p,i)=>p.id!==baseline.get(expected[i]).wpId))
  throw Error('Native WP REST 23-post source order not preserved');
  for(const id of source.sourceIds){
@@ -56,7 +56,7 @@ try{
   if(!expectedSEO||!expectedSEO.endsWith(' - PSE.VN'))throw Error('Missing independently sourced SEO title '+id);
   const r=await api('/wp-json/wp/v2/posts/'+sourceRow.wpId+'?context=edit&_fields=id,status,slug,date,title,content,categories,pse_seo_title,pse_seo_description,acf');
   const p=r.data,html=String(p?.content?.raw||''),assets=[...html.matchAll(/(?:href|src)=["']([^"']+)["']/gi)].map(x=>x[1]);
-  if(r.http!==200||p?.id!==sourceRow.wpId||p.status!==b.status||p.slug!==b.slug||p.date!==b.date||
+  if(r.http!==200||p?.id!==sourceRow.wpId||p.status!==(id==='92'?'publish':b.status)||p.slug!==b.slug||p.date!==(id==='92'?'2011-06-20T01:52:44':b.date)||
     p.title?.raw!==b.title||html.length!==b.htmlLength||!p.categories?.includes(1759)||
     p.acf?.action!=='PostDetails'||p.acf?.key!=='ssr-post')
     throw Error('Post status/date/body/category/ACF changed '+id);
@@ -87,15 +87,27 @@ try{
    seen.push(...o.items);
    report[label].push({page:pg,http:200,count:o.items.length,overflow:o.overflow});
   }
-  if(seen.length!==23||JSON.stringify(seen)!==JSON.stringify(slugs))
+  if(seen.length!==24||JSON.stringify(seen)!==JSON.stringify(slugs))
    throw Error(label+' archive source order mismatch');
  }
  await f.close();
- report.status='PASS_24_SOURCE_RECORDS_24_SEO_23_PUBLISHED';
+ const detail=await ctx.newPage();
+ const detailResponse=await detail.goto(front+'/dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo',{waitUntil:'domcontentloaded',timeout:60000});
+ const detailInfo=await detail.evaluate(()=>({
+  body:document.querySelector('main')?.innerText||'',
+  files:[...document.querySelectorAll('main a[href]')].map(a=>a.href).filter(u=>/\.pdf(?:[?#]|$)/i.test(u)),
+  overflow:document.documentElement.scrollWidth>window.innerWidth+3
+ }));
+ if(detailResponse?.status()!==200||!detailInfo.body.includes('Điều lệ')||
+ detailInfo.files.length<1||!detailInfo.files.some(u=>/\/(?:api\/files\/)?wp-content\/uploads\//i.test(u))||detailInfo.overflow)
+  throw Error('Newly restored 92 public detail unavailable, PDF missing or mobile overflow');
+ report.detail92={http:200,pdfLocal:true,overflow:false};
+ await detail.close();
+ report.status='PASS_24_SOURCE_RECORDS_24_SEO_24_PUBLISHED';
  console.log('PSE_GOV_FINAL='+JSON.stringify({status:report.status,source:24,wp:report.wordpress.length,
-  seo:report.seoMatched,published:23,draft:[92],ranked:23,desktop:report.desktop,
+  seo:report.seoMatched,published:24,draft:[],ranked:24,desktop:report.desktop,
   mobile:report.mobile,legacyMediaHotlinks:0,errors:[]}));
 }catch(e){report.status='FAIL';report.errors.push(String(e).slice(0,320));console.error('PSE_GOV_FINAL_ERROR='+String(e))}
 finally{await mkdir('artifacts/pse-governance-final',{recursive:true});
  await writeFile('artifacts/pse-governance-final/report.json',JSON.stringify(report,null,2)+'\n');await browser.close()}
-if(report.status!=='PASS_24_SOURCE_RECORDS_24_SEO_23_PUBLISHED')process.exitCode=1;
+if(report.status!=='PASS_24_SOURCE_RECORDS_24_SEO_24_PUBLISHED')process.exitCode=1;
