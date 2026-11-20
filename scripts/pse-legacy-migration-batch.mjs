@@ -716,19 +716,46 @@ try{
      if(!types[ext])throw Error("Unsupported media extension "+ext);
      const hash=createHash("sha256").update(assetUrl).digest("hex").slice(0,16);
      const assetSlug="pse-legacy-"+hash;
+     const originalName=decodeURIComponent(new URL(assetUrl).pathname.split("/").at(-1)||"");
+     if(!originalName.toLowerCase().endsWith("."+ext)||/["\r\n]/.test(originalName))
+      throw Error("Unsafe original finance asset filename");
      const match=await api("/wp-json/wp/v2/media?context=edit&slug="+assetSlug+"&per_page=5&_fields=id,slug,source_url");
      if(match.status!==200||!Array.isArray(match.data)||match.data.length>1)
       throw Error("WordPress media lookup invalid");
      let obj=match.data[0];
+     if(financeScope){
+      // Check exact source filename and previous deterministic source URL media name before writing.
+      const existing=await api("/wp-json/wp/v2/media?context=edit&search="+
+        encodeURIComponent(originalName.slice(0,35))+"&per_page=100&_fields=id,slug,source_url");
+      if(existing.status!==200||!Array.isArray(existing.data))
+       throw Error("Existing WordPress finance media filename lookup unavailable");
+      const exact=existing.data.filter(m=>{
+       try{return decodeURIComponent(new URL(m.source_url,wp).pathname.split("/").at(-1)||"").toLowerCase()===originalName.toLowerCase()}
+       catch{return false}
+      });
+      if(exact.length>1||(obj&&exact.length&&exact[0].id!==obj.id))
+       throw Error("Ambiguous or conflicting WordPress finance filename");
+      obj=obj||exact[0];
+     }
      if(!obj){
+      const filename=financeScope?Buffer.from(originalName,"utf8").toString("latin1"):assetSlug+"."+ext;
       const up=await context.request.post(wp+"/wp-json/wp/v2/media",{
-       headers:{"X-WP-Nonce":nonce,"Content-Disposition":'attachment; filename="'+assetSlug+"."+ext+'"',"Content-Type":types[ext]},
-       // Both independently source-verified disclosure PDFs require longer WP processing.
-        // Existing deterministic media-slug readback prevents re-upload duplicates after a timeout.
-        data:buf,timeout:((disclosureSource && ["1670","1742"].includes(id) && ext==="pdf")||financeLargePdf)?240000:80000
+       headers:{"X-WP-Nonce":nonce,"Content-Disposition":'attachment; filename="'+filename+'"',"Content-Type":types[ext]},
+       // Readback by SHA-256 below protects large original media uploads.
+       data:buf,timeout:((disclosureSource && ["1670","1742"].includes(id) && ext==="pdf")||financeLargePdf)?240000:80000
       });
       if(up.status()!==201)throw Error("WordPress media upload HTTP "+up.status()+" source "+id);
       obj=await up.json();
+     }
+     if(financeScope){
+      const uploaded=new URL(String(obj.source_url||""),wp);
+      if(uploaded.origin!==wp||!uploaded.pathname.startsWith("/wp-content/uploads/"))
+       throw Error("Finance media not stored locally in WordPress");
+      const check=await context.request.get(uploaded.href,{timeout:150000});
+      if(check.status()!==200||
+       createHash("sha256").update(await check.body()).digest("hex")!==
+       createHash("sha256").update(buf).digest("hex"))
+       throw Error("Finance media source/local binary mismatch");
      }
      if(!obj?.id||!obj.source_url)throw Error("WP Media returned no URL");
      state.media[assetUrl]={id:obj.id,url:obj.source_url,sha256:createHash("sha256").update(buf).digest("hex"),
