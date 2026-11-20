@@ -4342,9 +4342,12 @@
     "1157": {
       "attempts": 1,
       "group_hint": "company",
-      "reason": "WP slug occupied by unrelated or empty content",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1157-thong-bao-ve-viec-xet-trao-hoc-bong-dpm-cho-sinh-vien-nam-hoc-2015-2016.html",
-      "status": "quarantined"
+      "status": "existing",
+      "wp_id": 77573,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "retag_proof_pdf_sha": null
     },
     "1158": {
       "attempts": 1,
@@ -4438,9 +4441,12 @@
     "1165": {
       "attempts": 1,
       "group_hint": "company",
-      "reason": "WP slug occupied by unrelated or empty content",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1165-thay-doi-uy-vien-hoi-dong-quan-tri-kiem-giam-doc-cong-ty.html",
-      "status": "quarantined"
+      "status": "existing",
+      "wp_id": 78260,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "retag_proof_pdf_sha": "590583e5c8e010cf81"
     },
     "1166": {
       "attempts": 1,
@@ -4483,9 +4489,12 @@
     "1169": {
       "attempts": 1,
       "group_hint": "company",
-      "reason": "WP slug occupied by unrelated or empty content",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1169-pse-cong-bo-thong-tin-cua-ong-uv-hdqt-kiem-giam-doc-cong-ty.html",
-      "status": "quarantined"
+      "status": "existing",
+      "wp_id": 79253,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "retag_proof_pdf_sha": "fd62b44c91664fdca1"
     },
     "1170": {
       "attempts": 2,
@@ -4517,9 +4526,12 @@
     "1172": {
       "attempts": 1,
       "group_hint": "company",
-      "reason": "WP slug occupied by unrelated or empty content",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1172-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo-pvfcco-se-cong-bo-thong-tin-thay-doi-giay-dkkd-lan-thu-11-ngay-18-01-2016.html",
-      "status": "quarantined"
+      "status": "existing",
+      "wp_id": 79316,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "retag_proof_pdf_sha": "fdc4482ea439b965f9"
     },
     "1173": {
       "attempts": 3,
@@ -5497,10 +5509,13 @@
     "1247": {
       "attempts": 3,
       "group_hint": "company",
-      "reason": "WP slug occupied by unrelated or empty content",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1247-pse-cong-bo-thong-tin-thay-doi-chu-tich-hdqt-10-01-2017.html",
-      "status": "quarantined"
+      "status": "existing",
+      "wp_id": 79031,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "retag_proof_pdf_sha": "5de1352460a3fdc648"
     },
     "1248": {
       "attempts": 3,
@@ -25747,7 +25762,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 251,
+  "runs": 252,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
