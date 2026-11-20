@@ -37,10 +37,38 @@ try{
     throw Error(device+' title/heading drift');
    report.checks.push({device,passed:true,...info});
    console.log('PSE_PDF_ICON_POSTDEPLOY='+JSON.stringify({device,status:'PASS',displayWidth:info.displayWidth,displayHeight:info.displayHeight,src:info.src,overflow:info.overflow}));
+   const listing='/tin-tuc-su-kien/tai-lieu-quan-tri-cong-ty/2';
+   const listResponse=await p.goto(root+listing,{waitUntil:'domcontentloaded',timeout:55000});
+   if(listResponse?.status()!==200)throw Error(device+' listing HTTP '+listResponse?.status());
+   const cards=await p.locator('#posts-grid .group').evaluateAll(elements=>elements.map(card=>{
+     const link=card.querySelector('a[href]'),tile=card.querySelector('[data-pse-document-thumb="pdf"]'),
+       svg=tile?.querySelector('svg'),rect=svg?.getBoundingClientRect();
+     return {href:link?.getAttribute('href')||'',hasPdfTile:!!tile,
+       tileText:tile?.textContent?.trim()||'',vectorWidth:rect?.width||0,
+       hasPhoto:!!card.querySelector('img.post-card-img'),
+       image:card.querySelector('img.post-card-img')?.getAttribute('src')||null};
+   }));
+   const examples=[
+     '/quy-che-noi-bo-ve-quan-tri-cong-ty-16-04-2018',
+     '/dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo-2018'
+   ];
+   for(const link of examples){
+     const card=cards.find(x=>x.href===link);
+     if(!card||!card.hasPdfTile||card.hasPhoto||!card.tileText.includes('Tài liệu PDF')||
+        card.vectorWidth<24||card.vectorWidth>48){
+       throw Error(device+' PDF document card not vector-safe '+link+': '+JSON.stringify(card));
+     }
+   }
+   const missingImageCard=cards.find(x=>x.href?.includes('20200728-bc42'));
+   if(!missingImageCard||missingImageCard.image!=='/images/posts/no-image.svg')
+     throw Error(device+' no-image card fallback changed: '+JSON.stringify(missingImageCard));
+   report.checks.push({device,type:'listing',passed:true,checked:examples.length,vectorPdfTiles:cards.filter(x=>x.hasPdfTile).length});
+   console.log('PSE_PDF_ARCHIVE_POSTDEPLOY='+JSON.stringify({device,status:'PASS',route:listing,
+     exampleCards:examples.length,vectorPdfTiles:cards.filter(x=>x.hasPdfTile).length}));
   }catch(e){report.errors.push({device,error:String(e).slice(0,400)});console.error('PSE_PDF_ICON_POSTDEPLOY_FAIL='+String(e))}
   finally{await p.close()}
  }
- report.result=report.errors.length===0&&report.checks.length===2?'PASS_DESKTOP_MOBILE_ICON_24PX':'FAIL';
+ report.result=report.errors.length===0&&report.checks.length===4?'PASS_DESKTOP_MOBILE_ICON_24PX':'FAIL';
 }catch(e){report.errors.push({error:String(e).slice(0,400)});report.result='FAIL';console.error('PSE_PDF_ICON_FATAL='+String(e))}
 finally{await mkdir('artifacts/pse-pdf-icon-postdeploy',{recursive:true});await writeFile('artifacts/pse-pdf-icon-postdeploy/report.json',JSON.stringify(report,null,2)+'\n');await browser.close()}
 if(report.result!=='PASS_DESKTOP_MOBILE_ICON_24PX')process.exitCode=1;
