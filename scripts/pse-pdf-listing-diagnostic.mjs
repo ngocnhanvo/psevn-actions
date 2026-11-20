@@ -18,11 +18,11 @@ try{
     imageAlt:image?.getAttribute('alt')||null,width:box?.width||0,height:box?.height||0,naturalWidth:image?.naturalWidth||0,naturalHeight:image?.naturalHeight||0};
  }));
  const picked=out.cards.filter(x=>/Quy chế nội bộ|Điều lệ công ty/.test(x.title)).slice(0,3);
- const api=await ctx.request.newContext({baseURL:wp,timeout:30000});
+ const api=ctx.request;
  for(const card of picked){
   const slug=decodeURIComponent(new URL(card.href,base).pathname).split('/').filter(Boolean).at(-1);
   if(!slug)continue;
-  const response=await api.get('/wp-json/wp/v2/posts?slug='+encodeURIComponent(slug)+'&_embed=true');
+  const response=await api.get(wp+'/wp-json/wp/v2/posts?slug='+encodeURIComponent(slug)+'&_embed=true');
   const rows=response.ok()?await response.json():[];
   const row=rows[0]||{};
   const snippet=String(row.content?.rendered||'');
