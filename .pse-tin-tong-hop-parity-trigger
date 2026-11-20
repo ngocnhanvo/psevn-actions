@@ -2,3 +2,4 @@
 Source: https://pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html
 Target: https://pse.webnvn.com/tin-tuc-su-kien/tin-tong-hop
 Run existing read-only Playwright diagnostic with category membership, published counts, source pagination sample and target SSR. No build/deploy/CMS mutations.
+2026-11-20 Read-only WordPress/Astro SSR category parity after 4 verified source-backed posts published: WP posts 82801,82805,82817,82820; live category 1746 should show new content; no build or CMS mutation. Import #44773661860 PASS and checkpoint saved.
