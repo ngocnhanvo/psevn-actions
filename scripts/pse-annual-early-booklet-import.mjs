@@ -146,9 +146,13 @@ async function createOrVerifyPost(sp){
  if(sourceTitle!==title+' - PSE.VN')throw Error('Original SEO <title> changed '+id);
  const date='2013-12-11T00:00:00';
  const fields='?context=edit&_fields=id,status,slug,title,content,date,categories,pse_seo_title,pse_seo_description,acf';
- const list=await rest('/wp-json/wp/v2/posts?context=edit&status=any&slug='+slug+'&per_page=100&_fields=id,status,slug,title,content,date,categories,pse_seo_title,acf');
- if(list.http!==200||!Array.isArray(list.data)||list.data.length>1)throw Error('WordPress slug ambiguous '+id);
- let post=list.data[0]||null;
+ const postQuery='/wp-json/wp/v2/posts?context=edit&slug='+slug+'&per_page=100&_fields=id,status,slug,title,content,date,categories,pse_seo_title,acf';
+ const published=await rest(postQuery),draft=await rest(postQuery+'&status=draft');
+ if(published.http!==200||draft.http!==200||!Array.isArray(published.data)||!Array.isArray(draft.data))
+  throw Error('WordPress slug lookup unavailable '+id+' '+published.http+'/'+draft.http);
+ const found=[...new Map([...published.data,...draft.data].map(p=>[p.id,p])).values()];
+ if(found.length>1)throw Error('WordPress slug ambiguous '+id);
+ let post=found[0]||null;
  if(post){
   if(post.id!==state.articles[id]?.wp_id||
     !String(post.content?.raw||'').includes('data-pse-source-id="'+id+'"'))
