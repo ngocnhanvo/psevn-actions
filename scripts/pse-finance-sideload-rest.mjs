@@ -8,15 +8,37 @@ const allowed=[
  ["1738",0,"https://www.pse.vn/images/20261104-CV-26-83-%C4%90NB-H%C4%90QT-%C4%90%C3%ADnh_ch%C3%ADnh_th%C3%B4ng_tin_%C4%91%C3%A3_c%C3%B4ng_b%E1%BB%91_trong_BCTC_qu%C3%BD_3.2026.pdf"],
  ["1666",0,"https://www.pse.vn/images/20260320-CV-26-16-%C4%90NB-H%C4%90QT-CBTT_BCTC_%C4%91%C3%A3_ki%E1%BB%83m_to%C3%A1n_n%C4%83m_2025.pdf"],
  ["1666",1,"https://www.pse.vn/images/20260320-CV-26-17-%C4%90NB-H%C4%90QT-gi%E1%BA%A3i_tr%C3%ACnh_l%E1%BB%A3i_nhu%E1%BA%ADn_sau_thu%E1%BA%BF_ch%C3%AAnh_l%E1%BB%87ch_so_v%E1%BB%9Bi_th%E1%BB%B1c_hi%E1%BB%87n_c%C3%B9ng_k%E1%BB%B3.pdf"],
- ["1650",0,"https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf"],
- ["1650",1,"https://www.pse.vn/images/CV-69-DNB-HDQT-giai-trinh-loi-nhuan-sau-thue-chenh-lech.pdf"]
 ];
 for(const [id] of allowed)if(!state.articles[id]?.source_url?.includes("/bao-cao-tai-chinh/"+id+"-"))throw Error("Source provenance mismatch "+id);
 const v=String(process.env.ENV_FILE||"").split(/\r?\n/).find(x=>x.trim().startsWith("WC_URL="));
 if(!v||v.split("=",2)[1].replace(/['"]/g,"").trim().replace(/\/$/,"")!=="https://admin-pse.webnvn.com")throw Error("Wrong WordPress environment");
 const root="https://admin-pse.webnvn.com";
 const browser=await chromium.launch({headless:true}),p=await browser.newPage();
-let changed=0;const errors=[];
+let changed=0,conflictsMarked=0;const errors=[];
+const collision=JSON.parse(await readFile("artifacts/pse-finance-media-collision/report.json","utf8"));
+const original="https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf";
+const source=collision.source.find(x=>x.url===original);
+const target=collision.candidates.find(x=>x.id===82544);
+if(collision.schema!=="pse-financial-media-collision-v1"||
+  source?.sha256!=="aba7bf51f204ab167dbef22b2c35fe262aab3f43b5a5308ff448b83453a4309d"||
+  source?.bytes!==29305039||
+  target?.sha256!=="3ae1294f3ef586cb2f55ecbe61ccfa72260c9bb906f7d65bc877c3f1b32a1b81"||
+  target?.bytes!==26607616)throw Error("PDF filename-collision independent audit evidence changed");
+for(const id of ["1480","1650"]){
+ const rec=state.articles[id];
+ if(!rec?.source_url?.includes("/bao-cao-tai-chinh/"+id+"-")||rec.wp_id)
+   throw Error("Financial collision checkpoint identity mismatch "+id);
+ if(!rec.finance_asset_conflict){
+  rec.finance_asset_conflict={status:"ASSET_DEFERRED",source_url:original,
+   source_filename:"CBTT_BCTC_ban_nien.pdf",source_sha256:source.sha256,
+   source_bytes:source.bytes,wp_media_id:82544,wp_sha256:target.sha256,
+   wp_bytes:target.bytes,attempt_count:3,last_error:"Same filename, different binary; cannot overwrite or rename."};
+  rec.finance_scope_terminal=true;rec.status="quarantined";
+  rec.reason="Original finance PDF filename conflicts with different WordPress media 82544";
+  conflictsMarked++;
+  console.log("PSE_FINANCE_MEDIA_CONFLICT_PROTECTED="+id);
+ }
+}
 try{
  await p.goto(root+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:50000});
  if(await p.locator("#user_login").count()){
@@ -60,12 +82,12 @@ try{
   }catch(e){errors.push({id,index,error:String(e).slice(0,170)})}
  }
 }finally{
- if(changed){
+ if(changed||conflictsMarked){
   // Media is already source-verified: reset only the exact nine financial
   // source IDs for a post-only importer pass; never reopen unrelated records.
   const mediaById={
    "1738":[allowed[0][2]],"1666":[allowed[1][2],allowed[2][2]],
-   "1650":[allowed[3][2],allowed[4][2]],"1480":[allowed[3][2]]
+
   };
   for(const [id,urls] of Object.entries(mediaById)){
    const rec=state.articles[id];
@@ -86,9 +108,9 @@ try{
   state.runs=Number(state.runs||0)+1;
   await writeFile(filename,JSON.stringify(state,null,2)+"\n");
  }
- if(process.env.GITHUB_ENV)await appendFile(process.env.GITHUB_ENV,"PSE_FINANCE_MEDIA_CHECKPOINT_CHANGED="+(changed?"yes":"no")+"\n");
+ if(process.env.GITHUB_ENV)await appendFile(process.env.GITHUB_ENV,"PSE_FINANCE_MEDIA_CHECKPOINT_CHANGED="+((changed||conflictsMarked)?"yes":"no")+"\n");
  await writeFile("pse-finance-sideload-report.json",JSON.stringify({changed,errors},null,2)+"\n");
  await browser.close();
 }
-console.log("PSE_FINANCE_SIDELOAD_SUMMARY="+JSON.stringify({changed,errors}));
+console.log("PSE_FINANCE_SIDELOAD_SUMMARY="+JSON.stringify({changed,conflictsMarked,errors}));
 if(errors.length)process.exitCode=1;
