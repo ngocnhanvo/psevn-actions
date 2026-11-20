@@ -1,0 +1,46 @@
+/** Verify PDF document icon dimensions after existing PSE production deployment. READ ONLY. */
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+
+const root='https://pse.webnvn.com';
+const target=root+'/quy-che-noi-bo-ve-quan-tri-cong-ty-16-04-2018';
+const expectedImage='/api/images/96/png/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.webp';
+const expectedPdf='/wp-content/uploads/2026/10/pse-legacy-84b86d569d20e69b.pdf';
+const report={schema:'pse-pdf-icon-postdeploy-v1',target,checks:[],errors:[],result:'STARTED'};
+const browser=await chromium.launch({headless:true});
+try{
+ const c=await browser.newContext();
+ for(const [device,viewport] of [['desktop',{width:1366,height:840}],['mobile',{width:390,height:844}]]){
+  const p=await c.newPage();await p.setViewportSize(viewport);
+  try{
+   const resp=await p.goto(target,{waitUntil:'domcontentloaded',timeout:55000});
+   if(resp?.status()!==200)throw Error(device+' article HTTP '+resp?.status());
+   const selector='#article-content img[alt="pdf" i]';
+   await p.locator(selector).first().waitFor({state:'visible',timeout:25000});
+   const info=await p.evaluate(selector=>{
+    const image=document.querySelector(selector);
+    if(!image)return null;
+    const rect=image.getBoundingClientRect(),css=getComputedStyle(image),pdf=image.closest('a[href]');
+    return{
+      naturalWidth:image.naturalWidth,naturalHeight:image.naturalHeight,loaded:image.complete,
+      displayWidth:Math.round(rect.width*100)/100,displayHeight:Math.round(rect.height*100)/100,
+      maxWidth:css.maxWidth,src:image.getAttribute('src'),href:pdf?.getAttribute('href'),
+      overflow:document.documentElement.scrollWidth-window.innerWidth,
+      h1:document.querySelector('h1')?.textContent?.trim()
+    };
+   },selector);
+   if(!info||info.src!==expectedImage||info.href!==expectedPdf)
+    throw Error(device+' PDF icon src or file link differs from expected: '+JSON.stringify(info));
+   if(!(info.displayWidth>0&&info.displayWidth<=81&&info.displayHeight>0&&info.displayHeight<=81&&info.overflow<=3))
+    throw Error(device+' PDF icon oversized or page overflow: '+JSON.stringify(info));
+   if(!info.h1?.includes('Quy chế nội bộ về quản trị công ty'))
+    throw Error(device+' title/heading drift');
+   report.checks.push({device,passed:true,...info});
+   console.log('PSE_PDF_ICON_POSTDEPLOY='+JSON.stringify({device,status:'PASS',displayWidth:info.displayWidth,displayHeight:info.displayHeight,src:info.src,overflow:info.overflow}));
+  }catch(e){report.errors.push({device,error:String(e).slice(0,400)});console.error('PSE_PDF_ICON_POSTDEPLOY_FAIL='+String(e))}
+  finally{await p.close()}
+ }
+ report.result=report.errors.length===0&&report.checks.length===2?'PASS_DESKTOP_MOBILE_ICON_80PX':'FAIL';
+}catch(e){report.errors.push({error:String(e).slice(0,400)});report.result='FAIL';console.error('PSE_PDF_ICON_FATAL='+String(e))}
+finally{await mkdir('artifacts/pse-pdf-icon-postdeploy',{recursive:true});await writeFile('artifacts/pse-pdf-icon-postdeploy/report.json',JSON.stringify(report,null,2)+'\n');await browser.close()}
+if(report.result!=='PASS_DESKTOP_MOBILE_ICON_80PX')process.exitCode=1;
