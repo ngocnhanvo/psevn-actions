@@ -1,5 +1,6 @@
 PSE PDF icon postdeploy QA request
-Astro production source: 7f4cddaae554ba0d925c65c8da8c5d984bc732a6
-Verified successful production deployment run: 44750431462
+Astro production source: 3f52415a8efa1485d6c00f22b419181b800941a7
+Verified successful production deployment run: 44755134668
 Requested at: 2026-11-20
+Expected icon size: 24x24 pixels on desktop and mobile
 Only GET/read-only validation.
