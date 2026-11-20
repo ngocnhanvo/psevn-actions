@@ -8,6 +8,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
+concurrency:
+  group: pse-governance-92-date-and-edge-readonly
+  cancel-in-progress: false
 jobs:
   source-date:
     if: github.repository == 'ngocnhanvo/psevn-actions'
@@ -15,16 +19,34 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble
       options: --ipc=host
-    timeout-minutes: 10
+    timeout-minutes: 14
+    env:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-governance-2026-independent-parity
+          run-id: 44744504960
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-governance-source-proof
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - run: node --check scripts/pse-governance-92-date.mjs && node scripts/pse-governance-92-date.mjs
+      - name: Inspect current 92 and 1563 records without writing
+        run: node --check scripts/pse-governance-seo-edge-audit.mjs && node scripts/pse-governance-seo-edge-audit.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pse-governance-92-original-created-date
           path: artifacts/pse-governance-92-date/report.json
+          if-no-files-found: warn
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-governance-92-1563-edge-readonly
+          path: artifacts/pse-governance-edge/report.json
           if-no-files-found: warn
           retention-days: 14
