@@ -41,7 +41,6 @@ class StaticDeltaContract(unittest.TestCase):
                     "_astro/b.css": meta(b"OLD-CSS"),  # same size, different content
                     "data/retained.json": meta(b'{"v":1}'),
                     "data/changed.json": meta(b'{"v":1}'),  # JSON also same size, different content
-                    "images/metadata.json": meta(b'{"keep":true}'),
                 }}
                 Path(".pse-remote-image-manifest.json").write_text(json.dumps(remote))
                 MOD["main"]()
