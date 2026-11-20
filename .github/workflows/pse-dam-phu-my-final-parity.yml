@@ -14,6 +14,9 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.64.0-noble
       options: --ipc=host
+    env:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, persist-credentials: false}
