@@ -1,0 +1,31 @@
+name: PSE Dam Phu My source and target product inventory (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-dam-phu-my-source-target-inventory.mjs
+      - .github/workflows/pse-dam-phu-my-inventory.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventory:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Inspect Joomla product, new product and public WP Product REST (no writes)
+        run: node --check scripts/pse-dam-phu-my-source-target-inventory.mjs && node scripts/pse-dam-phu-my-source-target-inventory.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-dam-phu-my-inventory
+          path: artifacts/pse-dam-phu-my/inventory.json
+          retention-days: 21
+          if-no-files-found: warn
