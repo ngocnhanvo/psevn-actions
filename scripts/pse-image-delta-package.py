@@ -80,9 +80,14 @@ def main():
     marker = Path("deploy/pse-image-delta.json")
     if marker.exists():
         raise ValueError("Unexpected existing image delta marker")
-    marker.write_text(json.dumps({
+    payload = json.dumps({
         "format": 1, "files": local, "reuse": reused
-    }, sort_keys=True, separators=(",", ":")), encoding="utf-8")
+    }, sort_keys=True, separators=(",", ":"))
+    # Match the signed PHP v2 marker bound before removing any compiled bytes.
+    if len(payload.encode("utf-8")) > 1048576:
+        print("PSE_IMAGE_DELTA=FULL_ZIP marker-size-limit")
+        return
+    marker.write_text(payload, encoding="utf-8")
     saved = sum(local[name]["size"] for name in reused)
     for name in reused:
         path = root / name
