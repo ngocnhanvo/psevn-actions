@@ -1,0 +1,33 @@
+name: PSE Tin tong hop 1159 source and WP identity proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-tin-tong-hop-1159-source-proof.yml
+      - scripts/pse-tin-tong-hop-1159-source-proof.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-source:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 8
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Check exact Joomla source and existing published WordPress post
+        run: node --check scripts/pse-tin-tong-hop-1159-source-proof.mjs && node scripts/pse-tin-tong-hop-1159-source-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-tin-tong-hop-1159-source-proof
+          path: artifacts/pse-tin-tong-hop-1159-source/
+          if-no-files-found: warn
+          retention-days: 21
