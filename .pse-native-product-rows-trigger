@@ -3,3 +3,4 @@ Original fertilizer Product records row-by-row source verification and native RE
 2026-10-25: Read-only source-versus-native Product audit for Kebo/Drone excerpts and original detailed usage-table integrity; existing CMS untouched, no build.
 
 2026-11-21: Full source-to-live WP independent audit requested by owner: all six fertilizer families, every 44 identifiable product, exact category membership, existing images/content, and two Joomla no-ID source rows. Evidence only, no CMS writes, no Astro build.
+2026-11-21: Retry source-to-live native Product parity via public read-only WordPress REST because private WordPress admin session was not available in earlier audit run 44838315933; no write, no build.
