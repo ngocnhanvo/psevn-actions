@@ -49,7 +49,13 @@ try{
    const cardTitle=cards[0]?.querySelector('h2');
    const techCell=content.querySelector('table td,table th');
    const style=e=>e?getComputedStyle(e):null;
-   return {tables,cards:cards.length,legacyImages:content.querySelectorAll('img[src*="pse.vn"]').length,
+   // Prevent legacy inline white headings from disappearing on pale table cells.
+   const unreadableTableText=[...content.querySelectorAll('table th,table td,table th *,table td *')]
+    .filter(el=>(el.textContent||'').trim()&&getComputedStyle(el).display!=='none')
+    .map(el=>({tag:el.tagName,color:getComputedStyle(el).color,text:(el.textContent||'').trim().slice(0,35)}))
+    .filter(item=>{const rgb=item.color.match(/[\\d.]+/g)?.slice(0,3).map(Number)||[];
+      return rgb.length===3&&rgb.every(channel=>channel>=210)});
+   return {tables,cards:cards.length,unreadableTableText,legacyImages:content.querySelectorAll('img[src*="pse.vn"]').length,
     horizontalOverflow:document.documentElement.scrollWidth-window.innerWidth,
     textLength:(content.textContent||'').replace(/\s+/g,' ').trim().length,
     design:{
@@ -70,6 +76,10 @@ try{
   if(found.legacyImages)throw Error('Legacy image hotlink present in category content');
   if(found.horizontalOverflow>5)throw Error('Page horizontal overflow at width '+width+': '+found.horizontalOverflow);
   if(found.textLength<2500)throw Error('Category technical text unexpectedly short');
+  if(found.unreadableTableText.length)
+    throw Error('White/light table text on pale background at width '+width+': '+
+      JSON.stringify(found.unreadableTableText.slice(0,5)));
+  report.checks.push('technical_table_text_contrast_'+width);
   const design=found.design;
   if(design.panelRadius<16||design.cardRadius<18||design.headerFont<21||
     design.cardHeadingFont<18||design.tableFont<14||design.mediaBackground==='none')
