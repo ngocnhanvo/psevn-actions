@@ -1,39 +1,47 @@
 # Phản hồi ChatGPT mới nhất — PSE
-- Thời điểm: 2026-11-20, khoảng 22:30 (Asia/Ho_Chi_Minh)
+
+- Thời điểm: 2026-11-20 22:44 (Asia/Ho_Chi_Minh)
 - Project: pse.vn
-- Repository: ngocnhanvo/psevn-actions
-- Branch: main
-- Frontend: ngocnhanvo/psevn-astro/master @ 6ac75b9a9a36f1015cf78ff6b4f94b1ea6475b4b
-- Backend: ngocnhanvo/psevn-php/master @ 11b30cccfeb15a900de9776c7084a2d197a1a045
-- Actions QA script: ngocnhanvo/psevn-actions/main @ aeba5c649239258b1bfc992c6f4c09348c123cec
-- Code mode: auto-build
-- Source gate: bypass
-- Final verified status: DONE (Đạm Phú Mỹ + read-only utilities/search regression)
+- Repo ghi: ngocnhanvo/psevn-actions @ main
+- Astro production: ngocnhanvo/psevn-astro @ master `85ae9d60a6457f1bca05444c889139bc6f41014e`
+- Chế độ code: auto-build
+- Cổng ghi source: bypass
+- Trạng thái xác minh: DONE — modernize Đạm Phú Mỹ UI, signed production deploy + independent browser QA
 
-## Nội dung phản hồi gửi người dùng
+## Phản hồi gửi người dùng
 
-### 1. Trạng thái mới nhất của PSE — 20/11/2026
+### Đã sửa giao diện Đạm Phú Mỹ trong Astro
 
-Đã kiểm tra repository GitHub `psevn-astro/master` (HEAD `6ac75b9a`), `psevn-php/master` (HEAD `11b30ccc`) và `psevn-actions/main` (sau sửa QA HEAD `aeba5c64` trước khi lưu phản hồi).
+Mình đã cập nhật `ProductsSSRPage.astro` trên nhánh production `master`:
 
-**Đạm Phú Mỹ đã hoàn tất:** 10 bảng kỹ thuật đã được đồng bộ vào WordPress, Astro lấy từ CMS, vẫn giữ 4 sản phẩm. Đã qua kiểm tra desktop 1366px, mobile 390px, không tràn layout, API WordPress và màn hình biên tập native. Không cần nhập lại hoặc build lại.
+- **Card sản phẩm:** bo góc lớn hơn, ảnh có nền sáng, tiêu đề nổi bật, thông số dễ đọc và nút “Xem chi tiết” hiện đại hơn.
+- **Responsive:** một cột trên mobile/tablet, hai cột trên desktop rộng để tránh nội dung bị chật.
+- **Nội dung kỹ thuật:** thêm tiêu đề và khung trình bày, tăng khoảng cách, cải thiện màu sắc và định dạng bảng; trên mobile, bảng được cuộn ngang trong khối nội dung.
+- **Nguồn dữ liệu:** giữ nguyên 4 sản phẩm và 10 bảng kỹ thuật do WordPress quản lý, không đưa thông số sản phẩm vào Astro.
 
-- Signed production deploy: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44761786462 — SUCCESS.
-- QA độc lập Đạm Phú Mỹ: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44762209387 — SUCCESS.
-- Evidence artifact: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44762209387/artifacts/14640684976.
+Commit: https://github.com/ngocnhanvo/psevn-astro/commit/85ae9d60a6457f1bca05444c889139bc6f41014e
 
-### 2. Sửa lỗi QA sau deploy
+**CI source: 131/131 file kiểm thử PASS — 588/588 test PASS**: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44764862528
 
-Bộ QA `pse-utility-live-qa.mjs` trước đây kiểm tra tên/URL tổ chức cũ và sai khi ESC Table `pse_03_vi` được cập nhật đúng yêu cầu. Đã sửa bài QA để xác minh kết cấu hai cột, các hàng liên kết với URL hợp lệ, form tìm kiếm SSR và bỏ thống kê truy cập, thay vì khớp tên tổ chức đã lỗi thời; đồng thời bổ sung trigger QA tự động khi chính script được thay đổi. Không ghi lại WordPress, không sửa Astro/PHP, không build/deploy thêm.
+### Đã triển khai production
 
-- Actions code commit: `aeba5c649239258b1bfc992c6f4c09348c123cec`.
-- Live QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44763692936 — SUCCESS.
-- Production render: đúng 6 mục theo thứ tự Tập đoàn Công Nghiệp Năng Lượng Quốc Gia Việt Nam / Tổng Công ty Phân bón và Hóa chất Dầu Khí - CTCP / Miền Bắc / Miền Trung / Miền Tây / Sở Giao dịch Chứng khoán Hà Nội (HNX), URL chứng khoán PSE. SSR tìm kiếm PASS.
-- Lỗi QA cũ: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44762154270; đã được thay thế bằng QA mới PASS, không phải lỗi deploy Đạm Phú Mỹ.
+**Build và deploy production: SUCCESS**: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44765486659
 
-### 3. Trạng thái bàn giao
+Log xác nhận đã deploy đúng commit `85ae9d60`, upload FTP-TLS thành công, kích hoạt staging bằng PHP có kiểm tra chữ ký và rollback, đồng thời smoke test homepage/API/SEO đạt.
 
-Đã hoàn tất công việc tiếp nối mới nhất; không chạy trùng import, CMS save hoặc build. Log/chứng cứ giữ tại các liên kết Actions trên.
+Trang được cập nhật: https://pse.webnvn.com/san-pham/dam-phu-my
+
+### Kết quả nghiệm thu sau deploy
+
+**QA Chromium độc lập: PASS** https://github.com/ngocnhanvo/psevn-actions/actions/runs/44765996697
+
+- So website gốc: 10/10 bảng kỹ thuật đúng dữ liệu/thứ tự.
+- 4/4 thẻ sản phẩm giữ nguyên.
+- Phong cách card, tiêu đề và bảng kỹ thuật mới đã được trình duyệt nhận; desktop 1366px và mobile 390px PASS, không tràn ngang.
+- Kiểm tra API WordPress và màn hình biên tập mô tả danh mục thành công, không ghi sửa CMS.
+- Artifact: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44765996697/artifacts/14643852392
+
+Đã hoàn tất trong production. Không cần build lại hoặc nhập lại dữ liệu.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
