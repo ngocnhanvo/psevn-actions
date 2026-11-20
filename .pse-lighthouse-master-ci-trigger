@@ -15,3 +15,4 @@
 2026-10-29 verify PSE Astro master 53844958a420f05500702161f1007dab99684af1 PR #124: Planner outage sentinel fails closed at proxy/UI; run full Vitest and source checks, NO BUILD, NO FTP.
 
 2026-11-20 Validate Astro master 9748eb98387c77a751f6f99177ef49fcd73ce7e0: TablePress cache v2, Product Logs cursor/snapshot, product/image timing; full source Vitest only, NO DEPLOY.
+2026-11-20 verify WordPress-managed category technical description rendering for PSE Astro master 6ac75b9a9a36f1015cf78ff6b4f94b1ea6475b4b, NO BUILD.
