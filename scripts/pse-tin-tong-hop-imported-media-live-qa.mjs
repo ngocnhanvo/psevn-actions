@@ -27,7 +27,7 @@ try{
     alt:img.getAttribute('alt')||'',naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,
     complete:img.complete,visible:css.display!=='none'&&css.visibility!=='hidden'&&Number(css.opacity)>0&&rect.width>1&&rect.height>1,
     width:Math.round(rect.width),height:Math.round(rect.height),display:css.display};
-  }))));
+  })));
   const wpUrls=wpImages.slice(0,12).map(url=>url.replaceAll('&amp;','&'));
   const wpStatus=[];
   for(const asset of wpUrls.slice(0,4)){
