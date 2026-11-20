@@ -3900,14 +3900,14 @@
     },
     "1127": {
       "attempts": 2,
+      "attribution_cleaned": true,
       "disclosure_restore_prepared": true,
       "group_hint": "shareholder",
+      "seo_cleaned": true,
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1127-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html",
       "status": "existing",
-      "wp_id": 82240,
-      "seo_cleaned": true,
-      "attribution_cleaned": true
+      "wp_id": 82240
     },
     "1128": {
       "attempts": 1,
@@ -9896,13 +9896,20 @@
       "status": "quarantined"
     },
     "1670": {
-      "attempts": 1,
+      "attempts": 2,
+      "disclosure_four_pdf_retry_attempted": true,
       "disclosure_restore_prepared": true,
       "group_hint": "shareholder",
+      "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1670-20260403-cbtt-thu-moi-tai-lieu-dhdcd-va-thong-bao-de-cu-ung-cu-thanh-vien-hdqt-bks-nhiem-ky-2026-2031.html",
-      "status": "pending",
-      "disclosure_four_pdf_retry_attempted": true,
-      "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+      "status": "imported",
+      "wp_id": 82529,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2026-04-03T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2026-04-03"
     },
     "1676": {
       "attempts": 1,
@@ -23807,11 +23814,26 @@
       "id": 82293,
       "sha256": "7ee756b01de4464eaf4b71b85779bdb7a955b4d2af89faa3d29c4906d0ece1db",
       "url": "/wp-content/uploads/2026/10/pse-legacy-74fcbc29a90dd02b.gif"
+    },
+    "https://www.pse.vn/images/Tai_lieu_%C4%90H%C4%90C%C4%90_2026_-_TA.pdf": {
+      "id": 82526,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-302d1db7161eafd0.pdf",
+      "sha256": "62047b101f9e40e374fd327788fa5d1cb75728eadd0cc302d303bf4ca6087eb5"
+    },
+    "https://www.pse.vn/images/CBTT_v%E1%BB%81_vi%E1%BB%87c_%E1%BB%A9ng_c%E1%BB%AD_%C4%91%E1%BB%81_c%E1%BB%AD_v%C3%A0o_H%C4%90QT_BKS_nhi%E1%BB%87m_k%E1%BB%B3_2026-2031.pdf": {
+      "id": 82527,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-fb0cf800f91cc4de.pdf",
+      "sha256": "34d3901e65376eafe4adc868ef1fbe0bcb86eef560e039dc046aecc858199552"
+    },
+    "https://www.pse.vn/images/Uy-Quyen.pdf": {
+      "id": 82528,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-956af3bb896ce6b3.pdf",
+      "sha256": "88b7e94b28cb52f24f630c7be31d85e5668d697f4bf94020452e9f5ddd59232d"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 234,
+  "runs": 235,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
