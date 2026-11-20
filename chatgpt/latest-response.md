@@ -1,47 +1,22 @@
-# Phản hồi ChatGPT mới nhất — PSE
+# Checkpoint PSE — Bản vá chữ trắng trong bảng kỹ thuật Đạm Phú Mỹ
 
-- Thời điểm: 2026-11-20 22:44 (Asia/Ho_Chi_Minh)
-- Project: pse.vn
-- Repo ghi: ngocnhanvo/psevn-actions @ main
-- Astro production: ngocnhanvo/psevn-astro @ master `85ae9d60a6457f1bca05444c889139bc6f41014e`
-- Chế độ code: auto-build
-- Cổng ghi source: bypass
-- Trạng thái xác minh: DONE — modernize Đạm Phú Mỹ UI, signed production deploy + independent browser QA
+Ngày 2026-11-20 (Asia/Ho_Chi_Minh). Phạm vi: https://pse.webnvn.com/san-pham/dam-phu-my.
+Repo Astro production: ngocnhanvo/psevn-astro@master, source commit `532fb8af7cc74e6cc87787f3878027baed693bed`.
 
-## Phản hồi gửi người dùng
+## Vấn đề và bản vá
+- Người dùng gửi ảnh: một số ô tiêu đề bảng có chữ trắng gần như vô hình trên nền xanh rất nhạt.
+- Nguyên nhân: HTML nguồn WordPress/Joomla có màu inline trắng từ bố cục cũ; sau lần cải thiện nền bảng trong Astro, màu chữ nguồn vẫn tồn tại trên các thẻ con.
+- Bản vá nhỏ ở `src/astro/pages/ProductsSSRPage.astro`: chỉ áp dụng màu chữ có tương phản cho `th`, `td` và phần tử con trong `.pse-category-editorial` bằng `!important`. Giữ màu cam/đỏ và các văn bản ngoài bảng, không sửa dữ liệu WordPress hay HTML gốc.
+- Source regression updated `src/lib/seo/pseProductSsrCategoryLayout.test.ts`; độc lập QA Chromium được tăng điều kiện computed text color cho bảng ở desktop/mobile.
 
-### Đã sửa giao diện Đạm Phú Mỹ trong Astro
-
-Mình đã cập nhật `ProductsSSRPage.astro` trên nhánh production `master`:
-
-- **Card sản phẩm:** bo góc lớn hơn, ảnh có nền sáng, tiêu đề nổi bật, thông số dễ đọc và nút “Xem chi tiết” hiện đại hơn.
-- **Responsive:** một cột trên mobile/tablet, hai cột trên desktop rộng để tránh nội dung bị chật.
-- **Nội dung kỹ thuật:** thêm tiêu đề và khung trình bày, tăng khoảng cách, cải thiện màu sắc và định dạng bảng; trên mobile, bảng được cuộn ngang trong khối nội dung.
-- **Nguồn dữ liệu:** giữ nguyên 4 sản phẩm và 10 bảng kỹ thuật do WordPress quản lý, không đưa thông số sản phẩm vào Astro.
-
-Commit: https://github.com/ngocnhanvo/psevn-astro/commit/85ae9d60a6457f1bca05444c889139bc6f41014e
-
-**CI source: 131/131 file kiểm thử PASS — 588/588 test PASS**: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44764862528
-
-### Đã triển khai production
-
-**Build và deploy production: SUCCESS**: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44765486659
-
-Log xác nhận đã deploy đúng commit `85ae9d60`, upload FTP-TLS thành công, kích hoạt staging bằng PHP có kiểm tra chữ ký và rollback, đồng thời smoke test homepage/API/SEO đạt.
-
-Trang được cập nhật: https://pse.webnvn.com/san-pham/dam-phu-my
-
-### Kết quả nghiệm thu sau deploy
-
-**QA Chromium độc lập: PASS** https://github.com/ngocnhanvo/psevn-actions/actions/runs/44765996697
-
-- So website gốc: 10/10 bảng kỹ thuật đúng dữ liệu/thứ tự.
-- 4/4 thẻ sản phẩm giữ nguyên.
-- Phong cách card, tiêu đề và bảng kỹ thuật mới đã được trình duyệt nhận; desktop 1366px và mobile 390px PASS, không tràn ngang.
-- Kiểm tra API WordPress và màn hình biên tập mô tả danh mục thành công, không ghi sửa CMS.
-- Artifact: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44765996697/artifacts/14643852392
-
-Đã hoàn tất trong production. Không cần build lại hoặc nhập lại dữ liệu.
+## Evidence và trạng thái
+- Source commit: https://github.com/ngocnhanvo/psevn-astro/commit/532fb8af7cc74e6cc87787f3878027baed693bed
+- CI Astro full regression: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44767523113 — SUCCESS, 131/131 test files, 588/588 tests.
+- Authenticated WP Build Website trigger: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44767679071 — SUCCESS, verified pending_count=0, owner-approved code-only exception.
+- Signed production build, FTP-TLS, PHP staging activation + smoke: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44767861619 — SUCCESS and exact Astro commit `532fb8af...`.
+- Independent read-only Chromium browser QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44768300194 — PASS. Checks `technical_table_text_contrast_1366`, `technical_table_text_contrast_390`, 10/10 technical tables exact Joomla content/order, 4 product cards, no horizontal page overflow, native WP editor accessible; no WP saves.
+- Browser screenshots/report artifact: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44768300194/artifacts/14645962222
+- Work DONE: no need to rebuild/reimport/restyle again for this issue absent new actual findings.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
