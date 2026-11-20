@@ -134,18 +134,20 @@ try{
  if(await admin.locator("#user_login").count()){
   await admin.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME);
   await admin.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD);
-  const body=await admin.locator("body").innerText();
-  const m=body.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i)||body.match(/(\d+)\s*([+\-x×*])\s*(\d+)/i);
+  // Reuse the proven Updraft login flow: parse the login form, not unrelated body text.
+  const loginText=(await admin.locator("#loginform").innerText()).slice(0,500);
+  const m=loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/);
   if(m){
-   const a=+m[1],b=+m[3],res=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];
-   const input=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();
-   if(!await input.count())throw Error("Login arithmetic input missing");
-   await input.fill(String(res));
+   const a=Number(m[1]),b=Number(m[3]),res=m[2]==="+"?a+b:m[2]==="-"?a-b:a*b;
+   const input=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
+   if(await input.count())await input.fill(String(res));
   }
-  await Promise.all([admin.waitForLoadState("domcontentloaded"),admin.locator("#wp-submit").click()]);
+  await admin.locator("#wp-submit").click();
  }
- if(admin.url().includes("wp-login"))throw Error("WordPress admin login rejected");
+ // Login redirect can still be pending after click; verify the protected admin page.
  await admin.goto(wp+"/wp-admin/post.php?post=248&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+ if(admin.url().includes("wp-login")||!(await admin.locator("#adminmenu").count()))
+  throw Error("WordPress admin login rejected after protected-page verification");
  const nonce=await admin.evaluate(async()=>{
   if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
   const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
