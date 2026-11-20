@@ -1,7 +1,7 @@
 name: PSE image delta signed deploy unit contracts (NO ASTRO BUILD)
 on:
   push:
-    branches: [feature/pse-delta-image-ftps-20261025]
+    branches: [main, feature/pse-delta-image-ftps-20261025]
     paths:
       - scripts/pse-image-delta-package.py
       - scripts/pse-static-delta-package.py
