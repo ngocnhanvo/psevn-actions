@@ -34,8 +34,8 @@ try{
    if(!await f.count())throw Error('Login captcha missing');await f.fill(String(ans))}
   await Promise.all([page.waitForLoadState('domcontentloaded'),page.locator('#wp-submit').click()]);
  }
- if(page.url().includes('wp-login'))throw Error('Login failed');
  await nav(page,cms+'/wp-admin/post.php?post=248&action=edit');
+ if(!await page.locator('#adminmenu').count())throw Error('Admin login missing after navigation');
  const c=await wp('/wp-json/wp/v2/categories/1758?_fields=id,slug,count,parent');
  if(c.status!==200||c.data?.slug!=='bao-cao-thuong-nien')throw Error('CMS annual category mismatch');
  r.cmsCategory=c.data;
