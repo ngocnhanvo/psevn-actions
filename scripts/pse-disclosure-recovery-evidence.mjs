@@ -57,6 +57,25 @@ async function findUntracked(){
    }).filter(Boolean),[...untrackedIds]);
    for(const item of hits)if(!untracked.some(x=>x.id===item.id))untracked.push(item);
   }
+  for(const item of untracked){
+    const response=await page.goto(item.url,{waitUntil:"domcontentloaded",timeout:30000});
+    item.http=response?.status()||null;
+    if(item.http!==200)continue;
+    Object.assign(item,await page.evaluate(()=>{
+      const root=document.querySelector('[itemprop="articleBody"]');
+      if(!root)return{hasArticleBody:false};
+      const copy=root.cloneNode(true);
+      const related=[...copy.querySelectorAll("h1,h2,h3,h4,h5,p")].find(e=>
+        String(e.textContent||"").trim().toLocaleLowerCase("vi")==="các bài viết khác");
+      if(related){const range=document.createRange();range.setStartBefore(related);range.setEnd(copy,copy.childNodes.length);range.deleteContents()}
+      const assets=[...new Set([...copy.querySelectorAll("a[href],img[src],iframe[src],object[data]")].map(x=>{
+        const raw=x.getAttribute("href")||x.getAttribute("src")||x.getAttribute("data");
+        try{return new URL(raw,location.href).href}catch{return null}
+      }).filter(x=>x&&/[.](?:png|jpe?g|gif|webp|pdf|docx?|xlsx?)(?:[?#]|$)/i.test(x)))];
+      const text=String(copy.textContent||"").trim();
+      return {hasArticleBody:true,title:document.title,textLength:text.length,excerpt:text.slice(0,380),assets};
+    }));
+  }
   console.log("PSE_DISCLOSURE_UNTRACKED="+JSON.stringify(untracked));
  }finally{await page.close()}
 }
