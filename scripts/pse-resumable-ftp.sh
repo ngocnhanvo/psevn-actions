@@ -43,10 +43,18 @@ set ftp:ssl-force yes
 set ftp:ssl-protect-data yes
 set ssl:verify-certificate yes
 set xfer:clobber yes
+# These local timestamp probes do not alter the secured FTPS session.
+# before_cd -> after_cd: login/TLS + remote CWD
+# after_cd -> after_put: actual resumable ZIP transfer
+# after_put -> after_publish: remote delete/rename
+! date -u '+[FTPS_TIMING] before_cd_epoch=%s'
 cd "$ASTRO_FTP_TARGET"
+! date -u '+[FTPS_TIMING] after_cd_epoch=%s'
 put -c "$ZIP_PATH" -o "$remote_temp"
+! date -u '+[FTPS_TIMING] after_put_epoch=%s'
 rm -f pse-astro.zip
 mv "$remote_temp" pse-astro.zip
+! date -u '+[FTPS_TIMING] after_publish_epoch=%s'
 bye
 LFTP
 status=$?
