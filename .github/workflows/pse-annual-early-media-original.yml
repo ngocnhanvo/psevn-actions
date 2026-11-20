@@ -1,0 +1,30 @@
+name: PSE original 2008 and 2010 annual booklet asset proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-annual-early-media-original.mjs
+      - .github/workflows/pse-annual-early-media-original.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-annual-early-media-original.mjs && node scripts/pse-annual-early-media-original.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-early-source-images
+          path: artifacts/pse-annual-early-media/report.json
+          if-no-files-found: warn
+          retention-days: 14
