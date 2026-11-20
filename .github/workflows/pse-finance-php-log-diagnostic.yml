@@ -1,0 +1,21 @@
+name: PSE finance PHP fatal log check (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [scripts/pse-finance-php-log-diagnostic.py]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-finance-php-log-diagnostic.py && python3 scripts/pse-finance-php-log-diagnostic.py
