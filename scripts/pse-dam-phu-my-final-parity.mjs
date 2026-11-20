@@ -53,7 +53,7 @@ try{
    const unreadableTableText=[...content.querySelectorAll('table th,table td,table th *,table td *')]
     .filter(el=>(el.textContent||'').trim()&&getComputedStyle(el).display!=='none')
     .map(el=>({tag:el.tagName,color:getComputedStyle(el).color,text:(el.textContent||'').trim().slice(0,35)}))
-    .filter(item=>{const rgb=item.color.match(/[\\d.]+/g)?.slice(0,3).map(Number)||[];
+    .filter(item=>{const rgb=item.color.match(/[0-9.]+/g)?.slice(0,3).map(Number)||[];
       return rgb.length===3&&rgb.every(channel=>channel>=210)});
    return {tables,cards:cards.length,unreadableTableText,legacyImages:content.querySelectorAll('img[src*="pse.vn"]').length,
     horizontalOverflow:document.documentElement.scrollWidth-window.innerWidth,
