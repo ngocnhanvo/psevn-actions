@@ -116,7 +116,15 @@ try{
  }
  const unidentifiedChecks=unidentified.map(item=>{
   const matches=fullWp.data.filter(p=>normalized(p.title?.raw||p.title?.rendered||"")===normalized(item.title));
-  return {...item,matchingWpIds:matches.map(p=>p.id),resolution:matches.length===1?"MATCH_BY_TITLE_REVIEW":"UNRESOLVED_NO_ORIGINAL_ID"};
+  const term=familyTerms.get(item.family),match=matches.length===1?matches[0]:null;
+  const hasFamily=!!term&&Array.isArray(match?.product_cat)&&match.product_cat.map(Number).includes(Number(term.id));
+  const resolution=match?(hasFamily?"MATCH_WITH_CATEGORY":"MATCH_TITLE_CATEGORY_MISSING"):"UNRESOLVED_NO_ORIGINAL_ID";
+  const row={...item,matchingWpIds:matches.map(p=>p.id),resolution,
+   expectedCategoryId:term?.id||null,wpCategoryIds:match?.product_cat||[],
+   wpExcerpt:(match?.excerpt?.raw||match?.excerpt?.rendered||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,280)};
+  if(!match)issues.push({type:"NO_SOURCE_ID_UNMATCHED_PRODUCT",...row});
+  else if(!hasFamily)issues.push({type:"NO_SOURCE_ID_CATEGORY_MEMBERSHIP_MISSING",...row});
+  return row;
  });
  const parity={schema:"pse-legacy-product-to-wp-complete-parity-v1",
   originalRows:all.reduce((n,g)=>n+g.products.length,0),
@@ -125,7 +133,7 @@ try{
   publishedWpProducts:fullWp.data.length,mappedProducts:checks.filter(c=>c.wpId).length,
   categories:catResult.data.filter(c=>pages.includes(c.slug)).map(c=>({slug:c.slug,id:c.id,parent:c.parent})),
   checks,issues,
-  verified:issues.length===0&&unidentifiedChecks.every(x=>x.resolution==="MATCH_BY_TITLE_REVIEW")};
+  verified:issues.length===0&&unidentifiedChecks.every(x=>x.resolution==="MATCH_WITH_CATEGORY")};
  console.log("PSE_PRODUCT_FULL_PARITY_SUMMARY="+JSON.stringify({
   rows:parity.originalRows,identified:parity.distinctOriginalIds,
   duplicates:parity.originalDuplicates,unidentified:unidentifiedChecks,
