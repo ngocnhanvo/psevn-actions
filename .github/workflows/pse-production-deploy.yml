@@ -350,6 +350,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile actions-hub/scripts/pse-ftps-upload.py
+          python3 -m unittest discover -s actions-hub/tests -p 'pse-ftps-upload.test.py' -v
           echo "PYTHON_FTPS_TRANSPORT=READY"
       - name: Upload compiled staging archive by verified Python FTP-TLS
         shell: bash
