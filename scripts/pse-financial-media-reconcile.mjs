@@ -14,7 +14,7 @@ const envUrl=k=>{
  return u.origin;
 };
 const wp=envUrl("WC_URL"),front=envUrl("WC_URL_CLIENT");
-const report={schema:"pse-finance-media-final-parity-v1",sourceCount:76,sourceRecords:[],wpCount:null,unmatched:[],unverifiedDocumentLinks:[],missingDocumentLinks:[],brokenWpAssets:[],assetLinksChecked:0,oldHotlinks:[],postsWithExtraDocuments:[],sourceErrors:[],frontend:{},errors:[],status:"UNVERIFIED"};
+const report={schema:"pse-finance-media-final-parity-v1",sourceCount:76,sourceRecords:[],wpCount:null,extraWpPosts:[],orderMismatches:[],unmatched:[],unverifiedDocumentLinks:[],missingDocumentLinks:[],brokenWpAssets:[],assetLinksChecked:0,oldHotlinks:[],postsWithExtraDocuments:[],sourceErrors:[],frontend:{},errors:[],status:"UNVERIFIED"};
 const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1350,height:850}});
 const request=async(url)=>{
@@ -115,6 +115,16 @@ try{
    report.postsWithExtraDocuments.push({id:row.id,extra:item.extraDocs.length});
   report.sourceRecords.push(item);
  }
+ const mappedIds=new Set(report.sourceRecords.filter(x=>x.wpId).map(x=>x.wpId));
+ report.extraWpPosts=wpPosts.filter(p=>!mappedIds.has(p.id)).map(p=>({id:p.id,slug:p.slug}));
+ const actualOrder=wpPosts.map(p=>p.id);
+ const expectedOrder=report.sourceRecords.map(p=>p.wpId).filter(Boolean);
+ for(let i=0;i<Math.max(expectedOrder.length,actualOrder.length);i++){
+  if(expectedOrder[i]!==actualOrder[i])report.orderMismatches.push({
+   index:i,sourceId:report.sourceRecords[i]?.id||null,expectedWpId:expectedOrder[i]||null,
+   actualWpId:actualOrder[i]||null
+  });
+ }
  const urls=[...localURLs],bad=[];let cursor=0;
  const head=async()=>{while(cursor<urls.length){
   const url=urls[cursor++];try{
@@ -135,6 +145,9 @@ try{
   }catch(e){report.frontend[id]={error:String(e).slice(0,150)}}
  }
  await page.close();
+ if(report.wpCount!==76)report.errors.push("WordPress finance archive count mismatch expected=76 actual="+report.wpCount);
+ if(report.extraWpPosts.length)report.errors.push("WordPress finance archive has unrelated extra posts "+report.extraWpPosts.length);
+ if(report.orderMismatches.length)report.errors.push("Source/target listing order mismatches "+report.orderMismatches.length);
  if(report.unmatched.length)report.errors.push("Unpublished original finance posts "+report.unmatched.length);
  if(report.missingDocumentLinks.length)report.errors.push("Missing source PDF links "+report.missingDocumentLinks.length);
  if(report.unverifiedDocumentLinks.length)report.errors.push("Financial PDF provenance unverified "+report.unverifiedDocumentLinks.length);
@@ -145,7 +158,7 @@ try{
  if(report.frontend.first?.http!==200||report.frontend.last?.http!==200)report.errors.push("SSR financial report pagination HTTP failure");
  report.status=report.errors.length?"PARTIAL":"PASS_CANDIDATE";
  console.log("PSE_FINANCE_FINAL_MEDIA="+JSON.stringify({status:report.status,
-   source:report.sourceCount,wp:report.wpCount,unmatched:report.unmatched,
+   source:report.sourceCount,wp:report.wpCount,unmatched:report.unmatched,extra:report.extraWpPosts,orderMismatches:report.orderMismatches.slice(0,15),
    missingPdf:report.missingDocumentLinks.slice(0,20),
    filenameUnverified:report.unverifiedDocumentLinks.length,
    localFilesChecked:report.assetLinksChecked,broken:report.brokenWpAssets.slice(0,10),
