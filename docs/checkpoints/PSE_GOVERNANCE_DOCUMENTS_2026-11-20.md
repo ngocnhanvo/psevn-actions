@@ -9,7 +9,7 @@
 - Joomla source: `https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty.html` (6 trang, `start=0,5,10,15,20,25`).
 - Astro production: `https://pse.webnvn.com/tin-tuc-su-kien/tai-lieu-quan-tri-cong-ty` (2 trang, 12+12).
 - WordPress: `https://admin-pse.webnvn.com`; native WP category `1759`, slug `tai-lieu-quan-tri-cong-ty`, parent `1744`.
-- `ngocnhanvo/psevn-astro/master` giữ nguyên; chỉ cập nhật dữ liệu WordPress, scoped plugin WordPress và Actions.
+- Đồng bộ nội dung ban đầu chỉ cần WordPress/SSR, không yêu cầu Astro build. **Hậu kiểm icon PDF** phát hiện bản source Astro cải tiến icon tài liệu, đã triển khai riêng `ngocnhanvo/psevn-astro/master` commit `7f4cddaae554ba0d925c65c8da8c5d984bc732a6` theo workflow production thành công #44750431462.
 
 ### Source ID → WordPress post ID theo đúng thứ tự Joomla
 
@@ -62,6 +62,14 @@ Thứ tự liên tục đọc theo dòng, từ trái qua phải. Tất cả 24 p
 7. [#44748372880](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44748372880) — #92 publish by source metadata & final 24 rank PASS, mobile/desktop 12+12.
 8. [#44748474075](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44748474075) — independent idempotent 24 rank & article SSR + local PDF PASS.
 9. [#44748928751](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44748928751) — **FINAL READ-ONLY PASS**: `source=24,wp=24,seo=24,published=24,draft=[],ranked=24,sourceLinkHotlinks=0,errors=[]`, two viewport 12+12 each and #92 PDF local.
+
+## Hậu kiểm icon PDF trong bài quản trị (hoàn tất trên production)
+
+- Bài ví dụ Joomla #1317 / WordPress #77841, `/quy-che-noi-bo-ve-quan-tri-cong-ty-16-04-2018`, có icon PDF gốc `https://www.pse.vn/media/jce/icons/pdf.png`, Media nội bộ `/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png` và tài liệu PDF `pse-legacy-84b86d569d20e69b.pdf`.
+- Binary audit [#44750402948](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44750402948) **PASS**: PNG nguồn Joomla, PNG WordPress, API file PNG Astro, cả WebP resize 96px/1024px đều HTTP 200 có chữ ký ảnh hợp lệ; PDF WordPress HTTP 206 có `%PDF`, PDF công khai `/wp-content/uploads/...` và `/api/files/wp-content/uploads/...` trên Astro HTTP 200. Lượt đo `naturalWidth=0` đầu tiên xảy ra trước khi ảnh tải xong, **không phải mất media**.
+- Astro source `7f4cddaae554ba0d925c65c8da8c5d984bc732a6` điều chỉnh PDF icon chọn resize 96px, CSS giới hạn hiển thị 80px, không ép kích thước ảnh bài viết thường; test [#44749769516](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44749769516) **PASS**.
+- WordPress Build Website kích hoạt thành công qua [#44750253089](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44750253089), production Astro build/deploy và signed PHP rollback [#44750431462](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44750431462) **success**.
+- QA trực tiếp [#44750849575](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44750849575) **PASS desktop và mobile**: icon đúng `/api/images/96/png/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.webp`, hiển thị **80×80px**, không tràn ngang, file PDF gốc vẫn gắn đúng link.
 
 ## Tình trạng cuối
 
