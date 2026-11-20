@@ -20,6 +20,8 @@ jobs:
       options: --ipc=host
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
