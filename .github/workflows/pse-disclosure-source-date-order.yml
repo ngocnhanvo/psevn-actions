@@ -1,0 +1,21 @@
+name: PSE legacy disclosure chronology comparison (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/pse-disclosure-source-date-order.mjs"
+      - ".github/workflows/pse-disclosure-source-date-order.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chronology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-disclosure-source-date-order.mjs && node scripts/pse-disclosure-source-date-order.mjs
