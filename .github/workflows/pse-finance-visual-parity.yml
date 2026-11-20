@@ -1,5 +1,8 @@
 name: PSE financial reports original versus new UI browser parity (READ ONLY)
 on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-finance-visual-parity.yml]
   workflow_dispatch:
 permissions:
   contents: read
