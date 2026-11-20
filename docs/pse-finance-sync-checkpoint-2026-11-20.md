@@ -1,3 +1,36 @@
+# CHỐT NGHIỆM THU — Báo cáo tài chính PSE, 20/11/2026
+
+> **FINAL: SOURCE / WORDPRESS DATA PARITY PASS; SEO TITLE PASS.** Các mục “đang chạy”, “chưa hoàn tất”, hoặc 67/72 bài ở bên dưới là **lịch sử các lượt sửa trước đó**, không phải trạng thái hiện hành. Không chạy lại importer/PDF sideload đã PASS.
+
+## Bằng chứng nghiệm thu cuối, độc lập
+
+- **Nguồn Joomla:** 76 bài, có ID, slug và thứ tự thu thập độc lập trên `https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html`. 76 bài này được xuất bản đúng trong WordPress category **1754** (parent **1744**); không thừa, không thiếu, không trùng slug, **không sai thứ tự**.
+- **Tài liệu:** **96/96 liên kết tài liệu gốc** có liên kết tương ứng ở WordPress (theo provenance của checkpoint hoặc SHA đối chứng); **0 thiếu, 0 chưa xác minh, 0 thừa**. **93 URL file local độc nhất** được kiểm tra hoạt động; không có 403/404/410 hay hotlink tài liệu về domain PSE cũ. Bằng chứng: [final media + SSR PASS run 44726497421](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44726497421); artifact `pse-financial-final-media`, status `PASS_CANDIDATE` với **errors: []**.
+- **Ngoại lệ đúng như nguồn:** Joomla #1137 không chứa PDF/đoạn thông tin BCTC, WordPress không bịa PDF; Joomla #298 chứa link MediaFire của bên thứ ba, WordPress bảo toàn link ngoài đó. Bài #1590 năm 2024 có một anchor PDF 2023 **rỗng nhãn trên nguồn**: đã gắn lại file đã tồn tại ở WP Media **77456**, thêm nhãn dễ hiểu, không tải trùng, giữ nguyên toàn bộ ngày đăng; nguồn hiện thực tế có ba link PDF.
+- **Bài #1737:** hai tài liệu từ Joomla và WordPress có tên file khác nhau nhưng **SHA-256 và byte length khớp tuyệt đối**. Media WP **77045**, **77046**; bằng chứng [44726181875](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44726181875), mapping lâu dài ở `docs/pse-finance-1737-verified-media-map.json`. Không đổi tên lại file hoặc upload trùng.
+- **Thứ tự 76 bài:** đã ghi các rank theo nguồn thành metadata WordPress, **không sửa bất kỳ `post_date`** (đặc biệt #1292, #1284, #1282 là thứ tự nguồn có chứng cứ nhưng ngày Joomla chưa xác minh). PHP plugin vĩnh viễn `wp-content/mu-plugins/pse-finance-source-order.php` thuộc `psevn-php/master`; chỉ áp dụng bộ lọc sắp xếp cho REST category 1754. Bằng chứng [44724960228](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44724960228), `PSE_FINANCE_ARCHIVE_ORDER.matched=76`, `changedPublicationDates=0`.
+- **SSR & giao diện:** URL `https://pse.webnvn.com/tin-tuc-su-kien/bao-cao-tai-chinh` và `/7` đều **HTTP 200**; 12 item/trang, 7 trang, trang cuối 4 item; kiểm tra desktop **1366×768** và mobile **390×844**, không tràn ngang. [Run 44723562119](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44723562119): `PSE_FINANCE_VISUAL_PARITY.status=PASS` cho cấu trúc/card/phân trang ở hai đầu; **không tuyên bố pixel-perfect so với giao diện Joomla cũ**, vì layout đã thiết kế mới.
+- **Yoast SEO title:** nguồn 76/76 có `<title>`. Ban đầu 67 WordPress thiếu SEO title, 9 bài mới có title đúng. Bản vá chỉ điền 67 title đang trống, không thay đổi `post_title`, ngày, nội dung hoặc mô tả: [44726970147](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44726970147), `changed=67`, `already=9`, `errors=[]`. Kiểm tra độc lập [44727997665](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44727997665), **76/76 Yoast title khớp nguồn**, không có sai lệch.
+- **SEO meta description:** Joomla **0/76** có meta description nguồn; WordPress vẫn có **67 mô tả đích** sau cập nhật. Chúng được **giữ nguyên, không tự sinh thêm, không xoá dữ liệu đích hợp lệ khi nguồn thiếu metadata**. Ba mô tả đã xác minh là tự sinh sai trong đợt nhập mới (IDs 82538, 82541, 82535) được làm sạch riêng bằng readback tại [44724326170](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44724326170).
+- **Backup & thu hồi PHP:** trước các đợt nhập/sửa đã tạo nhiều DB-only UpdraftPlus backups có xác minh. **7 PDF dở dang** từ upload timeout trước đó được đưa ra khu vực cách ly **ngoài webroot, có khả năng rollback**, và WordPress Media đã chuyển trash; không xóa vĩnh viễn. Endpoint PHP tạm `pse-finance-temporary-sideload.php` đã **được gỡ khỏi hosting** và **xóa khỏi `psevn-php/master`**. Chốt cuối WordPress CMS chỉ dùng plugin nguồn-rank vĩnh viễn; không còn endpoint phục hồi mở.
+- **Triển khai:** SSR Astro lấy dữ liệu từ WordPress theo REST và đã đọc lại HTTP 200. Không tạo workflow build/deploy Astro thứ hai; không cần build lại Astro để thay đổi Post Media/Yoast.
+
+## Kết quả nghiệm thu theo scope
+
+| Gate | Trạng thái |
+|---|---|
+| SOURCE_INVENTORY (76 bài Joomla) | PASS |
+| DATA_PARITY (76 bài, 96 link tài liệu, taxonomy) | PASS |
+| NAV_PARITY (thứ tự 76 bài & phân trang chuyên mục) | PASS |
+| SSR / RESPONSIVE_STRUCTURAL_QA (desktop/mobile) | PASS |
+| SEO_SOURCE_TITLE (76/76) | PASS |
+| SEO_SOURCE_META_DESCRIPTION (nguồn thiếu 76/76; giữ đích có trước) | SOURCE_MISSING, preserved |
+| PIXEL_DIFF so với giao diện Joomla | NOT_CLAIMED — ngoài phạm vi đồng bộ dữ liệu |
+
+**Không có việc ghi production còn treo thuộc phạm vi đồng bộ báo cáo tài chính.** Mọi nguồn tải bên thứ ba và tình trạng trống của Joomla đã được giữ đúng, không bịa tài liệu hay đổi ngày bài. Nếu phát sinh bài mới từ nguồn, cần tạo snapshot/rank mới trước khi mở rộng nghiệm thu 76 lên 77+.
+
+---
+
 # PSE — đối chiếu & đồng bộ Báo cáo tài chính (20/11/2026)
 
 ## Cơ sở kiểm kê độc lập (đã PASS)
