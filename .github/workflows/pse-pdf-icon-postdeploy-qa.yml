@@ -1,0 +1,30 @@
+name: PSE PDF document icon live browser QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-pdf-icon-postdeploy-request
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pdf-icon:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify PDF icon is at most 80px and article remains usable on desktop/mobile
+        run: node --check scripts/pse-pdf-icon-postdeploy-qa.mjs && node scripts/pse-pdf-icon-postdeploy-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-pdf-icon-postdeploy-qa
+          path: artifacts/pse-pdf-icon-postdeploy/report.json
+          retention-days: 14
+          if-no-files-found: warn
