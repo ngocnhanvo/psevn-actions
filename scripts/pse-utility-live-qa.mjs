@@ -31,11 +31,11 @@ for(let attempt=0;attempt<3;attempt++){
   // Old organization-name snapshots are not valid after authorized CMS edits.
   const start=html.indexOf('data-pse-section="utilities"');
   const utilityHtml=start<0?"":html.slice(start,start+30000);
-  const listMarkup=utilityHtml.match(/<ul\\b[^>]*class="pse-tools__links"[^>]*>([\\s\\S]*?)<\\/ul>/)?.[1]||"";
-  const rows=[...listMarkup.matchAll(/<li\\b[^>]*data-esc-builder-row="(\\d+)"[^>]*>([\\s\\S]*?)<\\/li>/g)]
-   .map(m=>({row:Number(m[1]),href:m[2].match(/<a\\b[^>]*href="([^"]+)"/)?.[1]||"",
-    label:(m[2].match(/data-esc-builder-cell-field="label"[^>]*>([\\s\\S]*?)<\\/span>/)?.[1]||"")
-     .replace(/<[^>]+>/g,"").replace(/\\s+/g," ").trim()}));
+  const listMarkup=utilityHtml.match(/<ul\b[^>]*class="pse-tools__links"[^>]*>([\s\S]*?)<\/ul>/)?.[1]||"";
+  const rows=[...listMarkup.matchAll(/<li\b[^>]*data-esc-builder-row="(\d+)"[^>]*>([\s\S]*?)<\/li>/g)]
+   .map(m=>({row:Number(m[1]),href:m[2].match(/<a\b[^>]*href="([^"]+)"/)?.[1]||"",
+    label:(m[2].match(/data-esc-builder-cell-field="label"[^>]*>([\s\S]*?)<\/span>/)?.[1]||"")
+     .replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim()}));
   const validLinks=rows.length>=6&&new Set(rows.map(x=>x.row)).size===rows.length&&rows.every(x=>{
    if(!x.label||!x.href)return false;
    try{return ["http:","https:"].includes(new URL(x.href.replaceAll("&amp;","&")).protocol)}
