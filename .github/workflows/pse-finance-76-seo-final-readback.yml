@@ -1,0 +1,43 @@
+name: PSE verify all 76 financial Yoast titles after import (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-finance-76-seo-final-readback.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  final-seo:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-finance-76-source-seo
+          run-id: 44725831596
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-finance-76-seo
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-financial-report-parity
+          run-id: 44712477709
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-financial-original
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-finance-76-seo-final-readback.mjs && node scripts/pse-finance-76-seo-final-readback.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-76-final-yoast
+          path: artifacts/pse-finance-seo-final/report.json
+          if-no-files-found: warn
+          retention-days: 14
