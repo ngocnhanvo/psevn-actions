@@ -4341,13 +4341,13 @@
     },
     "1157": {
       "attempts": 1,
+      "attribution_cleaned": true,
       "group_hint": "company",
+      "retag_proof_pdf_sha": null,
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1157-thong-bao-ve-viec-xet-trao-hoc-bong-dpm-cho-sinh-vien-nam-hoc-2015-2016.html",
       "status": "existing",
-      "wp_id": 77573,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "retag_proof_pdf_sha": null
+      "wp_id": 77573
     },
     "1158": {
       "attempts": 1,
@@ -4440,13 +4440,13 @@
     },
     "1165": {
       "attempts": 1,
+      "attribution_cleaned": true,
       "group_hint": "company",
+      "retag_proof_pdf_sha": "590583e5c8e010cf81",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1165-thay-doi-uy-vien-hoi-dong-quan-tri-kiem-giam-doc-cong-ty.html",
       "status": "existing",
-      "wp_id": 78260,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "retag_proof_pdf_sha": "590583e5c8e010cf81"
+      "wp_id": 78260
     },
     "1166": {
       "attempts": 1,
@@ -4488,13 +4488,13 @@
     },
     "1169": {
       "attempts": 1,
+      "attribution_cleaned": true,
       "group_hint": "company",
+      "retag_proof_pdf_sha": "fd62b44c91664fdca1",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1169-pse-cong-bo-thong-tin-cua-ong-uv-hdqt-kiem-giam-doc-cong-ty.html",
       "status": "existing",
-      "wp_id": 79253,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "retag_proof_pdf_sha": "fd62b44c91664fdca1"
+      "wp_id": 79253
     },
     "1170": {
       "attempts": 2,
@@ -4525,13 +4525,13 @@
     },
     "1172": {
       "attempts": 1,
+      "attribution_cleaned": true,
       "group_hint": "company",
+      "retag_proof_pdf_sha": "fdc4482ea439b965f9",
+      "seo_cleaned": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1172-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo-pvfcco-se-cong-bo-thong-tin-thay-doi-giay-dkkd-lan-thu-11-ngay-18-01-2016.html",
       "status": "existing",
-      "wp_id": 79316,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "retag_proof_pdf_sha": "fdc4482ea439b965f9"
+      "wp_id": 79316
     },
     "1173": {
       "attempts": 3,
@@ -5508,14 +5508,14 @@
     },
     "1247": {
       "attempts": 3,
+      "attribution_cleaned": true,
       "group_hint": "company",
+      "retag_proof_pdf_sha": "5de1352460a3fdc648",
+      "seo_cleaned": true,
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1247-pse-cong-bo-thong-tin-thay-doi-chu-tich-hdqt-10-01-2017.html",
       "status": "existing",
-      "wp_id": 79031,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
-      "retag_proof_pdf_sha": "5de1352460a3fdc648"
+      "wp_id": 79031
     },
     "1248": {
       "attempts": 3,
@@ -6939,14 +6939,18 @@
       "wp_id": 79362
     },
     "1363": {
-      "attempts": 0,
-      "group_hint": "company",
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1363-khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.html",
-      "status": "pending",
-      "source_created_date": "2019-07-16",
-      "date_source": "joomla_com_search_created",
+      "attempts": 1,
       "date_precision": "day",
-      "remote_verified_proof_run": 44835072340
+      "date_source": "joomla_com_search_created",
+      "group_hint": "company",
+      "remote_verified_proof_run": 44835072340,
+      "source_created_date": "2019-07-16",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1363-khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.html",
+      "status": "imported",
+      "wp_id": 82834,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2019-07-16T00:00:00"
     },
     "1364": {
       "attempts": 3,
@@ -9303,19 +9307,19 @@
     "1601": {
       "alias_audit_run": 44773915965,
       "attempts": 1,
+      "attribution_cleaned": true,
       "conflict_wp_id": 77405,
+      "date_precision": "day",
+      "date_source": "joomla_com_search_created",
       "distinct_source_verified": true,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "source_created_date": "2024-12-31",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1601-pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html",
       "status": "imported",
       "unique_slug_suffix": "2024",
-      "wp_id": 82828,
-      "seo_cleaned": true,
-      "attribution_cleaned": true,
       "verified_date": "2024-12-31T00:00:00",
-      "date_source": "joomla_com_search_created",
-      "date_precision": "day",
-      "source_created_date": "2024-12-31"
+      "wp_id": 82828
     },
     "1602": {
       "attempts": 3,
@@ -10980,6 +10984,31 @@
       "id": 82813,
       "sha256": "168677cf13c9aa4e8e077c6b9f81c161fe7da054e4d126c58a0b35ae6e5d0e4e",
       "url": "/wp-content/uploads/2026/11/pse-legacy-11c0c613b149e065.jpg"
+    },
+    "https://www.pse.vn/images/12-2024-006.jpg": {
+      "id": 82823,
+      "sha256": "240fcbbb8c24fd36beed709d5478aa9b6bc97d5cb47e34fcb8733ff45860d6e0",
+      "url": "/wp-content/uploads/2026/11/pse-legacy-093b308ad7e0cf3d.jpg"
+    },
+    "https://www.pse.vn/images/12-2024-007.jpg": {
+      "id": 82824,
+      "sha256": "602755a312970d24a6f30f338f9b29d09af99f43ed9815f5faf048f22a5a965a",
+      "url": "/wp-content/uploads/2026/11/pse-legacy-3cc26dc3ccc544ad.jpg"
+    },
+    "https://www.pse.vn/images/12-2024-008.jpg": {
+      "id": 82825,
+      "sha256": "12dfac8b1563f3b6d76d908d4558bb181e45033c1d918ff1de414a452167a6c8",
+      "url": "/wp-content/uploads/2026/11/pse-legacy-ff44bb6d0817a9a2.jpg"
+    },
+    "https://www.pse.vn/images/12-2024-009.jpg": {
+      "id": 82826,
+      "sha256": "145754c2085c32c190126f94dadb3fb734f5f6bdf824797800a4d488b31c18be",
+      "url": "/wp-content/uploads/2026/11/pse-legacy-c52eb000375afad1.jpg"
+    },
+    "https://www.pse.vn/images/12-2024-010.jpg": {
+      "id": 82827,
+      "sha256": "faa7598959b79ba572a96ec1db5d84c78b2282c251de64abf56b2d902dd58a8d",
+      "url": "/wp-content/uploads/2026/11/pse-legacy-1bc4ea607441e2bc.jpg"
     },
     "https://www.pse.vn/images/14._TA-_CBTT_cap_nhat_tai_lieu_%C4%90H.pdf": {
       "id": 77121,
@@ -25737,35 +25766,30 @@
       "sha256": "7ee756b01de4464eaf4b71b85779bdb7a955b4d2af89faa3d29c4906d0ece1db",
       "url": "/wp-content/uploads/2026/10/pse-legacy-74fcbc29a90dd02b.gif"
     },
-    "https://www.pse.vn/images/12-2024-006.jpg": {
-      "id": 82823,
-      "url": "/wp-content/uploads/2026/11/pse-legacy-093b308ad7e0cf3d.jpg",
-      "sha256": "240fcbbb8c24fd36beed709d5478aa9b6bc97d5cb47e34fcb8733ff45860d6e0"
+    "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam_1.jpg": {
+      "id": 82830,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-61d077cbc32d1925.jpg",
+      "sha256": "a284a214f7dbda928c600f834d7fd8a0cb0e11e471ed33e9231561395f5292b3"
     },
-    "https://www.pse.vn/images/12-2024-007.jpg": {
-      "id": 82824,
-      "url": "/wp-content/uploads/2026/11/pse-legacy-3cc26dc3ccc544ad.jpg",
-      "sha256": "602755a312970d24a6f30f338f9b29d09af99f43ed9815f5faf048f22a5a965a"
+    "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.jpg": {
+      "id": 82831,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-1df6351507363644.jpg",
+      "sha256": "4ded1899abb2a481dfeb2284e5e8ec451bb166daa976303de29b1a3789ab0543"
     },
-    "https://www.pse.vn/images/12-2024-008.jpg": {
-      "id": 82825,
-      "url": "/wp-content/uploads/2026/11/pse-legacy-ff44bb6d0817a9a2.jpg",
-      "sha256": "12dfac8b1563f3b6d76d908d4558bb181e45033c1d918ff1de414a452167a6c8"
+    "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam_3.jpg": {
+      "id": 82832,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-de408ae89208d5a4.jpg",
+      "sha256": "203337f85a0a3f777cffedfbdef9448162b8bdbaeb40b502b28ecd6039e075ad"
     },
-    "https://www.pse.vn/images/12-2024-009.jpg": {
-      "id": 82826,
-      "url": "/wp-content/uploads/2026/11/pse-legacy-c52eb000375afad1.jpg",
-      "sha256": "145754c2085c32c190126f94dadb3fb734f5f6bdf824797800a4d488b31c18be"
-    },
-    "https://www.pse.vn/images/12-2024-010.jpg": {
-      "id": 82827,
-      "url": "/wp-content/uploads/2026/11/pse-legacy-1bc4ea607441e2bc.jpg",
-      "sha256": "faa7598959b79ba572a96ec1db5d84c78b2282c251de64abf56b2d902dd58a8d"
+    "https://petrovietnam.petrotimes.vn/stores/news_dataimages/buihienanh/072019/13/12/khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam_2.jpg": {
+      "id": 82833,
+      "url": "/wp-content/uploads/2026/11/pse-legacy-31a48b6702b61304.jpg",
+      "sha256": "b62cf0f19589ff34e3d4dd65064a4f275f6452019155ffd5444ce096c849cef9"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 252,
+  "runs": 253,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
