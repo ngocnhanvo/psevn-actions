@@ -33,6 +33,7 @@ try{
       return {title:document.title,metaDescription:document.querySelector('meta[name="description"]')?.getAttribute('content')||null,
         headings,candidates:candidates.slice(0,18),tables,imgs,
         pageText:trims(document.querySelector('.item-page')?.textContent||document.querySelector('.product-description')?.textContent||document.querySelector('main')?.textContent).slice(0,25000),
+        sourceArticleBodyHtml:document.querySelector('.item-page [itemprop="articleBody"]')?.innerHTML||null,
         overflow:document.documentElement.scrollWidth-window.innerWidth};
     });
     out[type]={status:response?.status()||0,url:p.url(),...data};
@@ -55,6 +56,19 @@ try{
   seoTitle:p.yoast_head_json?.title,seoDescription:p.yoast_head_json?.description
  })):null,error:!Array.isArray(json)?String(JSON.stringify(json)).slice(0,600):null};
  console.log('PSE_DAM_WP_RECORD='+JSON.stringify(out.cms).slice(0,14500));
+ for(const [kind,path] of [
+   ['category_public','/wp-json/astro/v1/get-product-categories'],
+   ['category_native','/wp-json/wp/v2/product_cat?slug=dam-phu-my'],
+   ['category_api','/wp-json/api/products/categories?slug=dam-phu-my'],
+   ['products_related','/wp-json/wp/v2/product?status=publish&search=Ph%C3%BA%20M%E1%BB%B9&per_page=40&_fields=id,slug,status,title,content,excerpt,featured_media_url,product_categories,acf']
+ ]){
+  try{const response=await ctx.request.get(wpURL+path,{timeout:45000,failOnStatusCode:false});
+   const data=await response.json().catch(()=>null);
+   out.cms[kind]={http:response.status(),data:kind==='category_public'&&Array.isArray(data)?data.filter(x=>x.slug==='dam-phu-my'):data};
+   console.log('PSE_DAM_'+kind.toUpperCase()+'='+JSON.stringify(out.cms[kind]).slice(0,14500));
+  }catch(e){out.cms[kind]={error:String(e)}}
+ }
+
 }catch(err){out.errors.push({type:'fatal',message:String(err).slice(0,350)})}
 finally{await mkdir('artifacts/pse-dam-phu-my',{recursive:true});
  await writeFile('artifacts/pse-dam-phu-my/inventory.json',JSON.stringify(out,null,2)+'\n');
