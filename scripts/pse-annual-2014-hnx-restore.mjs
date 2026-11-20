@@ -117,9 +117,13 @@ try{
   '<p>Liên kết tài liệu trên website gốc không còn hoạt động. Bản PDF thay thế là tài liệu công bố '+
   'trên HNX ngày 18/03/2015, được CafeF lưu trữ. Không thể xác minh tệp này trùng byte với đường dẫn gốc đã mất.</p></section>';
  const dateStr='2015-03-16T00:00:00';
- const exists=await rest('/wp-json/wp/v2/posts?context=edit&status=any&slug='+slug+'&per_page=100&_fields=id,slug,status,content,date,categories,title');
- if(exists.http!==200||!Array.isArray(exists.data)||exists.data.length>1)throw Error('2014 WordPress slug ambiguous');
- let post=exists.data[0]||null;
+ const postQuery='/wp-json/wp/v2/posts?context=edit&slug='+slug+'&per_page=100&_fields=id,slug,status,content,date,categories,title';
+ const pub=await rest(postQuery),draft=await rest(postQuery+'&status=draft');
+ if(pub.http!==200||draft.http!==200||!Array.isArray(pub.data)||!Array.isArray(draft.data))
+  throw Error('2014 WordPress slug lookup failed '+pub.http+'/'+draft.http);
+ const found=[...new Map([...pub.data,...draft.data].map(x=>[x.id,x])).values()];
+ if(found.length>1)throw Error('2014 WordPress slug ambiguous');
+ let post=found[0]||null;
  if(post){
   if(post.id!==state.articles[id].wp_id||!String(post.content?.raw||'').includes('data-pse-annual-original-id="1092"'))
    throw Error('Existing 2014 WordPress slug unrelated to official mirror');
