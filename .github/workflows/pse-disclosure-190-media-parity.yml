@@ -1,0 +1,33 @@
+name: PSE disclosure 190 original media document parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-disclosure-190-media-parity.yml"
+      - "scripts/pse-disclosure-190-media-parity.mjs"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  media-parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify all 190 original article documents and target attachments
+        run: node --check scripts/pse-disclosure-190-media-parity.mjs && node scripts/pse-disclosure-190-media-parity.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-disclosure-190-media-parity
+          path: artifacts/pse-disclosure-media-parity/report.json
+          if-no-files-found: warn
+          retention-days: 14
