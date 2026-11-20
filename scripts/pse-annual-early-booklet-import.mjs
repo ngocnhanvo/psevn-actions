@@ -147,10 +147,14 @@ async function createOrVerifyPost(sp){
  const date='2013-12-11T00:00:00';
  const fields='?context=edit&_fields=id,status,slug,title,content,date,categories,pse_seo_title,pse_seo_description,acf';
  const postQuery='/wp-json/wp/v2/posts?context=edit&slug='+slug+'&per_page=100&_fields=id,status,slug,title,content,date,categories,pse_seo_title,acf';
- const published=await rest(postQuery),draft=await rest(postQuery+'&status=draft');
- if(published.http!==200||draft.http!==200||!Array.isArray(published.data)||!Array.isArray(draft.data))
-  throw Error('WordPress slug lookup unavailable '+id+' '+published.http+'/'+draft.http);
- const found=[...new Map([...published.data,...draft.data].map(p=>[p.id,p])).values()];
+ const published=await rest(postQuery);
+ const stagedId=state.articles[id]?.wp_id;
+ const staged=Number.isSafeInteger(stagedId)
+  ?await rest('/wp-json/wp/v2/posts/'+stagedId+'?context=edit&_fields=id,status,slug,title,content,date,categories,pse_seo_title,acf')
+  :null;
+ if(published.http!==200||!Array.isArray(published.data)||(staged&&staged.http!==200))
+  throw Error('WordPress slug/staged ID lookup unavailable '+id+' '+published.http+'/'+(staged?.http||''));
+ const found=[...new Map([...published.data,...(staged?[staged.data]:[])].map(p=>[p.id,p])).values()];
  if(found.length>1)throw Error('WordPress slug ambiguous '+id);
  let post=found[0]||null;
  if(post){
