@@ -1,0 +1,55 @@
+name: PSE restore 67 source verified financial Yoast titles (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-finance-76-seo-title-sync.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-finance-seo-title-writer
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-finance-76-source-seo
+          run-id: 44725831596
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-finance-76-seo
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-financial-report-parity
+          run-id: 44712477709
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-financial-original
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify source report and reviewed title-only repair syntax
+        run: node --check scripts/pse-finance-76-seo-title-sync.mjs
+      - name: Fresh UpdraftPlus DB-only backup before SEO postmeta edits
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Fill empty Yoast title fields from original Joomla head and read back
+        run: node scripts/pse-finance-76-seo-title-sync.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-76-source-title-update
+          path: artifacts/pse-finance-76-seo-sync/report.json
+          if-no-files-found: warn
+          retention-days: 14
