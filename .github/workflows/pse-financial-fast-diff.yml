@@ -1,0 +1,26 @@
+name: PSE finance source and CMS fast identity parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-financial-fast-diff.mjs
+permissions:
+  contents: read
+jobs:
+  scan:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-financial-fast-diff.mjs && node scripts/pse-financial-fast-diff.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-financial-fast-diff
+          path: artifacts/pse-financial-fast-diff/report.json
+          if-no-files-found: warn
+          retention-days: 14
