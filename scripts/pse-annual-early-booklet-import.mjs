@@ -56,7 +56,7 @@ async function persist(){
  await persistPromise;
 }
 function localPath(url){
- const u=new URL(url);
+ const u=new URL(url,wp);
  if(u.origin!==wp||!/^\/wp-content\/uploads\/\d{4}\/\d{2}\/[^/]+\.jpg$/i.test(u.pathname))
   throw Error('Media outside verified PSE WordPress local uploads');
  return u.pathname;
@@ -86,7 +86,7 @@ async function mediaFor(sourceUrl,sp){
  const saved=state.media?.[sourceUrl];
  if(saved?.id){
   if(saved.sha256!==digest||!Number.isSafeInteger(saved.id)||!saved.url)throw Error('Checkpoint media conflicts with bytes');
-  const q=await ctx.request.get(saved.url,{timeout:48000,failOnStatusCode:false});
+  const q=await ctx.request.get(new URL(saved.url,wp).href,{timeout:48000,failOnStatusCode:false});
   if(q.status()!==200||hash(await q.body())!==digest)throw Error('Mapped WordPress media changed '+sourceUrl);
   report.reusedMedia.push(saved.id);
   return saved;
@@ -95,7 +95,7 @@ async function mediaFor(sourceUrl,sp){
   '&per_page=100&_fields=id,source_url,slug,mime_type');
  if(lookup.http!==200||!Array.isArray(lookup.data))throw Error('WP Media lookup '+lookup.http);
  const matches=lookup.data.filter(x=>{
-  try{return decodeURIComponent(new URL(x.source_url).pathname.split('/').at(-1)||'').toLowerCase()===name.toLowerCase()}
+  try{return decodeURIComponent(new URL(x.source_url,wp).pathname.split('/').at(-1)||'').toLowerCase()===name.toLowerCase()}
   catch{return false}
  });
  if(matches.length>1)throw Error('Duplicate exact WordPress media filename '+name);
@@ -111,9 +111,9 @@ async function mediaFor(sourceUrl,sp){
  if(!Number.isSafeInteger(m.id)||!m.source_url||
     m.mime_type!=='image/jpeg'||!localPath(m.source_url))
   throw Error('Unexpected Media record '+name);
- const remoteName=decodeURIComponent(new URL(m.source_url).pathname.split('/').at(-1)||'');
+ const remoteName=decodeURIComponent(new URL(m.source_url,wp).pathname.split('/').at(-1)||'');
  if(remoteName.toLowerCase()!==name.toLowerCase())throw Error('WP renamed media file '+name+' to '+remoteName);
- const check=await ctx.request.get(m.source_url,{timeout:50000,failOnStatusCode:false});
+ const check=await ctx.request.get(new URL(m.source_url,wp).href,{timeout:50000,failOnStatusCode:false});
  if(check.status()!==200||hash(await check.body())!==digest)
   throw Error('WordPress Media SHA mismatch '+name);
  const mapped={id:m.id,url:m.source_url,sha256:digest,source_filename:origName,
