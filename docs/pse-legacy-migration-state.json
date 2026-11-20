@@ -7790,14 +7790,13 @@
       "wp_id": 77351
     },
     "1480": {
-      "attempts": 3,
+      "attempts": 0,
       "group_hint": "shareholder",
-      "reason": "Original finance PDF filename conflicts with different WordPress media 82544",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1480-20210812-cv53-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
-      "status": "quarantined",
+      "status": "pending",
       "finance_asset_conflict": {
-        "status": "ASSET_DEFERRED",
+        "status": "RESOLVED_FAILED_UPLOADS_QUARANTINED",
         "source_url": "https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf",
         "source_filename": "CBTT_BCTC_ban_nien.pdf",
         "source_sha256": "aba7bf51f204ab167dbef22b2c35fe262aab3f43b5a5308ff448b83453a4309d",
@@ -7806,9 +7805,10 @@
         "wp_sha256": "3ae1294f3ef586cb2f55ecbe61ccfa72260c9bb906f7d65bc877c3f1b32a1b81",
         "wp_bytes": 26607616,
         "attempt_count": 3,
-        "last_error": "Same filename, different binary; cannot overwrite or rename."
-      },
-      "finance_scope_terminal": true
+        "last_error": "Same filename, different binary; cannot overwrite or rename.",
+        "rollback": "private verified file backup + Media status trash",
+        "cleanup_count": 7
+      }
     },
     "1481": {
       "attempts": 1,
@@ -9712,13 +9712,12 @@
       "wp_id": 82428
     },
     "1650": {
-      "attempts": 3,
+      "attempts": 0,
       "group_hint": "shareholder",
-      "reason": "Original finance PDF filename conflicts with different WordPress media 82544",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1650-20250814-cbtt-bao-cao-tai-chinh-ban-nien-nam-2025-va-giai-trinh-chenh-lech-lnst-so-voi-cung-ky.html",
-      "status": "quarantined",
+      "status": "pending",
       "finance_asset_conflict": {
-        "status": "ASSET_DEFERRED",
+        "status": "RESOLVED_FAILED_UPLOADS_QUARANTINED",
         "source_url": "https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf",
         "source_filename": "CBTT_BCTC_ban_nien.pdf",
         "source_sha256": "aba7bf51f204ab167dbef22b2c35fe262aab3f43b5a5308ff448b83453a4309d",
@@ -9727,9 +9726,10 @@
         "wp_sha256": "3ae1294f3ef586cb2f55ecbe61ccfa72260c9bb906f7d65bc877c3f1b32a1b81",
         "wp_bytes": 26607616,
         "attempt_count": 3,
-        "last_error": "Same filename, different binary; cannot overwrite or rename."
-      },
-      "finance_scope_terminal": true
+        "last_error": "Same filename, different binary; cannot overwrite or rename.",
+        "rollback": "private verified file backup + Media status trash",
+        "cleanup_count": 7
+      }
     },
     "1651": {
       "attempts": 1,
@@ -23921,7 +23921,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 239,
+  "runs": 240,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
