@@ -6,6 +6,8 @@ if (message === "audit(pse): Kali SOP product recovery preflight" || message ===
   await import("./pse-product-sop-recovery.mjs");
 } else if (message === "audit(pse): product excerpt lines dry-run" || /^cms\(pse\): format product excerpt lines batch [1-9][0-9]*$/.test(message)) {
   await import("./pse-product-excerpt-format.mjs");
+} else if (message === "audit(pse): verify Nong Lam product category source" || message === "cms(pse): restore verified Nong Lam source category") {
+  await import("./pse-product-nong-lam-category.mjs");
 } else if ((message === "audit(pse): product content parity dry-run" || message === "audit(pse): product content exceptional dry-run") || /^cms\(pse\): restore verified fertilizer descriptions batch [1-9][0-9]*$/.test(message)) {
   await import("./pse-product-description-repair.mjs");
 } else {
