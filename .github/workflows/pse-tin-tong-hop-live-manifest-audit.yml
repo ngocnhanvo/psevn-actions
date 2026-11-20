@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/pse-tin-tong-hop-live-manifest-audit.yml
       - scripts/pse-tin-tong-hop-live-manifest-audit.mjs
+      - .pse-tin-tong-hop-parity-trigger
   workflow_dispatch:
 permissions:
   contents: read
