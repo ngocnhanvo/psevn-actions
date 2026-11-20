@@ -1,0 +1,28 @@
+name: PSE finance nine missing source assets (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-finance-9-source.mjs
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-finance-9-source.mjs && node scripts/pse-finance-9-source.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-9-source
+          path: artifacts/pse-finance-9-source/report.json
+          if-no-files-found: warn
+          retention-days: 14
