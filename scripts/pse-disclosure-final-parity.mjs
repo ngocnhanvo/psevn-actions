@@ -18,7 +18,7 @@ const wp=origin("WC_URL"),front=origin("WC_URL_CLIENT");
 const rows=Object.entries(s.articles).filter(([id,r])=>r.source_url?.includes("/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/"))
  .map(([id,r])=>({id,source:r.source_url,wpId:r.wp_id||null,status:r.status,verifiedDate:r.verified_date||null,dateSource:r.date_source||null}));
 const initialRestoreIds=new Set(["75","1740","1742","208","302","319","320","330","1013","1026","1044","1045","1047","1058","1121","1127","1149","1533","1670"]);
-const report={schema:"pse-disclosure-final-parity-v1",wp,front,source:190,checkpoint:rows.length,sourceUnique:new Set(rows.map(r=>r.id)).size,cmsTotal:null,cmsFetched:null,cmsExtra:[],missing:[],wrongCategory:[],wrongSlugs:[],unpublished:[],empty:[],dateDifferences:[],oldLinks:[],frontend:{},restoredDetails:[],errors:[]};
+const report={schema:"pse-disclosure-final-parity-v1",wp,front,source:190,checkpoint:rows.length,sourceUnique:new Set(rows.map(r=>r.id)).size,cmsTotal:null,cmsFetched:null,cmsExtra:[],missing:[],wrongCategory:[],wrongSlugs:[],unpublished:[],empty:[],dateDifferences:[],oldLinks:[],externalLinkChecks:[],frontend:{},restoredDetails:[],errors:[]};
 const browser=await chromium.launch({headless:true});
 try{
  const ctx=await browser.newContext({viewport:{width:1350,height:900}});
@@ -60,6 +60,17 @@ try{
     report.dateDifferences.push({id:r.id,wpId:p.id,source:r.verifiedDate,date:p.date});
  }
  console.log("PSE_FINAL_CMS="+JSON.stringify({source:rows.length,total:report.cmsTotal,fetched:report.cmsFetched,missing:report.missing,extras:report.cmsExtra,wrongCategory:report.wrongCategory.length,wrongSlug:report.wrongSlugs.length,unpublished:report.unpublished.length,oldMediaLinks:report.oldLinks.length,dateDifferences:report.dateDifferences.length}));
+ for(const item of report.oldLinks){
+  for(const url of item.links){
+   const proof={id:item.id,url};
+   try{
+    const res=await ctx.request.head(url,{timeout:45000});
+    proof.http=res.status();proof.contentType=res.headers()["content-type"]||null;
+   }catch(e){proof.error=String(e).slice(0,150)}
+   report.externalLinkChecks.push(proof);
+   console.log("PSE_FINAL_EXTERNAL_MEDIA="+JSON.stringify(proof));
+  }
+ }
  const listing=await ctx.newPage();
  for(const [pageNum,url] of [[1,front+"/tin-tuc-su-kien/ban-cong-bo-thong-tin"],[16,front+"/tin-tuc-su-kien/ban-cong-bo-thong-tin/16"]]){
   try{
