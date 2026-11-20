@@ -13,3 +13,5 @@
 2026-10-28 PSE Agent chat skeleton open/history source master b79f0a4268a4fd700071195d9be2eafc891692b8 PR #122. 4-file scoped UI only; DEV Vitest 564/564 #40694278409 PASS. Verify production source FULL Vitest NO BUILD before WordPress-controlled release.
 
 2026-10-29 verify PSE Astro master 53844958a420f05500702161f1007dab99684af1 PR #124: Planner outage sentinel fails closed at proxy/UI; run full Vitest and source checks, NO BUILD, NO FTP.
+
+2026-11-20 Validate Astro master 9748eb98387c77a751f6f99177ef49fcd73ce7e0: TablePress cache v2, Product Logs cursor/snapshot, product/image timing; full source Vitest only, NO DEPLOY.
