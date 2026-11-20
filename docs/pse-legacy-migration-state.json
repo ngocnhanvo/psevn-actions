@@ -240,12 +240,19 @@
       "status": "quarantined"
     },
     "199": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/199-bao-cao-tai-chinh-6-thang-dau-nam-2011.html",
-      "status": "quarantined"
+      "status": "imported",
+      "wp_id": 82535,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2011-08-15T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2011-08-15"
     },
     "200": {
       "attempts": 1,
@@ -1781,12 +1788,19 @@
       "wp_id": 80119
     },
     "337": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/337-bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2012-cua-pvfcco-se.html",
-      "status": "quarantined"
+      "status": "imported",
+      "wp_id": 82541,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2013-02-28T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2013-02-28"
     },
     "338": {
       "attempts": 3,
@@ -4019,12 +4033,13 @@
       "wp_id": 80036
     },
     "1137": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1137-bao-cao-tai-chinh-ban-nien-2015.html",
-      "status": "quarantined"
+      "status": "quarantined",
+      "finance_scope_terminal": true
     },
     "1138": {
       "attempts": 1,
@@ -4155,12 +4170,19 @@
       "wp_id": 77647
     },
     "1148": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
       "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1148-bao-cao-tai-chinh-quy-3-2015.html",
-      "status": "quarantined"
+      "status": "imported",
+      "wp_id": 82538,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2015-10-16T00:00:00",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day",
+      "source_created_date": "2015-10-16"
     },
     "1149": {
       "attempts": 1,
@@ -7753,12 +7775,12 @@
       "wp_id": 77351
     },
     "1480": {
-      "attempts": 3,
+      "attempts": 1,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=29305039; ext=pdf",
+      "reason": "apiRequestContext.get: Timeout 45000ms exceeded.\nCall log:\n  - → GET https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KH",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1480-20210812-cv53-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
-      "status": "quarantined"
+      "status": "pending"
     },
     "1481": {
       "attempts": 1,
@@ -9662,11 +9684,11 @@
       "wp_id": 82428
     },
     "1650": {
-      "attempts": 3,
+      "attempts": 1,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=29305039; ext=pdf",
+      "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1650-20250814-cbtt-bao-cao-tai-chinh-ban-nien-nam-2025-va-giai-trinh-chenh-lech-lnst-so-voi-cung-ky.html",
-      "status": "quarantined"
+      "status": "pending"
     },
     "1651": {
       "attempts": 1,
@@ -9858,11 +9880,11 @@
       "wp_id": 77218
     },
     "1666": {
-      "attempts": 3,
+      "attempts": 1,
       "group_hint": "shareholder",
-      "reason": "Original media size unsafe; bytes=31725319; ext=pdf",
+      "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1666-20260320-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2025-va-giai-trinh-chenh-lech-lnst.html",
-      "status": "quarantined"
+      "status": "pending"
     },
     "1667": {
       "annual_category_verified": true,
@@ -10128,6 +10150,13 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1737-20261019-cbtt-bao-cao-tai-chinh-q3-2026.html",
       "status": "existing",
       "wp_id": 76977
+    },
+    "1738": {
+      "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1738-20261105-cbtt-dinh-chinh-thong-tin-da-cong-bo-trong-bctc-quy-3-2026.html",
+      "group_hint": "shareholder",
+      "status": "pending",
+      "attempts": 1,
+      "reason": "apiRequestContext.post: Timeout 80000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ("
     },
     "1740": {
       "attempts": 1,
@@ -23829,11 +23858,29 @@
       "id": 82528,
       "url": "/wp-content/uploads/2026/11/pse-legacy-956af3bb896ce6b3.pdf",
       "sha256": "88b7e94b28cb52f24f630c7be31d85e5668d697f4bf94020452e9f5ddd59232d"
+    },
+    "https://www.pse.vn/images/web/download/pvfcco-se-%20bao%20cao%20tai%20chinh%20ban%20nien%202011.pdf": {
+      "id": 82534,
+      "url": "/wp-content/uploads/2026/11/pvfcco-se-bao-cao-tai-chinh-ban-nien-2011.pdf",
+      "sha256": "aea71b80366c0c66947061c3ee16661f0726c05e0c1223b035528a74b2cb3dba",
+      "source_filename": "pvfcco-se- bao cao tai chinh ban nien 2011.pdf"
+    },
+    "https://www.pse.vn/images/tai-lieu-quan-tri/2015/BCTC-Q3-2015.pdf": {
+      "id": 82537,
+      "url": "/wp-content/uploads/2026/11/BCTC-Q3-2015.pdf",
+      "sha256": "709fbb8f9cb5b670c153392fc4d6c99316b260f8ffac3dbe8139b9c69c63af4b",
+      "source_filename": "BCTC-Q3-2015.pdf"
+    },
+    "https://www.pse.vn/images/web/download/bo%20co%20ti%20chnh%20nm%202012.pdf": {
+      "id": 82540,
+      "url": "/wp-content/uploads/2026/11/bo-co-ti-chnh-nm-2012.pdf",
+      "sha256": "31d9b7aee356c792f30ddd833ff3f741868e98252ec423411bab526d771c7288",
+      "source_filename": "bo co ti chnh nm 2012.pdf"
     }
   },
   "phase": "import",
   "queue": [],
-  "runs": 235,
+  "runs": 236,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
@@ -24053,5 +24100,6 @@
     "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html?start=180"
   ],
   "source": "https://www.pse.vn/",
-  "tracker_issue": 3
+  "tracker_issue": 3,
+  "finance_scope_runs": 1
 }
