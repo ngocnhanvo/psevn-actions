@@ -35,7 +35,7 @@ class StaticDeltaContract(unittest.TestCase):
                 (client / "data/retained.json").write_bytes(b'{"v":1}')
                 (client / "data/changed.json").write_bytes(b'{"v":2}')
                 (client / "images/metadata.json").write_bytes(b'{"keep":true}')
-                remote = {"static": {
+                remote = {"static_scope": "exclude-images-v1", "static": {
                     "about/index.html": meta(b"unchanged-html"),
                     "_astro/a.js": meta(b"unchanged-js"),
                     "_astro/b.css": meta(b"OLD-CSS"),  # same size, different content
@@ -84,10 +84,27 @@ class StaticDeltaContract(unittest.TestCase):
                                      sort_keys=True, separators=(",", ":"))
                 self.assertGreater(len(payload.encode("utf-8")), 1048576)
                 Path(".pse-remote-image-manifest.json").write_text(
-                    json.dumps({"static": local}), encoding="utf-8")
+                    json.dumps({"static_scope": "exclude-images-v1", "static": local}), encoding="utf-8")
                 with patch.dict(MOD["main"].__globals__, {"collect_local": lambda _: local}):
                     MOD["main"]()
                 self.assertEqual((client / "_astro/keep.js").read_bytes(), b"full-zip-fallback")
+                self.assertFalse(Path("deploy/pse-static-delta.json").exists())
+            finally:
+                os.chdir(previous)
+
+
+    def test_legacy_php_static_inventory_uses_full_zip(self):
+        previous = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
+            try:
+                root = Path("deploy/client")
+                (root / "_astro").mkdir(parents=True)
+                (root / "_astro/old.js").write_bytes(b"unchanged")
+                Path(".pse-remote-image-manifest.json").write_text(
+                    json.dumps({"static": {"_astro/old.js": meta(b"unchanged")}}))
+                MOD["main"]()
+                self.assertTrue((root / "_astro/old.js").exists())
                 self.assertFalse(Path("deploy/pse-static-delta.json").exists())
             finally:
                 os.chdir(previous)
