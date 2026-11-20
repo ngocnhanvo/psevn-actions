@@ -1,6 +1,6 @@
-PSE PDF icon postdeploy QA request
-Astro production source: 3f52415a8efa1485d6c00f22b419181b800941a7
-Verified successful production deployment run: 44755134668
+PSE PDF thumbnail cards production QA request
+Astro production source: 37cf33a5eaaab1358d146e2e5f211f30e7a1b0b3
+Verified successful production deployment run: 44757146369
 Requested at: 2026-11-20
-Expected icon size: 24x24 pixels on desktop and mobile
+Check article PDF icon 24px and all PDF card vector thumbnails on governance archive page 2, desktop and mobile
 Only GET/read-only validation.
