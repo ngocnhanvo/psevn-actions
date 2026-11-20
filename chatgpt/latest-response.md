@@ -1,40 +1,32 @@
-# PSE — Tin tổng hợp Joomla → Astro/WordPress — checkpoint 20/11/2026
+# PSE — Tin tổng hợp Joomla → WordPress/Astro — checkpoint 21/11/2026
 
-## Phạm vi
-- Joomla source: https://pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html
-- Frontend SSR: https://pse.webnvn.com/tin-tuc-su-kien/tin-tong-hop
-- Repos: ngocnhanvo/knowledge@main, psevn-astro@master, psevn-php@master, psevn-actions@main
-- Chế độ code: auto-build
-- Cổng ghi source: bypass
+## Mục tiêu và trạng thái
+- Nguồn: https://pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html
+- Mới: https://pse.webnvn.com/tin-tuc-su-kien/tin-tong-hop
+- Code mode: auto-build; Source gateway: bypass.
+- Dữ liệu nguồn đúng nhánh: **324 Joomla IDs**, 311 có WP ID, 13 cách ly nguồn media.
+- WordPress xuất bản đúng Tin tổng hợp: **310** (manifest QA #44837011865 xác minh 309 trước sửa bài #1159; sửa #1159 WP #79852 run #44836727645 PASS; final REST manifest run #44837083554 và SSR category QA run #44837083584).
+- Trong 67 trạng thái importer `draft_needs_date`, 66 đã xuất bản qua independent date backfill. **Chỉ Joomla #379 / WP #82119 còn draft chưa xác minh ngày**; 13 bài media missing là đầu việc thực sự còn thiếu. Không nhầm checkpoint importer với live WordPress.
+- 6 bài nhập mới với 24 ảnh tự tải thành công: #1603 WP82801, #1586 WP82805, #1599 WP82817, #1565 WP82820, #1601 WP82828, #1363 WP82834 (4 ảnh gốc được xác minh ngày 2019-07-16).
+- 6 bài WP sẵn có được gắn lại taxonomy: #1247 WP79031, #1172 WP79316, #1169 WP79253, #1165 WP78260, #1157 WP77573, #1159 WP79852. Tất cả bảo toàn nội dung, ngày, slug, PDF.
+- WP media original 24/24, Astro images naturalWidth >0 24/24, QA #44835819195 PASS.
+- Bằng chứng bài #1601/#1616 trùng tiêu đề nhưng khác sự kiện đã được tách, không quay lại nhập trùng.
+- Không sửa hardcode Astro/PHP, không build Astro vì trang đang SSR.
+- Báo cáo chi tiết các nguồn đang thiếu: `docs/reports/pse-tin-tong-hop-source-gaps-2026-11-21.md`.
 
-## Đã hoàn tất (không làm lại)
-1. Kiểm kê Joomla archive 56 trang, snapshot nguồn độc lập run #44771869548: 318 mã nguồn có link số độc nhất. Có thêm 5 bài tiêu đề dạng inline không nằm trong snapshot numeric. QA tổng Archive WP/SSR trước import là 298/298.
-2. Đã sao lưu UpdraftPlus trước mutation và dùng importer WordPress thật cho 5 bài mới (không hardcode vào Astro):
-   - Joomla #1603 → WP #82801, ngày nguồn 2025-01-08, 2 ảnh.
-   - #1586 → WP #82805, ngày 2024-07-17, 2 ảnh.
-   - #1599 → WP #82817, ngày 2024-12-18, 4 ảnh.
-   - #1565 → WP #82820, ngày 2023-08-24, 7 ảnh.
-   - #1601 → WP #82828, ngày Joomla created 2024-12-31, sự kiện xảy ra 30/12/2024, 5 ảnh, URL slug có đuôi -2024.
-3. Kiểm tra hai nguồn Joomla #1601/#1616 khác nội dung dù cùng tiêu đề: #1601 là sự kiện 30/12/2024, #1616 là 03/03/2025. Đã bảo toàn bài 2025 hiện có WP #77405 (slug/date/content/publish không đổi), sửa phân loại sai chỉ còn parent Tin PVFCCo-PSE [1742] thay vì Tin tổng hợp [1746]. QA độc lập #44773915965, sửa + nhập #44774688120 PASS.
-4. WordPress và Astro SSR chuyên mục Tin tổng hợp đều có 303 bài/26 trang, 12 thẻ/trang. Five-post browser QA #44775441972 PASS desktop 1366px và mobile 390px, bài chi tiết mới HTTP 200, không tràn ngang.
-5. Toàn bộ 20 ảnh mới đã xác nhận tải thực: WordPress media HTTP200, Astro /api/images trả ảnh naturalWidth=1024, không lỗi: #44776511159 PASS. Bản QA hình ảnh cập nhật để đợi img.decode() trước khi chụp: #44776855186 PASS, artifact #14650327478.
-6. Dữ liệu migration checkpoint `docs/pse-legacy-migration-state.json` đã đạt 804 records, `runs=251`, không còn trạng thái `pending` hoặc `media`, 482 imported + 26 existing + 231 draft_needs_date + 65 quarantined. Đây là tổng toàn repo, không phải riêng Tin tổng hợp.
+## Công việc chưa xong
+- 13 bài Joomla IDs: 186, 196, 198, 202, 204, 205, 226, 227, 229, 237, 240, 382, 1090. Lý do là file ảnh chính gốc trả 404/403, DNS lỗi, TLS hết hạn, từ chối kết nối; báo cáo nguồn #44833855640. Không bỏ ảnh hoặc thay ảnh không đúng nguồn.
+- #379 WP82119 bản nháp vì không có ngày tạo Joomla xác minh độc lập, dateState `review` sau 2 lần.
+- Chưa đạt SOURCE_TO_TARGET_PARITY_PASS toàn bộ, chỉ WP ↔ Astro đã PASS. Cần bộ media gốc/backups và ngày gốc 379.
+- Khi có dữ liệu: backup WP → nhập dữ liệu đúng bài → QA nội dung/media/date → kiểm lại 324 bài → chốt.
 
-## Đang dở / blockers cần tiếp tục
-- **20 bài lịch sử nguồn thuộc archive Tin tổng hợp chưa xuất bản trong WP**, 19 quarantined và 1 draft thiếu ngày; IDs: 1363,1247,1172,1169,1165,1157,1090,382,379,240,237,229,227,226,205,204,202,198,196,186. Phải giữ file ảnh/cấu trúc và ngày gốc, không tự bịa/force publish, không bỏ ảnh để làm QA xanh.
-- Một QA hoàn chỉnh 56 trang chạy lại #44773289402 thất bại do Joomla nguồn timeout 7 trang, không vì WP. Dùng source snapshot thành công #44771869548 làm oracle, tránh vòng lặp quét nặng.
-- Đã mở read-only collision audit 5 bài bị WP slug conflict: workflow #44776968875, scripts/pse-tin-tong-hop-five-collisions-audit.mjs. Đọc kết quả để xác minh phần có thể làm tiếp.
-- Chưa kiểm tra chắc chắn tất cả tiêu đề/ảnh của 20 bài lịch sử. Chưa thể đánh dấu SOURCE_TO_TARGET_PARITY_PASS.
-- Không cần Astro build: frontend danh sách bài là SSR lấy từ WordPress, live QA đã chứng minh.
-- Nếu có thêm CMS writes: bắt buộc backup, scope chính xác, read-before-write, read-after-write; tránh trùng slug. Hợp đồng rule repo knowledge.
-
-## URLs evidence
-- source archive: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44771869548
-- migration 4 posts: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44773661860
-- 1601 fix: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44774688120
-- WP/SSR QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44775441972
-- loaded images: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44776511159
-- proper screenshot: https://github.com/ngocnhanvo/psevn-actions/actions/runs/44776855186
+## Evidence
+- [Kiểm kê toàn bộ mapping từ checkpoint #44837011865](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44837011865)
+- [WordPress + Astro SSR sau 309 bài #44835838192](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44835838192)
+- [Sửa bài 1159 source đúng và taxonomy #44836727645](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44836727645)
+- [Tải 24 ảnh nguồn #44835819195](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44835819195)
+- [Media blockers #44833855640](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44833855640)
+- [Ngày nguồn backfill #44781587195](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44781587195)
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
