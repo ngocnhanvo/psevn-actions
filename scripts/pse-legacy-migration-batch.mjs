@@ -49,6 +49,10 @@ const mayRecoverGovernancePdf=(id,v)=>Object.hasOwn(governancePdfBytes,id)&&isGo
  v.reason==="Original media size unsafe; bytes="+governancePdfBytes[id]+"; ext=pdf"&&
  !v.governance_large_pdf_attempted;
 const mayTagAnnual=(id,v)=>isAnnual(id,v)&&Number.isSafeInteger(v.wp_id)&&!v.annual_category_verified&&["existing","imported","draft_needs_date"].includes(v.status);
+// Exact original disclosure scans: source document is the original JPG/PNG binary,
+// not the short editorial byline. All 12 source article bodies and images
+// were independently verified 20-Nov-2026, Actions run #44697939790.
+const disclosureScanCounts=Object.freeze({"208":1,"302":1,"319":1,"320":1,"330":1,"1013":2,"1026":2,"1044":1,"1045":2,"1047":2,"1058":3,"1121":4});
 // Three exact two-digit Joomla governance source IDs were visited but excluded
 // by the old 3+ digit crawler. Read-only proof: PSE governance run 40524872807.
 // Seed only the source URLs already present in 'seen'; never synthesize documents.
@@ -207,11 +211,15 @@ try{
   const path=url.pathname;
   const slug=path.match(/\/\d{2,6}-([^/]+)\.html$/i)?.[1]?.toLowerCase();
   const cat=cats[item.group_hint];
+  const disclosureSource=item.group_hint==="shareholder" &&
+    /^\/quan-he-nha-dau-tu\/tin-tuc-co-dong\/ban-cong-bo-thong-tin\/\d{2,6}-[^/]+[.]html$/i.test(path);
   // Preserve legacy child taxonomy from exact Joomla source path, not keywords.
   const sourceChildSlug=isGovernance(id,item)
     ? "tai-lieu-quan-tri-cong-ty"
     : isAnnual(id,item)
     ? "bao-cao-thuong-nien"
+    : disclosureSource
+    ? "ban-cong-bo-thong-tin"
     : item.group_hint==="company"
     ? (path.startsWith("/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/")?"tin-tong-hop":
        path.startsWith("/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/")?
@@ -222,7 +230,7 @@ try{
          "dang-uy":null)
     : null;
   let sourceChildCategory=null;
-  if(sourceChildSlug && (isAnnual(id,item) || isGovernance(id,item) || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
+  if(sourceChildSlug && (isAnnual(id,item) || isGovernance(id,item) || disclosureSource || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
     const r=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(sourceChildSlug)+"&_fields=id,slug,parent");
     if(r.status!==200||r.data?.length!==1||
       Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!==sourceChildSlug)
@@ -420,8 +428,14 @@ try{
        final.hostname==="www.pse.vn"&&final.protocol==="https:";
      if(verifiedScan376)console.log("PSE_GOV_376_SCAN_PROOF=PASS; bytes="+bytes.length+"; text_preserved=true");
    }
+   const verifiedDisclosureScan=disclosureSource && Object.hasOwn(disclosureScanCounts,id) &&
+     article.assets.length===disclosureScanCounts[id] && /<img\\b/i.test(article.html) &&
+     article.assets.every(x=>{try{const u=new URL(x);return u.protocol==="https:" &&
+       ["pse.vn","www.pse.vn"].includes(u.hostname) && u.pathname.startsWith("/images/") &&
+       /[.](?:png|jpg|jpeg)$/i.test(u.pathname)}catch{return false}});
+   if(verifiedDisclosureScan)console.log("PSE_DISCLOSURE_SCAN=SOURCE_VERIFIED; id="+id+"; media="+article.assets.length);
    const verifiedShortNotice=article.chars>=65 ||
-     (article.chars>=20 && article.assets.length>0) || verifiedPdfNotice || verifiedScan376;
+     (article.chars>=20 && article.assets.length>0) || verifiedPdfNotice || verifiedScan376 || verifiedDisclosureScan;
    if(!article.title||!verifiedShortNotice||article.chars>150000||article.html.length>550000)
     throw Error("Source content incomplete or oversized");
    const iso=article.dates.map(x=>String(x).trim()).find(x=>/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(x));
@@ -502,6 +516,30 @@ try{
      const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
      const governanceBigPdf=(recoverGovernancePdf||item.governance_large_pdf_attempted===true)&&
        isGovernance(id,item) && Object.hasOwn(governancePdfBytes,id) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
+     const disclosureLargePdf=id==="1670" && disclosureSource &&
+       new URL(assetUrl).pathname==="/images/Tai_lieu_%C4%90H%C4%90C%C4%90_2026_-_TV.pdf" &&
+       buf.length===36078003;
+     if(id==="1670" && buf.length>24_000_000 && !disclosureLargePdf)
+       throw Error("Unexpected oversized disclosure asset");
+     if(disclosureLargePdf){
+       const original=new URL(assetUrl),final=new URL(download.url());
+       if(original.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(original.hostname)||
+          final.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(final.hostname)||
+          !String(download.headers()["content-type"]||"").toLowerCase().includes("pdf")||
+          !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
+         throw Error("Disclosure original 36MB PDF signature/MIME/origin proof failed");
+       console.log("PSE_DISCLOSURE_PDF=SOURCE_VERIFIED; id=1670; bytes="+buf.length);
+     }
+     if(verifiedDisclosureScan){
+       const original=new URL(assetUrl),final=new URL(download.url()),h=buf.subarray(0,16);
+       const ext=original.pathname.split(".").at(-1).toLowerCase();
+       const signature=ext==="png"?h.subarray(0,8).toString("hex")==="89504e470d0a1a0a":
+         ["jpg","jpeg"].includes(ext)&&h.subarray(0,3).toString("hex")==="ffd8ff";
+       if(!signature||original.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(original.hostname)||
+          final.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(final.hostname)||
+          !String(download.headers()["content-type"]||"").toLowerCase().startsWith("image/"))
+         throw Error("Disclosure original scanned image signature/MIME/origin proof failed");
+     }
      const annualTinyGif=(recoverAnnualGif||item.annual_valid_gif_recovery_attempted===true) && isAnnual(id,item) && /\.gif(?:[?#]|$)/i.test(assetUrl) && buf.length>=35 && buf.length<80;
      if(annualTinyGif){
        const origin=new URL(assetUrl),finalUrl=new URL(download.url());
@@ -521,7 +559,7 @@ try{
          throw Error("Governance original large PDF origin/size/MIME/signature mismatch "+id);
        console.log("PSE_GOV_PDF_PROOF=PASS; source_id="+id+"; bytes="+buf.length);
      }
-     if((buf.length<80&&!annualTinyGif)||buf.length>(governanceBigPdf?42_000_000:(annual2025Pdf?40_000_000:24_000_000)))
+     if((buf.length<80&&!annualTinyGif)||buf.length>(governanceBigPdf?42_000_000:((annual2025Pdf||disclosureLargePdf)?40_000_000:24_000_000)))
        throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
