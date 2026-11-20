@@ -1,0 +1,32 @@
+name: PSE 190 disclosure articles final public parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/pse-disclosure-final-parity.yml"
+      - "scripts/pse-disclosure-final-parity.mjs"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify 190 original source IDs and restored Astro SSR pages
+        run: node --check scripts/pse-disclosure-final-parity.mjs && node scripts/pse-disclosure-final-parity.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-disclosure-final-190-parity
+          path: artifacts/pse-disclosure-final/report.json
+          if-no-files-found: warn
+          retention-days: 14
