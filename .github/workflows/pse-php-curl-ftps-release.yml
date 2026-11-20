@@ -45,6 +45,10 @@ jobs:
       DISPATCH_SITE_DOMAIN: ${{ github.event.client_payload.site_domain }}
 
     steps:
+      - name: Checkout signed Actions release request
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Checkout reviewed PSE PHP production source
         uses: actions/checkout@v4
         with:
