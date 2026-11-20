@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {ref: main, persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Verify PDF icon is at most 80px and article remains usable on desktop/mobile
+      - name: Verify PDF icon is at most 24px and article remains usable on desktop/mobile
         run: node --check scripts/pse-pdf-icon-postdeploy-qa.mjs && node scripts/pse-pdf-icon-postdeploy-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
