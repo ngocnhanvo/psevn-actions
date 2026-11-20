@@ -1,3 +1,25 @@
+# CHỐT NGHIỆM THU — 18/18 Báo cáo thường niên PSE, 20/11/2026
+
+> **FINAL: SOURCE → WORDPRESS → ASTRO SSR PARITY PASS, SEO TITLE PASS, DESKTOP/MOBILE PASS.** Các đoạn “PARTIAL”, “đang chạy”, 15/18 hoặc 16/18 ở bên dưới là **lịch sử các lượt sửa trước**, không phải trạng thái hiện tại. Không chạy lại các importer/media restoration đã PASS.
+
+## Chốt bằng chứng nghiệm thu cuối
+
+- **18/18 bài:** Joomla danh mục `https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien.html` có 18 ID nguồn, 16 bài ở trang 1, 2 bài trang 2. Tất cả 18 được xuất bản dưới WordPress category **1758** (parent **1744**) và hiển thị trên Astro SSR `https://pse.webnvn.com/tin-tuc-su-kien/bao-cao-thuong-nien`. **0 thiếu bài, 0 sai ID/slug/category/thứ tự**, số lượng SSR chính xác 12 bài trang 1 + 6 bài trang 2.
+- **Thứ tự, ngày:** plugin PHP `psevn-php/master: wp-content/mu-plugins/pse-annual-source-order.php` sử dụng metadata rank của Joomla scoped riêng cho REST danh mục 1758, giữ ngày WordPress hiện có. [Run #44738204708](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44738204708): `PASS_SOURCE_18`, `ranked=18`, `missing=[]`, `changedDates=0`; trực tiếp đọc lại 12+6 card, HTTP 200.
+- **Tập ảnh 2008 và 2010:** Joomla source **94 + 130 = 224 JPG**. WordPress phục hồi lần lượt #998 → Post **82794**, #1000 → Post **82796**. Từng ảnh mới/ảnh tìm lại từ lần lỗi được kiểm tra SHA-256 theo dữ liệu nguồn trước khi lưu vào checkpoint. [Run #44737782684](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44737782684): `PASS`, `mediaCreated=1`, `mediaReused=223` trong lượt chốt, `remaining=[]`, `errors=[]`, hai Post xuất bản, Astro 200. Các Media đã upload các lượt trước được dùng lại; không xóa/nhập trùng. 2008 có 94/94 ảnh; 2010 có 130/130 ảnh. WordPress bài viết dùng thư viện ảnh đã loại bỏ Joomla JavaScript/spam.
+- **Báo cáo 2014:** Joomla #1092 có đường dẫn `/images/web/news/qhcd/ThongTinCongBo/BCTN2014` trả HTTP 404. Bản PDF Báo cáo thường niên PSE 2014 công bố HNX, lưu ở CafeF, **6.637.821 bytes**, đã nhập dưới WordPress Media **82776**, Post **82777** và gắn thông báo nguồn thay thế. SHA256 file local bằng bản HNX/CafeF; **không khẳng định trùng byte với tài liệu gốc bị thất lạc**. [Run #44735517705](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44735517705): `PASS`, bản PDF qua Astro `/api/files` HTTP 200. Bài có source-created Joomla day **2015-03-16**.
+- **SEO Yoast title:** **18/18** giá trị chính xác như `<title>` Joomla; 15 bài gốc được điền từ trường trống, ba bài mới có metadata nguồn. [Run #44731016486](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44731016486) đã backup DB mới và readback 15/15; [final QA #44738556190](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44738556190) xác minh 18/18. **0 SEO meta description tự bịa trong 3 bài mới;** không ghi đè mô tả SEO đích của bài cũ khi nguồn thiếu.
+- **SSR / responsive:** [final QA độc lập, chỉ đọc #44738556190](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44738556190), artifact `pse-annual-18-final-independent-parity` ID **14629497526**: `PASS_18_SOURCE_PARITY`, `original=18`, `wordpress=18`, `yoast=18`, `ranked=18`, `errors=[]`. Trang danh mục trang 1/2 và bài 2008/2010/2014 đều **HTTP 200**, chạy trên **desktop 1366×768** và **mobile 390×844**, **0 tràn ngang**; bài 2008/2010 trả đúng số ảnh, ảnh thật đầu tiên tải được trên hai kích cỡ, tài liệu 2014 PDF đọc được. Không có link ảnh/PDF còn hotlink Joomla, không có nội dung spam/JavaScript cũ; không phát hiện ảnh lỗi trong phạm vi QA. Không tuyên bố pixel-perfect so với layout Joomla.
+- **An toàn:** nhiều bản sao lưu DB-only UpdraftPlus có xác nhận; 18 bài có ID, slug và ngày giữ nguyên theo bằng chứng, ngoại lệ các bài mới dùng Joomla com_search ngày *created*, không gán ngày theo năm báo cáo. Các lỗi cũ `Invalid URL` và `ECONNRESET` đã khắc phục bằng chuẩn hóa đường dẫn Media, tra cứu chính xác và retry GET; **không lặp importer đã hoàn tất**. Source ở `psevn-actions/main` và `psevn-php/master`, không cần deploy/build Astro vì SSR đọc WordPress.
+
+## Chốt trạng thái
+
+**COMPLETE — 18/18 Báo cáo thường niên gốc đối chiếu xong; 224/224 JPG; PDF HNX/CafeF 2014 có ghi rõ nguồn thay thế; 18/18 SEO title; SSR / responsive PASS.**
+
+Chế độ code: auto-build · Cổng ghi source: bypass.
+
+---
+
 # CẬP NHẬT TIẾP TỤC — Báo cáo thường niên PSE, 20/11/2026
 
 > **CHƯA HOÀN TẤT — 16/18 bài, còn hai booklet 2008 và 2010 đang nhập.** Không nhầm kết quả QA 16/18 với nghiệm thu cuối. Phần ghi nhận bên dưới là checkpoint lịch sử.
