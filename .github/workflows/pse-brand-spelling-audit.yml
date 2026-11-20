@@ -1,0 +1,45 @@
+name: PSE public brand spelling audit (read only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-brand-spelling-audit.yml
+      - scripts/pse-brand-spelling-audit.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pse-public-brand-spelling-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Scan sitemap and public pages with Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout audited project scripts
+        uses: actions/checkout@v4
+      - name: Install Playwright JS client (Chromium pinned in image)
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Self-test brand matcher and hostname restrictions
+        run: node scripts/pse-brand-spelling-audit.mjs --self-test
+      - name: Scan PSE site with read-only Chromium
+        timeout-minutes: 30
+        run: node scripts/pse-brand-spelling-audit.mjs
+        env:
+          SITE_URL: https://pse.webnvn.com
+      - name: Attach detailed URL-by-URL report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-brand-spelling-audit
+          path: audit-results/
+          if-no-files-found: warn
+          retention-days: 14
