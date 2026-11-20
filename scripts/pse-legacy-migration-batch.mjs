@@ -76,9 +76,16 @@ const governance376Image="https://www.pse.vn/images/web/quanhe-codong/tin-tuc/Ng
 const canVerifyGovernance376=(id,v)=>id==="376"&&isGovernance(id,v)&&!v.wp_id&&
  v.status==="quarantined"&&v.reason==="Source content incomplete or oversized"&&
  !v.governance_376_image_recovery_attempted;
+// Joomla repeated the exact 2015 audit resolution as disclosure #1127 and
+// company news #1129. The already-imported #1129 owns the only WP slug.
+// Reuse its identical PDF+icon, preserving existing categories and article.
+const mayRetagDisclosure1127=(id,r)=>
+ id==="1127" && r?.status==="quarantined" && !r.wp_id &&
+ r.reason==="WP slug occupied by unrelated or empty content" &&
+ r.source_url==="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1127-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html";
 const candidates=Object.keys(state.articles).filter(id=>
  mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) || canVerifyGovernance376(id,state.articles[id]) ||
- mayRecoverImage(id,state.articles[id]) ||
+ mayRetagDisclosure1127(id,state.articles[id]) || mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
     (state.articles[id].attempts||0)<3) ||
    (state.articles[id].status==="quarantined" &&
@@ -250,6 +257,39 @@ try{
    if(before.data.length===1){
     const old=before.data[0];
     if(annualTagOnly&&old.id!==item.wp_id)throw Error("Annual checkpoint WP identity mismatch");
+    if(mayRetagDisclosure1127(id,item)){
+     const matching=state.articles["1129"];
+     const pdf= "/wp-content/uploads/2026/10/pse-legacy-6c6a510f35db5a7e.pdf";
+     const icon="/wp-content/uploads/2026/10/pse-legacy-9d0398eade66fb17.png";
+     const title="Nghị quyết: Về việc Phê duyệt đơn vị kiểm toán Báo cáo tài chính năm 2015";
+     const content=String(old.content?.raw||"");
+     if(matching?.status!=="imported"||matching?.wp_id!==82240||
+        matching.source_url!=="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-chi-bo-hdqt-bks/1129-nghi-quyet-ve-viec-phe-duyet-don-vi-kiem-toan-bao-cao-tai-chinh-nam-2015.html"||
+        old.id!==82240||old.slug!==slug||old.status!=="publish"||
+        String(old.title?.raw||old.title?.rendered||"").trim()!==title||
+        !content.includes(pdf)||!content.includes(icon)||
+        !old.categories?.includes(1747)||!old.categories?.includes(1742)||
+        Number(cat)!==1744||Number(sourceChildCategory)!==1753)
+       throw Error("Disclosure 1127 cannot be proven identical to existing 1129; no category write");
+     const categories=[...new Set([...old.categories,cat,sourceChildCategory])];
+     if(!old.categories.includes(cat)||!old.categories.includes(sourceChildCategory)){
+      const saved=await api("/wp-json/wp/v2/posts/82240","POST",{categories});
+      if(saved.status!==200||saved.data?.id!==82240)throw Error("1127 existing category assignment rejected");
+     }
+     const verify=await api("/wp-json/wp/v2/posts/82240?context=edit&_fields=id,slug,status,title,content,categories");
+     if(verify.status!==200||verify.data?.id!==82240||verify.data.slug!==slug||
+        verify.data.status!=="publish"||
+        !categories.every(c=>verify.data.categories?.includes(c))||
+        String(verify.data.content?.raw||"")!==content)
+       throw Error("1127 existing article readback changed; refuse duplicate");
+     item.status="existing";item.wp_id=82240;
+     item.seo_cleaned=true;item.attribution_cleaned=true;
+     delete item.reason;
+     existing++;
+     console.log("PSE_DISCLOSURE_DUPLICATE=MERGED; source_id=1127; original_source_id=1129; wp_id=82240; category=1753; content_unchanged=true");
+     await persist();continue;
+    }
+
     // WP slug is unique within the same verified category. Old PSE posts
     // were imported before the source-URL marker was introduced, so requiring
     // that marker or comparing accented titles generates false conflicts.
