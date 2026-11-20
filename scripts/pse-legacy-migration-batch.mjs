@@ -10,6 +10,34 @@ const STATE="docs/pse-legacy-migration-state.json";
 const state=JSON.parse(await readFile(STATE,"utf8"));
 if(state.schema!=="pse-legacy-article-migration-v1")throw Error("Unknown state schema");
 if(!state.backup_verified)throw Error("Verified rollback backup required before WordPress writes");
+// Finance recovery is opt-in and confined to independently audited Joomla URLs.
+const financeScope=process.env.PSE_FINANCE_RECOVERY_SCOPE==="verified-nine-2026-11-20";
+const financeSourceUrls=Object.freeze({
+ "1738":"20261105-cbtt-dinh-chinh-thong-tin-da-cong-bo-trong-bctc-quy-3-2026",
+ "1666":"20260320-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2025-va-giai-trinh-chenh-lech-lnst",
+ "1650":"20250814-cbtt-bao-cao-tai-chinh-ban-nien-nam-2025-va-giai-trinh-chenh-lech-lnst-so-voi-cung-ky",
+ "1480":"20210812-cv53-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet",
+ "1148":"bao-cao-tai-chinh-quy-3-2015",
+ "1137":"bao-cao-tai-chinh-ban-nien-2015",
+ "337":"bao-cao-tai-chinh-da-duoc-kiem-toan-nam-2012-cua-pvfcco-se",
+ "298":"pvfcco-se-cong-bo-thong-tin-bao-cao-tai-chinh-ban-nien-2012-da-duoc-soat-xet",
+ "199":"bao-cao-tai-chinh-6-thang-dau-nam-2011"
+});
+if(financeScope){
+ for(const [id,slug] of Object.entries(financeSourceUrls)){
+  const expected="https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/"+id+"-"+slug+".html";
+  const old=state.articles[id];
+  if(!old){
+   if(id!=="1738")throw Error("Finance checkpoint unexpectedly absent source="+id);
+   state.articles[id]={source_url:expected,group_hint:"shareholder",status:"pending",attempts:0};
+  }else if(old.source_url!==expected||old.group_hint!=="shareholder")
+   throw Error("Finance source provenance changed "+id);
+ }
+ if(!state.backup_verified)throw Error("Verified rollback prerequisite absent");
+}
+const isFinance=(id,row)=>row?.group_hint==="shareholder" &&
+ new RegExp("^https://(?:www\\.)?pse\\.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/"+id+"-[^/]+\\.html$","i").test(row.source_url||"");
+const financeOversizedPdfBytes=Object.freeze({"1666":31725319,"1650":29305039,"1480":29305039});
 const opts=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
 function origin(name){
  const lines=opts.filter(x=>x.startsWith(name+"="));
@@ -62,6 +90,7 @@ const verifiedGovernanceTwoDigitSources=Object.freeze({
  "92":"https://www.pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty/92-dieu-le-cong-ty-co-phan-phan-bon-va-hoa-chat-dau-khi-dong-nam-bo.html"
 });
 for(const [id,original] of Object.entries(verifiedGovernanceTwoDigitSources)){
+ if(financeScope)break;
  if(!state.seen?.includes(original))throw Error("Two-digit governance source absent from original crawler visit "+id);
  if(state.articles[id]){
   if(state.articles[id].source_url!==original||state.articles[id].group_hint!=="shareholder")throw Error("Two-digit governance checkpoint identity drift "+id);
@@ -89,7 +118,9 @@ const mayRetryVerifiedDisclosure1670=(id,r)=>id==="1670" && r?.group_hint==="sha
  r.source_url==="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1670-20260403-cbtt-thu-moi-tai-lieu-dhdcd-va-thong-bao-de-cu-ung-cu-thanh-vien-hdqt-bks-nhiem-ky-2026-2031.html" &&
  !r.wp_id && r.status==="quarantined" && r.reason==="Unexpected oversized disclosure asset" &&
  !r.disclosure_four_pdf_retry_attempted;
-const candidates=Object.keys(state.articles).filter(id=>
+const candidates=financeScope
+ ? ["1738","1148","337","199","1666","1650","1480","298","1137"].filter(id=>!state.articles[id]?.wp_id&&!state.articles[id]?.finance_scope_terminal)
+ : Object.keys(state.articles).filter(id=>
  mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) || canVerifyGovernance376(id,state.articles[id]) ||
  mayRetryVerifiedDisclosure1670(id,state.articles[id]) || mayRetagDisclosure1127(id,state.articles[id]) || mayRecoverImage(id,state.articles[id]) ||
  ((["pending","media"].includes(state.articles[id].status) &&
@@ -235,7 +266,9 @@ try{
   const disclosureSource=item.group_hint==="shareholder" &&
     /^\/quan-he-nha-dau-tu\/tin-tuc-co-dong\/ban-cong-bo-thong-tin\/\d{2,6}-[^/]+[.]html$/i.test(path);
   // Preserve legacy child taxonomy from exact Joomla source path, not keywords.
-  const sourceChildSlug=isGovernance(id,item)
+  const sourceChildSlug=isFinance(id,item)
+     ? "bao-cao-tai-chinh"
+     : isGovernance(id,item)
     ? "tai-lieu-quan-tri-cong-ty"
     : isAnnual(id,item)
     ? "bao-cao-thuong-nien"
@@ -251,7 +284,7 @@ try{
          "dang-uy":null)
     : null;
   let sourceChildCategory=null;
-  if(sourceChildSlug && (isAnnual(id,item) || isGovernance(id,item) || disclosureSource || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
+  if(sourceChildSlug && (isFinance(id,item) || isAnnual(id,item) || isGovernance(id,item) || disclosureSource || /^\/tin-tuc-su-kien\/tin-cong-ty\/[a-z0-9-]+\/\d+-[^/]+\.html$/i.test(path))){
     const r=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(sourceChildSlug)+"&_fields=id,slug,parent");
     if(r.status!==200||r.data?.length!==1||
       Number(r.data[0].parent)!==Number(cat)||r.data[0].slug!==sourceChildSlug)
@@ -591,7 +624,21 @@ try{
      if(!download.ok())throw Error("Original media HTTP "+download.status());
      const buf=await download.body();
      const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
-     const governanceBigPdf=(recoverGovernancePdf||item.governance_large_pdf_attempted===true)&&
+     const financeLargePdf=financeScope&&isFinance(id,item) &&
+        Object.hasOwn(financeOversizedPdfBytes,id) &&
+        buf.length===financeOversizedPdfBytes[id] &&
+        /\.pdf(?:[?#]|$)/i.test(assetUrl);
+      if(financeLargePdf){
+       const orig=new URL(assetUrl),finalUrl=new URL(download.url());
+       if(orig.protocol!=="https:"||finalUrl.protocol!=="https:"||
+          !["pse.vn","www.pse.vn"].includes(orig.hostname)||
+          !["pse.vn","www.pse.vn"].includes(finalUrl.hostname)||
+          !String(download.headers()["content-type"]||"").toLowerCase().includes("pdf")||
+          !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
+        throw Error("Finance PDF size/MIME/origin/signature verification failed: "+id);
+       console.log("PSE_FINANCE_SOURCE_BIG_PDF="+JSON.stringify({id,bytes:buf.length,url:assetUrl}));
+      }
+      const governanceBigPdf=(recoverGovernancePdf||item.governance_large_pdf_attempted===true)&&
        isGovernance(id,item) && Object.hasOwn(governancePdfBytes,id) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
      const disclosure1670PdfBytes=Object.freeze({
        "https://www.pse.vn/images/Tai_lieu_%C4%90H%C4%90C%C4%90_2026_-_TV.pdf":36078003,
@@ -642,7 +689,7 @@ try{
          throw Error("Governance original large PDF origin/size/MIME/signature mismatch "+id);
        console.log("PSE_GOV_PDF_PROOF=PASS; source_id="+id+"; bytes="+buf.length);
      }
-     if((buf.length<80&&!annualTinyGif)||buf.length>(governanceBigPdf?42_000_000:((annual2025Pdf||disclosureLargePdf)?40_000_000:24_000_000)))
+     if((buf.length<80&&!annualTinyGif)||buf.length>(governanceBigPdf?42_000_000:((annual2025Pdf||disclosureLargePdf||financeLargePdf)?40_000_000:24_000_000)))
        throw Error("Original media size unsafe; bytes="+buf.length+"; ext="+new URL(assetUrl).pathname.split(".").at(-1));
      const ext=new URL(assetUrl).pathname.split(".").at(-1).toLowerCase();
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
@@ -678,13 +725,14 @@ try{
        headers:{"X-WP-Nonce":nonce,"Content-Disposition":'attachment; filename="'+assetSlug+"."+ext+'"',"Content-Type":types[ext]},
        // Both independently source-verified disclosure PDFs require longer WP processing.
         // Existing deterministic media-slug readback prevents re-upload duplicates after a timeout.
-        data:buf,timeout:(disclosureSource && ["1670","1742"].includes(id) && ext==="pdf")?240000:80000
+        data:buf,timeout:((disclosureSource && ["1670","1742"].includes(id) && ext==="pdf")||financeLargePdf)?240000:80000
       });
       if(up.status()!==201)throw Error("WordPress media upload HTTP "+up.status()+" source "+id);
       obj=await up.json();
      }
      if(!obj?.id||!obj.source_url)throw Error("WP Media returned no URL");
-     state.media[assetUrl]={id:obj.id,url:obj.source_url,sha256:createHash("sha256").update(buf).digest("hex")};
+     state.media[assetUrl]={id:obj.id,url:obj.source_url,sha256:createHash("sha256").update(buf).digest("hex"),
+       ...(financeScope?{source_filename:decodeURIComponent(new URL(assetUrl).pathname.split("/").at(-1))}:{})};
      console.log("PSE_LEGACY_MEDIA=PASS; article="+id+"; media_id="+obj.id);
      await persist();
     }
@@ -763,6 +811,7 @@ try{
    await persist();
   }catch(e){
    const reason=e instanceof Error?e.message:String(e);
+   if(financeScope&&isFinance(id,item)&&/^(Source content incomplete or oversized|Article contains non-local mandatory media)/.test(reason))item.finance_scope_terminal=true;
    item.reason=reason.slice(0,190);
    if(item.wp_id || item.attempts>=3){item.status="quarantined";failed++}
    else {item.status="pending";partial++}
