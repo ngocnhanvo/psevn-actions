@@ -1,0 +1,26 @@
+name: PSE archived original image availability probe (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-tin-tong-hop-wayback-probe.yml
+      - scripts/pse-tin-tong-hop-wayback-probe.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wayback-probe:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-tin-tong-hop-wayback-probe.mjs && node scripts/pse-tin-tong-hop-wayback-probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-tin-tong-hop-wayback-probe
+          path: artifacts/pse-tin-tong-hop-wayback-probe/
+          if-no-files-found: warn
+          retention-days: 21
