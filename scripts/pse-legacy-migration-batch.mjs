@@ -367,7 +367,7 @@ try{
     }
     // Source GIFs can be tiny but valid. Keep original markup; validate the
     // exact 49-byte binary before a narrowly scoped WordPress media upload.
-    article=await original.evaluate(({expectedTitle,brokenImageUrl})=>{
+    article=await original.evaluate(({expectedTitle,brokenImageUrl,disclosure1670})=>{
      let root;
      if(expectedTitle){
       const rows=[...document.querySelectorAll('.blog [itemprop="blogPost"]')].filter(e=>
@@ -380,6 +380,23 @@ try{
      const copy=root.cloneNode(true);
      if(expectedTitle)copy.querySelector(".page-header")?.remove();
      const omittedImages=[];
+     // Original #1670 has one broken, textless icon link (HTTP 404) beside
+     // an exact working "Ủy Quyền" link. Preserve the icon while resolving its
+     // href to the original verified working PDF, without altering visible text.
+     let repairedDisclosureLink=false;
+     if(disclosure1670){
+      const bad="https://www.pse.vn/images/uy_quyen.pdf";
+      const good="https://www.pse.vn/images/Uy-Quyen.pdf";
+      const anchorHref=a=>{try{return new URL(a.getAttribute("href"),location.href).href}catch{return null}};
+      const anchors=[...copy.querySelectorAll("a[href]")];
+      const broken=anchors.filter(a=>anchorHref(a)===bad);
+      const valid=anchors.filter(a=>anchorHref(a)===good &&
+        String(a.textContent||"").replace(/\\s+/g," ").trim()==="Ủy Quyền");
+      if(broken.length!==1||String(broken[0].textContent||"").trim()||valid.length!==1)
+        throw Error("Disclosure 1670 broken icon link source no longer matches audited original");
+      broken[0].setAttribute("href",good);
+      repairedDisclosureLink=true;
+     }
      if(brokenImageUrl){
       const originalText=(copy.textContent||"").replace(/\s+/g," ").trim();
       const images=[...copy.querySelectorAll("img[src]")];
@@ -441,9 +458,15 @@ try{
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
-     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages};
-    },{expectedTitle:inlineTitle,brokenImageUrl});
+     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages,repairedDisclosureLink};
+    },{expectedTitle:inlineTitle,brokenImageUrl,disclosure1670:id==="1670"&&disclosureSource});
    }finally{await original.close()}
+   if(id==="1670"&&disclosureSource){
+    if(!article.repairedDisclosureLink||article.assets.length!==4||
+       article.assets.includes("https://www.pse.vn/images/uy_quyen.pdf"))
+      throw Error("Disclosure 1670 audited four attachments not preserved");
+    console.log("PSE_DISCLOSURE_1670_BROKEN_LINK=SOURCE_REPAIRED; original_four_pdfs_preserved=true");
+   }
    if(brokenImageUrl){
     if(article.omittedImages?.length!==1||article.chars<200||article.assets.includes(brokenImageUrl)||article.html.includes(brokenImageUrl))
      throw Error("Approved photo exclusion not verified");
@@ -558,19 +581,25 @@ try{
      const annual2025Pdf=recoverAnnualPdf && id==="1667" && isAnnual(id,item) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
      const governanceBigPdf=(recoverGovernancePdf||item.governance_large_pdf_attempted===true)&&
        isGovernance(id,item) && Object.hasOwn(governancePdfBytes,id) && /\.pdf(?:[?#]|$)/i.test(assetUrl);
-     const disclosureLargePdf=id==="1670" && disclosureSource &&
-       new URL(assetUrl).pathname==="/images/Tai_lieu_%C4%90H%C4%90C%C4%90_2026_-_TV.pdf" &&
-       buf.length===36078003;
-     if(id==="1670" && buf.length>24_000_000 && !disclosureLargePdf)
-       throw Error("Unexpected oversized disclosure asset");
-     if(disclosureLargePdf){
+     const disclosure1670PdfBytes=Object.freeze({
+       "https://www.pse.vn/images/Tai_lieu_%C4%90H%C4%90C%C4%90_2026_-_TV.pdf":36078003,
+       "https://www.pse.vn/images/Tai_lieu_%C4%90H%C4%90C%C4%90_2026_-_TA.pdf":36917621,
+       "https://www.pse.vn/images/CBTT_v%E1%BB%81_vi%E1%BB%87c_%E1%BB%A9ng_c%E1%BB%AD_%C4%91%E1%BB%81_c%E1%BB%AD_v%C3%A0o_H%C4%90QT_BKS_nhi%E1%BB%87m_k%E1%BB%B3_2026-2031.pdf":9099077,
+       "https://www.pse.vn/images/Uy-Quyen.pdf":1887034
+     });
+     const verifiedDisclosurePdf=id==="1670" && disclosureSource &&
+       Object.hasOwn(disclosure1670PdfBytes,assetUrl) &&
+       buf.length===disclosure1670PdfBytes[assetUrl];
+     const disclosureLargePdf=verifiedDisclosurePdf && buf.length>24_000_000;
+     if(id==="1670" && disclosureSource){
+       if(!verifiedDisclosurePdf)throw Error("Disclosure 1670 original media is not one of four audited PDFs");
        const original=new URL(assetUrl),final=new URL(download.url());
        if(original.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(original.hostname)||
           final.protocol!=="https:"||!["pse.vn","www.pse.vn"].includes(final.hostname)||
           !String(download.headers()["content-type"]||"").toLowerCase().includes("pdf")||
           !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
-         throw Error("Disclosure original 36MB PDF signature/MIME/origin proof failed");
-       console.log("PSE_DISCLOSURE_PDF=SOURCE_VERIFIED; id=1670; bytes="+buf.length);
+         throw Error("Disclosure original PDF signature/MIME/origin proof failed");
+       console.log("PSE_DISCLOSURE_PDF=SOURCE_VERIFIED; id=1670; bytes="+buf.length+"; file="+original.pathname);
      }
      if(verifiedDisclosureScan){
        const original=new URL(assetUrl),final=new URL(download.url()),h=buf.subarray(0,16);
