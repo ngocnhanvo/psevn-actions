@@ -1,0 +1,31 @@
+name: PSE disclosure public CMS parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/pse-disclosure-public-cms.mjs"
+      - ".github/workflows/pse-disclosure-public-cms.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-cms-parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Read public category and published CMS records
+        run: node --check scripts/pse-disclosure-public-cms.mjs && node scripts/pse-disclosure-public-cms.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-disclosure-public-cms-parity
+          path: artifacts/pse-disclosure-cms-public/audit.json
+          if-no-files-found: warn
+          retention-days: 14
