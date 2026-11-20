@@ -81,21 +81,24 @@ async function login() {
   await userInput.fill(USERNAME);
   await page.locator('#user_pass').fill(PASSWORD);
 
-  const answer = solveArithmetic(await page.locator('body').innerText());
+  const answer = solveArithmetic(await page.locator('#loginform').innerText());
   if (answer !== null) {
     const captchaInput = await findCaptchaInput();
     if (!captchaInput) throw new Error('Arithmetic CAPTCHA detected but input was not found.');
     await captchaInput.fill(String(answer));
   }
 
-  await Promise.all([
-    page.waitForLoadState('domcontentloaded'),
-    page.locator('#wp-submit').click(),
-  ]);
-
-  if (page.url().includes('wp-login.php') || await visible(page.locator('#login_error'))) {
+  // waitForLoadState can resolve immediately on the pre-click login document.
+  // Verify the protected admin page, not the transient wp-login.php URL.
+  // This is the same verified navigation used by PSE's CMS migration jobs.
+  await page.locator('#wp-submit').click();
+  await page.goto(`${origin}/wp-admin/post.php?post=248&action=edit`, {
+    waitUntil: 'domcontentloaded',
+    timeout: 60000,
+  });
+  if (!(await visible(page.locator('#adminmenu')))) {
     const loginError = await page.locator('#login_error').textContent().catch(() => '');
-    throw new Error(`WordPress login failed. ${loginError || ''}`.trim());
+    throw new Error(`WordPress login failed after protected admin verification. ${loginError || ''}`.trim());
   }
 }
 
