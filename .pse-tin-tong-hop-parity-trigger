@@ -1,0 +1,4 @@
+2026-11-20 Audit PSE Joomla source and WordPress Astro Tin tong hop category before data writes.
+Source: https://pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop.html
+Target: https://pse.webnvn.com/tin-tuc-su-kien/tin-tong-hop
+Run existing read-only Playwright diagnostic with category membership, published counts, source pagination sample and target SSR. No build/deploy/CMS mutations.
