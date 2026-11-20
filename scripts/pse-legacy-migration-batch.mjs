@@ -119,7 +119,9 @@ const mayRetryVerifiedDisclosure1670=(id,r)=>id==="1670" && r?.group_hint==="sha
  !r.wp_id && r.status==="quarantined" && r.reason==="Unexpected oversized disclosure asset" &&
  !r.disclosure_four_pdf_retry_attempted;
 const candidates=financeScope
- ? ["1738","1148","337","199","1666","1650","1480","298","1137"].filter(id=>!state.articles[id]?.wp_id&&!state.articles[id]?.finance_scope_terminal)
+ ? ["1738","1148","337","199","1666","1650","1480","298","1137"].filter(id=>
+  !state.articles[id]?.wp_id&&(!state.articles[id]?.finance_scope_terminal||
+    (id==="1137"&&!state.articles[id]?.finance_exception_attempted)))
  : Object.keys(state.articles).filter(id=>
  mayTagAnnual(id,state.articles[id]) || mayRecoverAnnualGif(id,state.articles[id]) || mayRecoverAnnualPdf(id,state.articles[id]) || mayRecoverGovernancePdf(id,state.articles[id]) || canVerifyGovernance376(id,state.articles[id]) ||
  mayRetryVerifiedDisclosure1670(id,state.articles[id]) || mayRetagDisclosure1127(id,state.articles[id]) || mayRecoverImage(id,state.articles[id]) ||
@@ -229,6 +231,13 @@ try{
     break;
   }
   const item=state.articles[id];
+  // Exact source 1137 is a title-only report without linked document.
+  if(financeScope&&id==="1137"&&isFinance(id,item)&&item.finance_scope_terminal&&!item.finance_exception_attempted){
+   item.finance_exception_attempted=true;
+   delete item.finance_scope_terminal;
+   item.status="pending";item.attempts=0;
+   await persist();
+  }
   if(mayRetryVerifiedDisclosure1670(id,item)){
    item.disclosure_four_pdf_retry_attempted=true;
    item.status="pending";item.attempts=0;delete item.reason;
@@ -544,7 +553,23 @@ try{
        ["pse.vn","www.pse.vn"].includes(u.hostname) && u.pathname.startsWith("/images/") &&
        /[.](?:png|jpg|jpeg)$/i.test(u.pathname)}catch{return false}});
    if(verifiedDisclosureScan)console.log("PSE_DISCLOSURE_SCAN=SOURCE_VERIFIED; id="+id+"; media="+article.assets.length);
-   const verifiedShortNotice=article.chars>=65 ||
+   const originalMediafire298="http://www.mediafire.com/file/mn5v49y1db5me3h/scan0001.pdf";
+   const financeSource1137Empty=financeScope&&id==="1137"&&isFinance(id,item)&&
+     article.title==="Báo cáo tài chính bán niên 2015"&&
+     !article.bodyText.trim()&&article.assets.length===0&&
+     !article.html.replace(/<[^>]+>|&nbsp;|&#160;|\s/gi,"").trim();
+   const financeSource298External=financeScope&&id==="298"&&isFinance(id,item)&&
+     article.title==="PVFCCo SE công bố thông tin Báo cáo tài chính bán niên 2012 đã được soát xét."&&
+     article.bodyText.trim()==="Báo cáo tài chính đã được soát xét"&&
+     article.assets.length===1&&article.assets[0]===originalMediafire298&&
+     article.html.includes(originalMediafire298);
+   if(financeSource1137Empty)article.html="";
+   if(financeSource298External){
+    // External MediaFire file is a third-party link, never synthesize its bytes.
+    article.assets=[];
+    item.financial_external_media_preserved=originalMediafire298;
+   }
+   const verifiedShortNotice=financeSource1137Empty||financeSource298External||article.chars>=65 ||
      (article.chars>=20 && article.assets.length>0) || verifiedPdfNotice || verifiedScan376 || verifiedDisclosureScan;
    if(!article.title||!verifiedShortNotice||article.chars>150000||article.html.length>550000)
     throw Error("Source content incomplete or oversized");
@@ -793,10 +818,14 @@ try{
    const candidate=units.slice(0,158).join("");
    const space=candidate.lastIndexOf(" ");
    const seoDescription=(units.length>158 && space>115?candidate.slice(0,space):candidate).trim();
-   if(seoDescription.length<35||seoDescription.length>200)
+   if(!financeScope&&(seoDescription.length<35||seoDescription.length>200))
      throw Error("Cannot derive a grounded SEO description from original article body");
-   const data={title:article.title,slug,categories:articleCategories,content:html.trim(),
-     excerpt:seoDescription,pse_seo_description:seoDescription,status:"draft"};
+   // Financial source has no SEO meta-description; never invent one in Yoast.
+   const data=financeScope
+     ? {title:article.title,slug,categories:articleCategories,content:html.trim(),
+        excerpt:normalized,status:"draft"}
+     : {title:article.title,slug,categories:articleCategories,content:html.trim(),
+        excerpt:seoDescription,pse_seo_description:seoDescription,status:"draft"};
    if(originalDate)data.date=originalDate;
    const created=await api("/wp-json/wp/v2/posts","POST",data);
    if(created.status!==201||!Number.isSafeInteger(created.data?.id))throw Error("WordPress draft create HTTP "+created.status);
@@ -805,10 +834,15 @@ try{
    await persist();
    const check=await api("/wp-json/wp/v2/posts/"+postId+"?context=edit&_fields=id,slug,status,categories,content,date,title,excerpt,pse_seo_description");
    const raw=String(check.data?.content?.raw||"");
-   if(check.data?.pse_seo_description!==seoDescription||String(check.data?.excerpt?.raw||"").trim()!==seoDescription)
+   if(!financeScope&&(check.data?.pse_seo_description!==seoDescription||
+     String(check.data?.excerpt?.raw||"").trim()!==seoDescription))
      throw Error("WordPress Yoast SEO description/excerpt readback did not match");
+   if(financeScope&&String(check.data?.excerpt?.raw||"").trim()!==normalized)
+     throw Error("Finance original excerpt did not survive WP REST readback");
    if(check.status!==200||check.data.slug!==slug||!articleCategories.every(id=>check.data.categories?.includes(id))||
-      check.data.status!=="draft"||!raw.trim()||
+      check.data.status!=="draft"||(!raw.trim()&&!financeSource1137Empty)||
+      (financeSource1137Empty&&raw.trim()!=="")||
+      (financeSource298External&&!raw.includes(originalMediafire298))||
       !String(check.data.title?.raw||"").trim() ||
       article.assets.some(x=>!raw.includes(state.media[x].url)))
     throw Error("WordPress staged draft did not preserve all source/media links");
