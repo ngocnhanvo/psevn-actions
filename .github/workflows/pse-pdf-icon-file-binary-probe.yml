@@ -1,0 +1,28 @@
+name: PSE PDF document icon and file link binary audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-pdf-icon-file-binary-probe.mjs
+      - .github/workflows/pse-pdf-icon-file-binary-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: node --check scripts/pse-pdf-icon-file-binary-probe.mjs && node scripts/pse-pdf-icon-file-binary-probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-pdf-binary-probe
+          path: artifacts/pse-pdf-binary/report.json
+          if-no-files-found: warn
+          retention-days: 7
