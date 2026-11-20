@@ -27,14 +27,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          ref: 1896d26d98c9bac38ff76cf8b725dc39f294d69d
+          ref: 4a3bcd27879d7b645dfa88a0288f70ab9560e989
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: source-php
           persist-credentials: false
       - name: Validate reviewed PHP source and immutable production identity
         run: |
           set -euo pipefail
-          test "$(git -C source-php rev-parse HEAD)" = "1896d26d98c9bac38ff76cf8b725dc39f294d69d"
+          test "$(git -C source-php rev-parse HEAD)" = "4a3bcd27879d7b645dfa88a0288f70ab9560e989"
           php -l source-php/wp-content/mu-plugins/pse-finance-temporary-sideload.php
           python3 -m py_compile scripts/pse-finance-temporary-ftps.py
           node --check scripts/pse-finance-sideload-rest.mjs
@@ -62,7 +62,43 @@ jobs:
           run-id: 44719438751
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts/pse-finance-media-collision
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-finance-ftps-collision-report
+          run-id: 44720335077
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-finance-ftps-collision-report
+      - name: Verify seven failed-upload filenames, SHA-256 and zero references
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          a=json.load(open('artifacts/pse-finance-ftps-collision-report/pse-finance-ftp-collision-report.json'))
+          expected={
+            82533:'029a76a8d4cac08cfec3ce8c313504d2ec1a4352493534d9f94545f01a3d888',
+            82545:'b062c6f7710fad1a907607abf6074942deca5edc7859c1a392f19e29711236fe',
+            82547:'559b1dec76615be75b00d95033f616ce464dec7f3c8bfa0f9ed90e3a0d113848',
+            82543:'c2687e2259c21474c88f363759240ec3f7d3490c3d8fb5198d74a23f347c4ab5',
+            82546:'63af3af33176074a8e125b61562312145e8b971398ebef2a661f0f2da51b1d08',
+            82552:'c6e9a6cf709c9f795d277f6f0a8b9622f82223dd118cca6706c9ba459269d821',
+            82544:'3ae1294f3ef586cb2f55ecbe61ccfa72260c9bb906f7d65bc877c3f1b32a1b81'
+          }
+          byname={f['name']:f for f in a['files']}
+          media={m['id']:m for m in a['media']}
+          assert a['schema']=='pse-finance-ftp-file-collision-v1'
+          assert not a['errors'] and len(expected)==7
+          for mid,h in expected.items():
+            doc=media[mid]
+            name=doc['source_url'].split('/')[-1]
+            f=byname[name]
+            assert f['sha256']==h and doc['post'] is None
+            assert all(name not in ref['fileNames'] for ref in a['linkedPosts'])
+          print('PSE_FINANCE_ORPHAN_INDEPENDENT_PREFLIGHT=PASS; exact_files=7; public_references=0')
+          PY
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh WordPress database backup before reversible orphan cleanup
+        run: node scripts/pse-template-updraft-backup.mjs
       - name: Import only source-verified PSE financial PDF assets
         run: node --check scripts/pse-finance-sideload-rest.mjs && node scripts/pse-finance-sideload-rest.mjs
       - name: Persist exact original-URL to WordPress media mapping using SHA lease
@@ -95,7 +131,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          ref: 1896d26d98c9bac38ff76cf8b725dc39f294d69d
+          ref: 4a3bcd27879d7b645dfa88a0288f70ab9560e989
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: source-php
           persist-credentials: false
