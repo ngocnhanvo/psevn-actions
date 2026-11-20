@@ -1,0 +1,27 @@
+name: PSE financial report 1590 PDF and 3 dates diagnostic (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [scripts/pse-finance-repair-details.mjs]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-finance-repair-details.mjs && node scripts/pse-finance-repair-details.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-repair-details
+          path: artifacts/pse-finance-repair-details/report.json
+          if-no-files-found: warn
+          retention-days: 14
