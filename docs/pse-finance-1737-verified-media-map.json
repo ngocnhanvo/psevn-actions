@@ -1,0 +1,26 @@
+{
+  "schema": "pse-finance-1737-verified-media-map-v1",
+  "sourcePostId": "1737",
+  "wordpressPostId": 76977,
+  "evidence": {
+    "runId": 44726181875,
+    "date": "2026-11-20",
+    "method": "GET 200, PDF MIME/signature, exact bytes and SHA-256 for source and WordPress URLs"
+  },
+  "files": [
+    {
+      "source": "https://www.pse.vn/images/20261019-CV-26-79-%C4%90NB-H%C4%90QT-CBTT_B%C3%A1o_c%C3%A1o_t%C3%A0i_ch%C3%ADnh_qu%C3%BD_3_n%C4%83m_2026.pdf",
+      "target": "https://admin-pse.webnvn.com/wp-content/uploads/2026/10/pse-legacy-76977-01-285604171799.pdf",
+      "wordpressMediaId": 77045,
+      "bytes": 14587802,
+      "sha256": "2856041717991df176814694ee4ce60a71b8193376723ff2fc424298948eaa0a"
+    },
+    {
+      "source": "https://www.pse.vn/images/20261019-CV-26-80-%C4%90NB-H%C4%90QT-Gi%E1%BA%A3i_tr%C3%ACnh_l%E1%BB%A3i_nhu%E1%BA%ADn_sau_thu%E1%BA%BF_ch%C3%AAnh_l%E1%BB%87ch_so_v%E1%BB%9Bi_th%E1%BB%B1c_hi%E1%BB%87n_c%C3%B9ng_k%E1%BB%B3.pdf",
+      "target": "https://admin-pse.webnvn.com/wp-content/uploads/2026/10/pse-legacy-76977-02-57f8343d0a44.pdf",
+      "wordpressMediaId": 77046,
+      "bytes": 1165490,
+      "sha256": "57f8343d0a44b07848ce71bebaaf468d65ed26648cb2c35d841a342ffeeb1de9"
+    }
+  ]
+}
