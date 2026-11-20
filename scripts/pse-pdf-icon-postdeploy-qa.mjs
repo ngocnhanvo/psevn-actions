@@ -31,7 +31,7 @@ try{
    },selector);
    if(!info||info.src!==expectedImage||info.href!==expectedPdf)
     throw Error(device+' PDF icon src or file link differs from expected: '+JSON.stringify(info));
-   if(!(info.displayWidth>0&&info.displayWidth<=81&&info.displayHeight>0&&info.displayHeight<=81&&info.overflow<=3))
+   if(!(info.displayWidth>0&&info.displayWidth<=25&&info.displayHeight>0&&info.displayHeight<=25&&info.overflow<=3))
     throw Error(device+' PDF icon oversized or page overflow: '+JSON.stringify(info));
    if(!info.h1?.includes('Quy chế nội bộ về quản trị công ty'))
     throw Error(device+' title/heading drift');
@@ -40,7 +40,7 @@ try{
   }catch(e){report.errors.push({device,error:String(e).slice(0,400)});console.error('PSE_PDF_ICON_POSTDEPLOY_FAIL='+String(e))}
   finally{await p.close()}
  }
- report.result=report.errors.length===0&&report.checks.length===2?'PASS_DESKTOP_MOBILE_ICON_80PX':'FAIL';
+ report.result=report.errors.length===0&&report.checks.length===2?'PASS_DESKTOP_MOBILE_ICON_24PX':'FAIL';
 }catch(e){report.errors.push({error:String(e).slice(0,400)});report.result='FAIL';console.error('PSE_PDF_ICON_FATAL='+String(e))}
 finally{await mkdir('artifacts/pse-pdf-icon-postdeploy',{recursive:true});await writeFile('artifacts/pse-pdf-icon-postdeploy/report.json',JSON.stringify(report,null,2)+'\n');await browser.close()}
-if(report.result!=='PASS_DESKTOP_MOBILE_ICON_80PX')process.exitCode=1;
+if(report.result!=='PASS_DESKTOP_MOBILE_ICON_24PX')process.exitCode=1;
