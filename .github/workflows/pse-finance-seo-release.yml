@@ -1,5 +1,8 @@
 name: PSE financial posts original Yoast SEO title sync (NO ASTRO BUILD)
 on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-finance-seo-release.yml]
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-php
-          ref: 41b54231d9380c9dec3c25da7f48afc7a23a94d3
+          ref: 377c7a0708d9c5df986886805d863c9fc361488c
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: source-php
           persist-credentials: false
@@ -30,7 +33,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C source-php rev-parse HEAD)" = '41b54231d9380c9dec3c25da7f48afc7a23a94d3'
+          test "$(git -C source-php rev-parse HEAD)" = '377c7a0708d9c5df986886805d863c9fc361488c'
           php -l source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php
           grep -Fq "'pse_seo_title'" source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php
           python3 -m py_compile scripts/pse-finance-seo-ftps.py
