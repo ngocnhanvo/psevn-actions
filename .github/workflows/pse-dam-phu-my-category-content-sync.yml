@@ -3,8 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/pse-dam-phu-my-category-content-sync.mjs
-      - .github/workflows/pse-dam-phu-my-category-content-sync.yml
+      - .pse-dam-phu-my-category-sync-request
   workflow_dispatch:
 permissions:
   contents: read
