@@ -25,6 +25,23 @@ if(mediaNeedsServerSideload.length){
 const completed=ids.filter(id=>Boolean(s.articles[id]?.wp_id)),blocked=ids.filter(id=>s.articles[id]?.finance_scope_terminal);
 const summary={scopeRuns:s.finance_scope_runs||0,publishedOrDraft:completed.length,blocked,remaining,globalRuns:s.runs};
 console.log("PSE_FINANCE_RECOVERY_HANDOFF="+JSON.stringify(summary));
+const fullyImported=ids.every(id=>Number.isSafeInteger(s.articles[id]?.wp_id)&&
+ s.articles[id].status==="imported")&&remaining.length===0&&blocked.length===0;
+if(fullyImported){
+ const token=process.env.GITHUB_TOKEN;
+ if(!token)throw Error("Cannot verify final PSE parity without Actions token");
+ const workflows=["pse-finance-seo-release.yml","pse-financial-media-reconcile.yml"];
+ for(const workflow of workflows){
+  const u="https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/workflows/"+workflow+"/dispatches";
+  const response=await fetch(u,{method:"POST",headers:{
+    Authorization:"Bearer "+token,Accept:"application/vnd.github+json",
+    "X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"
+  },body:JSON.stringify({ref:"main"})});
+  if(response.status!==204)throw Error("PSE finance final verification dispatch failed "+workflow+" HTTP "+response.status);
+  console.log("PSE_FINANCE_FINAL_QA=DISPATCHED; workflow="+workflow);
+ }
+ process.exit(0);
+}
 if(!remaining.length||s.finance_scope_runs>=5){console.log("PSE_FINANCE_AUTO_NEXT=STOP; no_actionable_records_or_run_budget");process.exit(0)}
 const token=process.env.GITHUB_TOKEN;
 if(!token)throw Error("GITHUB_TOKEN unavailable for bounded finance continuation");
