@@ -131,7 +131,7 @@ jobs:
             php source-php/wp-content/plugins/github-trigger/products/tests/product-log-pagination.php
             grep -Fq "vcs_snapshot_changed" source-php/wp-content/plugins/github-trigger/products/endpoint.php
             if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-              expected="$(cat .pse-php-product-log-pagination-request)"
+              expected="$(head -n 1 .pse-php-product-log-pagination-request)"
               test "$source_sha" = "$expected" || { echo "::error::PHP master SHA differs from reviewed release"; exit 1; }
             fi
           fi
