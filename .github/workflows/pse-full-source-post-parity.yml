@@ -1,0 +1,31 @@
+name: PSE all legacy Joomla article identities versus live WordPress posts (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-full-content-audit-request
+permissions:
+  contents: read
+jobs:
+  parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned audit browser
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare source identities to live public WordPress REST
+        run: node --check scripts/pse-full-source-post-parity.mjs && node scripts/pse-full-source-post-parity.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-all-legacy-articles-live-inventory
+          path: artifacts/pse-content-parity/inventory.json
+          retention-days: 14
+          if-no-files-found: warn
