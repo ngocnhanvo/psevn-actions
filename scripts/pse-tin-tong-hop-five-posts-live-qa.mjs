@@ -70,6 +70,14 @@ try{
   const detailText=await page.locator('body').innerText();
   if(detail?.status()!==200||!detailText.includes('30/12/2024'))
     throw Error('2024 article detail route missing or wrong content');
+  // Capture the complete visual state, not an early DOMContentLoaded snapshot
+  // with blank images while Astro's WordPress upload proxy is still loading.
+  const visibleImages=await page.locator('#article-content img').evaluateAll(async imgs=>{
+    await Promise.all(imgs.map(async img=>{try{await img.decode()}catch{}}));
+    return imgs.map(img=>({src:img.currentSrc||img.src,width:img.naturalWidth}));
+  });
+  if(visibleImages.length!==5||visibleImages.some(img=>img.width<=0))
+    throw Error('Cannot capture migrated 2024 images at width '+width);
   await page.screenshot({path:root+'/tin-tong-hop-'+width+'.png',fullPage:true,timeout:45000});
   report.front.push({width,archiveHttp:res.status(),total:published.total,newPostSlugsOnFirstPage:slugsVisible,detailHttp:detail.status(),scrollOverflow:scroll,detailUrl:new URL(articleLink,front).pathname});
   report.checks.push('SSR_live_'+width+'_and_2024_detail');
