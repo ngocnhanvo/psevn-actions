@@ -42,10 +42,11 @@ try {
      if(!await el.count())throw Error("Arithmetic login field unavailable");
      await el.fill(String(n));
    }
-   await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
+   await page.locator("#wp-submit").click();
  }
- if(page.url().includes("wp-login"))throw Error("WP login failed");
  await page.goto(origin+"/wp-admin/post.php?post=248&action=edit",{waitUntil:"domcontentloaded",timeout:60000});
+ if(page.url().includes("wp-login")||!(await page.locator("#adminmenu").count()))
+  throw Error("WordPress protected admin verification failed");
  const nonce=await page.evaluate(async()=>{
    if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
    const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
