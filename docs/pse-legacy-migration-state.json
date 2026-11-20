@@ -3527,10 +3527,23 @@
     "1092": {
       "attempts": 3,
       "group_hint": "shareholder",
-      "reason": "Source content incomplete or oversized",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-thuong-nien/1092-bao-cao-thuong-nien-2014.html",
-      "status": "quarantined"
+      "status": "imported",
+      "wp_id": 82777,
+      "annual_category_verified": true,
+      "seo_cleaned": true,
+      "attribution_cleaned": true,
+      "verified_date": "2015-03-16",
+      "source_created_date": "2015-03-16",
+      "date_source": "joomla_com_search_created",
+      "verified_alternative_attachment": {
+        "url": "https://cafefnew.mediacdn.vn/download/180315/PSE_2015.3.18_9a1940e_18-_BCTN_2014.pdf",
+        "media_id": 82776,
+        "sha256": "427cc936f16bfebdc3e3dd7e7ddc6d26e5b3359a393150b05ee206563c951aa9",
+        "provenance": "HNX via CafeF",
+        "note": "Original Joomla link HTTP404; cannot prove binary equality"
+      }
     },
     "1093": {
       "attempts": 1,
@@ -23982,7 +23995,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 245,
+  "runs": 246,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
