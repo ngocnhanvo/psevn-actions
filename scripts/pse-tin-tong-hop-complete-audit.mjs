@@ -38,8 +38,14 @@ async function getArchive(page,idx=1){
    const pageInfo=(root.textContent||'').match(/Page\s+(\d+)\s+of\s+(\d+)/i);
    const starts=[...new Set(urls.map(x=>{try{return new URL(x.href).searchParams.get('start')}catch{return null}})
     .filter(x=>x!==null&&/^\d+$/.test(x)).map(Number))].sort((a,b)=>a-b);
+   // Some legacy Joomla entries show full body/headline directly and have no article anchor.
+   // Retain these independently from numeric article URLs for review.
+   const headlines=[...root.querySelectorAll('h2,h3')].map(h=>({
+     title:(h.textContent||'').replace(/\\s+/g,' ').trim(),
+     linked:!!h.querySelector('a[href]'),
+   })).filter(x=>x.title.length>=18&&x.title.length<=260);
    return {pageNumber:pageInfo?Number(pageInfo[1]):null,totalPages:pageInfo?Number(pageInfo[2]):null,
-    articles,starts,layout:!!document.querySelector('.blog'),title:document.title};
+    articles,headlines,starts,layout:!!document.querySelector('.blog'),title:document.title};
  });
 }
 try{
@@ -112,6 +118,18 @@ try{
  report.wordpress.unmatchedInSource=posts.filter(p=>!items.some(a=>
   Number(state.articles[a.id]?.wp_id)===p.id||a.slug===p.slug))
   .map(p=>({id:p.id,slug:p.slug,title:p.title?.rendered?.replace(/<[^>]+>/g,'')}));
+ // Normalized title comparison catches legacy full-body entries without numeric links.
+ const fold=str=>String(str||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')
+   .replace(/[đĐ]/g,'d').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const wpHeadlineKeys=new Set(posts.map(x=>fold(x.title?.rendered?.replace(/<[^>]+>/g,' '))));
+ const seenHeading=new Set();
+ const headlineRows=byPage.flatMap((p,i)=>p.headlines.map(h=>({...h,sourcePage:i+1})))
+  .filter(h=>{const key=fold(h.title);if(!key||seenHeading.has(key))return false;seenHeading.add(key);return true});
+ const unmatchedHeadlineRows=headlineRows.filter(h=>!wpHeadlineKeys.has(fold(h.title)));
+ report.source.headlines={totalUnique:headlineRows.length,unmatchedPublished:unmatchedHeadlineRows.length,
+  firstPage:byPage[0].headlines.slice(0,18),
+  unmatched:unmatchedHeadlineRows.slice(0,250)};
+
  const site=await ctx.newPage();
  const r=await site.goto(web+'/tin-tuc-su-kien/tin-tong-hop',{waitUntil:'domcontentloaded',timeout:50000});
  const visible=await site.evaluate(()=>({title:document.title,cardCount:document.querySelectorAll('#posts-grid .grid > div').length,
@@ -126,7 +144,9 @@ try{
  report.status=report.missing.length===0&&report.untracked.length===0?'PASS_SOURCE_TO_PUBLISHED':'PARTIAL_MISSING_SOURCE';
  console.log('PSE_TIN_TONG_HOP_FULL_AUDIT='+JSON.stringify({
   status:report.status,sourcePages:total,sourceUnique:sourceIds.size,sourceDuplicates:report.source.duplicates.length,
-  sourceMissingPublished:report.missing.length,untracked:report.untracked.length,wordpressPublished:posts.length,
+  sourceMissingPublished:report.missing.length,untracked:report.untracked.length,
+  sourceHeadlineCount:report.source.headlines?.totalUnique,
+  unmatchedSourceHeadlines:report.source.headlines?.unmatchedPublished,wordpressPublished:posts.length,
   wpExtraComparedToArchive:report.wordpress.unmatchedInSource.length,astroShown:countMatch?.[1],
   missingStatuses:Object.fromEntries([...new Set(report.missing.map(x=>x.checkpointStatus))].map(s=>[s,report.missing.filter(x=>x.checkpointStatus===s).length]))
  }));
