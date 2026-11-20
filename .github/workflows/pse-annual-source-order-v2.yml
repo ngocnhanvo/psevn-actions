@@ -2,7 +2,7 @@ name: PSE finalize exact 18-article annual source order (NO ASTRO BUILD)
 on:
   workflow_run:
     workflows:
-      - "PSE restore verified HNX 2014 annual report mirror (NO ASTRO BUILD)"
+      - "PSE restore original 2008 and 2010 annual booklets (NO ASTRO BUILD)"
     types: [completed]
   workflow_dispatch:
 permissions:
