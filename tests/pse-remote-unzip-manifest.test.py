@@ -25,7 +25,7 @@ ENV = {
 }
 
 
-def check_manifest(static):
+def check_manifest(static, scope=None):
     """Exercise the real manifest path with a mocked, correctly signed response."""
     with tempfile.TemporaryDirectory() as tmp:
         original = os.getcwd()
@@ -40,6 +40,8 @@ def check_manifest(static):
                 "images": {},
                 "static": static,
             }
+            if scope is not None:
+                response["static_scope"] = scope
             with mock.patch.dict(os.environ, ENV, clear=True), \
                     mock.patch.object(sys, "argv", [str(SCRIPT), "manifest"]), \
                     mock.patch.object(unzip, "signed_post", return_value=response), \
@@ -62,6 +64,19 @@ class PseSignedStaticJsonManifestTests(unittest.TestCase):
         inventory = check_manifest(remote)
         self.assertEqual(inventory["static"], remote)
         self.assertEqual(inventory["images"], {})
+
+
+    def test_new_php_scope_passes_only_when_image_metadata_is_excluded(self):
+        inventory = check_manifest({"_astro/main.js": META}, "exclude-images-v1")
+        self.assertEqual(inventory["static_scope"], "exclude-images-v1")
+        with self.assertRaisesRegex(RuntimeError, "unexpectedly includes images"):
+            check_manifest({"images/metadata.json": META}, "exclude-images-v1")
+        with self.assertRaisesRegex(RuntimeError, "Unsupported signed static inventory scope"):
+            check_manifest({"_astro/main.js": META}, "unknown-scope")
+
+    def test_old_php_has_no_scope_and_remains_backward_compatible(self):
+        inventory = check_manifest({"_astro/main.js": META})
+        self.assertNotIn("static_scope", inventory)
 
     def test_unsafe_and_unsupported_names_still_rejected(self):
         for name in (
