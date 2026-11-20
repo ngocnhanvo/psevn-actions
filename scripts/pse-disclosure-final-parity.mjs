@@ -79,6 +79,11 @@ try{
    const indicator=text.match(/Trang\s*\d+\s*\/\s*\d+\s*\(\s*Tổng\s*\d+\s*bài viết\s*\)/i)?.[0]||
      text.match(/Tổng\s+\d+\s+bài viết/i)?.[0]||null;
    report.frontend["page"+pageNum]={url,http:response?.status(),indicator,title:await listing.title(),bodyExcerpt:text.slice(0,900)};
+   if(pageNum===1){
+    const newer=text.indexOf("2026.11.12: CBTT"),older=text.indexOf("2026.08.13: CBTT");
+    report.frontend.page1.sourceChronologyCorrect=newer>=0&&older>=0&&newer<older;
+    report.frontend.page1.topTwo={newerIndex:newer,olderIndex:older};
+   }
   }catch(e){report.errors.push({stage:"frontend_listing",pageNum,error:String(e).slice(0,170)})}
  }
  await listing.close();
@@ -114,7 +119,8 @@ finally{
 }
 const pass=report.sourceUnique===190&&report.checkpoint===190&&report.cmsTotal===190&&report.cmsFetched===190&&
  !report.missing.length&&!report.cmsExtra.length&&!report.wrongCategory.length&&!report.wrongSlugs.length&&
- !report.unpublished.length&&!report.empty.length&&!report.dateDifferences.length&&!report.errors.length&&
+ !report.unpublished.length&&!report.empty.length&&!report.dateDifferences.length&&!report.oldLinks.length&&!report.errors.length&&
+ report.frontend.page1?.sourceChronologyCorrect===true&&
  [1,16].every(n=>report.frontend["page"+n]?.http===200)&&
  report.restoredDetails.length===19&&report.restoredDetails.every(x=>x.http===200&&!x.empty&&!x.error);
 console.log("PSE_FINAL_PARITY="+(pass?"PASS":"PARTIAL")+"; source="+report.sourceUnique+"; cms="+report.cmsTotal+"; unresolved="+report.missing.length+"; old_media_refs="+report.oldLinks.length+"; ssr_details="+report.restoredDetails.length);
