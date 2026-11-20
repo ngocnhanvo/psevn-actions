@@ -35,6 +35,8 @@ jobs:
           php -l source-php/esc-tool/image.php
           php -l source-php/pse-image-delta.php
           php -l source-php/pse-unzip.php
+          php source-php/tests/pse-image-delta.php
+          php source-php/tests/pse-static-delta.php
           php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
           node --check source-php/wp-content/plugins/github-trigger/vcs-build-trigger.js
           php -l source-php/wp-content/plugins/esc-visual-builder/includes/site-config.php
