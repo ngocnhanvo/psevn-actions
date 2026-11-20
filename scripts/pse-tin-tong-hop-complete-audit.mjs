@@ -73,8 +73,13 @@ try{
     for(let attempt=0;attempt<2;attempt++){
      try{
        const cur=await getArchive(page,idx);
-       if(cur.pageNumber!==idx||cur.totalPages!==total||cur.articles.length===0)
-        throw Error('Unexpected archive page/order '+idx+' got '+JSON.stringify({page:cur.pageNumber,total:cur.totalPages,items:cur.articles.length}));
+       // Joomla's final archive page may render its last full article inline
+       // without a numerical detail link. Count headings separately; never
+       // invent an article URL from a heading.
+       if(cur.pageNumber!==idx||cur.totalPages!==total||
+          (idx!==total&&cur.articles.length===0&&cur.headlines.length===0))
+        throw Error('Unexpected archive page/order '+idx+' got '+
+          JSON.stringify({page:cur.pageNumber,total:cur.totalPages,links:cur.articles.length,headlines:cur.headlines.length}));
        byPage[idx-1]=cur;last='';break;
      }catch(e){last=String(e?.message||e).slice(0,180);if(attempt===0)await page.waitForTimeout(1300)}
     }
