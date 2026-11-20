@@ -111,7 +111,7 @@ try{
   }
   if(item.missing.length)report.missingDocumentLinks.push({id:row.id,files:item.missing,originalCount:sourceDocs.length,targetCount:targetDocs.length});
   if(item.unverified.length)report.unverifiedDocumentLinks.push({id:row.id,files:item.unverified});
-  if(item.extraDocs.length>Math.max(0,targetDocs.length-sourceDocs.length))
+  if(item.extraDocs.length)
    report.postsWithExtraDocuments.push({id:row.id,extra:item.extraDocs.length});
   report.sourceRecords.push(item);
  }
@@ -137,6 +137,8 @@ try{
  await page.close();
  if(report.unmatched.length)report.errors.push("Unpublished original finance posts "+report.unmatched.length);
  if(report.missingDocumentLinks.length)report.errors.push("Missing source PDF links "+report.missingDocumentLinks.length);
+ if(report.unverifiedDocumentLinks.length)report.errors.push("Financial PDF provenance unverified "+report.unverifiedDocumentLinks.length);
+ if(report.postsWithExtraDocuments.length)report.errors.push("Unexpected extra financial PDF links "+report.postsWithExtraDocuments.length);
  if(report.brokenWpAssets.length)report.errors.push("Broken local finance files "+report.brokenWpAssets.length);
  if(report.oldHotlinks.length)report.errors.push("Legacy hosted media still referenced "+report.oldHotlinks.length);
  if(report.sourceErrors.length)report.errors.push("Original source details failed to load "+report.sourceErrors.length);
