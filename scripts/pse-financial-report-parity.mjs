@@ -3,7 +3,7 @@
  * READ ONLY. Never invent/import/publish a financial record from an unverified listing.
  */
 import {chromium} from "playwright";
-import {mkdir,writeFile} from "node:fs/promises";
+import {readFile,mkdir,writeFile} from "node:fs/promises";
 const legacy="https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh.html";
 const originalRoot="https://www.pse.vn";
 const archivePath="/quan-he-nha-dau-tu/bao-cao-tai-chinh/";
@@ -67,41 +67,21 @@ try{
  }
  report.sourceArticles=[...byId.values()];
  if(!byId.size)throw Error("No original Joomla financial records discovered");
- const wp=await browser.newPage();
- await wp.goto(cms+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:60000});
- if(await wp.locator("#user_login").count()){
-  if(!process.env.WP_ADMIN_USERNAME||!process.env.WP_ADMIN_PASSWORD)throw Error("WordPress admin credentials unavailable");
-  await wp.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME);
-  await wp.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD);
-  const text=await wp.locator("body").innerText();
-  const m=text.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i)||text.match(/(\d+)\s*([+\-x×*])\s*(\d+)/i);
-  if(m){
-   const a=+m[1],b=+m[3],v=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];
-   const field=wp.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();
-   if(!await field.count())throw Error("WP math challenge field missing");
-   await field.fill(String(v));
-  }
-  await Promise.all([wp.waitForLoadState("domcontentloaded"),wp.locator("#wp-submit").click()]);
- }
- if(wp.url().includes("wp-login"))throw Error("PSE WordPress login failed");
- const nonce=await wp.evaluate(async()=>{
-  if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
-  const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
-  if(!r.ok)throw Error("REST nonce unavailable");
-  return(await r.text()).trim();
- });
- const api=path=>wp.evaluate(async({path,nonce})=>{
-  const r=await fetch(path,{credentials:"same-origin",headers:{Accept:"application/json","X-WP-Nonce":nonce}});
-  return{http:r.status,total:Number(r.headers.get("X-WP-Total")||0),pages:Number(r.headers.get("X-WP-TotalPages")||0),body:await r.json().catch(()=>null)};
- },{path,nonce});
- const cats=await api("/wp-json/wp/v2/categories?context=edit&slug=bao-cao-tai-chinh&hide_empty=false&_fields=id,name,slug,parent,count");
+ const wpContext=await browser.newContext();
+ const checkpoint=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
+ if(checkpoint.schema!=="pse-legacy-article-migration-v1")throw Error("PSE source provenance checkpoint mismatch");
+ const api=async path=>{
+  const r=await wpContext.request.get(cms+path,{timeout:45000});
+  return {http:r.status(),total:Number(r.headers()["x-wp-total"]||0),pages:Number(r.headers()["x-wp-totalpages"]||0),body:await r.json().catch(()=>null)};
+ };
+ const cats=await api("/wp-json/wp/v2/categories?slug=bao-cao-tai-chinh&hide_empty=false&_fields=id,name,slug,parent,count");
  if(cats.http!==200||!Array.isArray(cats.body)||cats.body.length!==1)throw Error("Finance category missing/ambiguous "+cats.http);
  const cat=cats.body[0];
  if(cat.slug!=="bao-cao-tai-chinh"||Number(cat.parent)!==1744)throw Error("Finance taxonomy parent not verified");
  report.category=cat;
  const articles=[];let pages=1;
  for(let i=1;i<=pages;i++){
-  const query="/wp-json/wp/v2/posts?context=edit&status=publish&categories="+cat.id+"&per_page=100&page="+i+"&_fields=id,slug,title,date,categories,acf,content";
+  const query="/wp-json/wp/v2/posts?status=publish&categories="+cat.id+"&per_page=100&page="+i+"&_fields=id,slug,title,date,categories,acf,content";
   const r=await api(query);
   if(r.http!==200||!Array.isArray(r.body))throw Error("WP financial posts unavailable page="+i+" HTTP "+r.http);
   if(i===1)pages=r.pages||1;
@@ -111,6 +91,12 @@ try{
  report.wpCount=articles.length;
  report.wpArticles=articles.map(p=>({id:p.id,slug:p.slug,originPageId:p.acf?.origin_page_id||null,date:p.date,title:p.title?.raw||p.title?.rendered||""}));
  const bySlug=new Map(articles.map(p=>[p.slug,p])),byOriginal=new Map(articles.filter(p=>p.acf?.origin_page_id).map(p=>[String(p.acf.origin_page_id),p]));
+ // Use previous source-provenance checkpoint as a second mapping only, not as the source oracle.
+ for(const [sourceId,row] of Object.entries(checkpoint.articles||{})){
+  if(!String(row.source_url||"").includes(archivePath)||!row.wp_id)continue;
+  const matchedPost=articles.find(p=>Number(p.id)===Number(row.wp_id));
+  if(matchedPost)byOriginal.set(String(sourceId),matchedPost);
+ }
  const matched=new Set();
  for(const source of report.sourceArticles){
   let post=byOriginal.get(source.id),how="originId";
