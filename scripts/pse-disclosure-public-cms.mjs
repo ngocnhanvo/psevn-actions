@@ -24,7 +24,7 @@ const api=async path=>{
  }
  throw Error("WP REST GET unavailable "+path.split("?")[0]+"; "+String(err).slice(0,120));
 };
-const report={schema:"pse-disclosure-public-cms-v1",wpOrigin:wp,frontend:target,checkpointCount:rows.length,sourceArchiveIndependentUnique:190,sourceOnlyIds:["75","1740","1742"],category:null,categoryTotal:null,postsFetched:0,publicPublished:[],unavailable:[],wrongCategory:[],oldLinks:[],errors:[]};
+const report={schema:"pse-disclosure-public-cms-v1",wpOrigin:wp,frontend:target,checkpointCount:rows.length,sourceArchiveIndependentUnique:190,sourceOnlyIds:["75","1740","1742"].filter(id=>!rows.some(row=>row.id===id)),category:null,categoryTotal:null,postsFetched:0,publicPublished:[],unavailable:[],wrongCategory:[],oldLinks:[],emptyContent:[],errors:[]};
 try{
  const c=await api("/wp-json/wp/v2/categories?slug=ban-cong-bo-thong-tin&hide_empty=false&_fields=id,slug,name,parent,count");
  if(c.status!==200||c.data?.length!==1)throw Error("Category not public or duplicated "+c.status);
@@ -35,7 +35,7 @@ try{
  const wpIds=rows.map(x=>x.wpId).filter(Boolean),posts=[];
  for(let i=0;i<wpIds.length;i+=40){
   const ids=wpIds.slice(i,i+40);
-  const r=await api("/wp-json/wp/v2/posts?include="+ids.join(",")+"&per_page=100&_fields=id,status,slug,categories,title,link");
+  const r=await api("/wp-json/wp/v2/posts?include="+ids.join(",")+"&per_page=100&_fields=id,status,slug,categories,title,link,content");
   if(r.status!==200||!Array.isArray(r.data))throw Error("Published post batch blocked at "+i);
   posts.push(...r.data);
  }
@@ -45,9 +45,14 @@ try{
   if(!post){report.unavailable.push(row);continue}
   report.publicPublished.push({id:row.id,wpId:post.id,categoryOk:post.categories?.includes(cat.id),link:post.link});
   if(!post.categories?.includes(cat.id))report.wrongCategory.push({id:row.id,wpId:post.id,categories:post.categories});
+  const body=String(post.content?.rendered||"");
+  if(!body.replace(/<[^>]*>/g,"").trim() && !/<(?:img|iframe|embed)\b/i.test(body))report.emptyContent.push({id:row.id,wpId:post.id});
+  const old=[...new Set((body.match(/https?:\/\/(?:www\.)?pse\.vn\/(?:images|media|files)\/[^"'\s<>]+/gi)||[]))];
+  if(old.length)report.oldLinks.push({id:row.id,wpId:post.id,links:old.slice(0,10)});
+
  }
  report.postsFetched=posts.length;
- console.log("PSE_DISCLOSURE_PUBLIC_CMS="+JSON.stringify({category:cat,categoryTotal:report.categoryTotal,checkpointRecords:rows.length,publishedFound:posts.length,unavailable:report.unavailable.length,wrongCategory:report.wrongCategory.length,sourceOnly:report.sourceOnlyIds}));
+ console.log("PSE_DISCLOSURE_PUBLIC_CMS="+JSON.stringify({category:cat,categoryTotal:report.categoryTotal,checkpointRecords:rows.length,publishedFound:posts.length,unavailable:report.unavailable.length,wrongCategory:report.wrongCategory.length,oldMediaLinks:report.oldLinks.length,emptyContent:report.emptyContent.length,sourceOnly:report.sourceOnlyIds}));
  const fresh=await fetch(target+"/tin-tuc-su-kien/ban-cong-bo-thong-tin",{signal:AbortSignal.timeout(25000),headers:{"User-Agent":"Mozilla/5.0"}});
  report.frontendHttp=fresh.status;
  const html=await fresh.text();
@@ -59,6 +64,6 @@ try{
 } finally{
  await mkdir("artifacts/pse-disclosure-cms-public",{recursive:true});
  await writeFile("artifacts/pse-disclosure-cms-public/audit.json",JSON.stringify(report,null,2)+"\n");
- console.log("PSE_DISCLOSURE_PUBLIC_AUDIT="+JSON.stringify({cmsTotal:report.categoryTotal,wpPublished:report.postsFetched,unavailable:report.unavailable.length,wrongCategory:report.wrongCategory.length,errors:report.errors.length}));
+ console.log("PSE_DISCLOSURE_PUBLIC_AUDIT="+JSON.stringify({cmsTotal:report.categoryTotal,wpPublished:report.postsFetched,unavailable:report.unavailable.length,wrongCategory:report.wrongCategory.length,oldMediaLinks:report.oldLinks.length,emptyContent:report.emptyContent.length,errors:report.errors.length}));
 }
 if(report.errors.length)process.exitCode=1;
