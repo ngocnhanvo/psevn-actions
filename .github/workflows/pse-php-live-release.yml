@@ -80,6 +80,21 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           set -euo pipefail
+          # A real push request may opt into a SHA-pinned two-file PHP release.
+          # workflow_dispatch and all historical requests retain full scope.
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            request="$(tail -n 1 .pse-php-live-release-request)"
+            if [[ "$request" =~ ^PSE_DELTA_RELEASE_SHA=([0-9a-f]{40})$ ]]; then
+              expected_sha="${BASH_REMATCH[1]}"
+              actual_sha="$(git -C source-php rev-parse HEAD)"
+              if [[ "$expected_sha" != "$actual_sha" ]]; then
+                echo "::error::Scoped PHP release source SHA mismatch"
+                exit 1
+              fi
+              export PSE_PHP_RELEASE_SCOPE=delta
+              echo "PSE_PHP_RELEASE_SCOPE=delta source_verified=true files=2"
+            fi
+          fi
           python3 scripts/pse-php-live-release.py
       - name: Check PHP image API response contract without exposing backend origin
         shell: bash
