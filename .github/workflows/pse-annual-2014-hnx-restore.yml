@@ -1,0 +1,60 @@
+name: PSE restore verified HNX 2014 annual report mirror (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-annual-2014-hnx-restore.yml
+      - .pse-annual-2014-retry
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  restore-2014:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 19
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-annual-missing-date-evidence
+          run-id: 44731533087
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-annual-dates-proof
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-annual-18-parity
+          run-id: 44729950280
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-annual-parity-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh DB-only UpdraftPlus backup before changing CMS
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Verify original 404 and HNX PDF copy, then publish with attribution
+        run: node --check scripts/pse-annual-2014-hnx-restore.mjs && node scripts/pse-annual-2014-hnx-restore.mjs
+      - name: Persist original provenance and verified WordPress post ID
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/pse-legacy-migration-save.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-2014-official-hnx-recovery
+          path: artifacts/pse-annual-2014/report.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Confirm 2014 source-backed recovered post
+        run: |
+          node -e "const r=require('./artifacts/pse-annual-2014/report.json'); if(r.status!=='PASS') throw Error('2014 mirror recovery remains incomplete');"
