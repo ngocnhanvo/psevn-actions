@@ -1,0 +1,78 @@
+name: PSE finalize exact 18-article annual source order (NO ASTRO BUILD)
+on:
+  workflow_run:
+    workflows:
+      - "PSE restore verified HNX 2014 annual report mirror (NO ASTRO BUILD)"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-annual-source-order-final-writer
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 4ae5b4f6eddd366cb71957d6eb476bb51f25728d
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Syntax-check and SHA-pin only evolving 15-18 annual sorting plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = 4ae5b4f6eddd366cb71957d6eb476bb51f25728d
+          php -l source-php/wp-content/mu-plugins/pse-annual-source-order.php
+          python3 -m py_compile scripts/pse-annual-order-ftps-v2.py
+          node --check scripts/pse-annual-18-final-order.mjs
+      - name: Deploy exact PHP v2 with verified reversible rollback
+        run: python3 scripts/pse-annual-order-ftps-v2.py
+  rank:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-annual-18-parity
+          run-id: 44729950280
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-annual-parity-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh DB-only backup before inserting 18 audited ranks
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Apply original Joomla order without changing any WordPress dates
+        run: node --check scripts/pse-annual-18-final-order.mjs && node scripts/pse-annual-18-final-order.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-final-18-order
+          path: artifacts/pse-annual-order-v2/report.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Require all 18 original source records and SSR pagination
+        run: |
+          node -e "const r=require('./artifacts/pse-annual-order-v2/report.json'); if(r.status!=='PASS_SOURCE_18') throw Error('Annual original parity not yet complete');"
