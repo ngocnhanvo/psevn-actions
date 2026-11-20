@@ -71,7 +71,7 @@ try{
  const api=(path,method="GET",data)=>admin.evaluate(async({path,method,data,nonce})=>{
   const r=await fetch(path,{method,credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json",
    ...(data?{"Content-Type":"application/json"}:{})},...(data?{body:JSON.stringify(data)}:{})});
-  return{http:r.status(),data:await r.json().catch(()=>null),total:Number(r.headers.get("X-WP-Total")||0)};
+  return{http:r.status,data:await r.json().catch(()=>null),total:Number(r.headers.get("X-WP-Total")||0)};
  },{path,method,data,nonce});
  // First: restore the one exact missing old file link without altering title, dates, or other attachments.
  const postPath="/wp-json/wp/v2/posts/77458";
