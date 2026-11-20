@@ -44,9 +44,24 @@ try{
      .map(c=>(c.textContent||'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()).join(' | ')).join(' || ')
    );
    const cards=[...document.querySelectorAll('main article.group')];
+   const panel=document.querySelector('.pse-editorial-panel');
+   const header=panel?.querySelector('.pse-editorial-header h2');
+   const cardTitle=cards[0]?.querySelector('h2');
+   const techCell=content.querySelector('table td,table th');
+   const style=e=>e?getComputedStyle(e):null;
    return {tables,cards:cards.length,legacyImages:content.querySelectorAll('img[src*="pse.vn"]').length,
     horizontalOverflow:document.documentElement.scrollWidth-window.innerWidth,
-    textLength:(content.textContent||'').replace(/\s+/g,' ').trim().length};
+    textLength:(content.textContent||'').replace(/\s+/g,' ').trim().length,
+    design:{
+     panelRadius:parseFloat(style(panel)?.borderTopLeftRadius||'0'),
+     headerFont:parseFloat(style(header)?.fontSize||'0'),
+     cardRadius:parseFloat(style(cards[0])?.borderTopLeftRadius||'0'),
+     cardHeadingFont:parseFloat(style(cardTitle)?.fontSize||'0'),
+     tableFont:parseFloat(style(techCell)?.fontSize||'0'),
+     mediaBackground:style(cards[0]?.querySelector('.pse-catalog-card__media'))?.backgroundImage||'none',
+     contentScrollWidth:content.scrollWidth,
+     contentClientWidth:content.clientWidth
+    }};
   });
   if(found.tables.length!==10||found.tables.some((x,i)=>n(x)!==n(expected[i])))
    throw Error('Technical table content does not match independently crawled Joomla source at width '+width+
@@ -55,6 +70,13 @@ try{
   if(found.legacyImages)throw Error('Legacy image hotlink present in category content');
   if(found.horizontalOverflow>5)throw Error('Page horizontal overflow at width '+width+': '+found.horizontalOverflow);
   if(found.textLength<2500)throw Error('Category technical text unexpectedly short');
+  const design=found.design;
+  if(design.panelRadius<16||design.cardRadius<18||design.headerFont<21||
+    design.cardHeadingFont<18||design.tableFont<14||design.mediaBackground==='none')
+    throw Error('New CMS-driven product layout styles missing at width '+width+': '+JSON.stringify(design));
+  if(width===390&&design.contentScrollWidth<=design.contentClientWidth)
+    throw Error('Technical tables should scroll inside editorial container on narrow viewport');
+  report.checks.push('modern_product_card_and_editorial_styles_'+width);
   await p.screenshot({path:out+'/category-'+width+'.png',fullPage:true,timeout:45000});
   report.checks.push('live_'+width+'_10_tables_4_cards_no_overflow');
   if(context!==desktop)await context.close();
