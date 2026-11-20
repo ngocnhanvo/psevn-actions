@@ -1,0 +1,53 @@
+name: PSE publish verified 92 and finalize 24 governance documents (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-governance-92-finalize.mjs
+      - .github/workflows/pse-governance-92-finalize.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-governance-92-publish-24-order-single-writer
+  cancel-in-progress: false
+jobs:
+  finalize:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 18
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-governance-2026-independent-parity
+          run-id: 44744504960
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-governance-source-proof
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-governance-92-legacy-feed-proof
+          run-id: 44747738951
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-governance-feed-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Back up WordPress database immediately before source-verified publication
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Publish verified original 92 and restore all 24 exact Joomla ranks
+        run: node --check scripts/pse-governance-92-finalize.mjs && node scripts/pse-governance-92-finalize.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-governance-24-published-source-verified
+          path: artifacts/pse-governance-92-final/report.json
+          retention-days: 30
+          if-no-files-found: warn
