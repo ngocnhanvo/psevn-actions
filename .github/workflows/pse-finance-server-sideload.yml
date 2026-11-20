@@ -1,0 +1,120 @@
+name: PSE finance verified PDF server sideload (TEMPORARY PHP, NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-finance-server-sideload.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  deploy-temp:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 49d0b99bb8d7f24a32defd5f5a7a340b93c26901
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Validate reviewed PHP source and immutable production identity
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = "49d0b99bb8d7f24a32defd5f5a7a340b93c26901"
+          php -l source-php/wp-content/mu-plugins/pse-finance-temporary-sideload.php
+          python3 -m py_compile scripts/pse-finance-temporary-ftps.py
+          node --check scripts/pse-finance-sideload-rest.mjs
+      - name: Deploy only authorized temporary PHP file by FTPS and verify SHA256
+        run: python3 scripts/pse-finance-temporary-ftps.py deploy
+  sideload:
+    needs: deploy-temp
+    runs-on: ubuntu-latest
+    timeout-minutes: 29
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Import only source-verified PSE financial PDF assets
+        run: node --check scripts/pse-finance-sideload-rest.mjs && node scripts/pse-finance-sideload-rest.mjs
+      - name: Persist exact original-URL to WordPress media mapping using SHA lease
+        if: always() && env.PSE_FINANCE_MEDIA_CHECKPOINT_CHANGED == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/pse-legacy-migration-save.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-sideload-records
+          path: |
+            pse-finance-sideload-report.json
+            docs/pse-legacy-migration-state.json
+          if-no-files-found: warn
+          retention-days: 14
+  retire-temp:
+    needs: [deploy-temp, sideload]
+    if: always() && needs.deploy-temp.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: 49d0b99bb8d7f24a32defd5f5a7a340b93c26901
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Remove temporary WordPress endpoint from hosting and verify absence
+        run: python3 scripts/pse-finance-temporary-ftps.py retire
+  resume-finance:
+    needs: [deploy-temp, sideload, retire-temp]
+    if: needs.sideload.result == 'success' && needs.retire-temp.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Continue bounded finance post import after media checkpoint is saved
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          url='https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/workflows/pse-finance-recover.yml/dispatches'
+          payload=json.dumps({'ref':'main'}).encode()
+          req=urllib.request.Request(url,payload,headers={
+            'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],
+            'Accept':'application/vnd.github+json',
+            'Content-Type':'application/json',
+            'X-GitHub-Api-Version':'2022-11-28'
+          },method='POST')
+          with urllib.request.urlopen(req,timeout=25) as response:
+            if response.status!=204:raise RuntimeError('PSE finance resume failed')
+          print('PSE_FINANCE_RESUME=DISPATCHED; post_only=true')
+          PY
