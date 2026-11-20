@@ -15,7 +15,7 @@ const source=await browser.newPage(),wp=await browser.newPage();
 await source.route(/\.(?:png|jpe?g|webp|svg|gif|woff2?|ttf)(?:[?#]|$)/i,r=>r.abort());
 const report={schema:"pse-finance-source-yoast-parity-v1",mode:"source-verified-write-minimal",
  titleMatched:0,titleChanged:0,metaDescriptionSourceMissing:0,
- generatedDescriptionDetected:[],notImported:[],sourceFailures:[],wordpressFailures:[],items:[],status:"UNVERIFIED"};
+ generatedDescriptionDetected:[],descriptionCleaned:[],notImported:[],sourceFailures:[],wordpressFailures:[],items:[],status:"UNVERIFIED"};
 try{
  await wp.goto(root+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:55000});
  if(await wp.locator("#user_login").count()){
@@ -80,6 +80,19 @@ try{
     if(old.pse_seo_description&&old.pse_seo_description.trim()===
        String(old.excerpt?.raw||"").trim()){
      report.generatedDescriptionDetected.push({sourceId:id,wpId:item.wp_id});
+     if(!["1148","337","199"].includes(id))
+      throw Error("Unexpected non-source SEO description generated on unapproved article "+id);
+     const cleaned=await api("/wp-json/wp/v2/posts/"+item.wp_id,"POST",
+       {pse_seo_description:""});
+     if(cleaned.http!==200||cleaned.json?.id!==item.wp_id)
+      throw Error("Original-source-missing SEO description cleanup denied HTTP "+cleaned.http+
+        " code "+String(cleaned.json?.code||"unknown"));
+     const verify=await api(path);
+     if(verify.http!==200||verify.json?.pse_seo_description!==""||
+       verify.json?.slug!==old.slug)
+      throw Error("Source-missing Yoast description cleanup readback mismatch "+id);
+     row.sourceMissingDescriptionCleared=true;
+     report.descriptionCleaned.push({sourceId:id,wpId:item.wp_id});
     }
    }else{
     row.descriptionNeedsReview=old.pse_seo_description!==seo.metaDescription;
@@ -99,7 +112,7 @@ try{
  report.status=report.notImported.length||report.sourceFailures.length||report.wordpressFailures.length?"PARTIAL":"PASS_SOURCE_VERIFIED";
  console.log("PSE_FINANCE_SEO_SUMMARY="+JSON.stringify({status:report.status,items:report.items.length,
    titleChanged:report.titleChanged,titleMatched:report.titleMatched,descriptionSourceMissing:report.metaDescriptionSourceMissing,
-   generatedDescriptions:report.generatedDescriptionDetected,unimported:report.notImported,
+   generatedDescriptions:report.generatedDescriptionDetected,descriptionsCleaned:report.descriptionCleaned,unimported:report.notImported,
    sourceFailures:report.sourceFailures,wordpressFailures:report.wordpressFailures}));
 }finally{
  await mkdir("artifacts/pse-finance-seo",{recursive:true});
