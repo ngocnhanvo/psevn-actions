@@ -391,7 +391,7 @@ try{
       const anchors=[...copy.querySelectorAll("a[href]")];
       const broken=anchors.filter(a=>anchorHref(a)===bad);
       const valid=anchors.filter(a=>anchorHref(a)===good &&
-        String(a.textContent||"").replace(/\\s+/g," ").trim()==="Ủy Quyền");
+        String(a.textContent||"").replace(/\s+/g," ").trim()==="Ủy Quyền");
       if(broken.length!==1||String(broken[0].textContent||"").trim()||valid.length!==1)
         throw Error("Disclosure 1670 broken icon link source no longer matches audited original");
       broken[0].setAttribute("href",good);
