@@ -1,5 +1,8 @@
 name: PSE financial reports final source document and SSR parity (READ ONLY)
 on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/pse-financial-media-reconcile.yml]
   workflow_dispatch:
 permissions:
   contents: read
