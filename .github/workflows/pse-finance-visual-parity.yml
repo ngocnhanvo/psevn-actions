@@ -1,0 +1,25 @@
+name: PSE financial reports original versus new UI browser parity (READ ONLY)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-finance-visual-parity.mjs && node scripts/pse-finance-visual-parity.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-finance-visual-parity
+          path: artifacts/pse-finance-visual
+          if-no-files-found: warn
+          retention-days: 14
