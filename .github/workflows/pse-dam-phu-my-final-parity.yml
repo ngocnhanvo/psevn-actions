@@ -1,0 +1,29 @@
+name: PSE Dam Phu My independent source-to-production data parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths: [.pse-dam-phu-my-final-qa-request]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  parity:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify original ten HTML tables and four products on desktop and mobile
+        run: node --check scripts/pse-dam-phu-my-final-parity.mjs && node scripts/pse-dam-phu-my-final-parity.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-dam-phu-my-source-target-final-parity
+          path: artifacts/pse-dam-phu-my-final/
+          retention-days: 21
+          if-no-files-found: warn
