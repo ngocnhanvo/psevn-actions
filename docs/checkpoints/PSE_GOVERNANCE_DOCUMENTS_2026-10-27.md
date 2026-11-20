@@ -1,5 +1,7 @@
 # PSE — Tài liệu quản trị công ty — Checkpoint ngày 27/10/2026
 
+> **LƯU Ý (20/11/2026): CHECKPOINT LỊCH SỬ — ĐÃ ĐƯỢC THAY THẾ.** Đồng bộ đã **HOÀN TẤT 24/24 bài Joomla = 24 bài WordPress xuất bản = 24 bài Astro SSR**, SEO title 24/24 và đúng thứ tự nguồn (desktop/mobile PASS). Xem bản nghiệm thu mới: [PSE_GOVERNANCE_DOCUMENTS_2026-11-20.md](./PSE_GOVERNANCE_DOCUMENTS_2026-11-20.md); QA độc lập [run #44748928751](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44748928751). Các trạng thái 23/24 hoặc draft #92 bên dưới chỉ mô tả ngày 27/10, **không còn là tồn đọng**.
+
 ## Nguồn, đích và phạm vi
 - Joomla: `https://pse.vn/quan-he-nha-dau-tu/tai-lieu-quan-tri-cong-ty.html`
 - Astro công khai: `https://pse.webnvn.com/tin-tuc-su-kien/tai-lieu-quan-tri-cong-ty`
