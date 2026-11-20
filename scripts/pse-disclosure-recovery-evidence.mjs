@@ -41,9 +41,28 @@ async function worker(){
   }
  }finally{await page.close()}
 }
-try{await Promise.all([worker(),worker(),worker()])}finally{
+const untrackedIds=new Set(["1742","1740","75"]);
+const untracked=[];
+async function findUntracked(){
+ const page=await browser.newPage({viewport:{width:1280,height:840}});
+ try{
+  for(const start of [0,6,174,180,186]){
+   const url="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html"+(start?"?start="+start:"");
+   const response=await page.goto(url,{waitUntil:"domcontentloaded",timeout:30000});
+   if(response?.status()!==200)throw Error("Archive HTTP "+response?.status()+" at start="+start);
+   const hits=await page.evaluate(ids=>[...document.querySelectorAll(".blog a[href]")].map(a=>{
+    const u=new URL(a.href);const match=u.pathname.match(/\\/(\\d{2,6})-[^/]+\\.html$/);
+    if(!match||!ids.includes(match[1])||!u.pathname.includes("/ban-cong-bo-thong-tin/"))return null;
+    return {id:match[1],url:u.href,label:String(a.textContent||"").replace(/\\s+/g," ").trim().slice(0,220)};
+   }).filter(Boolean),[...untrackedIds]);
+   for(const item of hits)if(!untracked.some(x=>x.id===item.id))untracked.push(item);
+  }
+  console.log("PSE_DISCLOSURE_UNTRACKED="+JSON.stringify(untracked));
+ }finally{await page.close()}
+}
+try{await Promise.all([worker(),worker(),worker(),findUntracked()])}finally{
  await mkdir("artifacts/pse-disclosure-recovery",{recursive:true});
- await writeFile("artifacts/pse-disclosure-recovery/source.json",JSON.stringify({schema:"pse-disclosure-recovery-source-v1",source:"www.pse.vn",scope:pending.length,results},null,2)+"\n");
- console.log("PSE_DISCLOSURE_RECOVERY_SUMMARY="+JSON.stringify({scope:pending.length,received:results.filter(x=>x?.http===200).length,parseable:results.filter(x=>x?.hasArticleBody).length,withAssets:results.filter(x=>x?.assetCount>0).length,failed:results.filter(x=>x?.http!==200).map(x=>x?.id),output:"artifacts/pse-disclosure-recovery/source.json",mode:"read-only"}));
+ await writeFile("artifacts/pse-disclosure-recovery/source.json",JSON.stringify({schema:"pse-disclosure-recovery-source-v1",source:"www.pse.vn",scope:pending.length,results,untracked},null,2)+"\n");
+ console.log("PSE_DISCLOSURE_RECOVERY_SUMMARY="+JSON.stringify({scope:pending.length,received:results.filter(x=>x?.http===200).length,parseable:results.filter(x=>x?.hasArticleBody).length,withAssets:results.filter(x=>x?.assetCount>0).length,failed:results.filter(x=>x?.http!==200).map(x=>x?.id),untracked:untracked.length,output:"artifacts/pse-disclosure-recovery/source.json",mode:"read-only"}));
  await browser.close();
 }
