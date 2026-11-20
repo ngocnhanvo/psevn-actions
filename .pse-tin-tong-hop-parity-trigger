@@ -5,3 +5,4 @@ Run existing read-only Playwright diagnostic with category membership, published
 2026-11-20 Read-only WordPress/Astro SSR category parity after 4 verified source-backed posts published: WP posts 82801,82805,82817,82820; live category 1746 should show new content; no build or CMS mutation. Import #44773661860 PASS and checkpoint saved.
 2026-11-21 Read-only category parity following five exact PDF/content-proven taxonomy repairs. Source IDs 1157 1165 1169 1172 1247 now mapped to existing WP posts; expected source-to-target PSE Tin tong hop archive SSR reflects category 1746. No CMS mutation or Astro build.
 2026-11-21 Read-only source/category SSR parity after Joomla article 1363 imported as WordPress 82834 with four verified original JPEGs, created day 2019-07-16. No CMS write or Astro build.
+2026-11-21 Verify WordPress and Astro SSR published 310 articles in Tin tong hop after source 1159 category-only repair, run 44836727645; ensure 26 archive pages, read-only.
