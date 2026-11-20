@@ -1,0 +1,44 @@
+name: PSE PDF icon shared post rendering tests (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-pdf-icon-source-tests.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout pinned PSE production Astro source
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: 7f4cddaae554ba0d925c65c8da8c5d984bc732a6
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Confirm exact source SHA
+        run: test "$(git -C source rev-parse HEAD)" = 7f4cddaae554ba0d925c65c8da8c5d984bc732a6
+      - uses: pnpm/action-setup@v4
+        with: {version: 9.15.9, run_install: false}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Install project dependencies from lockfile
+        working-directory: source
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Test PDF icon thumbnail and image normalization
+        working-directory: source
+        run: pnpm exec vitest run src/lib/wordpress/articleImages.test.ts
+      - name: Confirm all shared PSE CSS selectors are scoped
+        working-directory: source
+        run: |
+          grep -Fq '.article-content-post img:is(' src/styles/post.css
+          grep -Fq '[alt="pdf" i]' src/styles/post.css
+          echo "PSE_PDF_ICON_SOURCE_TESTS=PASS"
