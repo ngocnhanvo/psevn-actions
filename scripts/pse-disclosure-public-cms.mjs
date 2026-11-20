@@ -24,7 +24,7 @@ const api=async path=>{
  }
  throw Error("WP REST GET unavailable "+path.split("?")[0]+"; "+String(err).slice(0,120));
 };
-const report={schema:"pse-disclosure-public-cms-v1",wpOrigin:wp,frontend:target,checkpointCount:rows.length,sourceArchiveIndependentUnique:190,sourceOnlyIds:["75","1740","1742"].filter(id=>!rows.some(row=>row.id===id)),category:null,categoryTotal:null,postsFetched:0,publicPublished:[],unavailable:[],wrongCategory:[],wrongSlugs:[],differentVerifiedDates:[],oldLinks:[],emptyContent:[],errors:[]};
+const report={schema:"pse-disclosure-public-cms-v1",wpOrigin:wp,frontend:target,checkpointCount:rows.length,sourceArchiveIndependentUnique:190,sourceOnlyIds:["75","1740","1742"].filter(id=>!rows.some(row=>row.id===id)),category:null,categoryTotal:null,pdf1670EnglishMedia:null,postsFetched:0,publicPublished:[],unavailable:[],wrongCategory:[],wrongSlugs:[],differentVerifiedDates:[],oldLinks:[],emptyContent:[],errors:[]};
 try{
  const c=await api("/wp-json/wp/v2/categories?slug=ban-cong-bo-thong-tin&hide_empty=false&_fields=id,slug,name,parent,count");
  if(c.status!==200||c.data?.length!==1)throw Error("Category not public or duplicated "+c.status);
@@ -32,6 +32,10 @@ try{
  const archive=await api("/wp-json/wp/v2/posts?categories="+cat.id+"&per_page=1&_fields=id");
  if(archive.status!==200)throw Error("Archive category REST unavailable "+archive.status);
  report.categoryTotal=Number(archive.total||0);
+ const englishPdf=await api("/wp-json/wp/v2/media?slug=pse-legacy-302d1db7161eafd0&per_page=5&_fields=id,slug,source_url,mime_type");
+ report.pdf1670EnglishMedia={http:englishPdf.status,records:Array.isArray(englishPdf.data)?englishPdf.data:[]};
+ console.log("PSE_DISCLOSURE_1670_TA_MEDIA="+JSON.stringify(report.pdf1670EnglishMedia));
+
  const wpIds=rows.map(x=>x.wpId).filter(Boolean),posts=[];
  for(let i=0;i<wpIds.length;i+=40){
   const ids=wpIds.slice(i,i+40);
