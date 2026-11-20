@@ -70,7 +70,7 @@ async function getOriginal(url){
    if(r.status()!==200||!['pse.vn','www.pse.vn'].includes(u.hostname)||
       !String(r.headers()['content-type']||'').toLowerCase().includes('image/jpeg')||
       buf.length<1000||buf.length>30_000_000||
-      buf[0]!==0xff||buf[1]!==0xd8||buf[buf.length-2]!==0xff||buf[buf.length-1]!==0xd9)
+      buf[0]!==0xff||buf[1]!==0xd8)
     throw Error('Joomla original JPEG validation '+r.status()+' '+buf.length);
    return buf;
   }catch(e){error=String(e).slice(0,200);await new Promise(resolve=>setTimeout(resolve,450*(t+1)));}
