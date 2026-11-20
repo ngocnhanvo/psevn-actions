@@ -1,5 +1,10 @@
 name: PSE homepage utilities and live search QA (READ ONLY)
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-utility-live-qa.yml
+      - scripts/pse-utility-live-qa.mjs
   workflow_run:
     workflows: ["PSE Astro build and deploy via WordPress GitHub Trigger"]
     types: [completed]
@@ -10,7 +15,7 @@ jobs:
   live-utilities:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
