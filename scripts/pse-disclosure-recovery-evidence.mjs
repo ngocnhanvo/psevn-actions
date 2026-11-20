@@ -51,9 +51,9 @@ async function findUntracked(){
    const response=await page.goto(url,{waitUntil:"domcontentloaded",timeout:30000});
    if(response?.status()!==200)throw Error("Archive HTTP "+response?.status()+" at start="+start);
    const hits=await page.evaluate(ids=>[...document.querySelectorAll(".blog a[href]")].map(a=>{
-    const u=new URL(a.href);const match=u.pathname.match(/\\/(\\d{2,6})-[^/]+\\.html$/);
+    const u=new URL(a.href);const match=u.pathname.split("/").at(-1)?.match(/^([0-9]{2,6})-[^/]+[.]html$/);
     if(!match||!ids.includes(match[1])||!u.pathname.includes("/ban-cong-bo-thong-tin/"))return null;
-    return {id:match[1],url:u.href,label:String(a.textContent||"").replace(/\\s+/g," ").trim().slice(0,220)};
+    return {id:match[1],url:u.href,label:String(a.textContent||"").trim().slice(0,220)};
    }).filter(Boolean),[...untrackedIds]);
    for(const item of hits)if(!untracked.some(x=>x.id===item.id))untracked.push(item);
   }
