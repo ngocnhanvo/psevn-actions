@@ -26,9 +26,15 @@ try{
     if(!await field.count())throw Error('WordPress math captcha field missing');
     await field.fill(String(answer));
   }
-  await Promise.all([wp.waitForLoadState('domcontentloaded'),wp.locator('#wp-submit').click()]);
+  await wp.locator('#wp-submit').click();
  }
- if(wp.url().includes('wp-login.php'))throw Error('WordPress auth failed');
+ // Always verify a protected admin route after the login redirect, instead of
+ // inspecting a transient wp-login.php URL immediately after the button click.
+ await wp.goto(cms+'/wp-admin/post.php?post=248&action=edit',{
+  waitUntil:'domcontentloaded',timeout:60000
+ });
+ if(!await wp.locator('#adminmenu').count()||wp.url().includes('wp-login.php'))
+  throw Error('WordPress protected admin authentication failed');
  const nonce=await wp.evaluate(async()=>{
   if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
   const r=await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'same-origin'});
