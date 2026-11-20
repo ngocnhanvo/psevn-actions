@@ -1,0 +1,29 @@
+name: PSE annual media upload presence check (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-annual-media-presence.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-annual-media-presence.mjs && node scripts/pse-annual-media-presence.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-media-presence
+          path: artifacts/pse-annual-media-presence/report.json
+          if-no-files-found: warn
+          retention-days: 7
