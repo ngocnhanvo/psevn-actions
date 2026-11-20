@@ -1324,7 +1324,7 @@
       "wp_id": 79759
     },
     "298": {
-      "attempts": 3,
+      "attempts": 4,
       "group_hint": "shareholder",
       "reason": "Article contains non-local mandatory media",
       "short_content_rechecked": true,
@@ -7775,9 +7775,9 @@
       "wp_id": 77351
     },
     "1480": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
-      "reason": "apiRequestContext.get: Timeout 45000ms exceeded.\nCall log:\n  - → GET https://www.pse.vn/images/CBTT_BCTC_ban_nien.pdf\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KH",
+      "reason": "Finance media source/local binary mismatch",
       "short_content_rechecked": true,
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1480-20210812-cv53-dnb-hdqt-cbtt-bctc-giua-nien-do-da-duoc-soat-xet.html",
       "status": "pending"
@@ -9684,9 +9684,9 @@
       "wp_id": 82428
     },
     "1650": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
-      "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ",
+      "reason": "Finance media source/local binary mismatch",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1650-20250814-cbtt-bao-cao-tai-chinh-ban-nien-nam-2025-va-giai-trinh-chenh-lech-lnst-so-voi-cung-ky.html",
       "status": "pending"
     },
@@ -9880,7 +9880,7 @@
       "wp_id": 77218
     },
     "1666": {
-      "attempts": 1,
+      "attempts": 2,
       "group_hint": "shareholder",
       "reason": "apiRequestContext.post: Timeout 240000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ",
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1666-20260320-cbtt-bao-cao-tai-chinh-da-kiem-toan-nam-2025-va-giai-trinh-chenh-lech-lnst.html",
@@ -10155,7 +10155,7 @@
       "source_url": "https://www.pse.vn/quan-he-nha-dau-tu/bao-cao-tai-chinh/1738-20261105-cbtt-dinh-chinh-thong-tin-da-cong-bo-trong-bctc-quy-3-2026.html",
       "group_hint": "shareholder",
       "status": "pending",
-      "attempts": 1,
+      "attempts": 2,
       "reason": "apiRequestContext.post: Timeout 80000ms exceeded.\nCall log:\n  - → POST https://admin-pse.webnvn.com/wp-json/wp/v2/media\n    - user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ("
     },
     "1740": {
@@ -23880,7 +23880,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 236,
+  "runs": 237,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
@@ -24101,5 +24101,5 @@
   ],
   "source": "https://www.pse.vn/",
   "tracker_issue": 3,
-  "finance_scope_runs": 1
+  "finance_scope_runs": 2
 }
