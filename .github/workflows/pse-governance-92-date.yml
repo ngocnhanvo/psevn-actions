@@ -1,0 +1,30 @@
+name: PSE independently verify governance article 92 created date (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-governance-92-date.mjs
+      - .github/workflows/pse-governance-92-date.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-date:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-governance-92-date.mjs && node scripts/pse-governance-92-date.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-governance-92-original-created-date
+          path: artifacts/pse-governance-92-date/report.json
+          if-no-files-found: warn
+          retention-days: 14
