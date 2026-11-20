@@ -1,0 +1,75 @@
+name: PSE original annual report category order (NO ASTRO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-annual-source-order.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pse-annual-source-order-writer
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: a117e19ea522cf2f8d083d028f1d80c93953ed83
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Verify only new annual source order plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source-php rev-parse HEAD)" = a117e19ea522cf2f8d083d028f1d80c93953ed83
+          php -l source-php/wp-content/mu-plugins/pse-annual-source-order.php
+          python3 -m py_compile scripts/pse-annual-order-ftps.py
+          node --check scripts/pse-annual-source-order-apply.mjs
+      - name: Deploy exact PHP file and verify remote hash
+        run: python3 scripts/pse-annual-order-ftps.py
+  rank:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-annual-18-parity
+          run-id: 44729950280
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/pse-annual-proof
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh DB-only rollback backup for source ordering metadata
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Store original archive ranks without changing dates
+        run: node --check scripts/pse-annual-source-order-apply.mjs && node scripts/pse-annual-source-order-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-annual-original-order-readback
+          path: artifacts/pse-annual-order/report.json
+          if-no-files-found: warn
+          retention-days: 14
