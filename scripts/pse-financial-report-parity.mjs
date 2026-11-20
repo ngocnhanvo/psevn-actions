@@ -174,6 +174,8 @@ try{
  }
  report.errors.push(...(report.sourceErrors.length?["Legacy original could not be fully crawled"]:[]));
  if(report.missingSourceInWp.length)report.errors.push("Missing original financial posts: "+report.missingSourceInWp.length);
+ if(report.extraWpInCategory.length)report.errors.push("WordPress finance category has unverified extra posts: "+report.extraWpInCategory.length);
+ if(report.sourcePages.filter(p=>p.newArticles>0).length<10)report.errors.push("Legacy financial archive pagination appears incomplete");
  if(report.missingMedia.length)report.errors.push("Missing original attached files by filename: "+report.missingMedia.length);
  if(report.oldMediaLinks.length)report.errors.push("Finance posts still hotlink original media: "+report.oldMediaLinks.length);
  if(report.targetHttp!==200)report.errors.push("Astro archive did not return HTTP 200");
