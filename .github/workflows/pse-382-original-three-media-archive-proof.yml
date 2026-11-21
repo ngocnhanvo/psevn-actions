@@ -1,0 +1,33 @@
+name: PSE Joomla 382 exact original three archived photos (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-382-original-three-media-archive-proof.mjs
+      - .github/workflows/pse-382-original-three-media-archive-proof.yml
+permissions:
+  contents: read
+jobs:
+  original-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate three source JPEGs in exact archived URLs
+        run: |
+          node --check scripts/pse-382-original-three-media-archive-proof.mjs
+          node scripts/pse-382-original-three-media-archive-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-382-three-original-image-evidence
+          path: artifacts/pse-382-archive/
+          retention-days: 30
+          if-no-files-found: warn
