@@ -1,0 +1,41 @@
+name: PSE legacy Joomla product-description aliases versus native Products (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-legacy-product-article-alias-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-product-article-alias-readonly
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: "github.repository == 'ngocnhanvo/psevn-actions'"
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compare exact source aliases to 45 native WP Products
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ENV_FILE"
+          node --check scripts/pse-legacy-product-article-alias-audit.mjs
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+          node scripts/pse-legacy-product-article-alias-audit.mjs
+      - name: Preserve read-only source matching report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-legacy-product-article-alias-${{ github.run_id }}
+          path: artifacts/pse-legacy-product-article-alias/
+          if-no-files-found: ignore
+          retention-days: 7
