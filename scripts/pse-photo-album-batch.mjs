@@ -14,6 +14,8 @@ const message = String(evt.head_commit?.message||"").trim();
 const bulkAuthorized=message==="cms(pse): complete four verified historical galleries"&&
  process.env.GITHUB_REPOSITORY==="ngocnhanvo/psevn-actions"&&
  process.env.GITHUB_REF==="refs/heads/main";
+if(message==="cms(pse): complete four verified historical galleries"&&!bulkAuthorized)
+ throw Error("Untrusted repository or ref for four-gallery recovery");
 let command=message.match(/^(audit|cms)\(pse\): gallery (\d+) batch (\d+)$/);
 if(bulkAuthorized){
  const id=String(process.env.PSE_GALLERY_ID||"");
