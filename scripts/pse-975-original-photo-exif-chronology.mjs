@@ -14,7 +14,7 @@ const wp="https://admin-pse.webnvn.com",pattern=/^pse-gallery-975-[a-f0-9]{16}\.
 const report={schema:"pse-975-native-original-photo-capture-exif-chronology-v1",readOnly:true,
  noCmsWrites:true,noBuild:true,sourceId:975,originalEventTitle:"Đại hội công đoàn nhiệm kỳ II 10/2013",
  originalJoomlaFeedDay:"2011-03-05",originalJoomlaComSearchCreatedDay:"2011-03-06",
- dateWarning:"JPEG EXIF capture day is NOT a Joomla article publication day.",
+ dateWarning:"JPEG EXIF capture day is NOT a Joomla article publication day; complete original 110 filenames and media SHA are verified.",
  nativeMediaTotal:null,registryPages:null,matchingNativeGalleryFiles:0,uniqueMedia:0,
  files:[],sampled:0,byCaptureYear:{},summary:null};
 async function get(url,timeout=25000){
@@ -49,9 +49,8 @@ const candidates=native.filter(m=>pattern.test(String(m.media_details?.file||"")
 report.matchingNativeGalleryFiles=candidates.length;
 report.uniqueMedia=new Set(candidates.map(x=>x.id)).size;
 if(candidates.length!==110||report.uniqueMedia!==110)throw Error("Original 975 media cohort not exactly 110");
-const samples=[...new Map(Array.from({length:16},(_,i)=>{
- const idx=Math.floor(i*(candidates.length-1)/15);return [candidates[idx].id,candidates[idx]];
-})).values()];
+// All 110 originals verified in exact WordPress Media registry, then read-only EXIF and SHA.
+const samples=candidates;
 function exifJpeg(b){
  const result={hasExif:false,originalCapture:null,originalCaptureYear:null,
   digitizedAt:null,modifiedAt:null,error:null};
