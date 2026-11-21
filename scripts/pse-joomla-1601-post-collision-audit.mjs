@@ -36,16 +36,22 @@ try{
     bodyTokenOverlap:overlap(sourceInfo.body,body)};
   report.wordpress.push(entry);
   const url=front+"/"+p.slug;
-  const target=await ctx.request.get(url,{maxRedirects:0,timeout:30000,failOnStatusCode:false});
-  const html=target.status()===200?await target.text():"";
+  let target=null,error=null;
+  for(let attempt=1;attempt<=3;attempt++){
+   try{target=await ctx.request.get(url,{maxRedirects:0,timeout:20000,failOnStatusCode:false});break}
+   catch(e){error=String(e?.code||e?.name||"network").slice(0,45);
+    if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*1500));}
+  }
+  const html=target?.status()===200?await target.text():"";
   const canonical=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
    html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
   const c=canonical?new URL(canonical,front):null;
-  report.frontend.push({wpId:p.id,pathname:"/"+p.slug,status:target.status(),
+  report.frontend.push({wpId:p.id,pathname:"/"+p.slug,status:target?.status()||null,error:target?null:error,
     canonicalCorrect:!!c&&c.origin===front&&c.pathname==="/"+p.slug&&!c.search&&!c.hash});
  }
  await mkdir("artifacts/pse-1601-collision",{recursive:true});
  await writeFile("artifacts/pse-1601-collision/result.json",JSON.stringify(report,null,2)+"\n");
  console.log("PSE_JOOMLA_1601_COLLISION="+JSON.stringify(report));
  console.log("PSE_1601_READ_ONLY=true; wordpress_writes=0; astro_build=0");
+ if(report.frontend.some(x=>x.error))process.exitCode=1;
 }finally{await ctx.close();await browser.close()}
