@@ -4,6 +4,8 @@ const event = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
 const message = String(event.head_commit?.message || "").split("\n")[0];
 if (message === "audit(pse): Kali SOP product recovery preflight" || message === "cms(pse): restore source verified Kali SOP product") {
   await import("./pse-product-sop-recovery.mjs");
+} else if (message === "audit(pse): SOP native numeric detail route preflight" || message === "cms(pse): fix SOP Product native numeric detail slug") {
+  await import("./pse-sop-native-detail-slug.mjs");
 } else if (message === "audit(pse): product excerpt lines dry-run" || /^cms\(pse\): format product excerpt lines batch [1-9][0-9]*$/.test(message)) {
   await import("./pse-product-excerpt-format.mjs");
 } else if (message === "audit(pse): verify Nong Lam product category source" || message === "cms(pse): restore verified Nong Lam source category") {
