@@ -102,6 +102,18 @@ try{
   const r=await fetch(path,{method,credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
   return {http:r.status,data:await r.json().catch(()=>({}))};
  },{path,method,body,nonce});
+ // Bounded read-only concurrency reduces 2x complete-gallery Media scans.
+ // All CMS writes/uploads remain strictly serialized by the existing loop.
+ const scanMedia=async(records,fn)=>{
+  let cursor=0;
+  await Promise.all(Array.from({length:Math.min(4,records.length)},async()=>{
+   for(;;){
+    const i=cursor++;
+    if(i>=records.length)return;
+    await fn(records[i]);
+   }
+  }));
+ };
  const cat=await api("/wp-json/wp/v2/categories?slug=anh");
  if(cat.http!==200||cat.data?.length!==1||cat.data[0].slug!=="anh")throw Error("WP photo category changed");
  const category=cat.data[0].id;
@@ -110,16 +122,15 @@ try{
  let post=posts.data[0];
  if(post&&(!post.categories.includes(category)||post.acf?.key!=="ssr-post"||post.acf?.action!=="PostDetails"||!String(post.content?.raw||"").includes('data-pse-gallery-id="'+id+'"')))
    throw Error("Existing Post does not match verified gallery provenance");
- const allMedia=[];
  // Read only native attachment registry first, preserving already imported bytes.
- for(const item of items){
+ await scanMedia(items,async item=>{
   const m=await api("/wp-json/wp/v2/media?context=edit&search="+item.marker+"&per_page=50&_fields=id,slug,mime_type,source_url,media_details");
   if(m.http!==200||!Array.isArray(m.data))throw Error("WP media search denied");
   const found=m.data.filter(x=>x.slug===item.marker);
   if(found.length>1)throw Error("Ambiguous existing gallery image");
   item.id=found[0]?.id||null;
   item.nativeMedia=found[0]||null;
- }
+ });
  // A second agent/session may enqueue the same marker before the first
  // import finishes. Published, source-complete galleries are immutable for
  // this run; do not repeat media HEAD requests or POST write/readback.
@@ -168,9 +179,8 @@ try{
   console.log("PSE_GALLERY_IMPORTED id="+id+" sourceIndex="+item.index+" wpMediaId="+item.id+" bytesVerified=true");
  }
  // Resolve all previously saved media to determine a complete ordered gallery.
- const missing=[];
- for(const item of items){
-  if(!item.id){missing.push(item);continue}
+ const missing=items.filter(item=>!item.id);
+ await scanMedia(items.filter(item=>item.id&&!item.native),async item=>{
   if(!item.native){
    const media=await api("/wp-json/wp/v2/media/"+item.id+"?context=edit");
    if(media.http!==200)throw Error("Stored gallery image readback failed");
@@ -178,7 +188,7 @@ try{
    if(filename.split("/").at(-1)!==item.filename)throw Error("Stored gallery image identity mismatch");
    item.native=wp+"/wp-content/uploads/"+filename;
   }
- }
+ });
  if(missing.length){
   console.log("PSE_GALLERY_BATCH=PARTIAL id="+id+" uploadedThisRun="+created+" remaining="+missing.length+" nextBatch="+(batch+1)+" noPostPublished=true");
  }else{
