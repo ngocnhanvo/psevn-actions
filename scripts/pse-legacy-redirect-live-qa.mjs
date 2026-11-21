@@ -21,16 +21,29 @@ try{
   if(await page.locator("#user_login").count()){
     await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
     await page.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD||"");
-    const t=await page.locator("body").innerText();
-    const m=t.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i)||t.match(/(\d+)\s*([+\-x×*])\s*(\d+)/i);
+    // Only genuine login-form fields may contain a challenge. Ignore the
+    // unrelated numeric content often present in WordPress page templates.
+    const t=(await page.locator("#loginform").innerText()).slice(0,500);
+    const m=t.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i);
     if(m){
       const a=+m[1],b=+m[3],v=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];
-      const f=page.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();
-      if(!await f.count())throw Error("Cannot solve native WP login challenge");await f.fill(String(v));
+      const field=page.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
+      if(!await field.count())throw Error("Cannot solve native WP login challenge");
+      await field.fill(String(v));
     }
-    await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
+    await page.locator("#wp-submit").click();
   }
-  if(page.url().includes("wp-login.php"))throw Error("WordPress login unsuccessful");
+  let adminVerified=false;
+  for(let attempt=1;attempt<=2;attempt++){
+    try{
+      const response=await page.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:35000});
+      adminVerified=Boolean(response&&response.status()<500&&
+       !page.url().includes("wp-login")&&await page.locator("#adminmenu").count());
+      if(adminVerified)break;
+    }catch(e){console.warn("PSE_LIVE_QA_AUTH_GET_RETRY attempt="+attempt+" reason="+String(e?.name||"network"))}
+    if(attempt===1)await page.waitForTimeout(1500);
+  }
+  if(!adminVerified)throw Error("WordPress protected admin GET verification failed");
   const nonce=await page.evaluate(async()=>{
     if(globalThis.wpApiSettings?.nonce)return globalThis.wpApiSettings.nonce;
     const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
