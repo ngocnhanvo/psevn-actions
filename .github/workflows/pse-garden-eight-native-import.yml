@@ -1,0 +1,73 @@
+name: PSE original Phu My Garden eight native WordPress Products (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-garden-eight-native-import.mjs
+      - .github/workflows/pse-garden-eight-native-import.yml
+      - .pse-garden-eight-native-import-request
+permissions:
+  contents: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): import eight original Phu My Garden products'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify eight original PNG bytes and WordPress native collisions (GET ONLY)
+        run: node --check scripts/pse-garden-eight-native-import.mjs && node scripts/pse-garden-eight-native-import.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-garden-eight-native-source-preflight
+          path: artifacts/pse-garden-native-import/report.json
+          retention-days: 30
+          if-no-files-found: warn
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): import eight original Phu My Garden products'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    # Do not submit the apply marker until the pending five/two Joomla Posts
+    # writer chain is completed. GitHub keeps only one pending job per group.
+    concurrency:
+      group: pse-wp-photo-import
+      cancel-in-progress: false
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verified fresh Updraft DB rollback point before the 8-row writer
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Unlock guarded Garden writer only after fresh backup succeeds
+        run: echo "PSE_GARDEN_FRESH_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Publish only eight exact original Garden variants to native WP
+        run: node --check scripts/pse-garden-eight-native-import.mjs && node scripts/pse-garden-eight-native-import.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-garden-eight-original-native-import
+          path: artifacts/pse-garden-native-import/report.json
+          retention-days: 30
+          if-no-files-found: warn
