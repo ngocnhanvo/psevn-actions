@@ -108,15 +108,44 @@ try{
   if(normalize(info.h1)!==normalize(source.title)||
    info.canonical!==front+path||info.overflow>2)
    throw Error("Astro original #379 H1/canonical/responsive mismatch width "+width);
-  for(const v of native.images){
-   const basename=new URL(v,wp).pathname.split("/").at(-1);
-   if(!info.imgs.some(x=>{try{return decodeURIComponent(new URL(x).pathname).includes(decodeURIComponent(basename))}
-      catch{return false}}))
-    {console.log("PSE_379_FRONTEND_IMAGE_DOM_DIAGNOSTIC="+JSON.stringify({
-      width,expected:basename,imgs:info.imgTrace}).slice(0,13000));
-     throw Error("Original Joomla native image absent on public Astro width "+width+" "+basename);}
+  // Astro's native image optimizer converts saved .jpg into .webp at a
+  // verified /api/images/... URL. Preserve the source-owned filename stem.
+  const stems=native.images.map(v=>decodeURIComponent(new URL(v,wp).pathname.split("/").at(-1))
+   .replace(/\.[^.]+$/,""));
+  const selected=[];
+  for(const stem of stems){
+   const urls=info.imgs.filter(x=>{try{
+    const u=new URL(x,front),file=decodeURIComponent(u.pathname.split("/").at(-1));
+    return u.origin===front&&u.pathname.startsWith("/api/images/")&&file===stem+".webp";
+   }catch{return false}});
+   if(urls.length!==1){
+    console.log("PSE_379_FRONTEND_IMAGE_DOM_DIAGNOSTIC="+JSON.stringify({
+     width,expectedStem:stem,actualUrls:info.imgs,imgs:info.imgTrace}).slice(0,14000));
+    throw Error("Original Joomla optimized image absent/duplicated width "+width+" stem "+stem);
+   }
+   selected.push(urls[0]);
   }
-  report.viewports.push({width,route200:true,h1:true,canonical:true,allOriginalImagesPresent:true,overflow:info.overflow});
+  if(new Set(selected).size!==5)throw Error("Astro optimized original 379 images duplicated");
+  const decoded=await page.evaluate(async stems=>{
+   return Promise.all(stems.map(async stem=>{
+    const image=[...document.images].find(x=>{
+     try{return decodeURIComponent(new URL(x.src).pathname.split("/").at(-1))===stem+".webp"}
+     catch{return false}
+    });
+    if(!image)return{stem,ok:false,reason:"IMG_MISSING"};
+    image.loading="eager";
+    try{
+     await Promise.race([image.decode(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("IMAGE_DECODE_TIMEOUT")),25000))]);
+    }catch(e){return{stem,ok:false,reason:String(e?.message||e).slice(0,70)}}
+    return{stem,ok:image.naturalWidth>0&&image.naturalHeight>0,
+     width:image.naturalWidth,height:image.naturalHeight};
+   }));
+  },stems);
+  if(decoded.some(x=>!x.ok))
+   throw Error("Astro original 379 browser pixel decode failed "+JSON.stringify({width,decoded}));
+  report.viewports.push({width,route200:true,h1:true,canonical:true,
+   allOriginalImagesPresent:true,allOriginalImagesDecoded:true,decoded,overflow:info.overflow});
   await page.close();
  }
  report.passed=true;
