@@ -29,7 +29,7 @@ const norm=t=>String(t||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
 // Source Joomla textContent concatenates adjacent block nodes without a space;
 // rendered WordPress innerText inserts visual whitespace. Require every
 // source character in exact order after removing ONLY Unicode whitespace.
-const exactTextChars=s=>norm(s).normalize("NFKC").replace(/\\s+/gu,"");
+const exactTextChars=s=>norm(s).normalize("NFKC").replace(/\s+/gu,"");
 const browser=await chromium.launch({headless:true}),net=await request.newContext({timeout:50000});
 const report={schema:"pse-two-original-shareholder-source-postrelease-v1",
  sourceIds:[338,1085],sourcePosts:[],media:[],rows:[],readOnly:true,noBuild:true,noCmsWrites:true};
