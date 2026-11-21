@@ -116,21 +116,18 @@ try{
   },{path,method,body,nonce});
   return payload;
  };
- const [table,cats,posts]=await Promise.all([
-  api("/wp-json/tablepress/v1/table/pse_01_vi"),
+ // Original #1640 belongs to the native top-level tin-cong-ty term,
+ // NOT the separate TablePress-driven archive used by older gallery-backed
+ // tin-tong-hop articles. Read-only source #44891097492 verified parent=0.
+ const [cats,posts]=await Promise.all([
   api("/wp-json/wp/v2/categories?slug=tin-cong-ty&hide_empty=false&_fields=id,slug,parent,name"),
   api("/wp-json/wp/v2/posts?context=edit&status=any&slug=nhung-giai-dieu-dep-ve-dong-nam-bo&per_page=10&_fields=id,slug,status,acf,categories,date,content,featured_media")
  ]);
- if(table.http!==200||table.data?.items?.length!==3||
-    cats.http!==200||!Array.isArray(cats.data)||cats.data.length!==1||
-    cats.data[0].id!==1742||posts.http!==200||!Array.isArray(posts.data)||posts.data.length>1)
-   throw Error("Native WordPress Joomla Article category, Page or existing Post registry changed");
- const parentId=Number(table.data.items[0]?.categoryId);
- const parentSlug=String(table.data.items[0]?.categorySlug||"");
- const parent=await api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(parentSlug)+"&_fields=id,slug,name");
- if(parent.http!==200||parent.data?.length!==1||parent.data[0].id!==parentId||
-   Number(cats.data[0].parent)!==parentId||parentId<1)
-  throw Error("PSE native company/tin-cong-ty category lineage invalid");
+ if(cats.http!==200||!Array.isArray(cats.data)||cats.data.length!==1||
+    cats.data[0].id!==1742||cats.data[0].slug!=="tin-cong-ty"||
+    cats.data[0].name!=="Tin PVFCCo-PSE"||Number(cats.data[0].parent)!==0||
+    posts.http!==200||!Array.isArray(posts.data)||posts.data.length>1)
+   throw Error("Native WordPress source-owned top-level tin-cong-ty category or existing Post registry changed");
  const existingPost=posts.data[0]||null;
  if(existingPost&&String(existingPost.acf?.origin_page_id||"")!=="1640")
   throw Error("Conflicting native WordPress Post with original slug");
@@ -153,7 +150,7 @@ try{
   if(n===r.pages)break;
  }
  console.log("PSE_1640_NATIVE_IMPORT_PREFLIGHT="+JSON.stringify({sourceId:1640,sourceDate:sourceDay,
-  nativeNewsCategory:cats.data[0].id,newsRootCategory:parentId,existingPosts:posts.data.length,
+  nativeNewsCategory:cats.data[0].id,topLevelCategoryVerified:true,existingPosts:posts.data.length,
   exactExistingMedia:registry.size,sourceArticleChars:info.bodyText.length,archiveProof:2,
   freshBackup:true,writeScope:"ONLY_ORIGINAL_1640"}));
  for(const p of pictures){
@@ -238,7 +235,7 @@ try{
   throw Error("Sanitized exact Joomla source body and native media parity failed");
  const desc=article.text.slice(0,159).trim();
  if(existingPost?.status==="publish"){
-  if(!existingPost.categories?.includes(parentId)||!existingPost.categories?.includes(1742)||
+  if(!existingPost.categories?.includes(1742)||
    existingPost.date?.slice(0,10)!==sourceDay||Number(existingPost.featured_media)!==pictures[0].wpId||
    pictures.some(x=>!String(existingPost.content?.raw||"").includes(x.filename)))
    throw Error("Published original #1640 exists but source parity differs; refuse overwrite");
@@ -247,7 +244,7 @@ try{
  }else{
   const created=await api("/wp-json/wp/v2/posts","POST",{
    title:headline,slug:"nhung-giai-dieu-dep-ve-dong-nam-bo",
-   categories:[parentId,1742],content:article.html,featured_media:pictures[0].wpId,
+   categories:[1742],content:article.html,featured_media:pictures[0].wpId,
    date:sourceDay+"T00:00:00",excerpt:desc,status:"draft",pse_seo_description:desc,
    acf:{action:"PostDetails",key:"ssr-post",origin_page_id:"1640"}
   });
@@ -260,8 +257,7 @@ try{
     read.data.slug!=="nhung-giai-dieu-dep-ve-dong-nam-bo"||
     read.data.acf?.action!=="PostDetails"||read.data.acf?.key!=="ssr-post"||
     String(read.data.acf?.origin_page_id)!=="1640"||
-    read.data.date?.slice(0,10)!==sourceDay||!read.data.categories?.includes(parentId)||
-    !read.data.categories?.includes(1742)||Number(read.data.featured_media)!==pictures[0].wpId||
+    read.data.date?.slice(0,10)!==sourceDay||!read.data.categories?.includes(1742)||Number(read.data.featured_media)!==pictures[0].wpId||
     pictures.some(x=>!String(read.data.content?.raw||"").includes(x.filename)))
    throw Error("Native original 1640 draft readback did not preserve source");
   const pub=await api("/wp-json/wp/v2/posts/"+postId,"POST",{status:"publish"});
