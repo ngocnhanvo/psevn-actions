@@ -16,8 +16,11 @@ const tokens=s=>new Set(text(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").
 const overlap=(a,b)=>{const x=tokens(a),y=tokens(b);return x.size?Number(([...x].filter(w=>y.has(w)).length/x.size).toFixed(3)):0};
 const report={schema:"pse-five-ambiguous-joomla-product-alias-taxonomy-v1",readOnly:true,rows:[],categories:0};
 try{
- const req=await page.request.get(wp+"/wp-json/wp/v2/product_cat?hide_empty=false&per_page=100&_fields=id,slug,name,description,count",{timeout:35000});
- if(req.status()!==200)throw Error("Public native ProductCategory REST "+req.status());
+ // PSE stores complete editor-owned category HTML in protected term meta.
+ // The native public product_cat.description may legitimately be empty.
+ // Its official custom Astro REST endpoint resolves rich_description first.
+ const req=await page.request.get(wp+"/wp-json/astro/v1/get-product-categories",{timeout:35000});
+ if(req.status()!==200)throw Error("PSE native ProductCategory source REST "+req.status());
  const cats=await req.json();if(!Array.isArray(cats)||cats.length<6||cats.length>100)throw Error("Native product categories unavailable");
  report.categories=cats.length;
  for(const id of ids){
