@@ -32,12 +32,12 @@ try{
   if(html.length<250||html.length>8000000)throw Error("Source body unexpected "+target.id);
   const sourcePage=await sourceCtx.newPage();
   try{
-   const inert=html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi,"");
+   const inert=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,"");
    await sourcePage.setContent('<base href="'+sourceUrl+'">'+inert,{waitUntil:"domcontentloaded",timeout:25000});
    const hrefs=await sourcePage.evaluate(()=>{
     const root=document.querySelector(".item-page [itemprop=articleBody],.item-page,article,.blog")||document.body;
     return [...new Set([...root.querySelectorAll("a[href]")].map(e=>e.href).filter(h=>{
-     try{const u=new URL(h);return u.hostname==="www.pse.vn"&&u.pathname.startsWith("/images/gallery/")&&/\\.(?:jpe?g|png|webp)$/i.test(u.pathname)}catch{return false}
+     try{const u=new URL(h);return u.hostname==="www.pse.vn"&&u.pathname.startsWith("/images/gallery/")&&/\.(?:jpe?g|png|webp)$/i.test(u.pathname)}catch{return false}
     }))];
    });
    if(hrefs.length!==target.images)throw Error("Independent Joomla source image count changed "+target.id+" "+hrefs.length);
