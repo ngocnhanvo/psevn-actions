@@ -1,0 +1,34 @@
+name: PSE Joomla 379 exact RSS date and native draft preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-379-native-readonly-preflight.mjs
+      - .github/workflows/pse-379-native-readonly-preflight.yml
+permissions:
+  contents: read
+jobs:
+  check:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-379-native-readonly-preflight.mjs
+      - run: node scripts/pse-379-native-readonly-preflight.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-379-native-source-preflight
+          path: artifacts/pse-379-native-preflight/report.json
+          retention-days: 14
+          if-no-files-found: ignore
