@@ -1,1 +1,3 @@
 After signed deployment 44886355852: verify 53 products including all eight native Garden variants.
+
+2026-11-21: after signed Garden release 44886355852, strict QA 45+8=53 product pagination, original 7 PDFs, and responsive details; use dynamic exact cohort assertions, no CMS writes/build.
