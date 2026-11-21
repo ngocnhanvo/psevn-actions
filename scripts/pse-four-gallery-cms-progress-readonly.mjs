@@ -86,7 +86,7 @@ try{
  },{path,nonce});
  const byId=new Map(albums.map(x=>[x.id,{...x,observedMedia:0,
   exactFilenameCount:0,duplicateFilenames:[],unexpectedFilenames:[],missingFilenames:[],sampleMediaIds:[],publishedPost:null}]));
- const filenames=new Map(), seenMediaIds=new Set();
+ const filenames=new Map(), seenMediaIds=new Set(), slugMismatches=[];
  let pagesExpected=null,lastMediaId=0;
  for(let n=1;n<=65;n++){
   let data,last="unavailable";
@@ -116,6 +116,7 @@ try{
    if(!m)continue;
    const id=Number(m[1]),row=byId.get(id);
    row.observedMedia++;
+   if(media.slug!==basename.replace(/\.[^.]+$/,""))slugMismatches.push({id:mediaId,filename:basename,slug:media.slug});
    if(!expectedByAlbum.get(id).has(basename)){row.unexpectedFilenames.push(basename);continue;}
    if(!filenames.has(basename))filenames.set(basename,[]);
    filenames.get(basename).push(Number(media.id));
@@ -147,6 +148,8 @@ try{
   report.albums.push(row);
   console.log("PSE_FOUR_GALLERY_PROGRESS_ROW="+JSON.stringify({...row,missingFilenames:undefined,missingCount:row.missingFilenames.length}));
  }
+ report.slugMismatches=slugMismatches;
+ console.log("PSE_GALLERY_NATIVE_SLUG_MISMATCHES="+JSON.stringify(slugMismatches));
  report.totalObservedOriginalPhotos=report.albums.reduce((n,r)=>n+r.exactFilenameCount,0);
  report.expectedOriginalPhotos=464;
  report.uniqueMediaIdsObserved=seenMediaIds.size;
