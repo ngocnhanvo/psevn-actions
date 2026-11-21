@@ -29,7 +29,7 @@ const result={schema:"pse-legacy-804-article-public-post-inventory-v1",sourceChe
  createdAt:"2026-11-21",readOnly:true,wordpress:{},groups:[],entries:[],summary:{}};
 try{
  const [posts,products,categories,pages]=await Promise.all([
-  full({route:"posts",fields:"status=publish&_fields=id,slug,status,date,categories"}),
+  full({route:"posts",fields:"status=publish&_fields=id,slug,status,date,categories,acf"}),
   full({route:"product",fields:"status=publish&_fields=id,slug,title,product_cat,featured_media"}),
   full({route:"categories",fields:"hide_empty=false&_fields=id,slug,parent"}),
   full({route:"pages",fields:"status=publish&_fields=id,slug,status,acf,content"})
@@ -48,6 +48,14 @@ try{
   const postsSlug=bySlug.get(slug)||[];
   const sourceProduct=/\/hoat-dong-kinh-doanh\/san-pham\//.test(family);
   const sourceGallery=/\/tin-tuc-su-kien\/thu-vien\/anh$/.test(family);
+  // Joomla archive URL keeps the numeric article ID. The native source-owned
+  // WP gallery slug intentionally retains it (e.g. 1053-ngay-hoi...),
+  // unlike ordinary Posts. Count only the exact ACF source-ID owner.
+  const gallerySlug=sourceId+"-"+slug;
+  const sourceGalleryOwners=sourceGallery?(bySlug.get(gallerySlug)||[]).filter(p=>
+    p.status==="publish"&&String(p.acf?.origin_page_id||"")===String(sourceId)&&
+    p.acf?.key==="ssr-post"&&p.acf?.action==="PostDetails"):[];
+  if(sourceGalleryOwners.length>1)throw Error("Multiple native WP Posts own Joomla gallery "+sourceId);
   const alternativeProduct=sourceProduct?products.filter(p=>String(p.slug).endsWith("-"+sourceId)):[];
   // Distribution source items 1031 and 1568 were independently migrated as native
   // WordPress Pages (see PSE_DISTRIBUTION_MODERN_UI_2026-10-25.md), not Posts.
@@ -61,9 +69,10 @@ try{
   let current=postsExact[0]||null;
   if(current)status="PUBLISHED_ID";
   else if(postsSlug.length===1){current=postsSlug[0];status="PUBLISHED_SLUG"}
+  else if(sourceGalleryOwners.length===1){current=sourceGalleryOwners[0];status="PUBLISHED_GALLERY";}
   else if(alternativeProduct.length===1)status="NATIVE_PRODUCT";
   else if(nativePages.length===1)status="NATIVE_PAGE";
-  else if(sourceGallery)status="PHOTO_GALLERY_SOURCE";
+  else if(sourceGallery)status="PHOTO_GALLERY_NOT_PUBLIC";
   const expectedCategory=catBySlug.get(family.split("/").at(-1));
   const taxonomyMismatch=!!current&&!!expectedCategory&&!current.categories.includes(expectedCategory.id);
   const entry={sourceId:Number(sourceId),sourcePath:path,sourceFamily:family,
@@ -77,8 +86,8 @@ try{
   if(status.startsWith("PUBLISHED"))g.published++;
   else if(status==="NATIVE_PRODUCT")g.nativeProduct++;
   else if(status==="NATIVE_PAGE")g.nativePage++;
-  else if(status==="PHOTO_GALLERY_SOURCE")g.gallery++;
   else{g.missing++;g.unpublishedSourceIds.push(Number(sourceId))}
+  if(sourceGallery)g.gallery++;
   if(taxonomyMismatch)g.taxonomyMismatch++;
  }
  result.wordpress={publishedPostCount:posts.length,publishedProductCount:products.length,
