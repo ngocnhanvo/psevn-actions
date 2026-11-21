@@ -89,7 +89,7 @@ try{
    sourceImg:article.imageSources.length,archiveImageProof:report.originalPublisherArchives.length,
    sourceCreatedDay:hasDate?report.date.day:null,sourceDatePrecision:report.date?.precision||null,
    sourceDateMethod:report.date?.source||null,existingPublishedWordPressPosts:posts.length,
-   nativeCategoryId:cats[0].id,readOnly:true,noCmsWrites:true
+   nativeCategoryId:cats[0].id,nativeCategoryParent:cats[0].parent,nativeCategoryName:cats[0].name,readOnly:true,noCmsWrites:true
  }));
  console.log("PSE_1640_SOURCE_MEDIA="+JSON.stringify(report.originalPublisherArchives));
 }finally{
