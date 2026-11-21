@@ -37,6 +37,7 @@ const browser=await chromium.launch({headless:true}),net=await request.newContex
 const report={schema:"pse-eight-original-garden-live-acceptance-v1",readOnly:true,
  sourceOwnership:"verified-original-PNG-SHA256",rows:[],category:{},media:[],issues:[],summary:{}};
 try{
+ await mkdir("artifacts/pse-garden-eight-live",{recursive:true});
  const get=async path=>{
   const res=await net.get(wp+path,{timeout:45000});
   if(res.status()!==200)throw Error("Native public WP source endpoint HTTP "+res.status()+" "+path);
@@ -93,8 +94,8 @@ try{
       !canon||canon.origin!==front||canon.pathname!=="/san-pham/"+slug||canon.search||canon.hash||
       dom.overflow||leaks.length)
      throw Error("Live Garden Product SEO/mobile/privacy mismatch "+slug+" width "+width);
-    const img=page.locator("main img,#main-content img").filter({hasNot:page.locator("nonexistent")});
-    const pics=page.locator('main img[src*="'+target.name+'"],#main-content img[src*="'+target.name+'"]');
+    const stem=target.name.replace(/\.png$/,"");
+    const pics=page.locator('main img[src*="'+stem+'"],#main-content img[src*="'+stem+'"]');
     if(!await pics.count()&&!dom.matchingImages.length)
      throw Error("Garden original photo absent on detail "+slug);
     const check=await pics.count()?pics.first():null;
