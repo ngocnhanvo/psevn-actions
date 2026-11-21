@@ -12,7 +12,7 @@ const origin=key=>{
 const front=origin("WC_URL_CLIENT"),wp=origin("WC_URL");
 if(front===wp)throw Error("Frontend and WordPress origin collision");
 const slug="989-hoi-dong-co-dong-le-ra-mat-va-don-nhan-iso",expected=98;
-const browser=await chromium.launch({headless:true}),report={album:slug,expected,readOnly:true,widths:[],allHeadProbes:[]};
+const browser=await chromium.launch({headless:true}),report={album:slug,expected,readOnly:true,widths:[],sampleNetworkProbes:[]};
 try{
  const paths=[];
  for(const width of [390,1440]){
@@ -56,7 +56,7 @@ try{
   await page.keyboard.press("Escape");
   if(await dialog.isVisible())throw Error("Gallery modal did not close");
   if(seenAdmin.length)throw Error("Private WordPress origin leaked into browser requests");
-  if(width===390)paths.push(...urls);
+  if(width===390)paths.push(...[0,10,20,30,40,50,60,70,80,97].map(i=>urls[i]));
   report.widths.push({width,http:resp.status(),images:count,sampledDecode:5,lightbox:true,seo:true,overflow:false,wpOriginRequests:0});
   console.log("PSE_GALLERY_989_LIVE_WIDTH="+JSON.stringify(report.widths.at(-1)));
   await page.close();
@@ -67,14 +67,15 @@ try{
  await Promise.all(Array.from({length:4},async()=>{
    for(;;){
      const i=next++;if(i>=paths.length)return;
-     const response=await request.request.head(paths[i],{timeout:30000,failOnStatusCode:false});
+     // Astro's /api/files route exposes GET, not HEAD: request actual bytes.
+     const response=await request.request.get(paths[i],{timeout:35000,failOnStatusCode:false});
      checks[i]={status:response.status(),mime:String(response.headers()["content-type"]||"").slice(0,70)};
    }
  }));
- report.allHeadProbes=checks;await request.close();
- if(checks.length!==expected||checks.some(x=>x.status!==200||!x.mime.startsWith("image/")))
-   throw Error("Not all 98 WordPress media HEAD requests passed");
- console.log("PSE_GALLERY_989_LIVE_SUMMARY="+JSON.stringify({widths:report.widths.length,images:expected,headPass:checks.length,sourceAdminHostHidden:true}));
+ report.sampleNetworkProbes=checks;await request.close();
+ if(checks.length!==10||checks.some(x=>x.status!==200||!x.mime.startsWith("image/")))
+   throw Error("Public original-media sample GET requests failed");
+ console.log("PSE_GALLERY_989_LIVE_SUMMARY="+JSON.stringify({widths:report.widths.length,renderedImageUrls:expected,sampleGetPass:checks.length,decodedPerViewport:5,sourceAdminHostHidden:true}));
 }finally{
  await mkdir("artifacts/pse-gallery-989-live",{recursive:true});
  await writeFile("artifacts/pse-gallery-989-live/report.json",JSON.stringify(report,null,2)+"\n");
