@@ -188,7 +188,12 @@ try{
     throw Error("Source original photo ID not unique in WP "+def.id+" marker="+marker);
    const m=files[0],file=String(m.media_details?.file||"").replace(/^\/+/,"");
    if(file.split("/").at(-1)!==marker+"."+ext)throw Error("Source original WP filename mismatch "+def.id);
-   const url=new URL(m.source_url||"");
+   // PSE custom Media REST returns a root-relative source_url. Resolve it
+   // against the authenticated WP origin, never against the public Astro host.
+   const nativeSource=String(m.source_url||"");
+   if(!nativeSource.startsWith("/wp-content/uploads/")||nativeSource.startsWith("//"))
+    throw Error("Unexpected WordPress original Media URL type");
+   const url=new URL(nativeSource,wp);
    if(url.origin!==wp||url.pathname!=="/wp-content/uploads/"+file||
       !Number.isSafeInteger(Number(m.id))||Number(m.id)<1)throw Error("Source Media WP host/ID mismatch");
    originalLinks.push({broken,full,marker,wpId:Number(m.id),wpUrl:url.href,file});
