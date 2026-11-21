@@ -74,6 +74,41 @@ try{
   mediaCount:x.media.length,tableCount:x.tables,paragraphCount:x.paragraphs,
   htmlChars:x.htmlChars});
  report.source=toSummary(src);report.overview=toSummary(ov);
+ // A native Category description cannot be called source-complete if any
+ // mandatory Joomla image is missing. Only verify exact original URLs here.
+ const allowedHosts=new Set(["pse.vn","www.pse.vn","dpm.vn","www.dpm.vn"]);
+ report.originalImages=[];
+ for(const [index,img] of src.images.entries()){
+  const row={index,host:img.host,path:img.path,http:null,bytes:0,
+   sha256:null,validBinary:false,decision:"UNVERIFIED"};
+  report.originalImages.push(row);
+  if(!allowedHosts.has(img.host)){row.decision="EXTERNAL_HOST_REQUIRES_REVIEW";continue}
+  let url;
+  try{url=new URL("https://"+img.host+img.path)}catch{row.decision="INVALID_ORIGINAL_URL";continue}
+  try{
+   const res=await page.request.get(url.href,{timeout:20000,maxRedirects:1,failOnStatusCode:false});
+   row.http=res.status();
+   if(row.http!==200){row.decision="SOURCE_HTTP_"+row.http;continue}
+   const length=Number(res.headers()["content-length"]||0);
+   if(length>8500000){row.decision="SOURCE_FILE_TOO_LARGE";continue}
+   const bytes=await res.body();
+   row.bytes=bytes.length;
+   if(bytes.length<160||bytes.length>8500000){row.decision="INVALID_FILE_LENGTH";continue}
+   const hex=bytes.subarray(0,12).toString("hex");
+   row.validBinary=hex.startsWith("ffd8ff")||
+    hex.startsWith("89504e470d0a1a0a")||
+    ["GIF87a","GIF89a"].includes(bytes.subarray(0,6).toString("ascii"))||
+    (bytes.subarray(0,4).toString("ascii")==="RIFF"&&bytes.subarray(8,12).toString("ascii")==="WEBP");
+   if(row.validBinary){row.sha256=createHash("sha256").update(bytes).digest("hex");row.decision="ORIGINAL_BINARY_VERIFIED"}
+   else row.decision="INVALID_IMAGE_SIGNATURE";
+  }catch(e){row.decision="SOURCE_FETCH_UNAVAILABLE";row.error=String(e?.code||e?.name||"network").slice(0,80)}
+  console.log("PSE_1434_ORIGINAL_MEDIA="+JSON.stringify({index:row.index,host:row.host,
+   http:row.http,bytes:row.bytes,validBinary:row.validBinary,decision:row.decision}));
+ }
+ report.sourceMediaSummary={expected:src.images.length,
+  binaryVerified:report.originalImages.filter(x=>x.validBinary).length,
+  blocked:report.originalImages.filter(x=>!x.validBinary).map(x=>({index:x.index,host:x.host,decision:x.decision})),
+  contentImportedToWordPress:false};
  const identicalText=src.text===ov.text;
  const sourceInOverview=ov.text.includes(src.text);
  const overviewInSource=src.text.includes(ov.text)&&ov.text.length>=300;
@@ -110,7 +145,7 @@ try{
  console.log("PSE_1434_NPK_CATEGORY_SUMMARY="+JSON.stringify({
   sourceId:1434,originalBodyChars:src.text.length,overviewBodyChars:ov.text.length,
   crossSource:report.crossSource,nativeCategory:report.nativeCategory,
-  frontend:report.frontend,decision:report.decision,readOnly:true,noCmsWrites:true}));
+  frontend:report.frontend,media:report.sourceMediaSummary,decision:report.decision,readOnly:true,noCmsWrites:true}));
 }finally{
  await mkdir("artifacts/pse-1434-npk-category",{recursive:true});
  await writeFile("artifacts/pse-1434-npk-category/report.json",JSON.stringify(report,null,2)+"\n");
