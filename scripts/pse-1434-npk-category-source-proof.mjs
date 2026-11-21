@@ -12,9 +12,9 @@ if(process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||
  throw Error("Exact Joomla #1434 source quarantine no longer matches");
 const source=new URL(item.source_url);
 if(source.protocol!=="https:"||source.hostname!=="www.pse.vn"||
- !source.pathname.includes("/nhom-phan-hon-hop-npk-phu-my/8-trang-chu/")||
- !source.pathname.endsWith("/1434-npk-phu-my.html")||source.search||source.hash)
- throw Error("Joomla #1434 original URL identity changed");
+ !/\/1434-[^/]+\.html$/i.test(source.pathname)||
+ !source.pathname.includes("/8-trang-chu/")||source.search||source.hash)
+ throw Error("Joomla #1434 original manifest URL not supported: "+source.pathname);
 const overview="https://pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-hon-hop-npk-phu-my/8-trang-chu.html";
 const values=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
 function originOf(name){
