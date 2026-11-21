@@ -4,6 +4,10 @@ on:
     branches: [main]
     paths:
       - .pse-two-original-joomla-posts-trigger
+  workflow_run:
+    workflows:
+      - PSE five original Joomla gallery-backed posts native CMS guarded restore
+    types: [completed]
 permissions:
   contents: read
 jobs:
@@ -37,7 +41,17 @@ jobs:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.ref == 'refs/heads/main' &&
-      github.event.head_commit.message == 'cms(pse): recover two additional gallery-backed Joomla Posts'
+      (
+        (github.event_name == 'push' &&
+         github.event.head_commit.message == 'cms(pse): recover two additional gallery-backed Joomla Posts')
+        ||
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push' &&
+         github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
+         github.event.workflow_run.head_commit.message == 'cms(pse): recover five original Joomla photo-backed posts')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 25
     container:
