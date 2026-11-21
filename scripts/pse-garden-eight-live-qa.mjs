@@ -33,6 +33,9 @@ const variants=[
 ];
 const slugOf=x=>"phu-my-garden-"+x.name.toLowerCase().replace(/\.png$/,"");
 const normal=s=>String(s||"").replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+// Joomla authoring uses ASCII dashes; WordPress wptexturize may render U+2013.
+// Match only this typographic dash equivalence; keep formula, crop and taxonomy strict.
+const cropComparable=s=>normal(s).replace(/[\u2010-\u2015\u2212]/g,"-");
 const browser=await chromium.launch({headless:true}),net=await request.newContext({timeout:40000});
 const report={schema:"pse-eight-original-garden-live-acceptance-v1",readOnly:true,
  sourceOwnership:"verified-original-PNG-SHA256",rows:[],category:{},media:[],issues:[],summary:{}};
@@ -59,7 +62,7 @@ try{
   const slug=slugOf(target),record=products.find(p=>p.slug===slug);
   const title=normal(record?.title?.rendered||record?.title?.raw);
   if(!record||!record.product_cat?.includes(Number(gardenTerm[0].id))||
-     !title.includes("Phú Mỹ Garden")||!title.includes(target.formula)||!title.includes(target.crop)||
+     !title.includes("Phú Mỹ Garden")||!title.includes(target.formula)||!cropComparable(title).includes(cropComparable(target.crop))||
      !Number.isSafeInteger(Number(record.featured_media))||Number(record.featured_media)<1)
    throw Error("Native Garden Product identity/category/title missing "+slug);
   const media=await get("/wp-json/wp/v2/media/"+record.featured_media+
@@ -90,7 +93,7 @@ try{
      overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+2
     }),target.name);
     const canon=dom.canonical?new URL(dom.canonical,front):null;
-    if(dom.h1.length!==1||!dom.h1[0].includes(target.formula)||!dom.h1[0].includes(target.crop)||
+    if(dom.h1.length!==1||!dom.h1[0].includes(target.formula)||!cropComparable(dom.h1[0]).includes(cropComparable(target.crop))||
       !canon||canon.origin!==front||canon.pathname!=="/san-pham/"+slug||canon.search||canon.hash||
       dom.overflow||leaks.length)
      throw Error("Live Garden Product SEO/mobile/privacy mismatch "+slug+" width "+width);
