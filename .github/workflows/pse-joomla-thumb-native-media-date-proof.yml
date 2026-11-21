@@ -1,0 +1,32 @@
+name: PSE seven Joomla article image identity and WP Media/date evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-joomla-thumb-native-media-date-proof.mjs
+      - .github/workflows/pse-joomla-thumb-native-media-date-proof.yml
+permissions:
+  contents: read
+jobs:
+  evidence:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare exact original Joomla filenames, native Media IDs, Post slugs and original dates
+        run: node --check scripts/pse-joomla-thumb-native-media-date-proof.mjs && node scripts/pse-joomla-thumb-native-media-date-proof.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-seven-original-article-media-date-proof
+          path: artifacts/pse-thumb-native-media-date/report.json
+          if-no-files-found: ignore
+          retention-days: 30
