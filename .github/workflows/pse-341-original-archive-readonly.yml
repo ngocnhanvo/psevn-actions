@@ -1,0 +1,33 @@
+name: PSE Joomla 341 exact historical original HTML archive evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-341-original-archive-readonly.mjs
+      - .github/workflows/pse-341-original-archive-readonly.yml
+permissions:
+  contents: read
+jobs:
+  archived-source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Check syntax and inspect exact original archive
+        run: |
+          node --check scripts/pse-341-original-archive-readonly.mjs
+          node scripts/pse-341-original-archive-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-341-original-archive-source-proof
+          path: artifacts/pse-341-source-archive/report.json
+          retention-days: 30
+          if-no-files-found: warn
