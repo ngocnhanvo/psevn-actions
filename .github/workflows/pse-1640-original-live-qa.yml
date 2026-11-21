@@ -1,0 +1,43 @@
+name: PSE original Joomla 1640 two publisher archival JPEGs full live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-1640-original-live-qa.mjs
+      - .github/workflows/pse-1640-original-live-qa.yml
+      - .pse-1640-original-live-qa-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-1640-original-live-qa.mjs
+  public-acceptance:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): verify original Joomla 1640 two archive photos postrelease'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-1640-original-live-qa.mjs && node scripts/pse-1640-original-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-1640-archive-jpeg-production-acceptance
+          path: artifacts/pse-original-1640-live/report.json
+          retention-days: 30
+          if-no-files-found: warn
