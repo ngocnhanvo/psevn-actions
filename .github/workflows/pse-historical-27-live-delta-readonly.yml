@@ -1,0 +1,32 @@
+name: PSE original 27 historical Joomla source identities versus native WP live (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-historical-27-live-delta-readonly.mjs
+      - .github/workflows/pse-historical-27-live-delta-readonly.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare source-ID exact post identity for original 27 cohort, no CMS writes
+        run: node --check scripts/pse-historical-27-live-delta-readonly.mjs && node scripts/pse-historical-27-live-delta-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-historical-27-native-public-source-identity-audit
+          path: artifacts/pse-historical-27-live/report.json
+          retention-days: 30
+          if-no-files-found: warn
