@@ -67,7 +67,15 @@ for(const p of posts){
 }
 const resources=[...links.values()].sort((a,b)=>a.url.localeCompare(b.url));
 const countByKind={};for(const item of resources)countByKind[item.kind]=(countByKind[item.kind]||0)+1;
-const toCheck=resources.filter(x=>x.kind==="WP_NATIVE_UPLOAD"||x.kind==="FRONTEND_UPLOAD").slice(0,250);
+const eligible=resources.filter(x=>x.kind==="WP_NATIVE_UPLOAD"||x.kind==="FRONTEND_UPLOAD");
+// Resume only the 147 not yet tested; prior successful GET-only HEAD run
+// #44917101264 proved the first 250 under this exact stable inventory.
+if(posts.length!==758||documentTagRefs!==503||resources.length!==400||
+ eligible.length!==397||countByKind.WP_NATIVE_UPLOAD!==397||
+ resources.filter(x=>x.kind==="EXTERNAL_FILE").length!==1)
+ throw Error("PSE native document inventory changed; resume is unsafe");
+const priorRunId=44917101264,priorVerifiedNativeHEAD=250;
+const toCheck=eligible.slice(priorVerifiedNativeHEAD);
 const checks=[];let cursor=0;
 await Promise.all(Array.from({length:5},async()=>{for(;;){
  const i=cursor++;if(i>=toCheck.length)return;
@@ -97,13 +105,17 @@ const result={schema:"pse-all-published-758-wordpress-document-link-inventory-v1
  notes:"HEAD validates only response status/metadata and never proves PDF bytes. Original Joomla document links remain provenance evidence and must not be silently rewritten. When capped, unchecked local documents are NOT claimed PASS.",
  postCount:posts.length,documentTagRefs,uniqueDocumentUrls:resources.length,byKind:countByKind,
  wpUploadEligible:resources.filter(x=>["WP_NATIVE_UPLOAD","FRONTEND_UPLOAD"].includes(x.kind)).length,
- wpUploadHeadChecked:checks.length,wpUploadHeadUnchecked:Math.max(0,resources.filter(x=>["WP_NATIVE_UPLOAD","FRONTEND_UPLOAD"].includes(x.kind)).length-checks.length),
+ wpUploadHeadChecked:checks.length,wpUploadPriorVerified:priorVerifiedNativeHEAD,
+ priorRunId,wpUploadCombinedChecked:checks.length+priorVerifiedNativeHEAD,
+ wpUploadHeadUnchecked:Math.max(0,eligible.length-priorVerifiedNativeHEAD-checks.length),
  issueCounts:Object.fromEntries([...new Set(issues.map(x=>x.reason))].map(x=>[x,issues.filter(y=>y.reason===x).length])),
  issues,originalLegacyFileUrls:originalLinks,insecureHttpDocs:insecure,
  checkedNativeFiles:checks,resources};
 console.log("PSE_758_PUBLISHED_DOCUMENT_LINK_SUMMARY="+JSON.stringify({
  posts:result.postCount,documentTagRefs,uniqueDocumentUrls:resources.length,byKind:countByKind,
- nativeEligible:result.wpUploadEligible,nativeHeadChecked:checks.length,nativeUnchecked:result.wpUploadHeadUnchecked,
+ nativeEligible:result.wpUploadEligible,nativeHeadCheckedThisRun:checks.length,
+ priorVerifiedRunId:priorRunId,priorVerifiedCount:priorVerifiedNativeHEAD,
+ nativeCombinedHeadChecked:result.wpUploadCombinedChecked,nativeUnchecked:result.wpUploadHeadUnchecked,
  originalJoomlaDocuments:originalLinks.length,insecureHttpDocuments:insecure.length,
  issues:result.issueCounts,readOnly:true,noCmsWrites:true}));
 for(const item of issues.slice(0,25))console.log("PSE_758_NATIVE_DOCUMENT_ISSUE="+JSON.stringify(item).slice(0,850));
