@@ -21,6 +21,7 @@ try{
     count:cards.length,
     titles:cards.map(card=>(card.querySelector("h2")?.textContent||"").replace(/\s+/g," ").trim()),
     sopCardSrcSet:cards.find(card=>card.textContent.includes("Kali Phú Mỹ (SOP)"))?.querySelector("img")?.getAttribute("srcset")||"",
+    sopHref:cards.find(card=>card.textContent.includes("Kali Phú Mỹ (SOP)"))?.querySelector("a[href]")?.href||"",
     overflow:document.documentElement.scrollWidth-innerWidth,
     links:cards.map(card=>card.querySelector("a[href]")?.getAttribute("href")||"")
    };
@@ -45,8 +46,10 @@ try{
   if(section.overflow>5)throw Error("Category horizontal overflow "+section.overflow+" at "+width);
   await page.screenshot({path:out+"/category-"+width+".png",fullPage:true,timeout:40000});
   const detail=await context.newPage();
-  const rd=await detail.goto(base+product,{waitUntil:"domcontentloaded",timeout:60000});
-  if(rd?.status()!==200)throw Error("Product detail HTTP "+rd?.status()+" at "+width);
+  const actualDetailUrl=section.sopHref||base+product;
+  console.log("PSE_SOP_DETAIL_LINK="+JSON.stringify({width,actualDetailUrl,source:section.sopHref?"product-card":"fallback"}));
+  const rd=await detail.goto(actualDetailUrl,{waitUntil:"domcontentloaded",timeout:60000});
+  if(rd?.status()!==200)throw Error("SOP product card points to a broken detail HTTP "+rd?.status()+" at "+width+" url="+actualDetailUrl);
   const d=await detail.evaluate(()=>{
    const body=(document.querySelector("main")?.textContent||"").replace(/\s+/g," ").trim();
    return {h1:document.querySelector("main h1")?.textContent?.trim()||"",containsName:body.includes("Kali Phú Mỹ (SOP)"),
