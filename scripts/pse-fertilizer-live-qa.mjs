@@ -19,40 +19,63 @@ try{
    for(const spec of specs){
     try{
      const res=await page.goto(url.origin+spec.path,{waitUntil:"domcontentloaded",timeout:60000});
-     if(spec.kind==="catalog"&&res?.status()===200)await page.waitForFunction(()=>document.querySelectorAll("#product-grid article").length>0,{timeout:15000}).catch(()=>{});
+     if(spec.kind==="catalog"&&res?.status()===200)
+       await page.waitForFunction(()=>document.querySelectorAll("#product-grid article,article.pse-catalog-card").length>0,{timeout:15000}).catch(()=>{});
      let catalogAudit=null;
      if(spec.kind==="catalog"&&res?.status()===200){
-       const initial=await page.locator("#product-grid article").count();
-       const payload=await page.locator("#main-content").getAttribute("data-products");
-       const parsed=JSON.parse(payload||"[]");
-       const declared=Array.isArray(parsed)?parsed.length:0;
-       let clicks=0;
-       while(clicks<4&&await page.locator("#load-more-btn:not(.hidden)").isVisible()){
-         await page.locator("#load-more-btn").click();
-         clicks++;
+       const ssrCount=await page.locator("article.pse-catalog-card").count();
+       const collect=()=>page.evaluate(()=>[...document.querySelectorAll("article.pse-catalog-card")].map(card=>({
+         href:card.querySelector("a[href]")?.getAttribute("href")||"",
+         srcset:card.querySelector("img[srcset]")?.getAttribute("srcset")||""
+       })));
+       if(ssrCount){
+         // The live PSE catalog uses SSR pagination, not the former client Load More.
+         const cards=await collect(),pageSizes=[ssrCount];
+         for(const index of [2,3]){
+           const next=await page.goto(url.origin+"/san-pham/"+index,{waitUntil:"domcontentloaded",timeout:60000});
+           if(next?.status()!==200)throw Error("SSR catalog page "+index+" HTTP "+next?.status());
+           const group=await collect();cards.push(...group);pageSizes.push(group.length);
+         }
+         catalogAudit={mode:"ssr",initial:ssrCount,pageSizes,checkedCount:cards.length,
+           uniqueHrefs:new Set(cards.map(x=>x.href)).size,allImgSrcSet:cards.filter(x=>x.srcset).length};
+         await page.goto(url.origin+spec.path,{waitUntil:"domcontentloaded",timeout:60000});
+       }else{
+         const initial=await page.locator("#product-grid article").count();
+         const payload=await page.locator("#main-content").getAttribute("data-products");
+         const parsed=JSON.parse(payload||"[]");
+         let clicks=0;
+         while(clicks<4&&await page.locator("#load-more-btn:not(.hidden)").isVisible()){
+           await page.locator("#load-more-btn").click();clicks++;
+         }
+         const cards=await page.locator("#product-grid article").evaluateAll(list=>list.map(card=>({
+           href:card.querySelector("a[href]")?.getAttribute("href")||"",
+           srcset:card.querySelector("img[srcset]")?.getAttribute("srcset")||""
+         })));
+         catalogAudit={mode:"client",initial,declared:parsed.length,clicks,checkedCount:cards.length,
+           uniqueHrefs:new Set(cards.map(x=>x.href)).size,allImgSrcSet:cards.filter(x=>x.srcset).length};
        }
-       await page.waitForFunction(count=>document.querySelectorAll("#product-grid article").length===count,declared,{timeout:14000}).catch(()=>{});
-       catalogAudit={initial,declared,clicks,expanded:await page.locator("#product-grid article").count(),
-         firstProductImageSource:await page.locator("#product-grid article img").first().getAttribute("srcset")};
      }
      const d=await page.evaluate(()=>{
       const main=document.querySelector("#main-content")||document.querySelector("main");
       const imgs=[...(main?.querySelectorAll("img")||[])].filter(x=>!!x.currentSrc||!!x.src);
       const docs=[...(main?.querySelectorAll(".pse-download-card")||[])];
-      const cards=main?.querySelectorAll("#product-grid article").length||0;
+      const cards=main?.querySelectorAll("#product-grid article,article.pse-catalog-card").length||0;
       return{
        header:!!document.querySelector(".pse-header"),
-       footer:!!document.querySelector(".pse-footer"),
+       footer:!!document.querySelector("footer,[role=contentinfo],.pse-footer"),
        h1:[...(main?.querySelectorAll("h1")||[])].map(x=>(x.textContent||"").replace(/\s+/g," ").trim()),
        title:document.title,cards,docs:docs.map(x=>({label:(x.textContent||"").replace(/\s+/g," ").trim(),href:x.href,valid:!!x.href&&/\.pdf(?:$|\?)/i.test(new URL(x.href).pathname)})),
-       hasPseCatalog:!!main?.classList.contains("pse-products-catalog"),
+       hasPseCatalog:!!(main?.classList.contains("pse-products-catalog")||main?.querySelector(".pse-product-showcase")),
        images:imgs.length,imagesWithSrcset:(main?.querySelectorAll('img[srcset]').length||0),broken:imgs.filter(i=>i.complete&&i.naturalWidth===0).length,
        bodyOverflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+3,
        insideScroll:[...(main?.querySelectorAll("*")||[])].filter(el=>{const s=getComputedStyle(el);return /scroll|auto/.test(s.overflowY)&&el.scrollHeight>el.clientHeight+5}).slice(0,5).map(x=>x.tagName)
       };
      });
-     const good=res?.status()===200&&d.header&&d.footer&&!d.bodyOverflow
-       &&(spec.kind==="catalog"?d.hasPseCatalog&&catalogAudit?.initial===spec.minCards&&catalogAudit?.declared===44&&catalogAudit?.expanded===44&&catalogAudit?.clicks>=2&&d.imagesWithSrcset>=44
+     // Modern PSE FooterSection may render a CTA <section>, not .pse-footer.
+     const good=res?.status()===200&&d.header&&!d.bodyOverflow
+       &&(spec.kind==="catalog"?d.hasPseCatalog&&catalogAudit?.initial===spec.minCards&&
+         catalogAudit?.checkedCount===45&&catalogAudit?.uniqueHrefs===45&&
+         catalogAudit?.allImgSrcSet===45&&d.imagesWithSrcset>=spec.minCards
          :spec.kind==="manual"?d.docs.length===7&&d.docs.every(x=>x.valid)
          :d.h1.length===1&&d.h1[0].includes("Hữu cơ Phú Mỹ")&&d.images>=1);
      const result={width,path:spec.path,http:res?.status(),...d,catalogAudit,pass:good};results.push(result);if(good)passed++;
