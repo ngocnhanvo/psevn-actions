@@ -16,6 +16,7 @@ on:
       - PSE exact three archived original agriculture posts and JPEGs (GUARDED)
       - PSE two source-proven shareholder exact original Joomla 301 (GUARDED)
       - PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)
+      - PSE Joomla 204 original three archive-backed publisher images native WP (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -74,6 +75,10 @@ jobs:
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)' &&
              github.event.workflow_run.head_commit.message == 'cms(pse): redirect three exact original agriculture articles 344 348 370')
+            ||
+            (github.event.workflow_run.event == 'push' &&
+             github.event.workflow_run.name == 'PSE Joomla 204 original three archive-backed publisher images native WP (GUARDED)' &&
+             github.event.workflow_run.head_commit.message == 'cms(pse): restore Joomla 204 original article with three exact publisher archives')
          ))
       )
     runs-on: ubuntu-latest
@@ -176,6 +181,9 @@ jobs:
           elif (name=="PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect three exact original agriculture articles 344 348 370"):
               cohort="SOURCE_PROVEN_THREE_AGRICULTURE_EXACT_ORIGINAL_301"
+          elif (name=="PSE Joomla 204 original three archive-backed publisher images native WP (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): restore Joomla 204 original article with three exact publisher archives"):
+              cohort="SOURCE_PROVEN_JOOMLA_204_THREE_ARCHIVED_PUBLISHER_JPEGS"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
