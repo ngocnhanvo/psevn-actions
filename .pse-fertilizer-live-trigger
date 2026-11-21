@@ -11,3 +11,5 @@ Signed Astro production release #40143412040 PASS. Re-run 9 target live Product/
 2026-10-25: Live QA only after genuine NPK native WordPress Product 81014 CSS layout source repair PASS #40192146942, WordPress normal Build Website #40192247140 pending_count=1, signed deploy #40192313507 PASS Astro master 1785a65d13b05a744bfe8f3818e409929285094f. Verify actual 390/768/1440 detail imported table and Header assigned category, screenshots; READ ONLY no build.
 
 2026-11-21: Read-only QA after signed production deployment #44842527166 (Astro master 532fb8af); verify live native fertilizer catalog, 7 manuals, 390/768/1440 layout and featured images, including new Kali Phu My SOP. No CMS write, no build.
+
+2026-11-21: Repeat postdeploy fertilizer live QA with current SSR catalog pagination 16+16+13 and 45 native products instead of stale #product-grid/Load More selectors; footer CTA is conditional. Previous run #44850438039 failed stale tests; signed deploy unchanged. Read-only.
