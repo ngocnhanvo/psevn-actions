@@ -71,29 +71,39 @@ try{
     raw.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,""),{waitUntil:"domcontentloaded",timeout:18000});
    const data=await page.evaluate(()=>{
     const t=x=>String(x||"").normalize("NFKC").replace(/\s+/g," ").trim();
-    const root=document.querySelector(".item-page [itemprop=articleBody]")||
-     document.querySelector(".item-page")||document.querySelector("article");
+    const exact=document.querySelector(".item-page [itemprop=articleBody]");
+    const outer=document.querySelector(".item-page")||document.querySelector("article");
+    const root=exact||outer,content=root?.cloneNode(true);
+    content?.querySelectorAll(".extranews_box,.extranews_separator,.relateditems,.related-articles,.pagenav,.pagination,.article-info").forEach(x=>x.remove());
     const title=t(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent||document.title);
-    const links=[...(root?.querySelectorAll("a[href]")||[])].map(e=>({
+    const links=[...(content?.querySelectorAll("a[href]")||[])].map(e=>({
      title:t(e.textContent).slice(0,120),
      url:(()=>{try{return new URL(e.getAttribute("href"),document.baseURI).href}catch{return null}})()
     })).filter(x=>x.url).slice(0,60);
-    const files=links.filter(x=>/\.(?:pdf|docx?|xlsx?|zip|rar|jpg|jpeg)(?:$|[?#])/i.test(x.url)||
-     /tải|download|đính kèm|pdf|bctc|báo cáo/i.test(x.title)).slice(0,35);
-    const media=[...(root?.querySelectorAll("iframe[src],object[data],embed[src]")||[])]
+    // Related HTML pages titled "Báo cáo tài chính" are NOT document attachments.
+    const files=links.filter(x=>/\.(?:pdf|docx?|xlsx?|zip|rar)(?:$|[?#])/i.test(x.url)).slice(0,35);
+    const media=[...(content?.querySelectorAll("iframe[src],object[data],embed[src]")||[])]
      .map(e=>e.getAttribute("src")||e.getAttribute("data")).filter(Boolean).slice(0,20);
-    return{title,body:t(root?.textContent||""),htmlChars:root?.innerHTML.length||0,links,files,media};
+    return{title,body:t(content?.textContent||""),htmlChars:content?.innerHTML.length||0,
+     exactArticleBodyExists:!!exact,exactArticleBodyHtmlChars:exact?.innerHTML.length||0,
+     exactArticleBodyText:t(exact?.textContent||"").slice(0,600),
+     rootHtmlStart:String(root?.innerHTML||"").slice(0,2000),
+     links,files,media};
    });
    item.title=data.title;item.bodyChars=data.body.length;item.bodyStart=data.body.slice(0,470);
    item.links=data.links;item.files=data.files;item.media=data.media;item.bodyHtmlChars=data.htmlChars;
+   item.exactArticleBodyExists=data.exactArticleBodyExists;
+   item.exactArticleBodyHtmlChars=data.exactArticleBodyHtmlChars;
+   item.exactArticleBodyText=data.exactArticleBodyText;
+   item.rootHtmlStart=data.rootHtmlStart;
    item.decision=/báo cáo tài chính bán niên 2015/i.test(item.title)?
-    (item.files.length?"EXACT_ORIGINAL_PDF_LINK_CANDIDATE":"EXACT_ORIGINAL_BODY_NO_ATTACHMENT_PROVEN"):
+    (item.files.length?"EXACT_ORIGINAL_DOCUMENT_HREF_CANDIDATE":"EXACT_ORIGINAL_HTML_NO_DOCUMENT_URL"):
     "CAPTURE_TITLE_NOT_ORIGINAL";
   }catch(e){item.decision="ARCHIVE_FETCH_OR_PARSE_ERROR";item.error=String(e?.name||e?.code||"network").slice(0,70)}
   console.log("PSE_1137_ARCHIVED_ORIGINAL_DETAIL="+JSON.stringify(item).slice(0,12500));
  }
- report.financial.decision=report.financial.captures.some(x=>x.decision==="EXACT_ORIGINAL_PDF_LINK_CANDIDATE")?
-  "ORIGINAL_DOCUMENT_URL_CANDIDATE_NEXT_VALIDATE_BINARY":"NO_ORIGINAL_DOCUMENT_LINK_PROVEN";
+ report.financial.decision=report.financial.captures.some(x=>x.decision==="EXACT_ORIGINAL_DOCUMENT_HREF_CANDIDATE")?
+  "ORIGINAL_DOCUMENT_URL_CANDIDATE_NEXT_VALIDATE_BINARY":"NO_ORIGINAL_DOCUMENT_LINK_IN_ARCHIVED_ARTICLE";
  const image="http://images1.tuoitre.vn/tianyon/ImageView.aspx?ThumbnailID=521979";
  for(const imgUrl of [image,image.replace(/^http:/,"https:")]){
   const rec={url:imgUrl,http:null,contentType:null,bytes:0,sha256:null,validImage:false,location:null,error:null};
