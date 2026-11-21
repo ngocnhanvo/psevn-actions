@@ -8,7 +8,8 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const msg=String(event.head_commit?.message||"").split("\n")[0];
-const apply=msg==="cms(pse): apply source-verified legacy 301 redirects";
+const applyThreeProductAliases=msg==="cms(pse): apply three verified product aliases";
+const apply=msg==="cms(pse): apply source-verified legacy 301 redirects"||applyThreeProductAliases;
 const identityOnly=msg==="audit(pse): verify exact legacy 301 source identity";
 const vars=String(process.env.ENV_FILE||"").split(/\r?\n/)
   .map(s=>s.trim().replace(/^export\s+/,""));
@@ -52,7 +53,7 @@ if(helmetSources.size!==22)throw Error("Retirement set must contain exactly 22 k
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900}});
 const report={mode:apply?"apply":"audit",retired:[],alreadyRetired:[],proposed:[],
-  published:[],unchanged:[],skipped:[],deferred:[],issues:[],counts:{}};
+  published:[],unchanged:[],skipped:[],deferred:[],outOfScope:[],issues:[],counts:{}};
 const artifact="artifacts/pse-legacy-redirect";
 await mkdir(artifact,{recursive:true});
 try{
@@ -239,10 +240,14 @@ try{
     ["/hoat-dong-kinh-doanh/kenh-phan-phoi/30-he-thong-phan-phoi-san-pham-tai-cac-tinh-mien-dong-nam-bo.html",
       "he-thong-phan-phoi-san-pham-tai-cac-tinh-mien-dong-nam-bo"]
   ];
+  const exactNativePageDestinations=new Map();
   for(const [source,slug] of verifiedDistributionPaths){
     const page=byPageSlug.get(slug);
-    if(page?.acf?.action==="PublicPage")
+    if(page?.acf?.action==="PublicPage"&&
+       (page.acf.key==="pse-business-"+slug||slug==="kenh-phan-phoi")){
       add(source,"/"+slug,"verified-distribution-source+published-wp-page");
+      exactNativePageDestinations.set(source,"/"+slug);
+    }
   }
 
   // Owner-supplied explicit parity example.
@@ -300,7 +305,8 @@ try{
     return identity&&r.status==="publish"&&title==="PSE 301 - "+from&&
       String(r.acf?.type)==="301"&&String(r.acf?.match_type)==="Exact"&&
       (!identity.exactPublished||!identity.approvedState)&&
-      !(exactProductAliasDestinations.get(from)===String(r.acf?.to_link||""));
+      !(exactProductAliasDestinations.get(from)===String(r.acf?.to_link||""))&&
+      !(exactNativePageDestinations.get(from)===String(r.acf?.to_link||""));
   }).map(r=>({id:r.id,from:String(r.acf?.from_link||""),
     to:String(r.acf?.to_link||""),...manifestIdentity.get(String(r.acf?.from_link||""))}));
   console.log("PSE_LEGACY_REDIRECT_IDENTITY="+JSON.stringify({
@@ -376,6 +382,9 @@ try{
         outcomes[i]={kind:"skip",data:{...proposal,reason:"existing WordPress rule needs review",id:r.id}};
         continue;
       }
+      if(applyThreeProductAliases&&!exactProductAliasDestinations.has(proposal.from)){
+        outcomes[i]={kind:"outOfScope",data:proposal};continue;
+      }
       if(apply&&applyTargetChecks>=maxApplyTargetChecks){
         outcomes[i]={kind:"deferred",data:{...proposal,reason:"next-guarded-apply-batch"}};
         continue;
@@ -405,6 +414,7 @@ try{
     if(outcome.kind==="verified")checked.push(outcome.data);
     else if(outcome.kind==="unchanged")report.unchanged.push(outcome.data);
     else if(outcome.kind==="deferred")report.deferred.push(outcome.data);
+    else if(outcome.kind==="outOfScope")report.outOfScope.push(outcome.data);
     else report.skipped.push(outcome.data);
   }
   report.proposed=checked;
@@ -415,8 +425,15 @@ try{
   console.log("PSE_LEGACY_REDIRECT_PREFLIGHT="+JSON.stringify({
     ...report.counts,helmetMatched:retire.length,helmetNotMatched:notMatched.length,
     targetVerified:checked.length,alreadyCorrect:report.unchanged.length,
-    skipped:report.skipped.length,deferred:report.deferred.length,maxApplyTargetChecks,apply
+    skipped:report.skipped.length,deferred:report.deferred.length,outOfScope:report.outOfScope.length,
+    verifiedProductAliases:checked.filter(x=>exactProductAliasDestinations.get(x.from)===x.to).length,
+    maxApplyTargetChecks,apply,applyThreeProductAliases
   }));
+  if(applyThreeProductAliases&&(
+      exactProductAliasDestinations.size!==3||checked.length!==3||
+      checked.some(x=>exactProductAliasDestinations.get(x.from)!==x.to)||
+      unsafePublished.length||report.issues.length||report.skipped.length||report.deferred.length
+    ))throw Error("Three-product guarded preflight failed, no CMS mutation");
   if(apply&&unsafePublished.length){
     throw Error("Refusing CMS writes: "+unsafePublished.length+
       " existing PSE 301 rules lack verified published source identity; "+
@@ -472,7 +489,7 @@ try{
     mode:report.mode,retired:report.retired.length,published:report.published.length,
     alreadyCorrect:report.unchanged.length,sourceUnmatched:notMatched.length,
     targetSkipped:report.skipped.length,deferred:report.deferred.length,
-    issues:report.issues.length,noBuild:true
+    outOfScope:report.outOfScope.length,issues:report.issues.length,noBuild:true
   }));
   }
 }finally{
