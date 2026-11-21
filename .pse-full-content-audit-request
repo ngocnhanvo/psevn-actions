@@ -4,3 +4,5 @@
 2026-11-21 inspect 17 historical Joomla article media blockers: verify actual external image/PDF host reachability and source metadata without altering CMS, source content, or publication dates. Run source-media probe before individual recovery.
 2026-11-21: Retry same source-media read-only diagnostic after fixing YAML quoting; no CMS writes or build. Failed workflow parse #44851215659 had zero jobs and made no changes.
 2026-11-21: Source-recovery candidates Joomla #1641 and #1651 have third-party images reachable by HEAD in #44851260617. Prove full binary/MIME/hash and independently authenticated Joomla-created date before considering any scoped WordPress import. Read-only; do not build.
+
+2026-11-21: Rerun exact Joomla source #1641/#1651 after correcting H2/document-title lookup; verify independent original day and full remote image bytes without WordPress writes.
