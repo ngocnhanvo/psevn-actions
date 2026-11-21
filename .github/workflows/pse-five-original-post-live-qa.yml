@@ -1,0 +1,31 @@
+name: PSE five recovered original Joomla articles live source parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-five-original-post-live-qa-request
+permissions:
+  contents: read
+jobs:
+  browser:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare five original Joomla articles and photos to live WordPress Astro SSR
+        run: node --check scripts/pse-five-original-post-live-qa.mjs && node scripts/pse-five-original-post-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-five-original-posts-production-acceptance
+          path: artifacts/pse-five-original-posts-live/report.json
+          retention-days: 21
+          if-no-files-found: ignore
