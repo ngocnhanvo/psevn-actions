@@ -64,7 +64,8 @@ try{
      {slug:"993-ngay-truyen-thong",count:11},
      {slug:"986-hoi-thao-tong-ket-vuon-thuc-nghiem-ngay-3-6-2013",count:35},
      {slug:"988-doan-thanh-nien-2011",count:32},
-     {slug:"985-hinh-anh-marketing-2010",count:44}
+     {slug:"985-hinh-anh-marketing-2010",count:44},
+     {slug:"989-hoi-dong-co-dong-le-ra-mat-va-don-nhan-iso",count:98}
    ];
    for(const album of verifiedAlbums){
    const href=available.find(path=>path.includes(album.slug));
