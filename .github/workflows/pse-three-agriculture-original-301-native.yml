@@ -1,0 +1,56 @@
+name: PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-three-agriculture-original-301-native.mjs
+      - .github/workflows/pse-three-agriculture-original-301-native.yml
+      - .pse-three-agriculture-original-301-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  syntax:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): redirect three exact original agriculture articles 344 348 370'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-three-agriculture-original-301-native.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): redirect three exact original agriculture articles 344 348 370'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft DB backup before three source-owned redirects
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Enable only exact 3 source original routing writes after rollback
+        run: echo "PSE_THREE_AGRICULTURE_301_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Restore three exact native WordPress 301 redirects
+        run: node --check scripts/pse-three-agriculture-original-301-native.mjs && node scripts/pse-three-agriculture-original-301-native.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-agriculture-three-exact-native-301
+          path: artifacts/pse-original-agriculture-301/
+          retention-days: 30
+          if-no-files-found: warn
