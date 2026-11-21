@@ -1,1 +1,1 @@
-After signed Astro master e213d006 released in #44889139157, strict independent source gallery 1053/990/980 public 354 photos 390/1440 pixel/lightbox/catalog QA; bounded navigation transport retry and single-image same-source retry, leave 975 source-date deferred. Read-only.
+Final signed release #44889139157 and no other concurrent QA runners. Recheck strict 354/354 original photos, 3 published galleries on 390/1440 with image proxy-queue 25s bounded wait 35s and actual naturalWidth>0, lightbox, canonical, archive; no CMS mutations or build.
