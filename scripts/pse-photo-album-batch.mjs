@@ -192,8 +192,27 @@ try{
  const uploadOne=async item=>{
   let id=item.id;
   if(!id){
-   const response=await network.get(item.url,{timeout:65000});
-   if(!response.ok())throw Error("Original image HTTP "+response.status());
+   // Read-only original Joomla image GET may be reset by old hosting under
+   // sustained download. Retry only transport/5xx, NEVER a CMS mutation.
+   let response=null;
+   for(let attempt=1;attempt<=4;attempt++){
+    try{
+     const candidate=await network.get(item.url,{timeout:45000,maxRedirects:2});
+     if(candidate.ok()){response=candidate;break}
+     if(candidate.status()<500)throw Error("Original image HTTP "+candidate.status());
+     if(attempt===4)throw Error("Original image HTTP "+candidate.status());
+     console.warn("PSE_GALLERY_ORIGINAL_GET_RETRY sourceIndex="+item.index+
+       " attempt="+attempt+" reason=HTTP"+candidate.status());
+    }catch(e){
+     if(/^Original image HTTP 4/.test(String(e?.message||"")))throw e;
+     if(attempt===4)throw Error("Original source GET retries exhausted sourceIndex="+item.index+
+       " reason="+String(e?.code||e?.name||"network").slice(0,40));
+     console.warn("PSE_GALLERY_ORIGINAL_GET_RETRY sourceIndex="+item.index+
+       " attempt="+attempt+" reason="+String(e?.code||e?.name||"network").slice(0,40));
+    }
+    await new Promise(resolve=>setTimeout(resolve,attempt*1000));
+   }
+   if(!response)throw Error("Original source image not verified sourceIndex="+item.index);
    const bytes=await response.body();
    const valid=(item.ext==="jpg"&&bytes[0]===255&&bytes[1]===216) ||
        (item.ext==="png"&&bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) ||
