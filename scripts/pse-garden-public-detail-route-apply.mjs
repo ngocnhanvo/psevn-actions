@@ -26,7 +26,7 @@ const rule={from:"^/san-pham/(phu-my-garden-pmgarden(?:009|00[2-8]))/?$",
 const browser=await chromium.launch({headless:true});
 const net=await request.newContext({timeout:45000});
 const page=await browser.newPage();
-let createdId=null,published=false;
+let createdId=null,published=false,api=null;
 const report={schema:"pse-verified-eight-garden-public-detail-rewrite-v1",sourceVariants:8,
  exactSlugs:slugs,rule,readOnly:false,writes:[],priorRule:null,after:null,buildTriggered:false};
 try{
@@ -77,7 +77,7 @@ try{
   return(await r.text()).trim();
  });
  if(!/^[a-zA-Z0-9]{8,24}$/.test(nonce))throw Error("Invalid WordPress REST nonce");
- const api=(path,method="GET",body)=>page.evaluate(async({path,method,body,nonce})=>{
+ api=(path,method="GET",body)=>page.evaluate(async({path,method,body,nonce})=>{
   const r=await fetch(path,{method,credentials:"same-origin",headers:{
    "X-WP-Nonce":nonce,"Accept":"application/json",
    ...(body?{"Content-Type":"application/json"}:{})
@@ -147,12 +147,24 @@ try{
   otherNumericProductRouteUnchanged:numeric[0].id,sourceOwned:true,noAstroHardcode:true,
   noBuildTriggered:true,writes:report.writes.length}));
 }finally{
- if(createdId&&!published){
-  // Only an uncommitted route draft created by this run may be rolled back.
+ if(createdId&&!published&&api){
+  // Clean up ONLY an incomplete, source-identified draft created by this job.
+  // Never delete an already-published native route after an ambiguous save.
   try{
-   const check=await page.request.get(wp+"/wp-json/wp/v2/chuyen-huong-link/"+createdId,{failOnStatusCode:false});
-   console.warn("PSE_GARDEN_ROUTE_ROLLBACK_MANUAL_REVIEW="+JSON.stringify({createdId,status:check.status(),noBlindReplay:true}));
-  }catch{console.warn("PSE_GARDEN_ROUTE_ROLLBACK_MANUAL_REVIEW id="+createdId)}
+   const before=await api("/wp-json/wp/v2/chuyen-huong-link/"+createdId+
+    "?context=edit&_fields=id,status,acf");
+   if(before.http===200&&before.data?.status==="draft"&&
+    before.data.acf?.from_link===rule.from&&before.data.acf?.to_link===rule.to){
+    const deleted=await api("/wp-json/wp/v2/chuyen-huong-link/"+createdId+"?force=true","DELETE");
+    const after=await api("/wp-json/wp/v2/chuyen-huong-link/"+createdId+"?context=edit");
+    if(deleted.http!==200||after.http!==404)
+     throw Error("Scoped WordPress draft cleanup did not verify zero residue");
+    console.log("PSE_GARDEN_ROUTE_TEMP_CLEANUP_PASS id="+createdId);
+   }else{
+    console.warn("PSE_GARDEN_ROUTE_ROLLBACK_MANUAL_REVIEW="+JSON.stringify({createdId,
+     status:before.http,recordStatus:before.data?.status||null,noAutomaticDelete:true}));
+   }
+  }catch(e){console.warn("PSE_GARDEN_ROUTE_CLEANUP_REQUIRES_REVIEW="+String(e?.message||e).slice(0,140))}
  }
  await mkdir("artifacts/pse-garden-native-route",{recursive:true});
  await writeFile("artifacts/pse-garden-native-route/report.json",JSON.stringify(report,null,2)+"\n");
