@@ -219,18 +219,51 @@ try{
        (item.ext==="webp"&&bytes.toString("ascii",0,4)==="RIFF"&&bytes.toString("ascii",8,12)==="WEBP");
    if(!valid||bytes.length<500||bytes.length>18000000)throw Error("Original gallery signature invalid");
    const mime=item.ext==="jpg"?"image/jpeg":"image/"+item.ext;
-   const upload=await ctx.request.post(wp+"/wp-json/wp/v2/media",{data:bytes,headers:{"X-WP-Nonce":nonce,"Content-Type":mime,"Content-Disposition":'attachment; filename="'+item.filename+'"',Accept:"application/json"},timeout:120000});
-   const data=await upload.json().catch(()=>({}));
-   if(upload.status()!==201||!Number.isSafeInteger(Number(data.id))||data.mime_type!==mime)throw Error("Gallery upload rejected "+upload.status());
-   id=Number(data.id);created++;
-   const alt=entry.title+" – ảnh "+(item.index+1);
-   const updated=await api("/wp-json/wp/v2/media/"+id,"POST",{alt_text:alt,title:alt});
-   if(updated.http!==200)throw Error("Could not save photo alt text");
+   try{
+    // The upload is NOT blindly retryable: WordPress can commit the image but
+    // drop the HTTP response. Confirm its exact source-derived marker first.
+    const upload=await ctx.request.post(wp+"/wp-json/wp/v2/media",{data:bytes,headers:{"X-WP-Nonce":nonce,"Content-Type":mime,"Content-Disposition":'attachment; filename="'+item.filename+'"',Accept:"application/json"},timeout:120000});
+    const data=await upload.json().catch(()=>({}));
+    if(upload.status()!==201||!Number.isSafeInteger(Number(data.id))||data.mime_type!==mime)throw Error("Gallery upload rejected HTTP "+upload.status());
+    id=Number(data.id);created++;
+   }catch(e){
+    const reason=String(e?.message||e);
+    if(!/ECONNRESET|ETIMEDOUT|socket hang up|Timeout/i.test(reason))throw e;
+    for(let probe=1;probe<=4&&!id;probe++){
+     await new Promise(resolve=>setTimeout(resolve,probe*1250));
+     const search=await readNative("/wp-json/wp/v2/media?context=edit&search="+item.marker+
+       "&per_page=50&_fields=id,slug,mime_type,media_details");
+     if(search.http!==200||!Array.isArray(search.data))throw Error("WP media upload receipt reconciliation unavailable");
+     const found=search.data.filter(x=>x.slug===item.marker);
+     if(found.length>1)throw Error("Duplicate native Media marker after ambiguous upload");
+     if(found.length===1){
+      const photo=found[0],path=String(photo.media_details?.file||"");
+      if(photo.mime_type!==mime||path.split("/").at(-1)!==item.filename)
+       throw Error("Ambiguous upload receipt returned different file");
+      id=Number(photo.id);
+      if(!Number.isSafeInteger(id)||id<1)throw Error("Unsafe reconciled Media ID");
+      console.log("PSE_GALLERY_UPLOAD_RECOVERED id="+id+" sourceIndex="+item.index+" receipt="+String(e?.code||"network"));
+     }
+    }
+    if(!id)throw Error("Transient WordPress upload ECONNRESET; receipt unconfirmed sourceIndex="+item.index);
+   }
    item.id=id;
   }
   const m=await readNative("/wp-json/wp/v2/media/"+id+"?context=edit");
   if(m.http!==200)throw Error("Native photo media readback failed");
   const media=m.data;
+  if(media.mime_type!==(item.ext==="jpg"?"image/jpeg":"image/"+item.ext))
+   throw Error("Native photo MIME mismatch");
+  const requiredAlt=entry.title+" – ảnh "+(item.index+1);
+  const currentTitle=String(media.title?.raw||media.title?.rendered||"");
+  if(media.alt_text!==requiredAlt||currentTitle!==requiredAlt){
+   // Previously uploaded but interrupted before alt/title save: correct that
+   // exact native ID only. This is a real diff, not a no-op CMS write.
+   const updated=await api("/wp-json/wp/v2/media/"+id,"POST",{alt_text:requiredAlt,title:requiredAlt});
+   if(updated.http!==200)throw Error("Could not save missing native gallery alt/title");
+   const reread=await readNative("/wp-json/wp/v2/media/"+id+"?context=edit");
+   if(reread.http!==200||reread.data?.alt_text!==requiredAlt)throw Error("Native Media alt readback failed");
+  }
   const nativeFile=String(media.media_details?.file||"").replace(/^\/+/,"");
   if(nativeFile.split("/").at(-1)!==item.filename)throw Error("Uploaded file identity mismatch");
   const pathParts=nativeFile.split("/");
