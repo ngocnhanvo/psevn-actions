@@ -96,8 +96,8 @@ try{
      // Modern PSE FooterSection may render a CTA <section>, not .pse-footer.
      const good=res?.status()===200&&d.header&&!d.bodyOverflow
        &&(spec.kind==="catalog"?d.hasPseCatalog&&catalogAudit?.initial===spec.minCards&&
-         catalogAudit?.checkedCount===45&&catalogAudit?.uniqueHrefs===45&&
-         catalogAudit?.allImgSrcSet===45&&d.imagesWithSrcset>=spec.minCards
+         catalogAudit?.checkedCount===expectedTotal&&catalogAudit?.uniqueHrefs===expectedTotal&&
+         catalogAudit?.allImgSrcSet===expectedTotal&&d.imagesWithSrcset>=spec.minCards
          :spec.kind==="manual"?d.docs.length===7&&d.docs.every(x=>x.valid)
          :d.h1.length===1&&d.h1[0].includes("Hữu cơ Phú Mỹ")&&d.images>=1);
      const result={width,path:spec.path,http:res?.status(),...d,catalogAudit,pass:good};results.push(result);if(good)passed++;
