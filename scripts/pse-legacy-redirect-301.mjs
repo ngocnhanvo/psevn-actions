@@ -316,6 +316,28 @@ try{
           exactPublished,approvedState});
     }
   }
+  // Joomla #1601 is the 2024 article, not the different 2025 Post using
+  // its old unqualified slug. Independent live source/body audit #44858605394
+  // verified 90.2% source-body token overlap with published WP #82828, versus
+  // 47% with the unrelated published WP #77405. Never use slug-only redirect.
+  const collisionSource=legacyInventory?.articles?.["1601"];
+  const collisionFrom=String(collisionSource?.source_url||"");
+  const collisionWp=publishedById.get(82828);
+  const collisionPath=collisionFrom?new URL(collisionFrom).pathname:"";
+  const collisionTarget="/pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo-2024";
+  const collisionExpectedPath="/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1601-pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html";
+  const verifiedCollisionDestinations=new Map();
+  if(Number(collisionSource?.wp_id)===82828&&
+    ["imported","existing","draft_needs_date"].includes(collisionSource.status)&&
+    collisionPath===collisionExpectedPath&&collisionWp?.slug===collisionTarget.slice(1)&&
+    Number(byPostSlug.get(collisionWp.slug)?.id)===82828&&
+    Number(byPostSlug.get("pvfcco-pse-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo")?.id)===77405){
+    add(collisionPath,collisionTarget,"joomla-1601-source-body+exact-wp-2024-post-id");
+    verifiedCollisionDestinations.set(collisionPath,collisionTarget);
+    verifiedPublishedPostAliases.set(collisionPath,{to:collisionTarget,wpId:82828,sourceStatus:collisionSource.status});
+  }else{
+    throw Error("Joomla #1601 unique 2024 WordPress identity changed; no redirect mutation");
+  }
   const unsafePublished=routes.filter(r=>{
     const from=String(r.acf?.from_link||"");
     const identity=manifestIdentity.get(from);
@@ -324,7 +346,8 @@ try{
       String(r.acf?.type)==="301"&&String(r.acf?.match_type)==="Exact"&&
       (!identity.exactPublished||!identity.approvedState)&&
       !(exactProductAliasDestinations.get(from)===String(r.acf?.to_link||""))&&
-      !(exactNativePageDestinations.get(from)===String(r.acf?.to_link||""));
+      !(exactNativePageDestinations.get(from)===String(r.acf?.to_link||""))&&
+      !(verifiedCollisionDestinations.get(from)===String(r.acf?.to_link||""));
   }).map(r=>({id:r.id,from:String(r.acf?.from_link||""),
     to:String(r.acf?.to_link||""),...manifestIdentity.get(String(r.acf?.from_link||""))}));
   console.log("PSE_LEGACY_REDIRECT_IDENTITY="+JSON.stringify({
@@ -454,6 +477,7 @@ try{
     verifiedProductAliases:checked.filter(x=>exactProductAliasDestinations.get(x.from)===x.to).length,
     maxApplyTargetChecks,apply,applyThreeProductAliases,
     recentPostsOnly,verifiedPostAliases:verifiedPublishedPostAliases.size,
+    verifiedCollisionAliasCount:verifiedCollisionDestinations.size,
     verifiedPostNew:checked.filter(x=>verifiedPublishedPostAliases.get(x.from)?.to===x.to).length,
     sample:recentPostsOnly?checked.slice(0,4).map(x=>({from:x.from,to:x.to})):undefined
   }));
