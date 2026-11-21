@@ -16,28 +16,40 @@ const get=async(path,timeout=16000)=>{const u=new URL(path,archive);
  if(u.origin!==archive||u.username||u.password)throw Error("Untrusted Wayback host");
  return await fetch(u.href,{signal:AbortSignal.timeout(timeout),redirect:"manual"})};
 try{
- const url=new URL(archive+"/cdx/search/cdx");
- url.searchParams.set("url","www.pse.vn"+src.pathname);
- url.searchParams.set("output","json");
- url.searchParams.set("filter","statuscode:200");
- url.searchParams.set("fl","timestamp,original,statuscode,mimetype");
- url.searchParams.set("limit","12");
+ const variants=["http://www.pse.vn","https://www.pse.vn","http://pse.vn","https://pse.vn"]
+  .map(origin=>origin+src.pathname);
+ report.indexes=[];
  let rows=[];
- try{
-  const response=await get(url.href);
-  report.indexStatus=response.status;
-  if(response.status===200){
-   const text=await response.text();
-   if(text.length<100000){const json=JSON.parse(text);
-    if(Array.isArray(json)&&Array.isArray(json[0])&&json[0][0]==="timestamp")rows=json.slice(1);}
-  }
- }catch(e){report.indexError=String(e?.name||e?.message||"network").slice(0,120)}
+ for(const variant of variants){
+  const url=new URL(archive+"/cdx/search/cdx");
+  url.searchParams.set("url",variant);
+  url.searchParams.set("output","json");
+  url.searchParams.set("filter","statuscode:200");
+  url.searchParams.set("fl","timestamp,original,statuscode,mimetype");
+  url.searchParams.set("limit","16");
+  const evidence={variant,http:null,rows:0,reason:null};
+  report.indexes.push(evidence);
+  try{
+   const response=await get(url.href);
+   evidence.http=response.status;
+   if(response.status!==200){evidence.reason="CDX_HTTP_"+response.status;continue}
+   const content=await response.text();
+   if(content.length>120000){evidence.reason="INDEX_OVERSIZED";continue}
+   const json=JSON.parse(content);
+   if(Array.isArray(json)&&Array.isArray(json[0])&&json[0][0]==="timestamp"){
+    const candidate=json.slice(1);
+    evidence.rows=candidate.length;rows.push(...candidate);
+   }else evidence.reason="NO_INDEX_CAPTURE";
+  }catch(e){evidence.reason="INDEX_FETCH_UNAVAILABLE";
+   evidence.error=String(e?.name||e?.message||"network").slice(0,70)}
+  console.log("PSE_975_ARCHIVE_INDEX_VARIANT="+JSON.stringify(evidence));
+ }
  const found=new Set();
  for(const [ts,original,status,mime] of rows){
   if(!/^\d{14}$/.test(String(ts))||String(ts).slice(0,8)>"20261121"||
    String(status)!=="200"||found.has(ts))continue;
   let u;try{u=new URL(String(original))}catch{continue}
-  if(u.hostname!=="www.pse.vn"||u.pathname!==src.pathname||!["http:","https:"].includes(u.protocol))continue;
+  if(!["www.pse.vn","pse.vn"].includes(u.hostname)||u.pathname!==src.pathname||!["http:","https:"].includes(u.protocol))continue;
   found.add(ts);
   const item={timestamp:ts,originalUrl:String(original),indexMime:mime,http:null,titleMatched:false,publishDateCandidates:[]};
   try{
