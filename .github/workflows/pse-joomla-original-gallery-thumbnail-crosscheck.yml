@@ -1,0 +1,30 @@
+name: PSE original Joomla broken article images versus authentic photo albums (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-joomla-original-gallery-thumbnail-crosscheck.mjs
+      - .github/workflows/pse-joomla-original-gallery-thumbnail-crosscheck.yml
+permissions:
+  contents: read
+jobs:
+  source-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Independently compare exact old article and gallery image identities
+        run: node --check scripts/pse-joomla-original-gallery-thumbnail-crosscheck.mjs && node scripts/pse-joomla-original-gallery-thumbnail-crosscheck.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-original-gallery-thumbnail-crosscheck
+          path: artifacts/pse-joomla-thumb-gallery-crosscheck/report.json
+          if-no-files-found: ignore
+          retention-days: 30
