@@ -1,0 +1,26 @@
+name: PSE unresolved original Joomla Post source handoff (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-unresolved-legacy-post-evidence.mjs
+      - .github/workflows/pse-unresolved-legacy-post-evidence.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Export exact historical Post-source blockers, no WordPress access
+        run: node --check scripts/pse-unresolved-legacy-post-evidence.mjs && node scripts/pse-unresolved-legacy-post-evidence.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-unresolved-original-27-posts
+          path: artifacts/pse-unresolved-source-evidence/report.json
+          if-no-files-found: ignore
+          retention-days: 30
