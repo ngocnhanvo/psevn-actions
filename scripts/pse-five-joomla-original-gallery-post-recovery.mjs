@@ -10,10 +10,22 @@ import {searchDate} from "./pse-legacy-search-date.mjs";
 
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const message=String(event.head_commit?.message||"").split("\n")[0];
+// Resume the two-source-Post cohort automatically ONLY after the exact
+// five-Post CMS apply workflow has successfully finished. No arbitrary
+// workflow_run event can authorize WordPress writes.
+const completeFive=event.workflow_run;
+const autoTwoAfterFive=process.env.GITHUB_EVENT_NAME==="workflow_run"&&
+ event.action==="completed"&&completeFive?.conclusion==="success"&&
+ completeFive?.event==="push"&&completeFive?.head_branch==="main"&&
+ completeFive?.head_repository?.full_name==="ngocnhanvo/psevn-actions"&&
+ completeFive?.name==="PSE five original Joomla gallery-backed posts native CMS guarded restore"&&
+ completeFive?.head_commit?.message==="cms(pse): recover five original Joomla photo-backed posts";
 const twoCohort=message==="audit(pse): verify two additional gallery-backed Joomla Posts"||
- message==="cms(pse): recover two additional gallery-backed Joomla Posts";
+ message==="cms(pse): recover two additional gallery-backed Joomla Posts"||
+ autoTwoAfterFive;
 const apply=message==="cms(pse): recover five original Joomla photo-backed posts"||
- message==="cms(pse): recover two additional gallery-backed Joomla Posts";
+ message==="cms(pse): recover two additional gallery-backed Joomla Posts"||
+ autoTwoAfterFive;
 const repository=process.env.GITHUB_REPOSITORY,ref=process.env.GITHUB_REF;
 if(repository!=="ngocnhanvo/psevn-actions"||ref!=="refs/heads/main")
  throw Error("Wrong PSE Actions main branch");
