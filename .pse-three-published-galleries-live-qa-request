@@ -1,1 +1,1 @@
-Strict partial QA 354 images; record exact failed URL HTTP status/MIME/byte count if browser decoding fails (d9c16645). No build or CMS mutations.
+After signed Astro master e213d006 released in #44889139157, strict independent source gallery 1053/990/980 public 354 photos 390/1440 pixel/lightbox/catalog QA; bounded navigation transport retry and single-image same-source retry, leave 975 source-date deferred. Read-only.
