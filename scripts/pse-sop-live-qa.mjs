@@ -20,7 +20,7 @@ try{
    return {
     count:cards.length,
     titles:cards.map(card=>(card.querySelector("h2")?.textContent||"").replace(/\s+/g," ").trim()),
-    sopCardImg:cards.find(card=>card.textContent.includes("Kali Phú Mỹ (SOP)"))?.querySelector("img")?.src||"",
+    sopCardSrcSet:cards.find(card=>card.textContent.includes("Kali Phú Mỹ (SOP)"))?.querySelector("img")?.getAttribute("srcset")||"",
     overflow:document.documentElement.scrollWidth-innerWidth,
     links:cards.map(card=>card.querySelector("a[href]")?.getAttribute("href")||"")
    };
@@ -29,8 +29,19 @@ try{
   if(section.titles.filter(x=>x===name).length!==1||
      section.titles.filter(x=>x===nonIdTitle).length!==1)
    throw Error("Recovered SOP or original Nông Lâm product absent/duplicated at "+width+": "+JSON.stringify(section.titles));
-  if(!section.sopCardImg||section.sopCardImg.includes("pse.vn/images/"))
-   throw Error("SOP image missing or legacy hotlinked at "+width);
+  // <img srcset> deliberately has no src in the Astro listing. Check actual
+  // browser-selected source and decoded pixels, not HTMLImageElement.src.
+  const sopImage=await page.locator("article.pse-catalog-card").filter({hasText:name})
+   .locator("img").first().evaluate(async img=>{
+    img.loading="eager";
+    try{await img.decode()}catch{}
+    return {currentSrc:img.currentSrc||"",srcset:img.getAttribute("srcset")||"",
+     naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight};
+   });
+  console.log("PSE_SOP_IMAGE_BROWSER="+JSON.stringify({width,...sopImage}));
+  if(!sopImage.currentSrc||sopImage.currentSrc.includes("pse.vn/images/")||
+     sopImage.naturalWidth<100||sopImage.naturalHeight<100)
+   throw Error("SOP original image not decoded from local WordPress build cache: "+JSON.stringify({width,...sopImage}));
   if(section.overflow>5)throw Error("Category horizontal overflow "+section.overflow+" at "+width);
   await page.screenshot({path:out+"/category-"+width+".png",fullPage:true,timeout:40000});
   const detail=await context.newPage();
@@ -46,7 +57,7 @@ try{
    throw Error("SOP detail data/overflow mismatch "+width+": "+JSON.stringify(d));
   await detail.screenshot({path:out+"/detail-"+width+".png",fullPage:true,timeout:40000});
   const item={width,categoryCards:section.count,originalRowNamesMatched:true,productHttp:rd.status(),
-   imageOwnedByWp:!section.sopCardImg.includes("pse.vn/images/"),
+   imageOwnedByWp:!sopImage.currentSrc.includes("pse.vn/images/"),
    compositionMatched:true,categoryOverflow:section.overflow,detailOverflow:d.overflow};
   found.push(item);
   console.log("PSE_SOP_FRONTEND_CHECK="+JSON.stringify(item));
