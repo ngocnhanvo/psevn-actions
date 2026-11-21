@@ -10,10 +10,8 @@ const target=category+"/341-du-nuoc-tuoi-cho-633000-ha-lua-xuan-2013.html";
 const variants=[
  category+"?format=feed&type=rss&limit=1000",
  category+"?format=feed&type=atom&limit=1000",
- category+"?format=feed&type=rss",
- category+"?format=feed&type=atom",
- category+".feed?type=rss&limit=1000",
- category+".feed?type=atom&limit=1000"
+ category+".html?format=feed&type=rss&limit=1000",
+ category+".html?format=feed&type=atom&limit=1000"
 ];
 const decode=s=>String(s||"").replace(/^<!\[CDATA\[|\]\]>$/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
 const tag=(xml,key)=>decode(xml.match(new RegExp("<"+key+"(?:\\s[^>]*)?>([\\s\\S]*?)<\\/"+key+">","i"))?.[1]);
@@ -21,7 +19,7 @@ const text=s=>decode(s).replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
 const report={schema:"pse-source-341-exact-feed-content-oracle-v1",readOnly:true,noCmsWrites:true,noBuild:true,
  sourceUrl:original+target,feeds:[],matches:[],summary:null};
 for(const variant of variants){
- const url=new URL(variant,original),entry={url:url.href,http:null,contentType:null,items:0,matches:[],reason:null};
+ const url=new URL(variant,original),entry={url:url.href,http:null,contentType:null,items:0,matches:[],id341Preview:[],reason:null};
  try{
   const res=await fetch(url.href,{headers:{Accept:"application/rss+xml, application/atom+xml, text/xml, application/xml"},
    redirect:"manual",signal:AbortSignal.timeout(24000)});
@@ -36,7 +34,12 @@ for(const variant of variants){
    const rel=tag(block,"link")||decode(block.match(/<link[^>]*href=["']([^"']+)["']/i)?.[1]);
    let sourceUrl;try{sourceUrl=new URL(rel,original)}catch{continue}
    if(!["pse.vn","www.pse.vn"].includes(sourceUrl.hostname)||
-    !["http:","https:"].includes(sourceUrl.protocol)||sourceUrl.pathname!==target)continue;
+    !["http:","https:"].includes(sourceUrl.protocol)||
+    !sourceUrl.pathname.startsWith(category+"/"))continue;
+   const sameId=/\/341-[^/]+\.html$/i.test(sourceUrl.pathname);
+   if(sameId)entry.id341Preview.push({pathname:sourceUrl.pathname,
+    exactTargetPath:sourceUrl.pathname===target,title:text(tag(block,"title"))});
+   if(!sameId&&sourceUrl.pathname!==target)continue;
    const title=text(tag(block,"title"));
    const pubDate=tag(block,"pubDate")||tag(block,"published")||tag(block,"updated");
    const description=tag(block,"description")||tag(block,"summary")||tag(block,"content")||"";
@@ -47,7 +50,7 @@ for(const variant of variants){
     }catch{return null}
    }).filter(Boolean))];
    const day=pubDate?new Date(pubDate):null;
-   const row={sourceUrl:sourceUrl.href,title,
+   const row={sourceUrl:sourceUrl.href,title,exactTargetPath:sourceUrl.pathname===target,
      exactTitle:title==="Đủ nước tưới cho 633.000 ha lúa Xuân 2013",
      publicationRaw:pubDate.slice(0,120),
      publicationLocal:day&&Number.isFinite(day.getTime())?
@@ -68,9 +71,15 @@ for(const variant of variants){
     sourceMediaPaths:x.sourceMediaPaths,titleMatch:x.exactTitle,spam:x.likelySpam
    }))}));
  }catch(e){entry.reason=String(e?.message||e).slice(0,100)}
- finally{report.feeds.push(entry)}
+ finally{report.feeds.push(entry);
+  console.log("PSE_341_CATEGORY_FEED_HTTP="+JSON.stringify({
+   url:entry.url,http:entry.http,contentType:entry.contentType,items:entry.items,
+   reason:entry.reason,matched:entry.matches.length,id341Preview:entry.id341Preview}));
+ }
 }
-report.summary={feedVariantsChecked:report.feeds.length,exactOriginalUrlMatches:report.matches.length,
+report.summary={feedVariantsChecked:report.feeds.length,
+ exactOriginalUrlMatches:report.matches.filter(r=>r.exactTargetPath&&r.exactTitle).length,
+ sameIdTitleMatches:report.matches.filter(r=>r.exactTitle).length,
  sourceContentCandidates:report.matches.filter(r=>r.exactTitle&&r.hasPossibleSourceBody&&!r.likelySpam).length,
  decision:report.matches.some(r=>r.exactTitle&&r.hasPossibleSourceBody&&!r.likelySpam)?
   "REVIEW_SOURCE_ORIGINAL_FEED_BODY_CANDIDATES":"ORIGINAL_CONTENT_UNRECOVERED_FROM_FEED",
