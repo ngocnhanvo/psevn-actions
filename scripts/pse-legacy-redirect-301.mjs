@@ -9,7 +9,8 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const msg=String(event.head_commit?.message||"").split("\n")[0];
 const applyThreeProductAliases=msg==="cms(pse): apply three verified product aliases";
-const applyRecentPublishedPosts=msg==="cms(pse): apply verified published Joomla Post redirects";
+const finishVerifiedPosts=msg==="cms(pse): finish remaining verified Joomla Post redirects";
+const applyRecentPublishedPosts=msg==="cms(pse): apply verified published Joomla Post redirects"||finishVerifiedPosts;
 const auditRecentPublishedPosts=msg==="audit(pse): check verified published Joomla Post redirects";
 const recentPostsOnly=applyRecentPublishedPosts||auditRecentPublishedPosts;
 const apply=msg==="cms(pse): apply source-verified legacy 301 redirects"||applyThreeProductAliases||applyRecentPublishedPosts;
@@ -402,9 +403,10 @@ try{
   const outcomes=new Array(candidates.length);
   // Audits can verify every target. Writes use resumable batches to stay well
   // below the Actions 55-minute limit and retain per-run rollback inventory.
-  // Cap one scoped CMS writer to 25 redirects: existing WordPress REST registry
-  // is re-read for every new entry. Resume only after read-back/artifact PASS.
-  const maxApplyTargetChecks=recentPostsOnly?25:100;
+  // Standard scopes stay capped to 25. A separately message-gated final batch
+  // may inspect at most 50, locked to the 43 exact post aliases proven earlier.
+  // Every WordPress registry write remains serialized and REST-read back.
+  const maxApplyTargetChecks=finishVerifiedPosts?50:recentPostsOnly?25:100;
   let applyTargetChecks=0;
   let cursor=0;
   const verify=async()=>{
@@ -482,10 +484,14 @@ try{
     sample:recentPostsOnly?checked.slice(0,4).map(x=>({from:x.from,to:x.to})):undefined
   }));
   if(applyRecentPublishedPosts&&(
-      checked.length<1||checked.length>25||
+      checked.length<1||checked.length>maxApplyTargetChecks||
       checked.some(x=>verifiedPublishedPostAliases.get(x.from)?.to!==x.to)||
       report.issues.length||unsafePublished.length
     ))throw Error("Scoped Post redirects fail closed: no CMS writes");
+  if(finishVerifiedPosts&&(
+      checked.length!==43||report.unchanged.length!==722||report.skipped.length||
+      report.deferred.length||verifiedCollisionDestinations.size!==1
+    ))throw Error("Final 43 source-verified Joomla Post 301 scope changed; refusing all writes");
   if(applyThreeProductAliases&&(
       exactProductAliasDestinations.size!==3||checked.length!==3||
       checked.some(x=>exactProductAliasDestinations.get(x.from)!==x.to)||
