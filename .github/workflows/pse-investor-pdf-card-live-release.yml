@@ -1,0 +1,86 @@
+name: PSE 35 investor PDF source-only card tiles production QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-investor-pdf-card-live-release.yml
+      - .pse-investor-pdf-postrelease-request
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): verify 35 native investor PDF tiles on production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Cross-reference 36 exact WP source Posts against public investor cards
+        run: node scripts/pse-investor-pdf-card-source-proof.mjs
+      - name: Assert 34 genuine text-only PDF placeholders now use live document icons
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+          const r=JSON.parse(await readFile("artifacts/pse-investor-pdf-card-sources/report.json","utf8"));
+          if(r.readOnly!==true||r.noCmsWrites!==true||r.pages?.length!==3||
+             r.summary?.cards!==36||r.summary?.noImageCards!==1||
+             r.summary?.noImageButRealPdfCards!==0||
+             r.summary?.noImageAndNoPdfCards!==1||
+             r.summary?.existingPdfTiles!==35)
+             throw Error("PSE_35_PDF_CARD_PARITY=FAIL "+JSON.stringify(r.summary));
+          for(const p of r.pages){
+            const expected=new Map([
+              ["/tin-tuc-su-kien/ban-cong-bo-thong-tin",12],
+              ["/tin-tuc-su-kien/bao-cao-thuong-nien",11],
+              ["/tin-tuc-su-kien/tai-lieu-quan-tri-cong-ty",12]
+            ]);
+            if(p.cardCount!==12||p.existingPdfTile!==expected.get(p.path)||
+               p.placeholderWithActualPDF!==0)
+              throw Error("PSE_PDF_CARD_CATEGORY_SOURCE=FAIL "+p.path);
+            for(const row of p.rows){
+              if(row.pdfTile&&row.pdfCount<1)throw Error("Synthetic document tile without source PDF");
+              if(row.pdfCount>0&&row.placeholder)throw Error("Real PDF still has default photo");
+            }
+          }
+          console.log("PSE_NATIVE_35_INVESTOR_PDF_CARDS=PASS; DOC_TILES=35; ORIGINAL_NON_DOCUMENT_FALLBACK=1");
+          NODE
+      - name: Compare 5 deployed news listings on 390 and 1440 browser pixels
+        run: node scripts/pse-five-native-listings-card-image-browser-qa.mjs
+      - name: Guard actual responsive cards and PDF tiles on both viewports
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+          const r=JSON.parse(await readFile("artifacts/pse-native-listing-browser/report.json","utf8"));
+          if(r.summary?.checked!==10||r.summary?.pass!==10||
+            r.summary?.issues?.length||r.summary?.thumbnailsBrowserChecked<8)
+            throw Error("PSE_POSTRELEASE_RESPONSIVE_LISTING=FAIL "+JSON.stringify(r.summary));
+          const expected=new Map([
+            ["/tin-tuc-su-kien/ban-cong-bo-thong-tin",{pdf:12,missing:0}],
+            ["/tin-tuc-su-kien/bao-cao-thuong-nien",{pdf:11,missing:1}],
+            ["/tin-tuc-su-kien/tai-lieu-quan-tri-cong-ty",{pdf:12,missing:0}]
+          ]);
+          for(const row of r.rows){
+            const requirement=expected.get(new URL(row.url).pathname);
+            if(requirement&&(row.documentTiles!==requirement.pdf||
+              row.missingFallbackCount!==requirement.missing))
+               throw Error("PSE_SOURCE_PDF_TILE_MOBILE_DESKTOP=FAIL "+row.url+" width "+row.width);
+          }
+          console.log("PSE_INVESTOR_PDF_390_1440_BROWSER=PASS; 10 routes/viewports; 35 correct PDF tiles");
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-investor-35-source-backed-pdf-card-browser-acceptance
+          path: |
+            artifacts/pse-investor-pdf-card-sources/report.json
+            artifacts/pse-native-listing-browser/report.json
+          retention-days: 30
+          if-no-files-found: warn
