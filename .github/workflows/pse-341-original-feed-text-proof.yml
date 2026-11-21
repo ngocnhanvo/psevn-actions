@@ -1,0 +1,30 @@
+name: PSE Joomla 341 exact original RSS/Atom text proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-341-original-feed-text-proof.mjs
+      - .github/workflows/pse-341-original-feed-text-proof.yml
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check scripts/pse-341-original-feed-text-proof.mjs
+      - run: node scripts/pse-341-original-feed-text-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-source-341-feed-body-proof
+          path: artifacts/pse-341-original-feed/report.json
+          retention-days: 14
+          if-no-files-found: ignore
