@@ -7,6 +7,7 @@ on:
       - .pse-php-agent-chat-release-request
       - .pse-php-product-log-pagination-request
       - .pse-php-category-description-request
+      - .pse-php-rest-write-logging-release-request
   workflow_dispatch:
     inputs:
       release_scope:
@@ -18,6 +19,7 @@ on:
           - deploy-trigger
           - product-log-pagination
           - category-description
+          - rest-write-logging
   repository_dispatch:
     types: [wp_deploy_php]
 
@@ -67,7 +69,9 @@ jobs:
           set -euo pipefail
 
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            if [[ "${{ github.event.head_commit.message }}" == "release(pse): product log pagination" ]]; then
+            if [[ "${{ github.event.head_commit.message }}" == "release(pse): restore native REST Post build logs" ]]; then
+              scope="rest-write-logging"
+            elif [[ "${{ github.event.head_commit.message }}" == "release(pse): product log pagination" ]]; then
               scope="product-log-pagination"
             elif [[ "${{ github.event.head_commit.message }}" == "release(pse): category description API" ]]; then
               scope="category-description"
@@ -94,6 +98,9 @@ jobs:
             product-log-pagination)
               printf '%s\n' \
                 'wp-content/plugins/github-trigger/products/endpoint.php' > "$manifest"
+              ;;
+            rest-write-logging)
+              printf '%s\n' 'wp-content/mu-plugins/disable-plugins-for-api.php' > "$manifest"
               ;;
             category-description)
               printf '%s\n' \
@@ -141,6 +148,15 @@ jobs:
             if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
               expected="$(head -n 1 .pse-php-product-log-pagination-request)"
               test "$source_sha" = "$expected" || { echo "::error::PHP master SHA differs from reviewed release"; exit 1; }
+            fi
+          elif [[ "$PSE_PHP_RELEASE_SCOPE" == "rest-write-logging" ]]; then
+            php -l source-php/wp-content/mu-plugins/disable-plugins-for-api.php >/dev/null
+            php -l source-php/tests/pse-content-rest-pending-build-regression.php >/dev/null
+            php source-php/tests/pse-content-rest-pending-build-regression.php
+            grep -Fq 'esc_is_core_content_rest_write() ? [] : $github_trigger_plugin' source-php/wp-content/mu-plugins/disable-plugins-for-api.php
+            if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+              expected="$(head -n 1 .pse-php-rest-write-logging-release-request)"
+              test "$source_sha" = "$expected" || { echo "::error::PSE PHP master SHA differs from reviewed REST hook release"; exit 1; }
             fi
           elif [[ "$PSE_PHP_RELEASE_SCOPE" == "category-description" ]]; then
             php -l source-php/wp-content/plugins/github-trigger/product-categories/endpoint.php >/dev/null
