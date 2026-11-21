@@ -1,0 +1,55 @@
+name: PSE native WordPress Garden eight public Product rewrite repair (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-garden-public-detail-route-apply.mjs
+      - .github/workflows/pse-garden-public-detail-route-apply.yml
+      - .pse-garden-public-detail-route-request
+permissions:
+  contents: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): restore eight Garden public Product detail rewrites'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-garden-public-detail-route-apply.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore eight Garden public Product detail rewrites'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft rollback point before native routing CPT write
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Confirm exact rollback before enabling scoped Garden route write
+        run: echo "PSE_GARDEN_ROUTE_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Create only a source-proven Garden regex rule in WordPress
+        run: node --check scripts/pse-garden-public-detail-route-apply.mjs && node scripts/pse-garden-public-detail-route-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-native-garden-eight-product-public-route
+          path: artifacts/pse-garden-native-route/
+          retention-days: 30
+          if-no-files-found: warn
