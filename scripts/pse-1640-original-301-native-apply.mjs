@@ -98,7 +98,7 @@ try{
  await mkdir("artifacts/pse-original-1640-301",{recursive:true});
  await writeFile("artifacts/pse-original-1640-301/rollback.json",JSON.stringify({previous:report.previous,createdId:null,from,to},null,2)+"\n");
  if(oldStatus===301&&record?.status==="publish"){
-  published=true;console.log("PSE_1640_NATIVE_301_ALREADY_PASS=1; writes=0");return;
+  console.log("PSE_1640_NATIVE_301_ALREADY_PASS=1; writes=0");
  }
  let id=record?.id;
  if(!id){
