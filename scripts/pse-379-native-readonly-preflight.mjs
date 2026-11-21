@@ -44,7 +44,10 @@ try{
  if(html.length<250||html.length>8000000)throw Error("Unsafe original source size");
  await original.setContent('<base href="'+source+'">'+html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,""),{waitUntil:"domcontentloaded"});
  const j=await original.evaluate(()=>{
-  const root=document.querySelector(".item-page [itemprop=articleBody],.item-page,article");
+  // Query the exact standalone Joomla articleBody, not its enclosing .item-page
+  // (which also includes pager and unrelated article links after the real post).
+  const root=document.querySelector('[itemprop="articleBody"]');
+  if(!root)throw Error("Original Joomla articleBody missing");
   const txt=s=>String(s||"").replace(/\s+/g," ").trim();
   return{title:txt(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent),
    text:txt(root?.textContent),
