@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/pse-1640-original-legacy-alias-readonly.mjs
       - .github/workflows/pse-1640-original-legacy-alias-readonly.yml
+      - .pse-1640-original-legacy-301-live-qa-request
 permissions:
   contents: read
 jobs:
