@@ -1,0 +1,31 @@
+name: PSE five live news listing card photos and PDF tiles browser QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-five-native-listings-card-image-browser-qa.mjs
+      - .github/workflows/pse-five-native-listings-card-image-browser-qa.yml
+permissions:
+  contents: read
+jobs:
+  browser-qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-five-native-listings-card-image-browser-qa.mjs
+      - run: node scripts/pse-five-native-listings-card-image-browser-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-five-news-listings-desktop-mobile-image-tile-qa
+          path: artifacts/pse-native-listing-browser/report.json
+          retention-days: 21
+          if-no-files-found: warn
