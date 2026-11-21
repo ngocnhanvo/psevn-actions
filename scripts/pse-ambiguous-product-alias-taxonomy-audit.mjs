@@ -19,6 +19,64 @@ try{
  // PSE stores complete editor-owned category HTML in protected term meta.
  // The native public product_cat.description may legitimately be empty.
  // Its official custom Astro REST endpoint resolves rich_description first.
+ // Source-only exact family equivalence for Joomla #1639, separate from
+ // weak textual overlap with other categories. Does not approve a redirect
+ // until the native category exists and post-release QA has passed.
+ const gardenSource=legacy.articles[1639]?.source_url;
+ const gardenOverview="https://pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-hon-hop-npk-phu-my/8-trang-chu.html";
+ if(!gardenSource?.startsWith("https://www.pse.vn/")||!/\/1639-/.test(gardenSource))
+  throw Error("Historical Garden source URL mismatch");
+ const expected=["002","003","004","005","006","007","008","009"].map(n=>"PMGarden"+n+".png").sort();
+ const gardenContext=await browser.newContext({javaScriptEnabled:false});
+ await gardenContext.route("**/*",route=>route.abort());
+ const gardenPage=await gardenContext.newPage();
+ const extractGarden=async url=>{
+  const res=await page.request.get(url,{timeout:45000,maxRedirects:3,failOnStatusCode:false});
+  if(res.status()!==200)throw Error("Garden source HTTP "+res.status());
+  const html=await res.text();
+  if(html.length<500||html.length>8000000)throw Error("Invalid Garden source HTML");
+  await gardenPage.setContent('<base href="'+url+'">'+html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,""),{waitUntil:"domcontentloaded",timeout:25000});
+  return gardenPage.evaluate(()=>{
+   const root=document.querySelector(".item-page [itemprop=articleBody],.item-page,article")||document.body;
+   const norm=s=>String(s||"").replace(/\s+/g," ").trim();
+   const headings=[...root.querySelectorAll("h1,h2,h3,h4")].map(e=>norm(e.textContent)).filter(t=>/garden/i.test(t));
+   const imgs=[...root.querySelectorAll("img[src]")].map(img=>{
+    let u;try{u=new URL(img.src)}catch{return null}
+    if(u.protocol!=="https:"||!["www.pse.vn","pse.vn"].includes(u.hostname)||!u.pathname.startsWith("/images/")||!/^PMGarden\d+\.png$/i.test(u.pathname.split("/").at(-1)))return null;
+    const tr=img.closest("tr"),cells=tr?[...tr.children].filter(el=>el.tagName==="TD"):[];
+    const desc=cells.find(td=>!td.contains(img))||tr||img.closest("figure,li,div")||img.parentElement;
+    return {filename:u.pathname.split("/").at(-1),path:u.pathname,rowText:norm(desc?.textContent)};
+   }).filter(Boolean);
+   const familyLinks=[...document.querySelectorAll("a[href]")].map(a=>{
+    try{const u=new URL(a.href);if(!["www.pse.vn","pse.vn"].includes(u.hostname)||!(/(?:\/|^)1639-/.test(u.pathname)||/phu-my-garden/i.test(u.pathname)))return null;
+     return {path:u.pathname,text:norm(a.textContent),inNavigation:!!a.closest("nav, .menu, .navbar, .mod-menu, .moduletable")};
+    }catch{return null}
+   }).filter(Boolean);
+   return{title:norm(document.querySelector("h1")?.textContent||document.title),headings,imgs,familyLinks};
+  });
+ };
+ try{
+  const [detail,overview]=[await extractGarden(gardenSource),await extractGarden(gardenOverview)];
+  const exactSet=x=>JSON.stringify(x.imgs.map(i=>i.filename).sort())===JSON.stringify(expected);
+  if(!exactSet(overview))throw Error("Original Garden overview eight filenames changed");
+  const rows=expected.map(filename=>{
+   const a=detail.imgs.filter(i=>i.filename===filename),b=overview.imgs.filter(i=>i.filename===filename);
+   return {filename,sourceMatches:a.length===1&&b.length===1&&a[0].path===b[0].path,
+    detailRowText:a[0]?.rowText||null,overviewRowText:b[0]?.rowText||null,
+    exactRowText:a.length===1&&b.length===1&&a[0].rowText.length>40&&a[0].rowText===b[0].rowText};
+  });
+  const exactImages=exactSet(detail)&&rows.every(r=>r.sourceMatches);
+  const exactRows=rows.filter(r=>r.exactRowText).length;
+  const sourceProof={sourceId:1639,sourceUrl:gardenSource,overviewUrl:gardenOverview,
+   detailTitle:detail.title,detailHeadings:detail.headings,overviewHeadings:overview.headings,
+   detailImageCount:detail.imgs.length,overviewImageCount:overview.imgs.length,exactImages,exactRows,
+   originalImagePaths:rows.filter(r=>r.sourceMatches).map(r=>r.filename),
+   detailImageNames:detail.imgs.map(r=>r.filename),
+   overviewFamilyLinks:overview.familyLinks.slice(0,20),detailFamilyLinks:detail.familyLinks.slice(0,20),
+   rows,redirectAuthorized:false,decision:exactImages&&exactRows===8?"ORIGINAL_GARDEN_FAMILY_CONTENT_EQUIVALENT_WAIT_CMS_AND_LIVE_QA":"SOURCE_GARDEN_DETAIL_REVIEW_REQUIRED"};
+  report.gardenSourceProof=sourceProof;
+  console.log("PSE_GARDEN_ALIAS_SOURCE_PROOF="+JSON.stringify({...sourceProof,rows:rows.map(r=>({filename:r.filename,sourceMatches:r.sourceMatches,exactRowText:r.exactRowText}))}).slice(0,7000));
+ }finally{await gardenContext.close()}
  const req=await page.request.get(wp+"/wp-json/astro/v1/get-product-categories",{timeout:35000});
  if(req.status()!==200)throw Error("PSE native ProductCategory source REST "+req.status());
  const cats=await req.json();if(!Array.isArray(cats)||cats.length<6||cats.length>100)throw Error("Native product categories unavailable");
