@@ -21,9 +21,10 @@ jobs:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - run: node --check scripts/pse-native-product-row-audit.mjs && node scripts/pse-native-product-row-audit.mjs
       - name: Verify published SOP category and detail at three widths
         run: node --check scripts/pse-sop-live-qa.mjs && node scripts/pse-sop-live-qa.mjs
+      - name: Reverify all original Joomla product identities and categories
+        run: node --check scripts/pse-native-product-row-audit.mjs && node scripts/pse-native-product-row-audit.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
