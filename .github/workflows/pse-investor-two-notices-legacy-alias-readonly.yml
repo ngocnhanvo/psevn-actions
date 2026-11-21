@@ -1,0 +1,43 @@
+name: PSE original shareholder Joomla 338 1085 old URL and native canonical audit (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-investor-two-notices-legacy-alias-readonly.mjs
+      - .github/workflows/pse-investor-two-notices-legacy-alias-readonly.yml
+      - .pse-investor-two-notices-legacy-alias-readonly-request
+permissions:
+  contents: read
+jobs:
+  source-only:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-investor-two-notices-legacy-alias-readonly.mjs
+  audit:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): original two shareholder notices public aliases'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-investor-two-notices-legacy-alias-readonly.mjs && node scripts/pse-investor-two-notices-legacy-alias-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-shareholder-old-alias-audit
+          path: artifacts/pse-original-investor-old-links/report.json
+          retention-days: 30
+          if-no-files-found: warn
