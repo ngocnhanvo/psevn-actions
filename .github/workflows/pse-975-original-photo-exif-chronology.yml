@@ -1,0 +1,30 @@
+name: PSE album 975 original 110 media EXIF chronology evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-975-original-photo-exif-chronology.mjs
+      - .github/workflows/pse-975-original-photo-exif-chronology.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check scripts/pse-975-original-photo-exif-chronology.mjs
+      - run: node scripts/pse-975-original-photo-exif-chronology.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-975-source-photo-capture-chronology-readonly
+          path: artifacts/pse-975-original-exif/report.json
+          retention-days: 21
+          if-no-files-found: warn
