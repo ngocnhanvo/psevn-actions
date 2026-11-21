@@ -12,6 +12,7 @@ on:
       - PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)
       - PSE Joomla 1640 two verified original publisher archive photos native WP (GUARDED)
       - PSE original Joomla 1640 exact native WordPress 301 redirect (GUARDED)
+      - PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -54,6 +55,10 @@ jobs:
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE original Joomla 1640 exact native WordPress 301 redirect (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): original Joomla 1640 exact native 301 to verified published Post')
+           ||
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): restore original shareholder notices 338 and 1085')
          ))
       )
     runs-on: ubuntu-latest
@@ -144,6 +149,9 @@ jobs:
           elif (name=="PSE original Joomla 1640 exact native WordPress 301 redirect (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): original Joomla 1640 exact native 301 to verified published Post"):
               cohort="SOURCE_PROVEN_ORIGINAL_1640_EXACT_301"
+          elif (name=="PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): restore original shareholder notices 338 and 1085"):
+              cohort="SOURCE_PROVEN_TWO_ORIGINAL_INVESTOR_NOTICES"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
