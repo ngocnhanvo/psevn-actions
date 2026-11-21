@@ -5,11 +5,29 @@ on:
     paths:
       - .pse-five-original-post-live-qa-request
       - .pse-seven-original-post-live-qa-request
+  # Trigger read-only acceptance ONLY after the existing signed PSE production
+  # workflow reports completed success. Never build, write CMS or deploy here.
+  workflow_run:
+    workflows:
+      - PSE Astro build and deploy via WordPress GitHub Trigger
+    types: [completed]
 permissions:
   contents: read
 jobs:
   browser:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'repository_dispatch' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
+          github.event.workflow_run.name == 'PSE Astro build and deploy via WordPress GitHub Trigger'
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
