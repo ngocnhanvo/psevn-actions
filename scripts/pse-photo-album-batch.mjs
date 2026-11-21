@@ -125,6 +125,23 @@ try{
   const r=await fetch(path,{method,credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
   return {http:r.status,data:await r.json().catch(()=>({}))};
  },{path,method,body,nonce});
+ // Only GET is retryable. Never blindly repeat an upload, Post publication,
+ // or native REST write after a transport interruption.
+ const readNative=async path=>{
+  let lastReason="unknown";
+  for(let attempt=1;attempt<=3;attempt++){
+   try{
+    const r=await api(path);
+    if(r.http<500)return r; // 4xx is a hard, provenance-relevant failure.
+    lastReason="WP HTTP "+r.http;
+   }catch(e){lastReason=String(e?.code||e?.name||"network").slice(0,70)}
+   if(attempt<3){
+    console.warn("PSE_GALLERY_NATIVE_READ_RETRY attempt="+attempt+" reason="+lastReason);
+    await new Promise(resolve=>setTimeout(resolve,750*attempt));
+   }
+  }
+  throw Error("Native WordPress GET retries exhausted reason="+lastReason);
+ };
  // Bounded read-only concurrency reduces 2x complete-gallery Media scans.
  // All CMS writes/uploads remain strictly serialized by the existing loop.
  const scanMedia=async(records,fn)=>{
@@ -137,17 +154,17 @@ try{
    }
   }));
  };
- const cat=await api("/wp-json/wp/v2/categories?slug=anh");
+ const cat=await readNative("/wp-json/wp/v2/categories?slug=anh");
  if(cat.http!==200||cat.data?.length!==1||cat.data[0].slug!=="anh")throw Error("WP photo category changed");
  const category=cat.data[0].id;
- const posts=await api("/wp-json/wp/v2/posts?context=edit&slug="+entry.slug+"&per_page=5&_fields=id,slug,categories,status,content,acf,featured_media");
+ const posts=await readNative("/wp-json/wp/v2/posts?context=edit&slug="+entry.slug+"&per_page=5&_fields=id,slug,categories,status,content,acf,featured_media");
  if(posts.http!==200||!Array.isArray(posts.data)||posts.data.length>1)throw Error("WP Post slug collision");
  let post=posts.data[0];
  if(post&&(!post.categories.includes(category)||post.acf?.key!=="ssr-post"||post.acf?.action!=="PostDetails"||!String(post.content?.raw||"").includes('data-pse-gallery-id="'+id+'"')))
    throw Error("Existing Post does not match verified gallery provenance");
  // Read only native attachment registry first, preserving already imported bytes.
  await scanMedia(items,async item=>{
-  const m=await api("/wp-json/wp/v2/media?context=edit&search="+item.marker+"&per_page=50&_fields=id,slug,mime_type,source_url,media_details");
+  const m=await readNative("/wp-json/wp/v2/media?context=edit&search="+item.marker+"&per_page=50&_fields=id,slug,mime_type,source_url,media_details");
   if(m.http!==200||!Array.isArray(m.data))throw Error("WP media search denied");
   const found=m.data.filter(x=>x.slug===item.marker);
   if(found.length>1)throw Error("Ambiguous existing gallery image");
@@ -192,7 +209,7 @@ try{
    if(updated.http!==200)throw Error("Could not save photo alt text");
    item.id=id;
   }
-  const m=await api("/wp-json/wp/v2/media/"+id+"?context=edit");
+  const m=await readNative("/wp-json/wp/v2/media/"+id+"?context=edit");
   if(m.http!==200)throw Error("Native photo media readback failed");
   const media=m.data;
   const nativeFile=String(media.media_details?.file||"").replace(/^\/+/,"");
@@ -237,7 +254,7 @@ try{
  const missing=items.filter(item=>!item.id);
  await scanMedia(items.filter(item=>item.id&&!item.native),async item=>{
   if(!item.native){
-   const media=await api("/wp-json/wp/v2/media/"+item.id+"?context=edit");
+   const media=await readNative("/wp-json/wp/v2/media/"+item.id+"?context=edit");
    if(media.http!==200)throw Error("Stored gallery image readback failed");
    const filename=String(media.data.media_details?.file||"").replace(/^\/+/,"");
    if(filename.split("/").at(-1)!==item.filename)throw Error("Stored gallery image identity mismatch");
@@ -258,7 +275,7 @@ try{
    const updated=await api("/wp-json/wp/v2/posts/"+postId,"POST",{content:html,featured_media:items[0].id});
    if(updated.http!==200)throw Error("Gallery Post content update failed");
   }
-  const read=await api("/wp-json/wp/v2/posts/"+postId+"?context=edit");
+  const read=await readNative("/wp-json/wp/v2/posts/"+postId+"?context=edit");
   if(read.http!==200||read.data.slug!==entry.slug||read.data.acf?.key!=="ssr-post"||read.data.acf?.action!=="PostDetails"||!read.data.categories.includes(category)||!items.every(x=>String(read.data.content?.raw||"").includes(x.filename)))
     throw Error("Post native CMS readback failed");
   if(read.data.status!=="publish"){
