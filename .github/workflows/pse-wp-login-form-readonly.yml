@@ -44,7 +44,7 @@ jobs:
               html=resp.read(150000).decode('utf-8','replace')
               obj=Form();obj.feed(html)
               text=' '.join(obj.text)
-              expression=re.search(r'(\\d+)\\s*([+\\-x×*])\\s*(\\d+)\\s*(?:=|\\?)',text)
+              expression=re.search(r'(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)',text)
               print('PSE_LOGIN_SURFACE='+json.dumps({'status':resp.status,'path':urlparse(resp.url).path,'hasLoginForm':bool(obj.fields),
                  'fields':obj.fields,'arithmeticExpressionPresent':bool(expression),
                  'captchaKeywordPresent':'captcha' in html.lower(),'challengeIframe':bool(obj.errors),
