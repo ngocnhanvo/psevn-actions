@@ -104,8 +104,8 @@ try{
   return{status:r.status,pages:Number(r.headers.get("X-WP-TotalPages")||1),
    data:await r.json().catch(()=>null)};
  },{path,method,body,nonce});
- const cat=await api("/wp-json/wp/v2/categories?slug=tin-tuc-co-dong&_fields=id,slug,parent");
- if(cat.status!==200||cat.data?.length!==1)throw Error("Native shareholder taxonomy missing");
+ const cat=await api("/wp-json/wp/v2/categories?slug=thong-tin-co-dong&_fields=id,slug,parent");
+ if(cat.status!==200||cat.data?.length!==1||cat.data[0].slug!=="thong-tin-co-dong"||Number(cat.data[0].id)!==1744||Number(cat.data[0].parent)!==0)throw Error("Native shareholder taxonomy missing or source-owned ID changed");
  const catId=Number(cat.data[0].id);
  const allMedia=new Map(),wanted=new Set(prepared.flatMap(d=>d.images.map(m=>m.filename)));
  for(let n=1;n<=80;n++){
