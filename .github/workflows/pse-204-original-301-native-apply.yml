@@ -1,0 +1,56 @@
+name: PSE original Joomla 204 exact native WordPress 301 redirect (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-204-original-301-native-apply.mjs
+      - .github/workflows/pse-204-original-301-native-apply.yml
+      - .pse-204-original-301-native-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): original Joomla 204 exact native 301 to verified published Post'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-204-original-301-native-apply.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): original Joomla 204 exact native 301 to verified published Post'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft DB rollback before single source-owned Joomla 204 301
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Authorize exact source #204 WordPress redirect after rollback
+        run: echo "PSE_204_301_FRESH_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Redirect only the original Joomla Article 204 URL to its native Post
+        run: node --check scripts/pse-204-original-301-native-apply.mjs && node scripts/pse-204-original-301-native-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-204-native-wordpress-301-rollback
+          path: artifacts/pse-original-204-301/
+          retention-days: 30
+          if-no-files-found: warn
