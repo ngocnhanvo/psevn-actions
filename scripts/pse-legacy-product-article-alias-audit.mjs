@@ -10,10 +10,16 @@ if(state.schema!=="pse-legacy-article-migration-v1"||
  ids.some(id=>state.articles[id]?.status!=="quarantined"||
  state.articles[id]?.reason!=="Original Joomla section cannot be mapped to verified WP taxonomy"))
  throw Error("Source identity/quarantine state changed; do not guess aliases");
-const x=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,"")).find(s=>s.startsWith("WC_URL="));
-if(!x)throw Error("Missing WP origin");const wp=new URL(x.slice(7).replace(/^['"]|['"]$/g,""));
-if(wp.protocol!=="https:"||wp.username||wp.password||wp.port||!["","/"].includes(wp.pathname))
- throw Error("Invalid WordPress origin");
+const env=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
+const configuredOrigin=key=>{
+ const matches=env.filter(s=>s.startsWith(key+"="));
+ if(matches.length!==1)throw Error("Missing unique "+key);
+ const u=new URL(matches[0].slice(key.length+1).replace(/^['"]|['"]$/g,""));
+ if(u.protocol!=="https:"||u.username||u.password||u.port||
+    !["","/"].includes(u.pathname)||u.search||u.hash)throw Error("Invalid "+key+" origin");
+ return u.origin;
+};
+const wp={origin:configuredOrigin("WC_URL")},front=configuredOrigin("WC_URL_CLIENT");
 const normalize=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/gi,"d").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
 const terms=s=>new Set(normalize(s).split(" ").filter(t=>t.length>=2&&!/^(phu|my|mo|ta|va|hdsd|su|dung|phan|bon|nhom|san|pham|bao|gom)$/i.test(t)));
 const intersect=(a,b)=>[...a].filter(v=>b.has(v)).length;
@@ -62,9 +68,32 @@ try{
   const exact=matches.filter(m=>m.titleExact);
   const decision=r?.status()===200&&html.html&&html.text.length>=120&&exact.length===1?
     "EXACT_PRODUCT_TITLE_CANDIDATE":"MANUAL_SEMANTIC_REVIEW";
+  // Read-only 301 and published-canonical proof. A matching title alone is
+  // insufficient authority to rewrite a legacy Joomla product-detail URL.
+  const legacy=await page.request.get(front+legacyUrl.pathname,{
+    timeout:30000,maxRedirects:0,failOnStatusCode:false});
+  const frontendLegacy={status:legacy.status(),location:legacy.headers().location||null};
+  let verifiedTarget=null;
+  if(decision==="EXACT_PRODUCT_TITLE_CANDIDATE"){
+    const destination="/san-pham/"+exact[0].slug;
+    const target=await page.request.get(front+destination,{
+      timeout:30000,maxRedirects:0,failOnStatusCode:false});
+    const rendered=target.status()===200?await target.text():"";
+    const canonical=rendered.match(/<link\\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+      rendered.match(/<link\\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+    let canonicalOkay=false;
+    if(canonical){
+      const parsed=new URL(canonical,front);
+      canonicalOkay=parsed.origin===front&&parsed.pathname===destination&&!parsed.search&&!parsed.hash;
+    }
+    verifiedTarget={path:destination,status:target.status(),canonicalOkay};
+  }
+  const existing301=Boolean(verifiedTarget)&&verifiedTarget.status===200&&
+    verifiedTarget.canonicalOkay&&frontendLegacy.status===301&&
+    frontendLegacy.location===verifiedTarget.path;
   const row={id,source,http:r?.status()||0,sourceHeading:heading,
     originalBodyChars:html.text.length,internalProductLinks:html.links,
-    result:decision,candidates:matches};
+    result:decision,candidates:matches,frontendLegacy,verifiedTarget,existing301};
   report.aliases.push(row);
   console.log("PSE_LEGACY_PRODUCT_ALIAS="+JSON.stringify({id,http:row.http,title:heading,
     bodyChars:row.originalBodyChars,result:decision,candidates:matches.slice(0,3)}).slice(0,2300));
@@ -72,7 +101,11 @@ try{
  report.summary={sourceAliases:ids.length,source200:report.aliases.filter(r=>r.http===200).length,
    exactTitleCandidates:report.aliases.filter(r=>r.result==="EXACT_PRODUCT_TITLE_CANDIDATE").length,
    manualReview:report.aliases.filter(r=>r.result==="MANUAL_SEMANTIC_REVIEW").map(r=>r.id),
-   wpProducts:products.length,publishedNewProducts:0,readOnly:true};
+   wpProducts:products.length,publishedNewProducts:0,readOnly:true,
+   verifiedLive301:report.aliases.filter(r=>r.existing301).length,
+   exactTargetCanonical:report.aliases.filter(r=>r.verifiedTarget?.canonicalOkay).length,
+   unredirectedExactCandidates:report.aliases.filter(r=>
+     r.result==="EXACT_PRODUCT_TITLE_CANDIDATE"&&r.verifiedTarget?.canonicalOkay&&!r.existing301).map(r=>r.id)};
  await mkdir("artifacts/pse-legacy-product-article-alias",{recursive:true});
  await writeFile("artifacts/pse-legacy-product-article-alias/report.json",JSON.stringify(report,null,2)+"\n");
  console.log("PSE_LEGACY_PRODUCT_ALIAS_SUMMARY="+JSON.stringify(report.summary));
