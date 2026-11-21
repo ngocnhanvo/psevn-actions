@@ -72,11 +72,15 @@ try{
  for(let i=0;i<5;i++){
   const mapped=state.media?.[source.images[i]]?.url;
   if(!mapped||mapped!==native.images[i])throw Error("Original media mapping wrong index="+i);
-  const a=await net.get(mapped,{timeout:45000,failOnStatusCode:false});
+  const nativeURL=new URL(mapped,wp);
+  if(nativeURL.origin!==wp||!nativeURL.pathname.startsWith("/wp-content/uploads/")||
+     nativeURL.search||nativeURL.hash)
+   throw Error("Original media resolves outside WordPress uploads index="+i);
+  const a=await net.get(nativeURL.href,{timeout:45000,failOnStatusCode:false});
   const bytes=await a.body();
   if(a.status()!==200||!String(a.headers()["content-type"]||"").startsWith("image/")||bytes.length<80)
    throw Error("Original source-backed native image not downloadable index="+i);
-  const u=new URL(mapped),proxy=front+"/api/files"+u.pathname;
+  const proxy=front+"/api/files"+nativeURL.pathname;
   const b=await net.get(proxy,{timeout:45000,failOnStatusCode:false});
   const proxyBytes=await b.body();
   const digest=x=>createHash("sha256").update(x).digest("hex");
@@ -100,7 +104,7 @@ try{
    info.canonical!==front+path||info.overflow>2)
    throw Error("Astro original #379 H1/canonical/responsive mismatch width "+width);
   for(const v of native.images){
-   const basename=new URL(v).pathname.split("/").at(-1);
+   const basename=new URL(v,wp).pathname.split("/").at(-1);
    if(!info.imgs.some(x=>{try{return decodeURIComponent(new URL(x).pathname).includes(decodeURIComponent(basename))}
       catch{return false}}))
     throw Error("Original Joomla native image absent on public Astro width "+width+" "+basename);
