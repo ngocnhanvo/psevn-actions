@@ -27,6 +27,26 @@ const pics=[
  {url:"https://www.baobariavungtau.com.vn/dataimages/202505/original/images2017800_16_2025_acondao.jpg",sha:"bb8a5f29dc3abbc3de791b10d5b85c74aa7bb6905386a3c6a9e178a626b83ae6"}
 ].map(p=>({...p,filename:"pse-original-1640-"+createHash("sha256").update(p.url).digest("hex").slice(0,16)+".jpg"}));
 const sha=b=>createHash("sha256").update(b).digest("hex");
+ // Strict idempotent GET transport retry, never retry unexpected 4xx or
+ // forgive a wrong JPEG digest/content type. CMS media responses occasionally
+ // reset long-lived connections under FTPS traffic.
+ const verifiedGet=async(url,opts={})=>{
+  const path=new URL(url).pathname;
+  for(let attempt=1;attempt<=3;attempt++){
+   try{
+    const r=await net.get(url,{...opts,failOnStatusCode:false});
+    if(r.status()<500||attempt===3)return r;
+    console.warn("PSE_1640_QA_SOURCE_GET_RETRY="+JSON.stringify({path,attempt,reason:"upstream-5xx"}));
+    await r.dispose();
+   }catch(e){
+    if(attempt===3||!/ECONNRESET|ETIMEDOUT|Timeout|socket hang up|ERR_CONNECTION_RESET/i.test(String(e?.message||e)))
+     throw e;
+    console.warn("PSE_1640_QA_SOURCE_GET_RETRY="+JSON.stringify({path,attempt,reason:"transient-network"}));
+   }
+   await new Promise(resolve=>setTimeout(resolve,attempt*950));
+  }
+  throw Error("Source/media read-only GET retry exhausted "+path);
+ };
 const strip=s=>String(s||"").replace(/<[^>]*>/g," ").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
 const browser=await chromium.launch({headless:true}),net=await request.newContext({timeout:50000});
 const report={schema:"pse-original-1640-full-postrelease-source-parity-v1",sourceId:1640,
@@ -77,12 +97,12 @@ try{
   if(u.origin!==wp||u.search||u.hash||!u.pathname.startsWith("/wp-content/uploads/")||
    !u.pathname.endsWith("/"+p.filename)||
    (index===0&&Number(post.featured_media)<1))throw Error("Native original #1640 Media identity mismatch index "+index);
-  const response=await net.get(u.href,{timeout:45000,failOnStatusCode:false});
+  const response=await verifiedGet(u.href,{timeout:45000,failOnStatusCode:false});
   const content=await response.body();
   if(response.status()!==200||!String(response.headers()["content-type"]||"").startsWith("image/jpeg")||
    sha(content)!==p.sha)throw Error("Native original archive JPEG digest mismatch index "+index);
   const proxy=front+"/api/files"+u.pathname;
-  const viaFront=await net.get(proxy,{timeout:45000,failOnStatusCode:false});
+  const viaFront=await verifiedGet(proxy,{timeout:45000,failOnStatusCode:false});
   const bytes=await viaFront.body();
   if(viaFront.status()!==200||!String(viaFront.headers()["content-type"]||"").startsWith("image/jpeg")||
    sha(bytes)!==p.sha)throw Error("Frontend original JPEG bytes do not match publisher capture");
