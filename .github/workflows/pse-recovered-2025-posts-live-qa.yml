@@ -1,0 +1,41 @@
+name: PSE restored 2025 Joomla Posts public article parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-2025-posts-live-qa-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-recovered-2025-posts-live-qa
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: "github.repository == 'ngocnhanvo/psevn-actions'"
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run independent SSR archive/detail/image source QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$ENV_FILE"
+          node --check scripts/pse-2025-posts-live-parity.mjs
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+          node scripts/pse-2025-posts-live-parity.mjs
+      - name: Preserve non-secret site screenshots and article audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-recovered-2025-post-live-${{ github.run_id }}
+          path: artifacts/pse-recovered-2025-posts/
+          if-no-files-found: ignore
+          retention-days: 7
