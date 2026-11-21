@@ -105,6 +105,7 @@ try{
   const posts=await all("/wp-json/wp/v2/posts?context=edit&status=publish&_fields=id,slug,status,acf");
   const categories=await all("/wp-json/wp/v2/categories?hide_empty=false&_fields=id,slug,parent,count");
   const productCategories=await all("/wp-json/wp/v2/product_cat?hide_empty=false&_fields=id,slug,parent,count");
+  const nativeProducts=await all("/wp-json/wp/v2/product?status=publish&_fields=id,slug,title");
   const menuResult=await api("/wp-json/wp/v2/menu-items?context=edit&per_page=100&_fields=id,url,type");
   if(menuResult.status!==200||!Array.isArray(menuResult.data))
     throw Error("Cannot read native WordPress menu URLs");
@@ -189,6 +190,40 @@ try{
         "/san-pham/"+slug,"verified-product-family-source+native-wp-taxonomy");
   }
 
+  // Three Joomla /8-trang-chu/ articles are product descriptions rather
+  // than missing WooCommerce products. The independent original-vs-current
+  // content/canonical audit was PASS (#44854597248). Require exact source ID,
+  // section, checkpoint quarantine reason, native published Product ID/slug
+  // AND Product title before proposing a reversible native WordPress 301.
+  // All other historical aliases remain quarantined (no guessed product).
+  const confirmedProductAliases=[
+    [1484,81006,"npk-phu-my-20-5-5-te-1711","NPK Phú Mỹ 20-5-5+TE"],
+    [1676,80956,"sa-phu-my-1682","SA Phú Mỹ"],
+    [1464,81018,"npk-phu-my-16-16-16-te-1716","NPK Phú Mỹ 16-16-16+TE"]
+  ];
+  const exactProductAliasDestinations=new Map();
+  const cleanTitle=v=>String(v||"").replace(/<[^>]*>/g,"").replace(/&amp;/gi,"&").trim();
+  if(!legacyInventory?.articles||nativeProducts.length!==45)
+    throw Error("Cannot verify complete PSE native Product and legacy registry for redirects");
+  for(const [sourceId,productId,productSlug,productTitle] of confirmedProductAliases){
+    const item=legacyInventory.articles[sourceId];
+    const product=nativeProducts.find(p=>Number(p.id)===productId);
+    let legacy;try{legacy=new URL(String(item?.source_url||""))}catch{
+      throw Error("Missing exact Joomla Product-article source "+sourceId);
+    }
+    if(item?.status!=="quarantined"||
+       item?.reason!=="Original Joomla section cannot be mapped to verified WP taxonomy"||
+       legacy.protocol!=="https:"||!legacyHostnames.has(legacy.hostname.replace(/^www\\./,""))||
+       !new RegExp("/hoat-dong-kinh-doanh/san-pham/.+/8-trang-chu/"+
+         sourceId+"-[^/]+\\.html$").test(legacy.pathname)||
+       !product||product.slug!==productSlug||
+       cleanTitle(product.title?.rendered||product.title?.raw)!==productTitle)
+      throw Error("Verified product/source identity changed; reject alias "+sourceId);
+    const from=legacy.pathname,to="/san-pham/"+productSlug;
+    exactProductAliasDestinations.set(from,to);
+    add(from,to,"joomla-original-content+exact-native-product-id-and-title");
+  }
+
   // Previously imported original Kênh phân phối content includes one parent
   // and three precise Joomla source article IDs. Never redirect guessed IDs.
   const verifiedDistributionPaths=[
@@ -258,7 +293,8 @@ try{
     const title=String(r.title?.raw||r.title?.rendered||"").replace(/<[^>]*>/g,"");
     return identity&&r.status==="publish"&&title==="PSE 301 - "+from&&
       String(r.acf?.type)==="301"&&String(r.acf?.match_type)==="Exact"&&
-      (!identity.exactPublished||!identity.approvedState);
+      (!identity.exactPublished||!identity.approvedState)&&
+      !(exactProductAliasDestinations.get(from)===String(r.acf?.to_link||""));
   }).map(r=>({id:r.id,from:String(r.acf?.from_link||""),
     to:String(r.acf?.to_link||""),...manifestIdentity.get(String(r.acf?.from_link||""))}));
   console.log("PSE_LEGACY_REDIRECT_IDENTITY="+JSON.stringify({
