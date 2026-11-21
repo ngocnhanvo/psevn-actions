@@ -84,7 +84,33 @@ try{
   if(!Array.isArray(posts)||posts.length!==1||posts[0].status!=="publish"||
    posts[0].date.slice(0,10)!==t.day||!posts[0].featured_media)
     throw Error("Published WordPress source identity/date missing "+t.id);
-  originals.push({...t,source,slug,title:data.title,expected,postId:posts[0].id});
+  // Prove native originals independently, then compare the exact documented
+  // Astro resize mapping (wordpressUploadImageApiUrl, width 1024). Gallery
+  // files proxy is not the regular article image path.
+  const nativeContext=await browser.newContext({javaScriptEnabled:false});
+  await nativeContext.route("**/*",r=>r.abort());
+  let nativeUrls;
+  try{
+   const nativePage=await nativeContext.newPage();
+   const body=String(posts[0].content?.rendered||"");
+   if(!body)throw Error("Missing native WordPress content "+t.id);
+   await nativePage.setContent('<base href="'+wp+'/">'+body,{waitUntil:"domcontentloaded"});
+   nativeUrls=await nativePage.locator("img[src]").evaluateAll(es=>es.map(i=>i.src));
+  }finally{await nativeContext.close()}
+  if(nativeUrls.length!==t.count||new Set(nativeUrls).size!==t.count)
+   throw Error("Native WordPress original image count/uniqueness "+t.id);
+  const nativePaths=nativeUrls.map((src,i)=>{
+   const u=new URL(src);
+   if(u.origin!==wp||u.search||u.hash||!/^\/wp-content\/uploads\/(?:[0-9]{4}\/[0-9]{2}\/)?pse-gallery-\d+-[a-f0-9]{16}\.(?:jpg|png|webp)$/i.test(u.pathname)||
+    u.pathname.split("/").at(-1)!==expected[i])
+    throw Error("Native WordPress original filename/path/order mismatch "+t.id+" index "+i);
+   return u.pathname;
+  });
+  const allowedPaths=nativePaths.map(path=>{
+   const ext=path.split(".").at(-1).toLowerCase();
+   return ["/api/files"+path,"/api/images/1024/"+ext+path.replace(/\.[a-z0-9]+$/i,".webp")];
+  });
+  originals.push({...t,source,slug,title:data.title,expected,originalNativePaths:nativePaths,allowedPaths,postId:posts[0].id});
  }
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});
@@ -97,15 +123,17 @@ try{
    const count=await imgs.count();
    if(count!==orig.count)throw Error("Joomla → Astro original media count "+orig.id+" expected "+orig.count+" got "+count);
    const urls=await imgs.evaluateAll(es=>es.map(i=>new URL(i.getAttribute("src")||"",location.href).href));
-   if(new Set(urls).size!==urls.length||urls.some(x=>!x.startsWith(front+"/api/files/wp-content/uploads/"))){
+   if(new Set(urls).size!==urls.length||urls.some((x,i)=>{
+    const u=new URL(x);
+    return u.origin!==front||!!u.search||!!u.hash||!orig.allowedPaths[i].includes(u.pathname);
+   })){
     const diagnostic=urls.map(x=>{const u=new URL(x);return {originClass:u.origin===front?"frontend":u.origin===wp?"wordpress":"other",path:u.pathname,queryPresent:!!u.search}});
     report.ownershipFailure={id:orig.id,width,expected:orig.expected,actual:diagnostic,unique:new Set(urls).size,leakedCount:leaked.length};
     console.log("PSE_POST_IMAGE_OWNERSHIP_DIAGNOSTIC="+JSON.stringify(report.ownershipFailure));
     throw Error("Astro broken native image ownership "+orig.id);
    }
-   const filenames=urls.map(x=>decodeURIComponent(new URL(x).pathname.split("/").at(-1)));
-   if(filenames.some((x,i)=>x!==orig.expected[i]))
-    throw Error("Original article image filename identity/order mismatch "+orig.id);
+   // Each displayed URL has already matched its original native path at the
+   // same index, including source extension encoded by the resize API.
    const dom=await page.evaluate(()=>({
     h1:[...document.querySelectorAll("h1")].map(x=>x.textContent.replace(/\s+/g," ").trim()),
     canonical:document.querySelector('link[rel="canonical"]')?.href||"",
