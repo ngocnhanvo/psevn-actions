@@ -1,1 +1,3 @@
 Source Joomla #1640 was restored as native WordPress Post 83471, source created day 2025-05-14 with two exact original publisher URL archived JPEG digest matches in apply #44891298690. Existing WordPress PHP Build Website #44891679359 SUCCESS and signed Astro production #44891755702 SUCCESS. Run strict read-only public QA for text,date,category,2 original JPG bytes, two viewports, SEO, canonical and no direct admin-origin network leaks.
+
+Strict read-only rerun: source-native JPEG HTTP GET had intermittent ECONNRESET at #44891991213. Source media already verified via native SHA during #44891298690, signed Astro production #44891755702 PASS. Only bounded GET retries added by f0912071; no relaxed digest/canonical assertions or CMS mutation.
