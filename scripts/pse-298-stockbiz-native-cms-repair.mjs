@@ -50,18 +50,24 @@ try{
  // and alternative exact 22-page signed PSE/Deloitte PDF is #44918382814.
  // Reverify live bytes: no trust in stale single run or filename alone.
  const [sourceList,pdfResp,publicPost]=await Promise.all([
-  net.get(listing,{timeout:45000,maxRedirects:0,failOnStatusCode:false}),
-  net.get(archive,{timeout:90000,maxRedirects:0,failOnStatusCode:false}),
+  fetch(listing,{redirect:"manual",signal:AbortSignal.timeout(45000)}),
+  fetch(archive,{redirect:"manual",signal:AbortSignal.timeout(90000),
+   headers:{Accept:"application/pdf,*/*;q=0.1"}}),
   net.get(wp+"/wp-json/wp/v2/posts/"+postId+
    "?_fields=id,slug,status,date,categories,acf,content,title",{timeout:45000,failOnStatusCode:false})
  ]);
- if(sourceList.status()!==200||pdfResp.status()!==200||publicPost.status()!==200)
-  throw Error("Official alternative PDF or WP source preflight unavailable");
- const listHtml=await sourceList.text(),mime=String(pdfResp.headers()["content-type"]||"").toLowerCase();
+ console.log("PSE_298_SAFE_SOURCE_HTTP="+JSON.stringify({
+  listingHttp:sourceList.status,pdfHttp:pdfResp.status,
+  wpRestHttp:publicPost.status()}));
+ if(sourceList.status!==200||pdfResp.status!==200||publicPost.status()!==200)
+  throw Error("Source or WP HTTP preflight status non-200; no CMS writes");
+ const listHtml=await sourceList.text(),mime=String(pdfResp.headers.get("content-type")||"").toLowerCase();
  if(!listHtml.includes("PSE-12-Q2-Audited")||!listHtml.includes("PSE")||
   (!mime.includes("application/pdf")&&!mime.includes("octet-stream")))
-  throw Error("Stockbiz listing/PDF provenance changed");
- const bytes=await pdfResp.body();
+  throw Error("Stockbiz original signed PDF listing/provenance changed");
+ const len=Number(pdfResp.headers.get("content-length")||0);
+ if(len>10000000)throw Error("Stockbiz PDF unexpectedly oversized");
+ const bytes=Buffer.from(await pdfResp.arrayBuffer());
  if(bytes.length!==bytesExpected||bytes.subarray(0,5).toString("ascii")!=="%PDF-"||
   !bytes.subarray(-2048).toString("latin1").includes("%%EOF")||sha(bytes)!==shaExpected)
   throw Error("Source PDF signature/length/SHA256 differs from exact archived proof");
