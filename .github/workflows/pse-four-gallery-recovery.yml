@@ -45,15 +45,37 @@ jobs:
             for (( batch=0; batch<count; batch++ )); do
               export PSE_GALLERY_ID="$gallery" PSE_GALLERY_BATCH="$batch"
               echo "PSE_SOURCE_RECOVERY_BEGIN gallery=$gallery batch=$batch of=$count"
-              log="$RUNNER_TEMP/pse-source-gallery-$gallery-$batch.log"
-              node scripts/pse-photo-album-batch.mjs | tee "$log"
-              # Never claim an album is complete merely because the process
-              # returned 0. Require the native verified end-of-batch marker.
-              if (( batch == count-1 )); then
-                grep -Eq 'PSE_GALLERY_BATCH=(COMPLETE|ALREADY_DONE)' "$log"
-              else
-                grep -Eq 'PSE_GALLERY_BATCH=(PARTIAL|ALREADY_DONE)' "$log"
-              fi
+              # If and only if a read/probe transport error interrupts the
+              # importer, a bounded batch retry is safe: each fresh invocation
+              # first REST-reads exact source-derived Media/Post identifiers and
+              # never blindly replays a WordPress POST.
+              completed=false
+              for (( attempt=1; attempt<=3; attempt++ )); do
+                log="$RUNNER_TEMP/pse-source-gallery-$gallery-$batch-attempt-$attempt.log"
+                if node scripts/pse-photo-album-batch.mjs 2>&1 | tee "$log"; then
+                  # Exit zero is insufficient; verify native Post/Media markers.
+                  if (( batch == count-1 )); then
+                    grep -Eq 'PSE_GALLERY_BATCH=(COMPLETE|ALREADY_DONE)' "$log"
+                  else
+                    grep -Eq 'PSE_GALLERY_BATCH=(PARTIAL|ALREADY_DONE)' "$log"
+                  fi
+                  completed=true
+                  break
+                fi
+                # Reject source/media identity failures and HTTP4xx. Only
+                # transient networking may be retried once state is reread.
+                if ! grep -Eqi 'ECONNRESET|ETIMEDOUT|socket hang up|TimeoutError|retries exhausted.*(network|ECONNRESET|ETIMEDOUT)' "$log"; then
+                  echo "PSE_RECOVERY_STOP nontransient source or CMS error"
+                  exit 1
+                fi
+                if (( attempt == 3 )); then
+                  echo "PSE_RECOVERY_STOP transient retries exhausted"
+                  exit 1
+                fi
+                echo "PSE_RECOVERY_TRANSIENT_RETRY gallery=$gallery batch=$batch attempt=$attempt"
+                sleep $((attempt*5))
+              done
+              if [[ "$completed" != true ]]; then exit 1; fi
               echo "PSE_SOURCE_RECOVERY_BATCH_PASS gallery=$gallery batch=$batch"
             done
             echo "PSE_SOURCE_RECOVERY_ALBUM_PUBLISHED id=$gallery"
