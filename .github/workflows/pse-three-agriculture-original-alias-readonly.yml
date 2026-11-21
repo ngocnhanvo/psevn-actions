@@ -1,0 +1,43 @@
+name: PSE original three agriculture Joomla old URLs and native canonical (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-three-agriculture-original-alias-readonly.mjs
+      - .github/workflows/pse-three-agriculture-original-alias-readonly.yml
+      - .pse-three-agriculture-original-alias-readonly-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-three-agriculture-original-alias-readonly.mjs
+  audit:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): three original agriculture Joomla URL canonical aliases'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-three-agriculture-original-alias-readonly.mjs && node scripts/pse-three-agriculture-original-alias-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-agriculture-344-348-370-alias-audit
+          path: artifacts/pse-three-agriculture-old-routes/report.json
+          retention-days: 30
+          if-no-files-found: warn
