@@ -1,0 +1,56 @@
+name: PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-investor-two-original-notices-import.mjs
+      - .github/workflows/pse-investor-two-original-notices-import.yml
+      - .pse-investor-two-original-notices-import-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): restore original shareholder notices 338 and 1085'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-investor-two-original-notices-import.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore original shareholder notices 338 and 1085'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Back up WordPress DB through existing Updraft before any source CMS writes
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Enable exactly two source-owned investor notices after verified rollback
+        run: echo "PSE_INVESTOR_FRESH_BACKUP=yes" >> "$GITHUB_ENV"
+      - name: Create only two verified Joomla investor Posts and four scanned originals
+        run: node --check scripts/pse-investor-two-original-notices-import.mjs && node scripts/pse-investor-two-original-notices-import.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-two-original-shareholder-notice-import
+          path: artifacts/pse-investor-two-native/report.json
+          retention-days: 30
+          if-no-files-found: warn
