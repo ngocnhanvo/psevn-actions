@@ -57,16 +57,26 @@ try{
       return{tag:el.tagName.toLowerCase(),path:u.pathname,host:u.hostname,
        isRequiredImage:el.tagName==="IMG",isMedia:/(?:\.(?:jpe?g|png|gif|webp|pdf))(?:$)/i.test(u.pathname)};
      }).filter(Boolean);
-     return{title:norm(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent||
+     const data={title:norm(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent||
       document.title),text:norm(root.textContent),htmlBytes:root.innerHTML.length,
       refs,contentBlocks:root.querySelectorAll("p,h2,h3,ul,ol,table").length};
+     if(!data.title||data.text.length<10)
+      data.sourceHints={rootTag:root.tagName,rootClass:root.className,
+       rootInnerHTMLSample:root.innerHTML.slice(0,400),
+       documentTitle:norm(document.title),bodyTextChars:norm(document.body?.textContent).length,
+       bodyTextSample:norm(document.body?.textContent).slice(0,280),
+       headings:[...document.querySelectorAll("h1,h2,h3")].slice(0,8).map(x=>norm(x.textContent))};
+     return data;
     });
    }finally{await page.close()}
    if(p?.missingBody){
     row.title=p.title;row.sourceHints=p.sourceHints;
     throw Error("Source original articleBody absent (diagnostic only; no substitution)");
    }
-   if(!p||!p.title||p.text.length<10)throw Error("Source original body missing");
+   if(!p||!p.title||p.text.length<10){
+    row.title=p?.title||null;row.sourceHints=p?.sourceHints||null;
+    throw Error("Source original body missing");
+   }
    row.title=p.title;row.bodyChars=p.text.length;row.bodySample=p.text.slice(0,200);
    row.htmlBytes=p.htmlBytes;row.contentBlocks=p.contentBlocks;
    row.media=p.refs.filter(x=>x.isRequiredImage||x.isMedia||["iframe","embed","object"].includes(x.tag));
