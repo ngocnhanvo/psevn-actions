@@ -19,3 +19,5 @@
 2026-11-20 Verify PSE modern WordPress-managed fertilizer category UI: Astro master 835c5048d7738298b281c84ba420f9b8f3cf6ad3; source regression FULL Vitest, no build/deploy. Retain ten CMS technical tables and four real product cards.
 2026-11-20 Recheck PSE modern fertilizer category UI, Astro master 85ae9d60a6457f1bca05444c889139bc6f41014e: corrected responsive contract after CI #44764608565 (587/588 PASS, previous test expected old breakpoint); run full Vitest, NO BUILD.
 2026-11-20 Verify contrast fix for legacy WordPress white text on pale product technical tables, Astro master 532fb8af7cc74e6cc87787f3878027baed693bed; full Vitest and no Astro build/deploy.
+
+2026-11-21 PSE investor PDF-only news listing card repair: source master db3a97688b21e3823ce137e2a901d6366d64cc67, one guarded fallback helper for actual PDF href, 34 of 35 placeholders have real original WP PDF links proven #44923393587, text-only/real photo cases tested; full production master Vitest + source boundary only, NO BUILD/FTP in QA.
