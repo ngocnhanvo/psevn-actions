@@ -31,7 +31,7 @@ try{
  const response=await page.request.get(wp.origin+"/wp-json/wp/v2/product?status=publish&per_page=100&_fields=id,slug,title,content,excerpt",{timeout:45000});
  if(response.status()!==200)throw Error("Public WooCommerce native Products REST "+response.status());
  const products=await response.json();
- if(!Array.isArray(products)||products.length!==45)throw Error("Unexpected published product registry "+products.length);
+ if(!Array.isArray(products)||products.length!==53)throw Error("Unexpected published 45 core + 8 Garden product registry "+products.length);
  report.wpProductCount=products.length;
  const strip=s=>String(s||"").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/ig," ").replace(/&amp;/gi,"&").replace(/\s+/g," ").trim();
  for(const id of ids){
@@ -91,9 +91,29 @@ try{
   const existing301=Boolean(verifiedTarget)&&verifiedTarget.status===200&&
     verifiedTarget.canonicalOkay&&frontendLegacy.status===301&&
     frontendLegacy.location===verifiedTarget.path;
+  // Independently inspect EVERY existing old URL, including family-level
+  // aliases that cannot safely map to one Product by weak title overlap.
+  let liveRedirect={status:frontendLegacy.status,location:frontendLegacy.location,
+   targetStatus:null,canonical:false,nativeTarget:false,exactSourceFamily:false};
+  if(frontendLegacy.status===301&&frontendLegacy.location){
+   const u=new URL(frontendLegacy.location,front);
+   if(u.origin!==front||u.search||u.hash)throw Error("Legacy redirect escapes native public origin "+id);
+   const dest=await page.request.get(u.href,{timeout:30000,maxRedirects:0,failOnStatusCode:false});
+   const body=dest.status()===200?await dest.text():"";
+   const canonical=body.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+    body.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+   const can=canonical?new URL(canonical,front):null;
+   const productSlug=u.pathname.startsWith("/san-pham/")?u.pathname.slice("/san-pham/".length):"";
+   liveRedirect={
+    status:301,location:u.pathname,targetStatus:dest.status(),
+    canonical:!!can&&can.origin===front&&can.pathname===u.pathname&&!can.search&&!can.hash,
+    nativeTarget:products.some(p=>p.slug===productSlug),
+    exactSourceFamily:id===1639&&u.pathname==="/san-pham/phu-my-garden",
+   };
+  }
   const row={id,source,http:r?.status()||0,sourceHeading:heading,
     originalBodyChars:html.text.length,internalProductLinks:html.links,
-    result:decision,candidates:matches,frontendLegacy,verifiedTarget,existing301};
+    result:decision,candidates:matches,frontendLegacy,verifiedTarget,existing301,liveRedirect};
   report.aliases.push(row);
   console.log("PSE_LEGACY_PRODUCT_ALIAS="+JSON.stringify({id,http:row.http,title:heading,
     bodyChars:row.originalBodyChars,result:decision,candidates:matches.slice(0,3)}).slice(0,2300));
@@ -104,6 +124,12 @@ try{
    wpProducts:products.length,publishedNewProducts:0,readOnly:true,
    verifiedLive301:report.aliases.filter(r=>r.existing301).length,
    exactTargetCanonical:report.aliases.filter(r=>r.verifiedTarget?.canonicalOkay).length,
+   verifiedPublishedRedirects:report.aliases.filter(r=>r.liveRedirect.status===301&&
+      r.liveRedirect.targetStatus===200&&r.liveRedirect.canonical&&
+      (r.liveRedirect.nativeTarget||r.liveRedirect.exactSourceFamily)).map(r=>({id:r.id,target:r.liveRedirect.location})),
+   stillMissingOrManual:report.aliases.filter(r=>!(r.liveRedirect.status===301&&
+      r.liveRedirect.targetStatus===200&&r.liveRedirect.canonical&&
+      (r.liveRedirect.nativeTarget||r.liveRedirect.exactSourceFamily))).map(r=>r.id),
    unredirectedExactCandidates:report.aliases.filter(r=>
      r.result==="EXACT_PRODUCT_TITLE_CANDIDATE"&&r.verifiedTarget?.canonicalOkay&&!r.existing301).map(r=>r.id)};
  await mkdir("artifacts/pse-legacy-product-article-alias",{recursive:true});
