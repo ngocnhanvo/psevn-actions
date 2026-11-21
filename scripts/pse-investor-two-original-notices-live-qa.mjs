@@ -72,8 +72,15 @@ try{
   await native.setContent('<base href="'+wp+'/">'+String(posts[0].content?.rendered||""));
   const wpBody=norm(await native.locator("body").innerText());
   const imgUrls=await native.locator("img[src]").evaluateAll(es=>es.map(x=>x.src));
-  if(imgUrls.length!==2||wpBody.length<src.body.length*0.75||!wpBody.includes(src.body.slice(0,50)))
+  if(imgUrls.length!==2||wpBody.length<src.body.length*0.75||!wpBody.includes(src.body.slice(0,50))){
+   console.log("PSE_INVESTOR_NATIVE_BODY_DIAGNOSTIC="+JSON.stringify({id:doc.id,
+    originalChars:src.body.length,wpRenderedChars:wpBody.length,originalOpening:src.body.slice(0,160),
+    wpRenderedOpening:wpBody.slice(0,190),nativeImageCount:imgUrls.length,
+    sourcePrefixExact:wpBody.includes(src.body.slice(0,50)),
+    sourcePrefixNormalized:wpBody.normalize("NFKC").replace(/[\\u2010-\\u2015\\u2212]/g,"-").includes(
+     src.body.slice(0,50).normalize("NFKC").replace(/[\\u2010-\\u2015\\u2212]/g,"-"))}));
    throw Error("WordPress source investor body/media lost "+doc.id);
+  }
   const expectedNames=doc.files.map(x=>"pse-original-"+doc.id+"-"+sha(x[0]).slice(0,16)+".jpg");
   for(let i=0;i<2;i++){
    const u=new URL(imgUrls[i]),filename=expectedNames[i];
