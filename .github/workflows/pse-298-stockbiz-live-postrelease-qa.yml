@@ -23,7 +23,8 @@ jobs:
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - run: node --check scripts/pse-298-stockbiz-live-postrelease-qa.mjs
       - name: Verify exact WordPress Post, replacement PDF original SHA and real responsive public site
-        if: github.event.head_commit.message == 'test(pse): verify 2012 Stockbiz alternative PDF public postrelease'
+        if: >-
+          github.event.head_commit.message == 'test(pse): verify 2012 Stockbiz alternative PDF public postrelease'
         run: node scripts/pse-298-stockbiz-live-postrelease-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
