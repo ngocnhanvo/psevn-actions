@@ -48,13 +48,24 @@ try{
   const txt=s=>String(s||"").replace(/\s+/g," ").trim();
   return{title:txt(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent),
    text:txt(root?.textContent),
+   rootLabel:root?.getAttribute("itemprop")||root?.className||root?.tagName,
+   hasExplicitArticleBody:!!document.querySelector(".item-page [itemprop=articleBody]"),
+   sections:[...(root?.children||[])].slice(0,22).map((c,i)=>({
+    index:i,tag:c.tagName,className:String(c.className||"").slice(0,90),
+    bodyChars:txt(c.textContent).length,start:txt(c.textContent).slice(0,140)
+   })),
    images:[...(root?.querySelectorAll("img[src]")||[])].map(x=>new URL(x.getAttribute("src"),document.baseURI).href),
    documents:[...(root?.querySelectorAll("a[href]")||[])].map(x=>x.href).filter(x=>/\.(?:pdf|docx?|zip|xlsx?)(?:[?#]|$)/i.test(x))};
  });
  await original.close();
  if(j.text.length<130||normalized(j.title)!==normalized(found[0].title))
   throw Error("Original Joomla title/body mismatch");
- report.sourceInfo={title:j.title,bodyChars:j.text.length,images:j.images.length,documents:j.documents.length};
+ report.sourceInfo={title:j.title,bodyChars:j.text.length,images:j.images.length,documents:j.documents.length,
+  rootLabel:j.rootLabel,hasExplicitArticleBody:j.hasExplicitArticleBody};
+ console.log("PSE_379_JOOMLA_DOM_BOUNDARY="+JSON.stringify({rootLabel:j.rootLabel,
+  hasExplicitArticleBody:j.hasExplicitArticleBody,sections:j.sections,
+  migrationBodyChars:String(entry.bodyText||"").length,
+  migrationBodyStart:normalized(entry.bodyText||"").slice(0,120)}));
  await admin.goto(wp.origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
  if(await admin.locator("#user_login").count()){
   await admin.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
@@ -103,6 +114,9 @@ try{
  const opening=normalized(j.text).slice(0,90),text=normalized(native.text);
  const comparison={sourceChars:normalized(j.text).length,nativeChars:text.length,
   sourceStart:normalized(j.text).slice(0,170),nativeStart:text.slice(0,170),
+  sourceEnd:normalized(j.text).slice(-200),nativeEnd:text.slice(-200),
+  nativeFullyContained:normalized(j.text).includes(text),
+  sourceContainsMigrationBody:normalized(j.text).includes(normalized(entry.bodyText||"")),
   openingFound:!!opening&&text.includes(opening),
   lengthRatio:normalized(j.text).length?Number((text.length/normalized(j.text).length).toFixed(3)):0};
  report.textComparison=comparison;
