@@ -18,6 +18,7 @@ on:
       - PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)
       - PSE Joomla 204 original three archive-backed publisher images native WP (GUARDED)
       - PSE original Joomla 204 exact native WordPress 301 redirect (GUARDED)
+      - PSE Joomla 379 exact RSS date native WordPress publication (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -38,7 +39,11 @@ jobs:
          github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
          github.event.workflow_run.head_branch == 'main' &&
          (
-           (github.event.workflow_run.event == 'workflow_run' &&
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE Joomla 379 exact RSS date native WordPress publication (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): publish Joomla 379 using verified RSS date')
+           ||
+                      (github.event.workflow_run.event == 'workflow_run' &&
             github.event.workflow_run.name == 'PSE two further original gallery-backed Joomla Posts guarded recovery')
            ||
            (github.event.workflow_run.event == 'push' &&
@@ -157,7 +162,10 @@ jobs:
           if (run.get("head_repository") or {}).get("full_name")!="ngocnhanvo/psevn-actions" or run.get("head_branch")!="main":
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_REPOSITORY")
           name=run.get("name")
-          if name=="PSE two further original gallery-backed Joomla Posts guarded recovery" and run.get("event")=="workflow_run":
+          if (name=="PSE Joomla 379 exact RSS date native WordPress publication (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): publish Joomla 379 using verified RSS date"):
+              cohort="SOURCE_PROVEN_ORIGINAL_379_RSS_DATE"
+          elif name=="PSE two further original gallery-backed Joomla Posts guarded recovery" and run.get("event")=="workflow_run":
               cohort="SOURCE_PROVEN_TWO_POSTS"
           elif (name=="PSE original Phu My Garden eight native WordPress Products (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): import eight original Phu My Garden products"):
