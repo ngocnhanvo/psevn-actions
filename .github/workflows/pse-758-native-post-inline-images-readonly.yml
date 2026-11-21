@@ -1,0 +1,30 @@
+name: PSE 758 published native Posts image link HEAD reachability (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-758-native-post-inline-images-readonly.mjs
+      - .github/workflows/pse-758-native-post-inline-images-readonly.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check scripts/pse-758-native-post-inline-images-readonly.mjs
+      - run: node scripts/pse-758-native-post-inline-images-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-758-published-post-inline-image-head-integrity
+          path: artifacts/pse-758-inline-images/report.json
+          retention-days: 21
+          if-no-files-found: warn
