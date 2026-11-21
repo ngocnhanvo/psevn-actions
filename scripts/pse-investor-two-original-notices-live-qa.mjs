@@ -26,6 +26,10 @@ const wp=site("WC_URL"),front=site("WC_URL_CLIENT");
 if(wp===front)throw Error("Public origin leak");
 const sha=b=>createHash("sha256").update(b).digest("hex");
 const norm=t=>String(t||"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
+// Source Joomla textContent concatenates adjacent block nodes without a space;
+// rendered WordPress innerText inserts visual whitespace. Require every
+// source character in exact order after removing ONLY Unicode whitespace.
+const exactTextChars=s=>norm(s).normalize("NFKC").replace(/\\s+/gu,"");
 const browser=await chromium.launch({headless:true}),net=await request.newContext({timeout:50000});
 const report={schema:"pse-two-original-shareholder-source-postrelease-v1",
  sourceIds:[338,1085],sourcePosts:[],media:[],rows:[],readOnly:true,noBuild:true,noCmsWrites:true};
@@ -72,7 +76,7 @@ try{
   await native.setContent('<base href="'+wp+'/">'+String(posts[0].content?.rendered||""));
   const wpBody=norm(await native.locator("body").innerText());
   const imgUrls=await native.locator("img[src]").evaluateAll(es=>es.map(x=>x.src));
-  if(imgUrls.length!==2||wpBody.length<src.body.length*0.75||!wpBody.includes(src.body.slice(0,50))){
+  if(imgUrls.length!==2||exactTextChars(wpBody)!==exactTextChars(src.body)){
    console.log("PSE_INVESTOR_NATIVE_BODY_DIAGNOSTIC="+JSON.stringify({id:doc.id,
     originalChars:src.body.length,wpRenderedChars:wpBody.length,originalOpening:src.body.slice(0,160),
     wpRenderedOpening:wpBody.slice(0,190),nativeImageCount:imgUrls.length,
