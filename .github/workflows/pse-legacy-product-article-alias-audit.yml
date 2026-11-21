@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .pse-legacy-product-article-alias-request
+      - scripts/pse-legacy-product-article-alias-audit.mjs
 permissions:
   contents: read
 concurrency:
