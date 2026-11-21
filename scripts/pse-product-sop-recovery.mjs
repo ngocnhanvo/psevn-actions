@@ -119,7 +119,7 @@ try{
   throw Error("Native ProductCategory ancestry has changed");
  if(products.data.length<44)throw Error("Published/draft Product registry unexpectedly incomplete");
  const matches=products.data.filter(x=>x.slug===slug||norm(x.title?.raw||x.title?.rendered)===norm(name));
- if(matches.length>1||matches.length===1&&(matches[0].slug!==slug||norm(matches[0].title?.raw||matches[0].title?.rendered)!==norm(name)))
+ if(matches.length>1||matches.length===1&&(![slug,canonicalSlug].includes(matches[0].slug)||norm(matches[0].title?.raw||matches[0].title?.rendered)!==norm(name)))
   throw Error("Ambiguous/colliding WordPress Product SOP identity");
  const media=existingMedia.data.filter(x=>x.slug===marker&&x.mime_type==="image/png");
  if(media.length>1)throw Error("Ambiguous existing SOP source media");
@@ -168,7 +168,7 @@ try{
    productId=Number(newProduct.data.id);
   }
   const before=await api("/wp-json/wp/v2/product/"+productId+"?context=edit");
-  if(before.status!==200||before.data.slug!==slug||norm(before.data.title?.raw||before.data.title?.rendered)!==norm(name)||
+  if(before.status!==200||![slug,slug+"-"+productId].includes(before.data.slug)||norm(before.data.title?.raw||before.data.title?.rendered)!==norm(name)||
    Number(before.data.featured_media)!==Number(mediaId)||!before.data.product_cat?.includes(child[0].id)||
    !String(before.data.content?.raw||"").includes("50%")||!String(before.data.excerpt?.raw||"").includes("17%"))
     throw Error("WP SOP product draft readback content/category/media mismatch");
@@ -178,11 +178,11 @@ try{
     throw Error("WP SOP product publish failed");
   }else if(before.data.status!=="publish")throw Error("Unexpected SOP product status");
   const after=await api("/wp-json/wp/v2/product/"+productId+"?context=edit");
-  if(after.status!==200||after.data.status!=="publish"||after.data.slug!==slug||
+  if(after.status!==200||after.data.status!=="publish"||![slug,slug+"-"+productId].includes(after.data.slug)||
    !after.data.product_cat?.includes(child[0].id)||after.data.featured_media!==mediaId||
    !String(after.data.content?.raw||"").includes("17%"))
    throw Error("Published native SOP product readback mismatch");
-  report.product={id:productId,slug,status:"publish",featuredMedia:mediaId,categoryId:child[0].id};
+  report.product={id:productId,slug:after.data.slug,status:"publish",featuredMedia:mediaId,categoryId:child[0].id};
   report.status="PASS";
   console.log("PSE_SOP_RECOVERY=PASS; title="+name+"; wp_product_id="+productId+"; wp_media_id="+mediaId+"; original_sha256="+hash+"; cms_native=true; no_astro_build=true");
  }
