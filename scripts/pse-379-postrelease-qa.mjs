@@ -98,7 +98,12 @@ try{
    const canonical=document.querySelector('link[rel="canonical"]')?.href||"";
    const overflow=document.documentElement.scrollWidth-window.innerWidth;
    const imgs=[...document.querySelectorAll("img[src]")].map(img=>img.currentSrc||img.src);
-   return{h1,canonical,overflow,imgs};
+   const imgTrace=[...document.querySelectorAll("img")].map(img=>({
+    src:img.getAttribute("src"),current:img.currentSrc||null,
+    dataSrc:img.getAttribute("data-src"),srcset:img.getAttribute("srcset"),
+    alt:img.getAttribute("alt")
+   })).slice(0,45);
+   return{h1,canonical,overflow,imgs,imgTrace};
   });
   if(normalize(info.h1)!==normalize(source.title)||
    info.canonical!==front+path||info.overflow>2)
@@ -107,7 +112,9 @@ try{
    const basename=new URL(v,wp).pathname.split("/").at(-1);
    if(!info.imgs.some(x=>{try{return decodeURIComponent(new URL(x).pathname).includes(decodeURIComponent(basename))}
       catch{return false}}))
-    throw Error("Original Joomla native image absent on public Astro width "+width+" "+basename);
+    {console.log("PSE_379_FRONTEND_IMAGE_DOM_DIAGNOSTIC="+JSON.stringify({
+      width,expected:basename,imgs:info.imgTrace}).slice(0,13000));
+     throw Error("Original Joomla native image absent on public Astro width "+width+" "+basename);}
   }
   report.viewports.push({width,route200:true,h1:true,canonical:true,allOriginalImagesPresent:true,overflow:info.overflow});
   await page.close();
