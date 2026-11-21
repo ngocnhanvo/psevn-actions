@@ -213,7 +213,7 @@ try{
     }
     if(item?.status!=="quarantined"||
        item?.reason!=="Original Joomla section cannot be mapped to verified WP taxonomy"||
-       legacy.protocol!=="https:"||!legacyHostnames.has(legacy.hostname.replace(/^www\\./,""))||
+       legacy.protocol!=="https:"||!legacyHostnames.has(legacy.hostname.replace(/^www\./,""))||
        !new RegExp("/hoat-dong-kinh-doanh/san-pham/.+/8-trang-chu/"+
          sourceId+"-[^/]+\\.html$").test(legacy.pathname)||
        !product||product.slug!==productSlug||
