@@ -21,7 +21,8 @@ jobs:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.ref == 'refs/heads/main' &&
-      github.event.head_commit.message == 'test(pse): inspect original Joomla 379 legacy alias after deploy'
+      (github.event.head_commit.message == 'test(pse): inspect original Joomla 379 legacy alias after deploy' ||
+       github.event.head_commit.message == 'test(pse): verify original Joomla 379 exact 301 postrelease')
     runs-on: ubuntu-latest
     timeout-minutes: 8
     container:
