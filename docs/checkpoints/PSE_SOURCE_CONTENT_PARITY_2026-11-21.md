@@ -52,3 +52,19 @@ Initial pre-import snapshot: **PRODUCT PARITY PASS / LIVE PRODUCT QA PASS / POST
 - **Next safe work**: individually prove remaining #1640 and other historical media/date sources; independently map 8 legacy product URL aliases to the already-published 45 Products; audit 16 gallery assets if requested. Do not trigger builds for read-only verification.
 
 **CURRENT STATUS: PARTIAL — current native Product parity PASS (45/45), two previously missing source Articles restored and public LIVE; 27 historically unverified articles + 8 Joomla legacy Product-description alias identities still need source evidence/mapping.**
+
+
+## 2026-11-21 — Three verified Joomla Product-detail aliases (continued session)
+
+- Recovered current code/log/checkpoint state before further mutation. All previously completed 45 native Product QA, 2 restored 2025 Posts, WordPress PHP build-queue fix and signed Astro/FTPS release were **not repeated**.
+- New independent product-alias audit [Actions #44854597248](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44854597248) **SUCCESS, read-only**: 8/8 original Joomla source HTTP200, exactly 3 unique title candidates with current published Product HTTP200 and correct frontend canonical; **0** existing 301 for those 3. Five further sources remain multiple/semantically ambiguous and must NOT be redirected automatically.
+- Exact aliases supported by original source + current Product identity:
+  - Joomla #1484 → native Product **#81006** `/san-pham/npk-phu-my-20-5-5-te-1711` (NPK Phú Mỹ 20-5-5+TE).
+  - Joomla #1676 → native Product **#80956** `/san-pham/sa-phu-my-1682` (SA Phú Mỹ).
+  - Joomla #1464 → native Product **#81018** `/san-pham/npk-phu-my-16-16-16-te-1716` (NPK Phú Mỹ 16-16-16+TE).
+- Remaining `MANUAL_SEMANTIC_REVIEW` Joomla IDs **1425,1426,1434,1639,1678**; do not pick an arbitrary Kali/NPK variant or fabricate an extra native Product.
+- Added read-only legacy HTTP/301/target canonical verification to `scripts/pse-legacy-product-article-alias-audit.mjs` (final audit fix commit [`cf2c7545`](https://github.com/ngocnhanvo/psevn-actions/commit/cf2c7545bdcfb806fb47a17fb68892f11dbc0c41)); audited all three targets in #44854597248.
+- Added a **guarded three-item native WordPress redirect candidate** to the existing PSE 301 script, locking source Joomla ID/quarantine section and native published Product ID/slug/title. Code commit [`c2cfa14e`](https://github.com/ngocnhanvo/psevn-actions/commit/c2cfa14eed209f90b933767e5fab5f6651441ce2); configured its workflow to auto-run read-only preflight on source changes [`15aec719`](https://github.com/ngocnhanvo/psevn-actions/commit/15aec719abfa26493aca4ff53b2cc2758f719420).
+- **As of this checkpoint write:** read-only guarded preflight [#44854845726](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44854845726) started; do NOT claim it passed before reading result/log/artifact. **No WordPress redirects written by this session, no new Astro production build, no FTP/WordPress changes yet.** Existing 669 native WordPress 301 rules and their prior live QA are left unchanged.
+- Next: inspect preflight #44854845726 for exact 3 verified proposals, 669 unchanged, zero identity issues/conflicts; only then authorize existing CMS apply via exact `.pse-legacy-redirect-301-trigger` commit message, inspect CMS backup/readback, run normal WordPress Build Website if actual pending revisions, verify signed Astro/FTPS and live affected HTTP301/canonical. Do not repeat already-PASS 669 rules or source content imports.
+- Complete source parity remains **PARTIAL** (27 unproven historical articles, 5 ambiguous legacy Product-description aliases, 16 gallery source pages). Original source images and the exact #379 Joomla created date cannot be invented.
