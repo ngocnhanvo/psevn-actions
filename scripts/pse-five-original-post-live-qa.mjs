@@ -1,4 +1,4 @@
-/** Native PSE WordPress -> Astro source and target independent five Post QA.
+/** Native PSE WordPress -> Astro source and target independent seven Post QA.
  * Never mutate original Joomla, CMS or deployment. */
 import {chromium,request} from "playwright";
 import {createHash} from "node:crypto";
@@ -7,6 +7,8 @@ const state=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","ut
 const targets=[
  {id:205,count:10,day:"2011-08-23"},
  {id:226,count:1,day:"2011-10-06"},
+ {id:227,count:11,day:"2011-10-13"},
+ {id:229,count:11,day:"2011-10-25"},
  {id:230,count:2,day:"2011-10-25"},
  {id:240,count:6,day:"2012-03-16"},
  {id:321,count:5,day:"2012-12-04"}
@@ -24,7 +26,7 @@ const wp=origin("WC_URL"),front=origin("WC_URL_CLIENT");
 if(wp===front)throw Error("CMS/frontend origin overlap");
 const browser=await chromium.launch({headless:true});
 const network=await request.newContext({timeout:50000});
-const report={schema:"pse-five-original-posts-live-v1",readOnly:true,sourceBacked:true,front,rows:[],imageGet:[]};
+const report={schema:"pse-seven-original-posts-live-v1",readOnly:true,sourceBacked:true,front,rows:[],imageGet:[]};
 try{
  const originals=[];
  for(const t of targets){
@@ -51,7 +53,7 @@ try{
   const expected=data.urls.map(src=>{
    const u=new URL(src),full=new URL(u.pathname.replace(/^\/images\/web\/gallery\//,"/images/gallery/"),u.origin).href;
    const ext=new URL(full).pathname.split(".").at(-1).toLowerCase().replace("jpeg","jpg");
-   const album=({"205":991,"226":992,"230":997,"240":996,"321":997})[t.id];
+   const album=({"205":991,"226":992,"227":993,"229":995,"230":997,"240":996,"321":997})[t.id];
    return "pse-gallery-"+album+"-"+createHash("sha256").update(full).digest("hex").slice(0,16)+"."+ext;
   });
   const slug=new URL(source).pathname.split("/").at(-1).replace(/^\d+-/,"").replace(/\.html$/i,"");
@@ -115,7 +117,7 @@ try{
  if(checks.some(x=>x.status!==200||!x.mime.toLowerCase().startsWith("image/")))
   throw Error("Original source image proxy HTTP not available");
  report.imageGet=checks;
- console.log("PSE_FIVE_ORIGINAL_POSTS_LIVE_PASS="+JSON.stringify({posts:5,originalImages:24,rows:report.rows.length,readOnly:true,sourceImageGet:checks.length}));
+ console.log("PSE_SEVEN_ORIGINAL_POSTS_LIVE_PASS="+JSON.stringify({posts:7,originalImages:46,rows:report.rows.length,readOnly:true,sourceImageGet:checks.length}));
 }finally{
  await mkdir("artifacts/pse-five-original-posts-live",{recursive:true});
  await writeFile("artifacts/pse-five-original-posts-live/report.json",JSON.stringify(report,null,2)+"\n");
