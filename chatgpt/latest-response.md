@@ -1,39 +1,44 @@
-# Latest ChatGPT response — pse.vn
+# Phản hồi mới nhất — PSE / Joomla → WordPress / Astro
 
-Time: 2026-11-21 ~21:56 Asia/Ho_Chi_Minh
-Repository: ngocnhanvo/psevn-actions@main
-Main durable checkpoint: docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
-Code mode: auto-build
-Source gateway: bypass
-Overall status: PARTIAL — chưa hoàn tất
+**Thời điểm:** 21/11/2026, khoảng 22:35 (Asia/Ho_Chi_Minh)
+**Project:** pse.vn
+**Repository:** ngocnhanvo/psevn-actions
+**Branch:** main
+**Checkpoint:** docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
+**Kết quả tổng thể:** PARTIAL — chưa hoàn tất
 
-## Verified new work
+## Hoàn tất một hạng mục mới: báo cáo tài chính bán niên 2012
 
-1. Re-read mandatory knowledge/main rules, Astro AGENTS, previous durable checkpoint and prior answer, then checked all repo HEADs and workflow status. PSE Astro/master remains e213d006f330ca5fc616c60fcd4ec80ab521486f, PHP/master remains 05b21fb0487e7ce1ed0d8af44085b1f3205bc180, no new signed deployment to repeat.
+Mình đã đối chiếu 4 bản lưu gốc của bài Joomla #298 và chứng minh link MediaFire trước đây đã xuất hiện trên Joomla từ năm 2015, nhưng hiện dẫn đến lỗi. Bản tài liệu thay thế trên Stockbiz đã được kiểm tra đúng công ty PSE, báo cáo tài chính đã được soát xét cho kỳ 01/01–30/06/2012, 22 trang, 5.520.707 byte, SHA-256 06d58c64257e7751df13981b383b62fd2a4b48a5afbf4a30fd6ebf8be75e6e26. Đây là bản lưu thay thế, KHÔNG thể khẳng định trùng byte với file gốc đã mất.
 
-2. Read-only new full 758 published WordPress Posts body/asset integrity audit, Actions [#44915815251](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44915815251) SUCCESS. Source ownership in source manifest linked 736 native WP Post IDs. Only two records flagged by native HTML checks:
-   - Original Joomla #1137 -> WP #82550, Báo cáo tài chính bán niên 2015, native Post content HTML empty.
-   - Original Joomla #225 -> WP #79574, PSE-Tặng nhà văn hóa cho người dân vùng sâu, one insecure external image URL at http://images1.tuoitre.vn/tianyon/ImageView.aspx?ThumbnailID=521979.
-   This is NOT original Joomla full text/media parity; it only detects native empty bodies and insecure references.
+- Kiểm tra nguồn PDF [#44918382814](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44918382814): PASS.
+- Sau khi sao lưu UpdraftPlus, chỉ cập nhật WordPress Post #82548, tạo WordPress Media #83504, giữ nguyên ngày đăng 16/08/2012, tiêu đề và danh mục; ghi chú công khai nguồn Stockbiz và việc không chứng minh trùng byte với file MediaFire. Native CMS backup/ghi/readback [#44919000386](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919000386): PASS. Không sửa các bài khác, không còn bản ghi tạm.
+- Yêu cầu build đúng WordPress PHP Build Website [#44919264249](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919264249): PASS với pending_count=1, no force.
+- Signed Astro/FTPS production [#44919348861](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919348861): PASS, không sử dụng pipeline độc lập.
+- QA độc lập sau triển khai [#44919560360](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919560360): PASS. Trang bài viết HTTP 200, canonical đúng, PDF mới trên Astro /api/files/ khớp byte/SHA-256 với Media WordPress và bản nguồn, chú thích Stockbiz hiển thị, link MediaFire chết không còn, responsive 390px/1440px không tràn ngang.
 
-3. Native live source diagnosis [#44915945292](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44915945292) PASS. #82550 WordPress Post has 0 attachments, 0 PDF links, no content fields; Astro live HTTP200/canonical displays only title/date/prev-next. #79574 live HTTP200/canonical actually emits exact same HTTP image source; browser mixed-content risk.
+Trang đã hoàn tất sửa: https://pse.webnvn.com/pvfcco-se-cong-bo-thong-tin-bao-cao-tai-chinh-ban-nien-2012-da-duoc-soat-xet
 
-4. New historical Wayback original Joomla #1137 proof: exact URL HTML archived on 2015-12-07 and 2025-03-27, with source-authored body BLANK in both snapshots (after excluding Joomla extra-news related posts and old prev/next). Zero source PDF/document links; no evidence the WordPress migration lost financial document content. Do NOT invent a PDF or claim missing file because of this original blank. Corrected strict proof [#44916304757](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44916304757) PASS. Earlier [#44916115871](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44916115871) mistakenly counted linked article titles as PDF files; fix commit c7f5306a is final. Wayback snapshot timestamps are NOT publish days.
+## Kết quả kiểm kê 758 bài / 400 liên kết tài liệu
 
-5. The #225 Tuổi Trẻ original photo ID521979: HTTP and HTTPS endpoints returned no verified image bytes, and both exact Wayback indexed protocol/query variants had 0 image captures. No source SHA or source-equivalent HTTPS conversion proven. No WordPress content edit performed; requires original publisher photo or owner archive verified image before safe repair. Do NOT invent/replace/delete with unrelated image.
+- Quét 758 Posts, 503 lượt liên kết tài liệu, 400 URL riêng.
+- 397 WordPress Uploads PDF/Office files HEAD HTTP 200, không phát hiện 404/410; 2 bản annual report 2014 và 2016 sử dụng đường dẫn tương đối /api/files/ hợp lệ trên Astro public host, HTTP 200, đã so byte và SHA. Kết quả đầu tiên báo 404 do nhầm origin WordPress admin là **báo sai**, đã sửa script, không ghi thừa vào WP.
+- Link PDF bên ngoài MediaFire năm 2012 đã được giải quyết tại #298 bằng bản lưu thay thế và công khai provenance.
 
-6. Source QA script/workflows committed to PSE Actions main only. Checkpoint update commit 30aa025ccc729408ca5f500419fffce358d24f11 includes proof and exact next action. No WordPress CMS media/posts/pages/categories/redirect writes, no Astro/PHP source change, no WordPress Build Website, no production FTP deployment in this session.
+## Hồi quy ngoài phạm vi #298
 
-7. Previously completed original article Joomla #379 remains DONE: WP Post #82119, native 301 #83503, signed production #44912356120, original 5 images and two viewport proof #44912815053 PASS. Do not repeat any of those actions. Previous source Kali articles #1425/#1426/#1678 exact archived HTML read-only recovered but original image bytes missing; 4 ambiguous Product-description aliases #1425/#1426/#1434/#1678 remain NOT mapped.
+- Homepage/search regression sau deploy [#44919538583](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919538583): PASS.
+- Bảy bài Joomla phục hồi [#44919538713](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919538713): FAIL do GET nguồn Joomla #205 timeout cả 3 lần, chưa thực sự so dữ liệu ở run này; không có chứng cứ Astro sai mới. Lần QA lịch sử #44912571563 PASS, không được mạo nhận mới PASS.
+- Bốn album [#44919538681](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919538681): FAIL vì ngay nguồn Joomla #1053 GET timeout 60 giây; chưa tới so ảnh và #975. Album #975 còn mâu thuẫn metadata ngày nguồn với tiêu đề sự kiện, chưa công bố.
 
-## Remaining work and verified blockers
+## Chưa thể hoàn tất toàn website
 
-- 12 ordinary original Joomla articles still not public because source media/body original proof is insufficient: #114 #121 #127 #178 #186 #196 #198 #202 #237 #382 #1090 #341.
-- Gallery #975 preserves 110 original images, but exact Joomla publication day/source metadata conflicts with the Oct2013 event title. Do not fabricate.
-- 4 legacy product-description old aliases #1425 #1426 #1434 #1678 require unique proven semantic target or owner-approved mapping, no duplicate Products.
-- The newly confirmed existing WordPress #79574 mixed-content photo requires exact old Tuổi Trẻ image original or official publisher equivalent before correcting source in CMS; HTML-only 758-post audit cannot prove full Joomla body equivalence.
-- Owner original Joomla database rows/publish metadata, exact source media directory, or verified original publisher media are still required to finish entire site parity. Once a NEW verifiable source file is available, follow original evidence -> guarded narrowly scoped WP write and fresh Updraft backup -> readback -> EXISTING WordPress PHP Build Website -> signed Astro production -> actual 301/media/mobile/desktop verification.
-- Latest native published population remains 758 Posts, 53 Products, 25 Pages, 15/16 original galleries. No unfinished GitHub build/deploy awaits intervention.
+- 12 bài Joomla thông thường (114,121,127,178,186,196,198,202,237,382,1090,341) thiếu bằng chứng byte ảnh/bài gốc, không tự giả ngày hoặc hình.
+- 4 alias mô tả sản phẩm cũ 1425,1426,1434,1678 chưa có đích chính xác chứng minh duy nhất; không tạo sản phẩm trùng hoặc redirect đoán.
+- Album 975 cần metadata Joomla đáng tin cậy; ảnh nguồn Tuổi Trẻ ở bài #225 chưa có bản binary gốc xác minh.
+- Website Joomla www.pse.vn timeout gần đây, nên không thể chốt toàn bộ source-target parity từ trang nguồn. Cần dữ liệu backup Joomla và thư mục images gốc/ảnh nguồn publisher hoặc nguồn độc lập chứng minh chính xác mới được nhập tiếp. Không có build/deploy đang chờ và không cần chạy lại hạng mục #298/#379 đã PASS.
+
+**Checkpoint đã cập nhật:** https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
