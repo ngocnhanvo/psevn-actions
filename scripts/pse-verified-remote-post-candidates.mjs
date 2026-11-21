@@ -22,7 +22,7 @@ try{
    const root=document.querySelector(".item-page [itemprop=articleBody]")||
      document.querySelector(".item-page");
    if(!root)throw Error("Original article body not present");
-   const title=(document.querySelector("h1")?.textContent||"").replace(/\s+/g," ").trim();
+   const title=(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent||document.title||"").replace(/\s+-\s+PSE\.VN\s*$/i,"").replace(/\s+/g," ").trim();
    const opening=(root.textContent||"").replace(/\s+/g," ").trim();
    const media=[...new Set([...root.querySelectorAll("img[src],a[href]")].map(el=>{
     const raw=el.getAttribute(el.tagName==="IMG"?"src":"href")||"";
@@ -35,6 +35,7 @@ try{
    }))];
    return{title,opening:opening.slice(0,600),chars:opening.length,media};
   });
+  console.log("PSE_REMOTE_SOURCE_PREFLIGHT="+JSON.stringify({id,title:item.title,chars:item.chars,media:item.media}));
   if(item.chars<65||!item.title||item.media.length<1||item.media.length>10)
    throw Error("Original article #"+id+" body/media boundaries changed");
   await page.close();
