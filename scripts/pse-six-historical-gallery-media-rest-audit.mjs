@@ -59,6 +59,41 @@ try{
   albumPosts.set(id,post);
   report.albums.push({id,postId:post.id,slug,status:post.status});
  }
+ // PSE WordPress native Media REST search indexes text, not every stored
+ // basename. Enumerate the authenticated registry by exact filesystem
+ // filename rather than assuming a missing search hit means lost original.
+ const filenames=new Map();
+ let totalMedia=0,registryPages=0;
+ for(let pageNumber=1;pageNumber<=60;pageNumber++){
+  const path="/wp-json/wp/v2/media?context=edit&per_page=100&page="+pageNumber+
+    "&_fields=id,slug,mime_type,media_details,source_url,status";
+  let response=null,last="unknown";
+  for(let retry=1;retry<=3;retry++){
+   try{
+    response=await page.evaluate(async({path,nonce})=>{
+      const r=await fetch(path,{credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json"}});
+      return {http:r.status,pages:Number(r.headers.get("X-WP-TotalPages")||1),
+        records:await r.json().catch(()=>null)};
+    },{path,nonce});
+    if(response.http===200||response.http<500)break;
+    last="HTTP "+response.http;
+   }catch(e){last=String(e?.code||e?.name||"network").slice(0,60)}
+   if(retry<3)await new Promise(resolve=>setTimeout(resolve,retry*750));
+  }
+  if(response?.http!==200||!Array.isArray(response.records)||
+    !Number.isSafeInteger(response.pages)||response.pages>60)
+   throw Error("Authenticated full Media registry unavailable page="+pageNumber+" cause="+last);
+  totalMedia+=response.records.length;registryPages++;
+  for(const m of response.records){
+   const filename=String(m.media_details?.file||"").split("/").at(-1);
+   if(!filename)continue;
+   if(!filenames.has(filename))filenames.set(filename,[]);
+   filenames.get(filename).push(m);
+  }
+  if(pageNumber>=response.pages)break;
+ }
+ if(registryPages<1||totalMedia<100)throw Error("WordPress Media inventory incomplete");
+ console.log("PSE_SIX_GALLERY_WP_REGISTRY="+JSON.stringify({pages:registryPages,media:totalMedia}));
  for(const x of target){
   const filename=x.marker+".jpg";
   const lookup=await get("/wp-json/wp/v2/media?context=edit&status=any&slug="+
@@ -69,10 +104,14 @@ try{
   const a=choose(lookup),b=choose(search);
   const content=String(albumPosts.get(x.album).content?.raw||"");
   const referenced=content.includes(filename);
-  const media=(a[0]||b[0])||null;
+  const byFile=filenames.get(filename)||[];
+  if(byFile.length>1)throw Error("Ambiguous exact source Media filename "+filename);
+  const media=byFile[0]||(a[0]||b[0])||null;
   const row={...x,slugHttp:lookup.http,slugMatches:a.length,searchHttp:search.http,searchMatches:b.length,
    galleryPostId:albumPosts.get(x.album).id,galleryReferencesFullFilename:referenced,
-   nativeMediaId:media?.id||null,nativeMediaFile:media?.media_details?.file||null,nativeMime:media?.mime_type||null};
+   exactFilenameMatches:byFile.length,
+   nativeMediaId:media?.id||null,nativeMediaFile:media?.media_details?.file||null,
+   nativeMediaSlug:media?.slug||null,nativeMime:media?.mime_type||null};
   report.rows.push(row);
   console.log("PSE_SIX_GALLERY_WP_MEDIA="+JSON.stringify(row));
  }
