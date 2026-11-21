@@ -1,0 +1,1 @@
+2026-11-21: Signed WordPress-normal frontend deployment #44853401110 PASS after native Post publish #82840 and #82846, six original uploaded media and repaired REST write logging. Verify exact two posts through public Tin công ty archive URL links, article contents, responsive 1366/390 viewport images, canonical and overflow. Read only; no CMS/build.
