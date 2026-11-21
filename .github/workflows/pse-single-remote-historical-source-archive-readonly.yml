@@ -1,0 +1,29 @@
+name: PSE four missing one-photo Joomla article archive source proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-single-remote-historical-source-archive-readonly.mjs
+      - .github/workflows/pse-single-remote-historical-source-archive-readonly.yml
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-single-remote-historical-source-archive-readonly.mjs && node scripts/pse-single-remote-historical-source-archive-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-four-original-one-photo-wayback-evidence
+          path: artifacts/pse-single-remote-archive/report.json
+          retention-days: 30
+          if-no-files-found: warn
