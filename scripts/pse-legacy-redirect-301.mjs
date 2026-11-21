@@ -60,17 +60,23 @@ try{
   if(await page.locator("#user_login").count()){
     await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
     await page.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD||"");
-    const t=await page.locator("body").innerText();
-    const m=t.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i)||
-      t.match(/(\d+)\s*([+\-x×*])\s*(\d+)/i);
+    // Follow the verified PSE importer login contract. Parsing the entire
+    // body can mistake unrelated numeric content for a form challenge.
+    const loginText=(await page.locator("#loginform").innerText()).slice(0,500);
+    const m=loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i);
     if(m){
       const a=+m[1],b=+m[3],c=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];
-      const f=page.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();
-      if(!await f.count())throw Error("Missing WP math challenge");await f.fill(String(c));
+      const field=page.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();
+      if(!await field.count())throw Error("Missing WP math challenge");await field.fill(String(c));
     }
-    await Promise.all([page.waitForLoadState("domcontentloaded"),page.locator("#wp-submit").click()]);
+    await page.locator("#wp-submit").click();
   }
-  if(page.url().includes("wp-login.php"))throw Error("WP auth failed");
+  // WordPress can redirect asynchronously. Verify an actual protected
+  // admin Page (and navigation controls) before claiming authentication.
+  await page.goto(wp+"/wp-admin/post.php?post=248&action=edit",{
+    waitUntil:"domcontentloaded",timeout:60000});
+  if(page.url().includes("wp-login")||!(await page.locator("#adminmenu").count()))
+    throw Error("WordPress admin login rejected after protected-page verification");
   const nonce=await page.evaluate(async()=>{
     if(globalThis.wpApiSettings?.nonce)return globalThis.wpApiSettings.nonce;
     const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
