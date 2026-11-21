@@ -1,0 +1,53 @@
+name: PSE original Joomla 379 exact native WordPress 301 redirect (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-379-original-301-native-apply.mjs
+      - .github/workflows/pse-379-original-301-native-apply.yml
+      - .pse-379-original-301-native-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): redirect original Joomla 379 to verified published article'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-379-original-301-native-apply.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): redirect original Joomla 379 to verified published article'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft DB rollback before Joomla 379 exact native redirect
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_379_301_FRESH_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - run: node --check scripts/pse-379-original-301-native-apply.mjs && node scripts/pse-379-original-301-native-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-379-original-exact-native-301
+          path: artifacts/pse-379-original-301/report.json
+          retention-days: 30
+          if-no-files-found: warn
