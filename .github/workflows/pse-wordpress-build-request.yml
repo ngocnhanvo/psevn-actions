@@ -13,6 +13,7 @@ on:
       - PSE Joomla 1640 two verified original publisher archive photos native WP (GUARDED)
       - PSE original Joomla 1640 exact native WordPress 301 redirect (GUARDED)
       - PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)
+      - PSE exact three archived original agriculture posts and JPEGs (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -59,6 +60,10 @@ jobs:
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): restore original shareholder notices 338 and 1085')
+            ||
+            (github.event.workflow_run.event == 'push' &&
+             github.event.workflow_run.name == 'PSE exact three archived original agriculture posts and JPEGs (GUARDED)' &&
+             github.event.workflow_run.head_commit.message == 'cms(pse): restore three original one-photo agriculture articles')
          ))
       )
     runs-on: ubuntu-latest
@@ -152,6 +157,9 @@ jobs:
           elif (name=="PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): restore original shareholder notices 338 and 1085"):
               cohort="SOURCE_PROVEN_TWO_ORIGINAL_INVESTOR_NOTICES"
+          elif (name=="PSE exact three archived original agriculture posts and JPEGs (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): restore three original one-photo agriculture articles"):
+              cohort="SOURCE_PROVEN_THREE_ORIGINAL_AGRICULTURE_ARCHIVED_PHOTOS"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
