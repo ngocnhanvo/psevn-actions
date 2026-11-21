@@ -9,6 +9,7 @@ on:
       - PSE two further original gallery-backed Joomla Posts guarded recovery
       - PSE original Phu My Garden eight native WordPress Products (GUARDED)
       - PSE native WordPress Garden eight public Product rewrite repair (GUARDED)
+      - PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -39,6 +40,10 @@ jobs:
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE native WordPress Garden eight public Product rewrite repair (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): restore eight Garden public Product detail rewrites')
+           ||
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): redirect exact Joomla Garden 1639 to published Garden category')
          ))
       )
     runs-on: ubuntu-latest
@@ -120,6 +125,9 @@ jobs:
           elif (name=="PSE native WordPress Garden eight public Product rewrite repair (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): restore eight Garden public Product detail rewrites"):
               cohort="SOURCE_PROVEN_EIGHT_GARDEN_ROUTES"
+          elif (name=="PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect exact Joomla Garden 1639 to published Garden category"):
+              cohort="SOURCE_PROVEN_GARDEN_1639_ALIAS"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
