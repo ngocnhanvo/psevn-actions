@@ -1,0 +1,29 @@
+name: PSE Joomla article 1640 original publisher image evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-1640-original-media-mirror-proof.mjs
+      - .github/workflows/pse-1640-original-media-mirror-proof.yml
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-1640-original-media-mirror-proof.mjs && node scripts/pse-1640-original-media-mirror-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1640-source-publisher-media-evidence
+          path: artifacts/pse-1640-source-mirror/report.json
+          retention-days: 14
+          if-no-files-found: ignore
