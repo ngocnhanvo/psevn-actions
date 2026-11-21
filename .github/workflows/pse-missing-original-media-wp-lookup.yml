@@ -1,0 +1,32 @@
+name: PSE missing Joomla source photo exact WordPress Media lookup (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-missing-original-media-wp-lookup.mjs
+      - .github/workflows/pse-missing-original-media-wp-lookup.yml
+permissions:
+  contents: read
+jobs:
+  source-media:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare original missing photo basenames to WordPress Media, no writes
+        run: node --check scripts/pse-missing-original-media-wp-lookup.mjs && node scripts/pse-missing-original-media-wp-lookup.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-missing-original-photo-native-wp-leads
+          path: artifacts/pse-missing-original-media-wp/report.json
+          if-no-files-found: ignore
+          retention-days: 14
