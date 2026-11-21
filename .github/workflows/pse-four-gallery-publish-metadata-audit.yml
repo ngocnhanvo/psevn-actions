@@ -1,0 +1,31 @@
+name: PSE four Joomla gallery publish metadata proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-four-gallery-publish-metadata-audit.mjs
+      - .github/workflows/pse-four-gallery-publish-metadata-audit.yml
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install Playwright wrapper from pinned container's Chromium
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Probe original Joomla publishing metadata, without CMS writes
+        run: node --check scripts/pse-four-gallery-publish-metadata-audit.mjs && node scripts/pse-four-gallery-publish-metadata-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-four-gallery-original-publish-metadata
+          path: artifacts/pse-four-gallery-publish-metadata/report.json
+          if-no-files-found: warn
+          retention-days: 21
