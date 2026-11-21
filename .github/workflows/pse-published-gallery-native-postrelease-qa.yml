@@ -1,0 +1,36 @@
+name: PSE published three gallery native postrelease browser QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-published-gallery-native-postrelease-qa.yml
+      - scripts/pse-published-gallery-native-postrelease-qa.mjs
+permissions:
+  contents: read
+concurrency:
+  group: pse-published-gallery-native-readonly
+  cancel-in-progress: false
+jobs:
+  browser:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Assert 354 published source-derived WP gallery images and live responsive UI without Joomla GET
+        run: node --check scripts/pse-published-gallery-native-postrelease-qa.mjs && node scripts/pse-published-gallery-native-postrelease-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-three-published-galleries-native-postrelease
+          path: artifacts/pse-gallery-native-postrelease/report.json
+          retention-days: 30
+          if-no-files-found: warn
