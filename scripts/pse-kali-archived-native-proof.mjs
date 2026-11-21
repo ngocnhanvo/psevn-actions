@@ -80,8 +80,11 @@ try{
    const m=await net.get(wp+"/wp-json/wp/v2/media/"+p.featured_media+"?_fields=id,source_url,alt_text",{failOnStatusCode:false});
    if(m.status()===200){
     const j=await m.json();
-    row.featuredOriginal={url:j.source_url,path:new URL(j.source_url).pathname,
-      file:decodeURIComponent(new URL(j.source_url).pathname.split("/").at(-1)),alt:j.alt_text||""};
+    const mediaUrl=new URL(j.source_url,wp);
+    if(mediaUrl.origin!==wp||!mediaUrl.pathname.startsWith("/wp-content/uploads/"))
+     throw Error("WordPress Media origin/path untrusted "+p.id);
+    row.featuredOriginal={url:mediaUrl.href,path:mediaUrl.pathname,
+      file:decodeURIComponent(mediaUrl.pathname.split("/").at(-1)),alt:j.alt_text||""};
    }
   }
   report.candidates.push(row);
