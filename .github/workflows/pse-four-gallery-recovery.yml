@@ -1,0 +1,61 @@
+name: PSE finish four original Joomla galleries in native WordPress (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-four-gallery-recovery-trigger
+permissions:
+  contents: read
+concurrency:
+  group: pse-wp-photo-import
+  cancel-in-progress: false
+jobs:
+  source-verified-migration:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'cms(pse): complete four verified historical galleries'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install pinned Playwright client without OS dependencies
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Source-only exact Joomla archive preflight
+        run: |
+          node --check scripts/pse-photo-album-batch.mjs
+          node --check scripts/pse-unpublished-albums-source-audit.mjs
+          node scripts/pse-unpublished-albums-source-audit.mjs
+      - name: Resume exact original image batches serially in native WordPress
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Each original batch remains idempotent and source/body/media guarded.
+          # NEVER invoke two CMS writers simultaneously.
+          for task in '1053:2' '990:3' '980:4' '975:3'; do
+            gallery="${task%%:*}"
+            count="${task##*:}"
+            for (( batch=0; batch<count; batch++ )); do
+              export PSE_GALLERY_ID="$gallery" PSE_GALLERY_BATCH="$batch"
+              echo "PSE_SOURCE_RECOVERY_BEGIN gallery=$gallery batch=$batch of=$count"
+              node scripts/pse-photo-album-batch.mjs
+              echo "PSE_SOURCE_RECOVERY_BATCH_PASS gallery=$gallery batch=$batch"
+            done
+            echo "PSE_SOURCE_RECOVERY_ALBUM_PUBLISHED id=$gallery"
+          done
+          echo "PSE_FOUR_VERIFIED_GALLERIES_CMS=PASS originalPhotos=464 nativePostAlbums=4"
+      - name: Preserve original evidence on success or failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-four-original-albums-source
+          path: artifacts/pse-unpublished-four-albums/report.json
+          if-no-files-found: warn
+          retention-days: 30
