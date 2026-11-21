@@ -1,32 +1,39 @@
 # Latest ChatGPT response — pse.vn
 
-Time: 2026-11-21 21:39 Asia/Ho_Chi_Minh
-Project: pse.vn
+Time: 2026-11-21 ~21:56 Asia/Ho_Chi_Minh
 Repository: ngocnhanvo/psevn-actions@main
-Checkpoint: docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
-Chế độ code: auto-build
-Cổng ghi source: bypass
-Trạng thái: PARTIAL — chưa hoàn tất
+Main durable checkpoint: docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
+Code mode: auto-build
+Source gateway: bypass
+Overall status: PARTIAL — chưa hoàn tất
 
-## Verified latest work
+## Verified new work
 
-- Read policy from knowledge/main and checked actual PSE repo HEADs; Astro/master remains e213d006, PHP/master remains 05b21fb0; no new production releases or unpublished code requiring build.
-- Original Joomla current site and exact article #1425 HTTP GET timed out (browser and GitHub run #44914109924). This is an upstream source availability blocker, not a WordPress issue.
-- New independent Wayback exact-source HTML audit [#44914381779](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44914381779) SUCCESS, recovering Joomla original articles:
-  - #1425 Kali Phú Mỹ Bột CANADA — 477 body characters, 1 source image.
-  - #1426 Kali Phú Mỹ — 457 body characters, 3 source images, includes multiple actual Kali variants; no single-product mapping permitted.
-  - #1678 Kali Phú Mỹ – Mô tả và HDSD — 466 body characters, 1 source image referring to KALI-MIENG, but this is not unique proof of an existing WP Product.
-- Strict archived original HTML vs WordPress Woo Product comparison [#44914636767](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44914636767) SUCCESS. Existing native Products: #82837 SOP; #80954 MOP Loại Bột; #80952 MOP Bột Trắng; #80938 Miểng MOP. No title+body+image **uniquely** source-equivalent, so no new 301 or product records. The initial read-only script failed due to relative WordPress Media URLs but was fixed; latest run supersedes failure.
-- Exact PNG evidence [#44914796530](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44914796530) SUCCESS: four original source PNG paths × four Wayback scheme/host variants. All archive indexes returned HTTP200 but 0 exact archived image binary captures. Four existing WordPress Product images are valid HTTP200 PNG with verifiable SHA256; without source byte originals there are 0 source↔WP SHA equivalence proofs. Do not claim the images differ; the original files are missing.
-- New checkpoint section committed on main via d6bfc8db. No WordPress media/post/product/category/redirect modifications; no Astro/PHP source or production deployment was triggered by read-only audits.
-- Previous Joomla article #379 fully DONE: WordPress Post #82119, native old-URL 301 #83503, signed production #44912356120, original 5 photo/mobile+desktop proof #44912815053 PASS. Do not repeat.
-- Sitewide last verified tally 758 published WordPress Posts, 53 Woo Products, 25 Pages, 15/16 original galleries and 12 missing original ordinary Joomla articles. Four old Product-description alias IDs #1425,#1426,#1434,#1678 still unproven; #975 gallery date contradicts event title; #341 historical body missing/source RSS unavailable.
+1. Re-read mandatory knowledge/main rules, Astro AGENTS, previous durable checkpoint and prior answer, then checked all repo HEADs and workflow status. PSE Astro/master remains e213d006f330ca5fc616c60fcd4ec80ab521486f, PHP/master remains 05b21fb0487e7ce1ed0d8af44085b1f3205bc180, no new signed deployment to repeat.
 
-## Required next evidence / no-safe-mutation boundary
+2. Read-only new full 758 published WordPress Posts body/asset integrity audit, Actions [#44915815251](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44915815251) SUCCESS. Source ownership in source manifest linked 736 native WP Post IDs. Only two records flagged by native HTML checks:
+   - Original Joomla #1137 -> WP #82550, Báo cáo tài chính bán niên 2015, native Post content HTML empty.
+   - Original Joomla #225 -> WP #79574, PSE-Tặng nhà văn hóa cho người dân vùng sâu, one insecure external image URL at http://images1.tuoitre.vn/tianyon/ImageView.aspx?ThumbnailID=521979.
+   This is NOT original Joomla full text/media parity; it only detects native empty bodies and insecure references.
 
-Obtain original Joomla database backup with content rows + created/published fields, exact source PNG files from images/23_mẫu_sản_phẩm_mới and images/web, or original third-party publisher bytes. To approve an alias to native Product, prove exact semantic destination (including variant specificity) and media; otherwise preserve old URL quarantine. After NEW evidence: targeted single-record scoped WordPress write and readback, fresh Updraft rollback, existing WordPress PHP Build Website, signed Astro FTP production, and live 301/media QA. With no new original source artifacts, do not rerun same Wayback paths or invent content.
+3. Native live source diagnosis [#44915945292](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44915945292) PASS. #82550 WordPress Post has 0 attachments, 0 PDF links, no content fields; Astro live HTTP200/canonical displays only title/date/prev-next. #79574 live HTTP200/canonical actually emits exact same HTTP image source; browser mixed-content risk.
 
-Current overall SOURCE_TO_TARGET_PARITY=PARTIAL because of missing original source assets and ambiguously matched aliases, not because an active build is pending.
+4. New historical Wayback original Joomla #1137 proof: exact URL HTML archived on 2015-12-07 and 2025-03-27, with source-authored body BLANK in both snapshots (after excluding Joomla extra-news related posts and old prev/next). Zero source PDF/document links; no evidence the WordPress migration lost financial document content. Do NOT invent a PDF or claim missing file because of this original blank. Corrected strict proof [#44916304757](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44916304757) PASS. Earlier [#44916115871](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44916115871) mistakenly counted linked article titles as PDF files; fix commit c7f5306a is final. Wayback snapshot timestamps are NOT publish days.
+
+5. The #225 Tuổi Trẻ original photo ID521979: HTTP and HTTPS endpoints returned no verified image bytes, and both exact Wayback indexed protocol/query variants had 0 image captures. No source SHA or source-equivalent HTTPS conversion proven. No WordPress content edit performed; requires original publisher photo or owner archive verified image before safe repair. Do NOT invent/replace/delete with unrelated image.
+
+6. Source QA script/workflows committed to PSE Actions main only. Checkpoint update commit 30aa025ccc729408ca5f500419fffce358d24f11 includes proof and exact next action. No WordPress CMS media/posts/pages/categories/redirect writes, no Astro/PHP source change, no WordPress Build Website, no production FTP deployment in this session.
+
+7. Previously completed original article Joomla #379 remains DONE: WP Post #82119, native 301 #83503, signed production #44912356120, original 5 images and two viewport proof #44912815053 PASS. Do not repeat any of those actions. Previous source Kali articles #1425/#1426/#1678 exact archived HTML read-only recovered but original image bytes missing; 4 ambiguous Product-description aliases #1425/#1426/#1434/#1678 remain NOT mapped.
+
+## Remaining work and verified blockers
+
+- 12 ordinary original Joomla articles still not public because source media/body original proof is insufficient: #114 #121 #127 #178 #186 #196 #198 #202 #237 #382 #1090 #341.
+- Gallery #975 preserves 110 original images, but exact Joomla publication day/source metadata conflicts with the Oct2013 event title. Do not fabricate.
+- 4 legacy product-description old aliases #1425 #1426 #1434 #1678 require unique proven semantic target or owner-approved mapping, no duplicate Products.
+- The newly confirmed existing WordPress #79574 mixed-content photo requires exact old Tuổi Trẻ image original or official publisher equivalent before correcting source in CMS; HTML-only 758-post audit cannot prove full Joomla body equivalence.
+- Owner original Joomla database rows/publish metadata, exact source media directory, or verified original publisher media are still required to finish entire site parity. Once a NEW verifiable source file is available, follow original evidence -> guarded narrowly scoped WP write and fresh Updraft backup -> readback -> EXISTING WordPress PHP Build Website -> signed Astro production -> actual 301/media/mobile/desktop verification.
+- Latest native published population remains 758 Posts, 53 Products, 25 Pages, 15/16 original galleries. No unfinished GitHub build/deploy awaits intervention.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
