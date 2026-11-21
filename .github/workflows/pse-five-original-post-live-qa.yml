@@ -1,9 +1,10 @@
-name: PSE five recovered original Joomla articles live source parity (READ ONLY)
+name: PSE seven recovered original Joomla articles live source parity (READ ONLY)
 on:
   push:
     branches: [main]
     paths:
       - .pse-five-original-post-live-qa-request
+      - .pse-seven-original-post-live-qa-request
 permissions:
   contents: read
 jobs:
@@ -20,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Compare five original Joomla articles and photos to live WordPress Astro SSR
+      - name: Compare seven original Joomla articles and photos to live WordPress Astro SSR
         run: node --check scripts/pse-five-original-post-live-qa.mjs && node scripts/pse-five-original-post-live-qa.mjs
       - uses: actions/upload-artifact@v4
         if: always()
