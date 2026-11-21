@@ -1,0 +1,26 @@
+name: PSE gallery 975 original Joomla historical published-date evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-975-wayback-published-day-readonly.mjs
+      - .github/workflows/pse-975-wayback-published-day-readonly.yml
+permissions:
+  contents: read
+jobs:
+  archive-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Confirm only original Joomla archived HTML can prove publication
+        run: node --check scripts/pse-975-wayback-published-day-readonly.mjs && node scripts/pse-975-wayback-published-day-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-975-original-source-archive-publication-date
+          path: artifacts/pse-975-wayback-date/report.json
+          retention-days: 30
+          if-no-files-found: warn
