@@ -1,1 +1,1 @@
-Read-only postrelease full Joomla source ID versus published WordPress Post/Product/Page counts. After signed original #1640 recovery + 301 QA 44892995289; no CMS writes, no build.
+Audit again after fixing Joomla gallery source ID+prefix to exact native Post ACF identity; original cohort 804, only READ-ONLY, no WP writes/build. Compare 16 gallery sources against live posts not just directory existence.
