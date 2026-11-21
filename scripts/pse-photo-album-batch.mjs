@@ -29,7 +29,11 @@ const galleries = new Map([
 if(!command){console.log("PSE_GALLERY_BATCH=NOT_REQUESTED; code_ready=true; noWordPressWrite=true");process.exit(0)}
 const mode=command[1],id=Number(command[2]),batch=Number(command[3]),entry=galleries.get(id);
 if(!entry||!Number.isSafeInteger(batch)||batch<0||batch>100)throw Error("Unknown approved source album/batch");
-const apply=mode==="cms",size=12,offset=batch*size;
+// After the original 12-photo galleries are complete, use source-verified
+// 24-item batches only for the four remaining large albums. Preserve all
+// existing gallery batch numbering, especially #989 batch 8 (indices 96-97).
+const largeSourceAlbums=new Set([1053,990,980,975]);
+const apply=mode==="cms",size=largeSourceAlbums.has(id)?24:12,offset=batch*size;
 const config=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""));
 function site(key) {
   const arr=config.filter(x=>x.startsWith(key+"="));if(arr.length!==1)throw Error("Invalid "+key);
@@ -76,7 +80,7 @@ try{
   const marker="pse-gallery-"+id+"-"+sha(url).slice(0,16);
   return {url,index:n,ext,marker,filename:marker+"."+ext,name:decodeURIComponent(u.pathname.split("/").at(-1))};
  });
- console.log("PSE_GALLERY_SOURCE=PASS id="+id+" total="+items.length+" batch="+batch+" apply="+apply);
+ console.log("PSE_GALLERY_SOURCE=PASS id="+id+" total="+items.length+" batch="+batch+" chunk="+size+" offset="+offset+" apply="+apply);
  if(!apply){console.log("PSE_GALLERY_BATCH=DRY_PASS; noCmsWrites=true");process.exit(0)}
  await admin.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
  if(await admin.locator("#user_login").count()){
