@@ -5,6 +5,28 @@ const lines=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().repl
 if(lines.length!==1)throw Error("Missing PSE frontend origin");
 const url=new URL(lines[0].slice(14).replace(/^['"]|['"]$/g,""));
 if(url.protocol!=="https:"||url.username||url.password||url.search||url.hash||!["","/"].includes(url.pathname))throw Error("Invalid frontend origin");
+
+const cmsLines=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,"")).filter(x=>x.startsWith("WC_URL="));
+if(cmsLines.length!==1)throw Error("Missing native WordPress origin");
+const nativeURL=new URL(cmsLines[0].slice(7).replace(/^['"]|['"]$/g,""));
+if(nativeURL.protocol!=="https:"||nativeURL.username||nativeURL.password||nativeURL.port||nativeURL.search||nativeURL.hash||
+ !["","/"].includes(nativeURL.pathname)||nativeURL.origin===url.origin)throw Error("Invalid native WordPress origin");
+const originalGardenSourceSlugs=["pmgarden009","pmgarden002","pmgarden003","pmgarden004","pmgarden005","pmgarden006","pmgarden007","pmgarden008"];
+// The verified original six-category inventory remains 45 unique Products.
+// Only the exact eight independently authenticated Garden variants may raise
+// the expected public catalog size to 53 (4 SSR pages), never a generic count.
+const productRegistry=await fetch(nativeURL.origin+"/wp-json/wp/v2/product?status=publish&per_page=100&_fields=id,slug",{signal:AbortSignal.timeout(35000)});
+if(!productRegistry.ok)throw Error("Native product registry HTTP "+productRegistry.status);
+const current=await productRegistry.json();
+if(!Array.isArray(current))throw Error("Native Product registry unavailable");
+const currentSlugs=new Set(current.map(x=>String(x.slug||"")));
+const gardenCount=originalGardenSourceSlugs.filter(x=>currentSlugs.has("phu-my-garden-"+x)).length;
+if(gardenCount!==0&&gardenCount!==8)throw Error("Incomplete original Garden migration "+gardenCount+"/8");
+const expectedTotal=45+gardenCount;
+if(current.length!==expectedTotal)throw Error("Unexpected native Product inventory "+current.length+" instead of "+expectedTotal);
+console.log("PSE_PRODUCT_LIVE_SOURCE_COHORT="+JSON.stringify({coreOriginal:45,gardenOriginal:gardenCount,
+ expectedPublicProducts:expectedTotal,expectedSSRPages:Math.ceil(expectedTotal/16),verifiedGardenSlugs:gardenCount}));
+
 const specs=[
  {kind:"catalog",path:"/san-pham/",title:"Sản phẩm",minCards:16},
  {kind:"manual",path:"/tai-lieu-huong-dan-su-dung-phan-bon/",title:"Tài liệu hướng dẫn sử dụng phân bón",minCards:7},
@@ -31,7 +53,7 @@ try{
        if(ssrCount){
          // The live PSE catalog uses SSR pagination, not the former client Load More.
          const cards=await collect(),pageSizes=[ssrCount];
-         for(const index of [2,3]){
+         for(let index=2;index<=Math.ceil(expectedTotal/16);index++){
            const next=await page.goto(url.origin+"/san-pham/"+index,{waitUntil:"domcontentloaded",timeout:60000});
            if(next?.status()!==200)throw Error("SSR catalog page "+index+" HTTP "+next?.status());
            const group=await collect();cards.push(...group);pageSizes.push(group.length);
