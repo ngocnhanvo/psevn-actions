@@ -36,18 +36,19 @@ const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({javaScriptEnabled:false});
 await ctx.route("**/*",r=>r.abort());
 const page=await ctx.newPage();
-async function extract(url){
+async function extract(url,allowOverview=false){
  const response=await page.request.get(url,{timeout:50000,maxRedirects:2,failOnStatusCode:false});
  if(response.status()!==200)throw Error("Original source HTTP "+response.status());
  const html=await response.text();
  if(html.length<300||html.length>8000000)throw Error("Unsafe Joomla source size");
  await page.setContent('<base href="'+url+'">'+
   html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,""),{waitUntil:"domcontentloaded",timeout:25000});
- return page.evaluate(()=>{
+ return page.evaluate((allowOverview)=>{
   const root=document.querySelector('.item-page [itemprop="articleBody"]')||
-   document.querySelector(".item-page")||document.querySelector("article");
+   document.querySelector(".item-page")||document.querySelector("article")||
+   (allowOverview?(document.querySelector(".blog")||document.querySelector("main")):null);
   const norm=s=>String(s||"").normalize("NFKC").replace(/\s+/g," ").trim();
-  if(!root)throw Error("Original articleBody missing");
+  if(!root)throw Error("Original articleBody/overview root missing");
   const images=[...root.querySelectorAll("img[src]")].map(e=>{
    let url;try{url=new URL(e.getAttribute("src"),document.baseURI)}catch{return null}
    if(!["http:","https:"].includes(url.protocol))return null;
@@ -62,10 +63,10 @@ async function extract(url){
    text:norm(root.textContent),images,media,
    tables:root.querySelectorAll("table").length,
    paragraphs:root.querySelectorAll("p").length,htmlChars:root.innerHTML.length};
- });
+ },allowOverview);
 }
 try{
- const src=await extract(source.href),ov=await extract(overview);
+ const src=await extract(source.href),ov=await extract(overview,true);
  if(src.text.length<1000)throw Error("Joomla #1434 original overview body unexpectedly short");
  const toSummary=x=>({title:x.title,bodyChars:x.text.length,
   bodySha256:sha(x.text),imageCount:x.images.length,
