@@ -1,0 +1,43 @@
+name: PSE original Joomla shareholder notices 338 1085 postrelease parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-investor-two-original-notices-live-qa.mjs
+      - .github/workflows/pse-investor-two-original-notices-live-qa.yml
+      - .pse-investor-two-original-notices-live-qa-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-investor-two-original-notices-live-qa.mjs
+  public-acceptance:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): verify two original shareholder notices 338 1085 postrelease'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-investor-two-original-notices-live-qa.mjs && node scripts/pse-investor-two-original-notices-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-shareholder-notice-338-1085-public-acceptance
+          path: artifacts/pse-original-investor-live/report.json
+          retention-days: 30
+          if-no-files-found: warn
