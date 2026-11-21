@@ -1,39 +1,38 @@
-# Phản hồi mới nhất — PSE, 21/11/2026 khoảng 23:28 (Asia/Ho_Chi_Minh)
+# Phản hồi mới nhất — PSE, 21/11/2026 khoảng 23:58 (Asia/Ho_Chi_Minh)
 
 **Project:** pse.vn
 **Repository:** ngocnhanvo/psevn-actions
 **Branch:** main
 **Checkpoint:** docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
-**Overall status:** PARTIAL — chưa hoàn tất
+**Status:** PARTIAL — chưa hoàn tất
 
-## Kết quả mới: kiểm tra ảnh trong 758 bài viết
+## 1. Đã khôi phục đúng checkpoint PSE
 
-[GitHub Actions #44922876914](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44922876914) SUCCESS: 758 native WP Posts, 3.408 thẻ IMG, 3.243 URL ảnh duy nhất, trong đó 2.901 WordPress Uploads, 341 Astro /api/files, 1 ảnh bên ngoài là Tuổi Trẻ Joomla #225. Kiểm tra mẫu phân bố **420/3.242 URL nội bộ**, 420 HEAD hợp lệ, 0 lỗi; **2.822 URL chưa kiểm tra**. Đây không phải bằng chứng ảnh gốc Joomla bằng byte.
+Đã đọc Knowledge/main và checkpoint thực tế, khóa nguồn chính xác: knowledge/main `1b5aab9e`, psevn-astro/master `db3a9768`, psevn-php/master `05b21fb0`. Actions/main đã tiến từ `7b732c77` lên `04ebc142` sau các bước chẩn đoán, release và lưu checkpoint. Không import lại hoặc ghi đè các bài đã đồng bộ.
 
-## QA thực tế của 5 danh sách
+## 2. Kiểm tra HTTPS frontend mới nhất — PASS
 
-[GitHub Actions #44923133641](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923133641) SUCCESS: 5 trang tin/tài liệu x 390px/1440px = 10/10 PASS, 120 card, 40 ảnh browser decode, HTTP200/canonical/H1/no overflow. Code Astro đã có logic lấy ảnh đầu tiên trong nội dung nếu bài không có Featured Image, ưu tiên ảnh thật; có FileText document tile cho PDF icon.
+Read-only GET-only production SSR/SEO run [#44926847589](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44926847589) **SUCCESS**: homepage HTTP200, `/api/user/info` HTTP200 và JSON hợp lệ, `robots.txt` HTTP200, `sitemap.xml` HTTP200 + XML hợp lệ. Trigger read-only marker commit `75bd15ac`. Đây chỉ là kiểm tra frontend HTTPS, không thay guard signed backend.
 
-## Phát hiện 34 bài có PDF thật nhưng hiển thị ảnh mặc định và sửa Astro master
+## 3. Signed production release — SUCCESS
 
-[GitHub Actions #44923393587](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923393587) SUCCESS: 36 investor card trên 3 chuyên mục matched chính xác từng slug sang WordPress Post. **35 no-image placeholders; 34 có actual .pdf href** (12 disclosure, 10 annual, 12 governance); **1 thật sự không có PDF**, giữ fallback. Có thêm 1 original PDF tile nên dự kiến sau fix 35 PDF tiles trên 36 card.
+[Official run #44923979017, attempt 3](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923979017) đã **SUCCESS**, sau khi hai attempt trước fail-closed vì TLS. Đây là retry qua cùng workflow production; không thêm pipeline hoặc FTP thủ công. Exact source Astro/master `db3a9768`: signed unzip preflight PASS; Astro build PASS; ZIP + Python FTPS PASS; private `.env` HTTP deny PASS; `SIGNED_UNZIP_SUCCESS` kích hoạt staging an toàn; homepage / WordPress SSR / robots smoke PASS.
 
-Astro/master code commit [3759f7f4](https://github.com/ngocnhanvo/psevn-astro/commit/3759f7f430e37930f0ddd9c6f9a0ef980de7e4bd), final tests master [db3a9768](https://github.com/ngocnhanvo/psevn-astro/commit/db3a97688b21e3823ce137e2a901d6366d64cc67): postThumbnail.ts thêm fallback khi nội dung có liên kết PDF thật và không có ảnh phù hợp; ưu tiên ảnh thật, không gán icon PDF cho docx, link giả, text. No WordPress writes, no Astro hardcoded CMS content. Full source QA [#44923728636](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923728636) SUCCESS: **590/590 tests / 131 test files**, Astro master isolation PASS.
+## 4. QA 35 icon PDF investor đã live — PASS
 
-## Deploy bị chặn — KHÔNG được báo live
+Gated marker `.pse-investor-pdf-postrelease-request` commit `c5bffead`, read-only [#44927155937](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44927155937) **SUCCESS**: 36 card matched từng bài WordPress, PDF source-backed 35/36: công bố thông tin 12/12; báo cáo thường niên 11/12; quản trị công ty 12/12. Một card không có PDF gốc nên giữ fallback đúng. Responsive trên 390px/1440px: 10/10 PASS, HTTP200/canonical/không tràn ngang. Astro PDF presentation **DONE, CODE+DEPLOY+QA**. Homepage utilities/search after-build [#44927116549](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44927116549) **SUCCESS**.
 
-Original WordPress PHP Build Website owner-approved one-time exception for PDF cards [#44923876478](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923876478) SUCCESS (pending_count=0 because only Astro source changed, no dummy WP save). Official signed production [#44923979017](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923979017):
-- Attempt 1 FAIL: Astro build PASS, Python FTPS staging ZIP 4.963.633 byte PASS, nhưng HTTP deny check của private public_html .env trả URLError khi kiểm tra qua frontend HTTPS. Fail-closed trước activation.
-- Attempt 2 (GitHub rerun_failed_workflow_run_jobs trên chính run ID, không tạo pipeline riêng) FAIL sớm hơn: signed unzip endpoint HTTPS TLS handshake timeout (_ssl.c:1063). Không build lại/không kích hoạt release ở attempt2.
-- Không có bước signed activate thành công, **Astro master db3a9768 CHƯA xác nhận live**, QA production 35 PDF tile CHƯA chạy. Không thử bỏ qua quyền bảo mật, không đọc .env, không FTP thủ công, không tạo pipeline khác hoặc retry vô hạn. Bản signed deployment trước đó là [#44919348861](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919348861) SUCCESS tại source e213d006; không kết luận nó còn hiển thị công khai sau sự cố TLS nếu không có browser evidence.
+## 5. Tồn tại của đồng bộ toàn site
 
-Prepared exact after-release read-only workflow .github/workflows/pse-investor-pdf-card-live-release.yml, gated marker .pse-investor-pdf-postrelease-request exact commit message 'test(pse): verify 35 native investor PDF tiles on production'. Khi HTTPS signed unzip hoạt động trở lại, dùng DUY NHẤT production pipeline hiện có và SHA db3a9768, kiểm tra deploy SUCCESS rồi kích marker QA: 35 source-backed PDF tile / 36 investor cards, 1 no-document fallback, 390/1440 10/10, canonical, no overflow. Không trigger QA trước release.
+Regression 4 album [#44927116566](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44927116566) **FAILED** vì nguồn Joomla album #1053 GET Timeout 60s, chưa đủ chứng cứ kết luận sai mới. Regression 7 bài lịch sử [#44927116541](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44927116541) **FAILED** do nguồn Joomla bài #205 timeout cả 3 retry; không phải lỗi đã xác định trên Astro.
 
-## Sitewide PSE content parity vẫn PARTIAL
+Vẫn còn 12 bài Joomla lịch sử không có đủ nguồn xác minh body/ảnh, album #975 có đủ 110/110 JPEG nhưng metadata năm 2010/2011/2013 mâu thuẫn, bốn alias Product lịch sử #1425/#1426/#1434/#1678 chưa có đích duy nhất, ảnh Tuổi Trẻ bài #225 chưa có bytes thật. Audit ảnh 758 bài WordPress mới HEAD 420 URL nội bộ PASS, còn 2.822 chưa kiểm; không báo 100% image parity.
 
-12 bài Joomla lịch sử thiếu ảnh/body verified; album #975 đã có 110/110 ảnh JPG gốc EXIF camera 2010-09-11 nhưng Joomla date 2011 và title 2013 vẫn mâu thuẫn; 4 old Product description aliases chưa có đích duy nhất xác minh; ảnh Tuổi Trẻ #225 chưa có source bytes; Joomla origin thời gian gần đây timeout. Không suy luận ngày/mượn ảnh để đăng sai nguồn. Hoàn tất độc lập trước đây: nguồn báo cáo tài chính 2012 Joomla #298 → WP #82548 Media #83504 signed Astro deploy + responsive SHA QA PASS #44919560360, không làm lại.
+## 6. Checkpoint đã lưu
 
-**Checkpoint:** https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
+Đã cập nhật [PSE_SOURCE_CONTENT_PARITY_2026-11-21.md](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md) tại commit [04ebc142](https://github.com/ngocnhanvo/psevn-actions/commit/04ebc142708f68062562091fdd789c175f90ad49).
+
+Bước tiếp theo: khi có bản sao lưu cơ sở dữ liệu Joomla gốc, media/file gốc hoặc bằng chứng lưu trữ nhà xuất bản, giải quyết đúng 12 bài và album #975, xác minh 4 URL Product, sau đó import/readback/QA từng record có nguồn thật. Chỉ lặp source-side QA #205 và #1053 khi host Joomla phục hồi. Không tự đặt ngày, thêm ảnh thay thế, tạo bản ghi thử hoặc build lặp.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
