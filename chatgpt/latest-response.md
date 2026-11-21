@@ -1,48 +1,39 @@
-# Phản hồi mới nhất — PSE tiếp tục nguồn Joomla, ngày 21/11/2026 23:00 (Asia/Ho_Chi_Minh)
+# Phản hồi mới nhất — PSE, 21/11/2026 khoảng 23:28 (Asia/Ho_Chi_Minh)
 
 **Project:** pse.vn
 **Repository:** ngocnhanvo/psevn-actions
 **Branch:** main
 **Checkpoint:** docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
-**Status:** PARTIAL — chưa hoàn tất
-**Only new commits:** actions/main read-only scripts/workflows and checkpoint, no WordPress CMS/app-source write, no production Astro build/FTPS in this continuation.
+**Overall status:** PARTIAL — chưa hoàn tất
 
-## Phát hiện mới: album Joomla #975 có dữ liệu EXIF khác hẳn năm trong tiêu đề
+## Kết quả mới: kiểm tra ảnh trong 758 bài viết
 
-Kiểm tra độc lập [GitHub Actions #44921649351](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44921649351) đã xác nhận cả **16/16 ảnh gốc được lấy mẫu** đều có EXIF DateTimeOriginal là **ngày 11/09/2010**.
+[GitHub Actions #44922876914](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44922876914) SUCCESS: 758 native WP Posts, 3.408 thẻ IMG, 3.243 URL ảnh duy nhất, trong đó 2.901 WordPress Uploads, 341 Astro /api/files, 1 ảnh bên ngoài là Tuổi Trẻ Joomla #225. Kiểm tra mẫu phân bố **420/3.242 URL nội bộ**, 420 HEAD hợp lệ, 0 lỗi; **2.822 URL chưa kiểm tra**. Đây không phải bằng chứng ảnh gốc Joomla bằng byte.
 
-Đây là phát hiện quan trọng vì:
+## QA thực tế của 5 danh sách
 
-- Nguồn Joomla RSS ghi ngày 05/03/2011 và com_search ghi 06/03/2011.
-- Tiêu đề album lại ghi *Đại hội công đoàn nhiệm kỳ II 10/2013*.
-- Các ảnh mẫu đều được chụp trước ngày nguồn Joomla ghi nhận, chứ không phải tháng 10/2013.
+[GitHub Actions #44923133641](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923133641) SUCCESS: 5 trang tin/tài liệu x 390px/1440px = 10/10 PASS, 120 card, 40 ảnh browser decode, HTTP200/canonical/H1/no overflow. Code Astro đã có logic lấy ảnh đầu tiên trong nội dung nếu bài không có Featured Image, ưu tiên ảnh thật; có FileText document tile cho PDF icon.
 
-Điều này cho thấy **mâu thuẫn có thể nằm trong lịch sử nội dung/tiêu đề của Joomla**, chứ không đơn thuần là lỗi ngày chuyển sang WordPress. Tuy nhiên, ngày chụp ảnh không phải ngày xuất bản. Mình sẽ kiểm tra đủ **110 ảnh** trước khi đưa ra quyết định về album này.
+## Phát hiện 34 bài có PDF thật nhưng hiển thị ảnh mặc định và sửa Astro master
 
-## Đã kiểm tra đủ 110/110 ảnh của album #975
+[GitHub Actions #44923393587](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923393587) SUCCESS: 36 investor card trên 3 chuyên mục matched chính xác từng slug sang WordPress Post. **35 no-image placeholders; 34 có actual .pdf href** (12 disclosure, 10 annual, 12 governance); **1 thật sự không có PDF**, giữ fallback. Có thêm 1 original PDF tile nên dự kiến sau fix 35 PDF tiles trên 36 card.
 
-[GitHub Actions #44921806074](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44921806074) **SUCCESS**.
+Astro/master code commit [3759f7f4](https://github.com/ngocnhanvo/psevn-astro/commit/3759f7f430e37930f0ddd9c6f9a0ef980de7e4bd), final tests master [db3a9768](https://github.com/ngocnhanvo/psevn-astro/commit/db3a97688b21e3823ce137e2a901d6366d64cc67): postThumbnail.ts thêm fallback khi nội dung có liên kết PDF thật và không có ảnh phù hợp; ưu tiên ảnh thật, không gán icon PDF cho docx, link giả, text. No WordPress writes, no Astro hardcoded CMS content. Full source QA [#44923728636](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923728636) SUCCESS: **590/590 tests / 131 test files**, Astro master isolation PASS.
 
-| Kiểm tra | Kết quả |
-|---|---:|
-| Ảnh gốc trong WordPress Media | 110/110 |
-| Ảnh tải được, có SHA-256 | 110/110 |
-| Ảnh có EXIF DateTimeOriginal | 110/110 |
-| Ảnh có ngày chụp ghi trong EXIF là 11/09/2010 | **110/110** |
+## Deploy bị chặn — KHÔNG được báo live
 
-Kết quả này xác nhận **album không thiếu file ảnh**. Vấn đề còn lại là lịch sử xuất bản: ảnh ghi năm 2010, dữ liệu Joomla ghi năm 2011, nhưng tiêu đề ghi tháng 10/2013.
+Original WordPress PHP Build Website owner-approved one-time exception for PDF cards [#44923876478](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923876478) SUCCESS (pending_count=0 because only Astro source changed, no dummy WP save). Official signed production [#44923979017](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44923979017):
+- Attempt 1 FAIL: Astro build PASS, Python FTPS staging ZIP 4.963.633 byte PASS, nhưng HTTP deny check của private public_html .env trả URLError khi kiểm tra qua frontend HTTPS. Fail-closed trước activation.
+- Attempt 2 (GitHub rerun_failed_workflow_run_jobs trên chính run ID, không tạo pipeline riêng) FAIL sớm hơn: signed unzip endpoint HTTPS TLS handshake timeout (_ssl.c:1063). Không build lại/không kích hoạt release ở attempt2.
+- Không có bước signed activate thành công, **Astro master db3a9768 CHƯA xác nhận live**, QA production 35 PDF tile CHƯA chạy. Không thử bỏ qua quyền bảo mật, không đọc .env, không FTP thủ công, không tạo pipeline khác hoặc retry vô hạn. Bản signed deployment trước đó là [#44919348861](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44919348861) SUCCESS tại source e213d006; không kết luận nó còn hiển thị công khai sau sự cố TLS nếu không có browser evidence.
 
-Mình vẫn giữ album ở trạng thái chưa công bố vì chưa có bằng chứng xác định khi nào bài Joomla được sửa tiêu đề hoặc xuất bản dưới tiêu đề hiện tại. Tự chọn 2011 hay 2013 để đăng có thể làm sai lịch sử nội dung.
+Prepared exact after-release read-only workflow .github/workflows/pse-investor-pdf-card-live-release.yml, gated marker .pse-investor-pdf-postrelease-request exact commit message 'test(pse): verify 35 native investor PDF tiles on production'. Khi HTTPS signed unzip hoạt động trở lại, dùng DUY NHẤT production pipeline hiện có và SHA db3a9768, kiểm tra deploy SUCCESS rồi kích marker QA: 35 source-backed PDF tile / 36 investor cards, 1 no-document fallback, 390/1440 10/10, canonical, no overflow. Không trigger QA trước release.
 
-## Tiếp tục và mốc còn thiếu
+## Sitewide PSE content parity vẫn PARTIAL
 
-Đối với bài #225, mình tìm được quy luật đường dẫn lưu ảnh tĩnh của hệ thống Tuổi Trẻ cũ và kiểm tra biến thể cụ thể dành cho ảnh ThumbnailID=521979. Workflow đọc-only [#44921384378](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44921384378) SUCCESS nhưng **không tìm được JPEG gốc có thể xác minh SHA-256**. Vì vậy chưa sửa ảnh nguồn HTTP trong WordPress.
+12 bài Joomla lịch sử thiếu ảnh/body verified; album #975 đã có 110/110 ảnh JPG gốc EXIF camera 2010-09-11 nhưng Joomla date 2011 và title 2013 vẫn mâu thuẫn; 4 old Product description aliases chưa có đích duy nhất xác minh; ảnh Tuổi Trẻ #225 chưa có source bytes; Joomla origin thời gian gần đây timeout. Không suy luận ngày/mượn ảnh để đăng sai nguồn. Hoàn tất độc lập trước đây: nguồn báo cáo tài chính 2012 Joomla #298 → WP #82548 Media #83504 signed Astro deploy + responsive SHA QA PASS #44919560360, không làm lại.
 
-**Checkpoint mới nhất:** [PSE source content parity 21/11](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md), đã xác minh sha f44b4fb18656709c2a252c874cf3f37dbd2dd045. Đã hoàn thành 2 workflow điều tra mới; không có job đang chạy.
-
-Các hạng mục đã hoàn thành trước gồm PDF báo cáo tài chính 2012 Joomla #298 → Post #82548 / Media #83504, WordPress Build Website, signed Astro FTPS và QA mobile/desktop #44919560360 PASS. Không làm lại.
-
-**Chưa thể xác nhận đồng bộ toàn bộ website:** 12 bài Joomla thiếu ảnh/văn bản nguồn; album #975 thiếu bằng chứng ngày đăng sau khi tiêu đề thay đổi; 4 alias Product cũ #1425/#1426/#1434/#1678 thiếu đích duy nhất; ảnh #225 Tuổi Trẻ không còn byte gốc; Joomla gốc vừa timeout khi chạy hồi quy. Cần bản sao lưu Joomla DB (các trường #__content created, modified, publish_up cho #975), ảnh nguồn/thư mục images gốc hoặc bằng chứng ảnh từ publisher để tiếp tục mà không đoán.
+**Checkpoint:** https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
