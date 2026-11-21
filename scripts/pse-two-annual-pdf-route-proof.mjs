@@ -54,8 +54,11 @@ for(const row of files){
  const correct=front+"/api/files"+row.file;
  const native=cms+row.file;
  const originalHtml=String(post.content?.rendered||"");
- const occurrences=originalHtml.split(wrong).length-1;
- if(occurrences!==1)throw Error("Unexpected exact single broken link count "+row.wpId+"="+occurrences);
+ const refs=[...originalHtml.matchAll(/\\b(?:href|src)\\s*=\\s*["']([^"']+)["']/gi)].map(m=>m[1]);
+ const originalRefs=refs.filter(raw=>{try{return new URL(raw.replace(/&amp;/gi,"&"),cms).href===wrong}catch{return false}});
+ const occurrences=originalRefs.length;
+ if(occurrences!==1)throw Error("Unexpected exact link identity "+row.wpId+"="+occurrences+
+  " refs="+JSON.stringify(refs.slice(0,8)).slice(0,800));
  const [old,frontend,wordpress]=await Promise.all([
   probe(wrong),probe(correct,true),probe(native,true)
  ]);
