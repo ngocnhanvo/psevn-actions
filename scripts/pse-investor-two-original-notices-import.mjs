@@ -32,7 +32,7 @@ const browser=await chromium.launch({headless:true}),net=await request.newContex
 const context=await browser.newContext({javaScriptEnabled:false});
 await context.route("**/*",r=>r.abort());
 const admin=await browser.newPage();
-const report={sourceIds:[338,1085],sourceMedia:4,posts:[],media:[],writes:0,success:false,build:false};
+const report={sourceIds:[338,1085],sourceMedia:4,posts:[],media:[],writes:0,success:false,build:false,cleanup:[]};
 let api=null;
 const draftIds=[];
 try{
@@ -167,7 +167,21 @@ try{
      img.setAttribute("src",original);
      img.removeAttribute("srcset");img.removeAttribute("sizes");
     }
-    c.querySelectorAll("script,style,form,button,nav,iframe,object,embed").forEach(x=>x.remove());
+    for(const a of c.querySelectorAll("a[href]")){
+     const u=new URL(a.getAttribute("href")||"",document.baseURI).href;
+     if(lookup.has(u))a.setAttribute("href",lookup.get(u));
+     else if(/\.(?:png|jpe?g|pdf|webp|gif)(?:\?|$)/i.test(u))
+      throw Error("Unverified mandatory original notice link");
+    }
+    c.querySelectorAll("script,style,form,button,nav,iframe,object,embed,video,audio,svg").forEach(x=>x.remove());
+    const allowed=new Set(["P","DIV","SPAN","BR","B","STRONG","I","EM","UL","OL","LI",
+      "H2","H3","H4","TABLE","THEAD","TBODY","TR","TD","TH","A","IMG","BLOCKQUOTE","HR","FIGURE","FIGCAPTION"]);
+    for(const el of [...c.querySelectorAll("*")].reverse()){
+     if(!el.parentNode)continue;
+     if(!allowed.has(el.tagName)){el.replaceWith(...el.childNodes);continue}
+     for(const attr of [...el.attributes])
+      if(!["href","src","alt","title","colspan","rowspan"].includes(attr.name))el.removeAttribute(attr.name);
+    }
     return{html:c.innerHTML.trim(),text:(c.textContent||"").replace(/\s+/g," ").trim()};
    },d.images.map(x=>({src:x.src,native:x.native})));
   }finally{await page.close()}
@@ -203,6 +217,29 @@ try{
   sourceIds:[338,1085],nativePosts:2,originalScans:4,days:docs.map(d=>d.day),
   exactOriginalSHA256:true,otherWrites:0,buildTriggered:false}));
 }finally{
+ if(!report.success&&api){
+  for(const draft of draftIds){
+   if(report.posts.some(p=>p.sourceId===draft.source&&p.status==="publish"))continue;
+   try{
+    const r=await api("/wp-json/wp/v2/posts/"+draft.id+"?context=edit&_fields=id,status,acf");
+    if(r.status===200&&r.data?.status==="draft"&&
+      String(r.data.acf?.origin_page_id)===String(draft.source)){
+     const trash=await api("/wp-json/wp/v2/posts/"+draft.id,"POST",{status:"trash"});
+     const after=await api("/wp-json/wp/v2/posts/"+draft.id+"?context=edit&_fields=id,status");
+     if(trash.status!==200||after.status!==200||after.data?.status!=="trash")
+      throw Error("Source-owned original notice draft cleanup failed");
+     report.cleanup.push({postId:draft.id,sourceId:draft.source,status:"trash",noDraftResidue:true});
+    }else if(r.status===200&&r.data.status==="publish"){
+     report.cleanup.push({postId:draft.id,sourceId:draft.source,status:"publish",noAutomaticDeletion:true});
+    }else{
+     throw Error("Unexpected original notice draft state");
+    }
+   }catch(e){
+    report.cleanup.push({postId:draft.id,sourceId:draft.source,cleanupFailed:String(e?.message||e).slice(0,120)});
+   }
+  }
+ }
+ if(report.cleanup.some(x=>x.cleanupFailed))process.exitCode=1;
  await mkdir("artifacts/pse-investor-two-native",{recursive:true});
  await writeFile("artifacts/pse-investor-two-native/report.json",JSON.stringify(report,null,2)+"\n");
  await net.dispose();await context.close();await browser.close();
