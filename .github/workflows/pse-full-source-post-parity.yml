@@ -25,6 +25,9 @@ jobs:
       - name: Inspect provenance of blocked external source media (READ ONLY)
         if: "github.event.head_commit.message == 'audit(pse): inspect unresolved external media'"
         run: node --check scripts/pse-missing-external-media-audit.mjs && node scripts/pse-missing-external-media-audit.mjs
+      - name: Prove two potentially recoverable original Post images and Joomla-created dates (READ ONLY)
+        if: "github.event.head_commit.message == 'audit(pse): prove two original image articles'"
+        run: node --check scripts/pse-verified-remote-post-candidates.mjs && node scripts/pse-verified-remote-post-candidates.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -32,5 +35,6 @@ jobs:
           path: |
             artifacts/pse-content-parity/inventory.json
             artifacts/pse-content-parity/external-media.json
+            artifacts/pse-content-parity/remote-post-candidates.json
           retention-days: 14
           if-no-files-found: warn
