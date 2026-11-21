@@ -7,6 +7,7 @@ on:
   workflow_run:
     workflows:
       - PSE two further original gallery-backed Joomla Posts guarded recovery
+      - PSE original Phu My Garden eight native WordPress Products (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -24,10 +25,16 @@ jobs:
         ||
         (github.event_name == 'workflow_run' &&
          github.event.workflow_run.conclusion == 'success' &&
-         github.event.workflow_run.event == 'workflow_run' &&
          github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
          github.event.workflow_run.head_branch == 'main' &&
-         github.event.workflow_run.name == 'PSE two further original gallery-backed Joomla Posts guarded recovery')
+         (
+           (github.event.workflow_run.event == 'workflow_run' &&
+            github.event.workflow_run.name == 'PSE two further original gallery-backed Joomla Posts guarded recovery')
+           ||
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE original Phu My Garden eight native WordPress Products (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): import eight original Phu My Garden products')
+         ))
       )
     runs-on: ubuntu-latest
     container:
@@ -85,7 +92,7 @@ jobs:
         if: "${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for build performance optimization' }}"
         shell: bash
         run: echo "PSE_FORCE_BUILD_ONCE=true" >> "$GITHUB_ENV"
-      - name: Verify two-Post CMS apply really succeeded before chained WordPress build
+      - name: Verify the exact two-Post or eight-Garden CMS apply before chained WordPress build
         if: github.event_name == 'workflow_run'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,8 +102,18 @@ jobs:
           import json,os,urllib.request
           event=json.load(open(os.environ["GITHUB_EVENT_PATH"],encoding="utf-8"))
           run=event.get("workflow_run") or {}
-          if not isinstance(run.get("id"),int) or run.get("conclusion")!="success" or run.get("event")!="workflow_run":
+          if not isinstance(run.get("id"),int) or run.get("conclusion")!="success":
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_EVENT")
+          if (run.get("head_repository") or {}).get("full_name")!="ngocnhanvo/psevn-actions" or run.get("head_branch")!="main":
+              raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_REPOSITORY")
+          name=run.get("name")
+          if name=="PSE two further original gallery-backed Joomla Posts guarded recovery" and run.get("event")=="workflow_run":
+              cohort="SOURCE_PROVEN_TWO_POSTS"
+          elif (name=="PSE original Phu My Garden eight native WordPress Products (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): import eight original Phu My Garden products"):
+              cohort="SOURCE_PROVEN_EIGHT_GARDEN"
+          else:
+              raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
           req=urllib.request.Request(url,headers={
               "Authorization":"Bearer "+os.environ["GH_TOKEN"],
@@ -106,8 +123,8 @@ jobs:
               jobs=json.load(response).get("jobs",[])
           applied=[j for j in jobs if j.get("name")=="apply" and j.get("conclusion")=="success"]
           if len(applied)!=1:
-              raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_MISSING_TWO_POST_APPLY")
-          print("PSE_WP_BUILD_CHAIN=PASS_SOURCE_PROVEN_TWO_POSTS; no_force=true")
+              raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_MISSING_CMS_APPLY")
+          print("PSE_WP_BUILD_CHAIN=PASS_"+cohort+"; no_force=true")
           PY
       - name: Trigger exactly one WordPress Build Website via authenticated PSE admin
         shell: bash
