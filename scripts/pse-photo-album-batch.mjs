@@ -1,6 +1,6 @@
 /** PSE bounded native WordPress gallery importer. No UI hardcoding, source media copied to WP only.
  * Use audit(pse): gallery ID batch N for read-only validation; cms(pse) for apply.
- * Each batch uploads <=12 originals and publishes the Post only after all items verify.
+ * Each batch uploads at most 48 originals (12 for older albums), and publishes the Post only after all images verify.
  */
 import { chromium,request } from "playwright";
 import { createHash } from "node:crypto";
@@ -30,10 +30,10 @@ if(!command){console.log("PSE_GALLERY_BATCH=NOT_REQUESTED; code_ready=true; noWo
 const mode=command[1],id=Number(command[2]),batch=Number(command[3]),entry=galleries.get(id);
 if(!entry||!Number.isSafeInteger(batch)||batch<0||batch>100)throw Error("Unknown approved source album/batch");
 // After the original 12-photo galleries are complete, use source-verified
-// 24-item batches only for the four remaining large albums. Preserve all
+// 48-item batches only for the four remaining large albums. Preserve all
 // existing gallery batch numbering, especially #989 batch 8 (indices 96-97).
 const largeSourceAlbums=new Set([1053,990,980,975]);
-const apply=mode==="cms",size=largeSourceAlbums.has(id)?24:12,offset=batch*size;
+const apply=mode==="cms",size=largeSourceAlbums.has(id)?48:12,offset=batch*size;
 const config=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""));
 function site(key) {
   const arr=config.filter(x=>x.startsWith(key+"="));if(arr.length!==1)throw Error("Invalid "+key);
@@ -149,7 +149,11 @@ try{
  }
  const subset=items.slice(offset,offset+size);
  let created=0;
- for(const item of subset){
+ // Distinct source URL hashes guarantee disjoint native Media IDs. Two uploads
+ // at once shorten large albums without changing WP Post publication order.
+ // On failure, drain both workers before closing the authenticated context.
+ let uploadCursor=0,uploadError=null;
+ const uploadOne=async item=>{
   let id=item.id;
   if(!id){
    const response=await network.get(item.url,{timeout:65000});
@@ -181,7 +185,17 @@ try{
   if(!head.ok()||!(head.headers()["content-type"]||"").startsWith("image/"))throw Error("WordPress gallery image unavailable");
   item.native=native;
   console.log("PSE_GALLERY_IMPORTED id="+id+" sourceIndex="+item.index+" wpMediaId="+item.id+" bytesVerified=true");
- }
+ };
+ const uploadWorker=async()=>{
+  for(;;){
+   if(uploadError)return;
+   const i=uploadCursor++;
+   if(i>=subset.length)return;
+   try{await uploadOne(subset[i])}catch(e){uploadError||=e;return}
+  }
+ };
+ await Promise.all(Array.from({length:Math.min(largeSourceAlbums.has(id)?2:1,subset.length)},()=>uploadWorker()));
+ if(uploadError)throw uploadError;
  // Resolve all previously saved media to determine a complete ordered gallery.
  const missing=items.filter(item=>!item.id);
  await scanMedia(items.filter(item=>item.id&&!item.native),async item=>{
