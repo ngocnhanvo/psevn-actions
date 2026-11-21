@@ -8,6 +8,7 @@ on:
     workflows:
       - PSE two further original gallery-backed Joomla Posts guarded recovery
       - PSE original Phu My Garden eight native WordPress Products (GUARDED)
+      - PSE native WordPress Garden eight public Product rewrite repair (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -34,6 +35,10 @@ jobs:
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE original Phu My Garden eight native WordPress Products (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): import eight original Phu My Garden products')
+           ||
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE native WordPress Garden eight public Product rewrite repair (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): restore eight Garden public Product detail rewrites')
          ))
       )
     runs-on: ubuntu-latest
@@ -92,7 +97,7 @@ jobs:
         if: "${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for build performance optimization' }}"
         shell: bash
         run: echo "PSE_FORCE_BUILD_ONCE=true" >> "$GITHUB_ENV"
-      - name: Verify the exact two-Post or eight-Garden CMS apply before chained WordPress build
+      - name: Verify exact verified CMS job success before signed WordPress build
         if: github.event_name == 'workflow_run'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -112,6 +117,9 @@ jobs:
           elif (name=="PSE original Phu My Garden eight native WordPress Products (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): import eight original Phu My Garden products"):
               cohort="SOURCE_PROVEN_EIGHT_GARDEN"
+          elif (name=="PSE native WordPress Garden eight public Product rewrite repair (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): restore eight Garden public Product detail rewrites"):
+              cohort="SOURCE_PROVEN_EIGHT_GARDEN_ROUTES"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
