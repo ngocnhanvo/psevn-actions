@@ -95,19 +95,40 @@ try{
     seen.add(from);eligible.push({id:r.id,from,to});
   }
   report.count=eligible.length;
-  // Six bounded read-only workers avoid exceeding the Actions timeout for
-  // hundreds of legacy sources; preserve deterministic report ordering.
+  // This QA probes 765 live routes. Production may transiently reset
+  // requests under concurrency; retry only GET transport/5xx failures.
+  // HTTP 301/Location and exact target canonical are NEVER relaxed.
+  const getPublic=async url=>{
+    let last=null;
+    for(let attempt=1;attempt<=3;attempt++){
+      try{
+        const response=await page.request.get(url,{maxRedirects:0,timeout:30000,failOnStatusCode:false});
+        if(response.status()<500||attempt===3)return response;
+        last="HTTP "+response.status();
+      }catch(e){
+        const raw=String(e?.message||e);
+        if(!/ECONNRESET|ETIMEDOUT|socket hang up|Timeout/i.test(raw))throw e;
+        last=String(e?.code||e?.name||"network").slice(0,45);
+        if(attempt===3)throw e;
+      }
+      console.warn("PSE_301_PUBLIC_GET_RETRY attempt="+attempt+" reason="+last);
+      await new Promise(resolve=>setTimeout(resolve,650*attempt));
+    }
+    throw Error("Unreachable public GET retry state");
+  };
+  // Reduce live concurrency after measured 43/765 TCP resets in #44862738711.
+  // Retry only transient transport failures, retain deterministic order.
   const checks=new Array(eligible.length);
   let cursor=0;
-  await Promise.all(Array.from({length:Math.min(6,eligible.length)},async()=>{
+  await Promise.all(Array.from({length:Math.min(3,eligible.length)},async()=>{
     for(;;){
       const i=cursor++;
       if(i>=eligible.length)return;
       const x=eligible[i],start=front+x.from,target=front+x.to;
       try{
-        const first=await page.request.get(start,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
+        const first=await getPublic(start);
         const location=first.headers()["location"]||"";
-        const second=await page.request.get(target,{maxRedirects:0,timeout:25000,failOnStatusCode:false});
+        const second=await getPublic(target);
         const html=second.status()===200?await second.text():"";
         const c=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
           html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
@@ -127,7 +148,8 @@ try{
   }
   console.log("PSE_LEGACY_301_LIVE_QA="+JSON.stringify({
     rules:eligible.length,pass:report.checked.length,fail:report.failed.length,
-    structuralRewrites:core.length,frontSourceFromEnv:true,noBuild:true
+    structuralRewrites:core.length,readOnlyConcurrency:3,publicGetTransientRetries:3,
+    frontSourceFromEnv:true,noBuild:true
   }));
   if(report.failed.length)throw Error("Live 301 parity failed "+report.failed.length+"/"+eligible.length);
 }finally{
