@@ -91,11 +91,24 @@ for(const entry of items.values())report.byKind[entry.kind]=(report.byKind[entry
 const targets=[...items.values()].filter(x=>
  ["CMS_UPLOAD","ASTRO_FILES_PROXY","ASTRO_IMAGE_OPTIMIZER","FRONTEND_UPLOAD"].includes(x.kind))
  .sort((a,b)=>a.url.localeCompare(b.url));
-if(targets.length>3200)throw Error("Too many image HEAD checks; require bounded subset");
-const lastIndex=targets.length,checks=Array(lastIndex);let counter=0;
+// HEAD of thousands of native image variants in one run would burden production.
+ // This checkpoint is intentionally a bounded, deterministically distributed
+ // diagnostic sample. Unchecked URLs are explicitly unverified.
+const maxHEAD=420;
+const priority=targets.filter(x=>x.kind!=="CMS_UPLOAD");
+const native=targets.filter(x=>x.kind==="CMS_UPLOAD");
+const room=Math.max(0,maxHEAD-Math.min(maxHEAD,priority.length));
+const subset=priority.slice(0,maxHEAD);
+if(room>0){
+ const indices=new Set();
+ for(let i=0;i<Math.min(room,native.length);i++)
+  indices.add(Math.min(native.length-1,Math.floor((i+.5)*native.length/Math.min(room,native.length))));
+ for(const n of indices)subset.push(native[n]);
+}
+const lastIndex=subset.length,checks=Array(lastIndex);let counter=0;
 await Promise.all(Array.from({length:6},async()=>{for(;;){
  const i=counter++;if(i>=lastIndex)return;
- const x=targets[i],parsed=new URL(x.url);
+ const x=subset[i],parsed=new URL(x.url);
  if(![wp,front].includes(parsed.origin))throw Error("Unexpected local image origin");
  const detail={url:x.url,kind:x.kind,postIds:x.postIds,ref:x.kindsOfRef,
   status:null,contentType:null,length:null,redirect:null,reason:null,error:null};
@@ -130,6 +143,8 @@ report.summary={posts:posts.length,uniqueImageUrls:items.size,
  tagCount:report.inlineImgTags,srcRefs:report.inlineSrcRefs,srcsetRefs:report.srcsetRefs,
  featuredMediaIds:report.featuredIdsReferenced,kindCounts:report.byKind,
  localImageUrlsEligible:targets.length,localImageUrlsChecked:checks.length,
+ localNotYetChecked:Math.max(0,targets.length-checks.length),
+ checkLimit:maxHEAD,sampleMethod:"ALL non-CMS priority then evenly spaced CMS Upload originals+variants",
  localHeadIssues:report.issues.length,issueCounts:report.byHead,
  externalReferenced:report.external.length,readOnly:true,noCMSWrites:true,noBuild:true,
  sourceByteParityNotVerified:true};
