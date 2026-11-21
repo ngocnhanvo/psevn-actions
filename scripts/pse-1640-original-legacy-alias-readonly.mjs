@@ -32,5 +32,13 @@ try{
  const alreadyCorrect=a.http===301&&url?.origin===front&&url.pathname===target&&!url.search&&!url.hash;
  const decision=targetOK?(alreadyCorrect?"ORIGINAL_1640_301_ALREADY_PASS":"ORIGINAL_1640_OLD_ALIAS_REQUIRES_NATIVE_WP_RULE"):"ORIGINAL_1640_TARGET_NOT_READY";
  console.log("PSE_1640_ORIGINAL_LEGACY_ALIAS_READONLY="+JSON.stringify({originalId:1640,wpPostId:83471,targetOK,alreadyCorrect,decision,sourcePath:old,target,rows,noWrites:true}));
+ const ev=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
+ if(ev.head_commit?.message==="test(pse): verify original Joomla 1640 legacy 301 postrelease"){
+  if(!alreadyCorrect||!targetOK)throw Error("Exact original Joomla 1640 301 -> native canonical still missing");
+  console.log("PSE_1640_ORIGINAL_LEGACY_301_LIVE_PASS="+JSON.stringify({
+   originalId:1640,wpPostId:83471,http:301,destination:target,
+   targetHttp:200,canonicalSameOrigin:true,readOnly:true,noBuild:true
+  }));
+ }
  if(!targetOK)throw Error("Cannot safely create original alias without live 1640 public Post");
 }finally{await net.dispose()}
