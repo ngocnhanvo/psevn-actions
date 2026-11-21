@@ -15,6 +15,7 @@ on:
       - PSE original investor notices 338 and 1085 exact native CMS restoration (GUARDED)
       - PSE exact three archived original agriculture posts and JPEGs (GUARDED)
       - PSE two source-proven shareholder exact original Joomla 301 (GUARDED)
+      - PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -69,6 +70,10 @@ jobs:
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE two source-proven shareholder exact original Joomla 301 (GUARDED)' &&
              github.event.workflow_run.head_commit.message == 'cms(pse): redirect two exact original shareholder notices 338 and 1085')
+            ||
+            (github.event.workflow_run.event == 'push' &&
+             github.event.workflow_run.name == 'PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)' &&
+             github.event.workflow_run.head_commit.message == 'cms(pse): redirect three exact original agriculture articles 344 348 370')
          ))
       )
     runs-on: ubuntu-latest
@@ -168,6 +173,9 @@ jobs:
           elif (name=="PSE two source-proven shareholder exact original Joomla 301 (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect two exact original shareholder notices 338 and 1085"):
               cohort="SOURCE_PROVEN_TWO_INVESTOR_EXACT_ORIGINAL_301"
+          elif (name=="PSE original agriculture Joomla 344 348 370 exact WP 301 (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect three exact original agriculture articles 344 348 370"):
+              cohort="SOURCE_PROVEN_THREE_AGRICULTURE_EXACT_ORIGINAL_301"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
