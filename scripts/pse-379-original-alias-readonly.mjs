@@ -47,6 +47,16 @@ try{
   {destination:target,http:canonical.status(),canonical:m?.[1]||null}];
  report.decision=!destinationOK?"TARGET_NOT_READY":alreadyCorrect?
   "SOURCE_379_NATIVE_301_LIVE_PASS":"SOURCE_379_NEEDS_EXACT_WP_REDIRECT";
+ const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
+ const exactAcceptance=event.head_commit?.message==="test(pse): verify original Joomla 379 exact 301 postrelease";
+ if(exactAcceptance){
+  if(!alreadyCorrect||!destinationOK)throw Error("Original Joomla 379 canonical 301 not live after signed deployment");
+  console.log("PSE_379_EXACT_ORIGINAL_301_LIVE_PASS="+JSON.stringify({
+   originalId:379,wpPostId:82119,legacyHttp301:true,
+   target,canonicalSameOrigin:true,sourceDate:"2013-07-03",
+   readOnly:true,noBuild:true
+  }));
+ }
  console.log("PSE_379_LEGACY_ALIAS_SOURCE="+JSON.stringify({
   id:379,wpPostId:82119,targetOK:destinationOK,alreadyCorrect,decision:report.decision,
   rows:report.rows,readOnly:true,noBuild:true}));
