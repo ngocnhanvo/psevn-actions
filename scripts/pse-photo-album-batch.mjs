@@ -72,8 +72,22 @@ try{
  // audit #44858808136. Avoid third-party subresources while reading source.
  const staticHtmlAlbums=new Set([986,997,993,989,985,996,992,1053,990,980,975]);
  if(staticHtmlAlbums.has(id)){
-   const raw=await network.get(legacy,{timeout:110000,maxRedirects:3});
-   if(!raw.ok())throw Error("Source gallery HTML unavailable HTTP "+raw.status());
+   let raw=null;
+   for(let attempt=1;attempt<=3;attempt++){
+    try{
+     const r=await network.get(legacy,{timeout:60000,maxRedirects:3});
+     if(r.ok()){raw=r;break}
+     if(r.status()<500)throw Error("Source gallery HTML HTTP "+r.status());
+     if(attempt===3)throw Error("Source gallery HTML unavailable HTTP "+r.status());
+    }catch(e){
+     if(/Source gallery HTML HTTP 4/.test(String(e?.message||"")))throw e;
+     if(attempt===3)throw e;
+     console.warn("PSE_GALLERY_SOURCE_HTML_RETRY attempt="+attempt+
+       " reason="+String(e?.code||e?.name||"network").slice(0,40));
+    }
+    await new Promise(resolve=>setTimeout(resolve,attempt*1000));
+   }
+   if(!raw)throw Error("Source original gallery HTML could not be read");
    const html=await raw.text();
    if(html.length<200||html.length>8000000)throw Error("Untrusted gallery source HTML size");
    await source.route("**/*",route=>route.abort());
@@ -300,7 +314,9 @@ try{
    try{await uploadOne(subset[i])}catch(e){uploadError||=e;return}
   }
  };
- await Promise.all(Array.from({length:Math.min(largeSourceAlbums.has(id)?2:1,subset.length)},()=>uploadWorker()));
+ // Old Joomla and WordPress occasionally reset concurrent uploads. Serialize
+ // writes; the remaining Media scan still uses bounded concurrent GET-only reads.
+ await Promise.all(Array.from({length:Math.min(1,subset.length)},()=>uploadWorker()));
  if(uploadError)throw uploadError;
  // Resolve all previously saved media to determine a complete ordered gallery.
  const missing=items.filter(item=>!item.id);
