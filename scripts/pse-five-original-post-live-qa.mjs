@@ -77,8 +77,12 @@ try{
    const count=await imgs.count();
    if(count!==orig.count)throw Error("Joomla → Astro original media count "+orig.id+" expected "+orig.count+" got "+count);
    const urls=await imgs.evaluateAll(es=>es.map(i=>new URL(i.getAttribute("src")||"",location.href).href));
-   if(new Set(urls).size!==urls.length||urls.some(x=>!x.startsWith(front+"/api/files/wp-content/uploads/")))
+   if(new Set(urls).size!==urls.length||urls.some(x=>!x.startsWith(front+"/api/files/wp-content/uploads/"))){
+    const diagnostic=urls.map(x=>{const u=new URL(x);return {originClass:u.origin===front?"frontend":u.origin===wp?"wordpress":"other",path:u.pathname,queryPresent:!!u.search}});
+    report.ownershipFailure={id:orig.id,width,expected:orig.expected,actual:diagnostic,unique:new Set(urls).size,leakedCount:leaked.length};
+    console.log("PSE_POST_IMAGE_OWNERSHIP_DIAGNOSTIC="+JSON.stringify(report.ownershipFailure));
     throw Error("Astro broken native image ownership "+orig.id);
+   }
    const filenames=urls.map(x=>decodeURIComponent(new URL(x).pathname.split("/").at(-1)));
    if(filenames.some((x,i)=>x!==orig.expected[i]))
     throw Error("Original article image filename identity/order mismatch "+orig.id);
