@@ -39,9 +39,9 @@ const get=async url=>{
  throw Error("Source GET retry exhausted "+new URL(url).pathname);
 };
 try{
- const cats=await get(wp+"/wp-json/wp/v2/categories?slug=tin-tuc-co-dong&_fields=id,slug");
+ const cats=await get(wp+"/wp-json/wp/v2/categories?slug=thong-tin-co-dong&_fields=id,slug,parent");
  if(cats.status()!==200)throw Error("Investor category lookup failed");
- const foundCat=await cats.json();if(foundCat.length!==1)throw Error("Investor taxonomy source missing");
+ const foundCat=await cats.json();if(foundCat.length!==1||foundCat[0].slug!=="thong-tin-co-dong"||Number(foundCat[0].id)!==1744)throw Error("Investor taxonomy source missing");
  const catId=Number(foundCat[0].id);
  const inert=await browser.newContext({javaScriptEnabled:false});await inert.route("**/*",r=>r.abort());
  for(const doc of docs){
