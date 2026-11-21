@@ -1,0 +1,55 @@
+name: PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-garden-1639-native-redirect.mjs
+      - .github/workflows/pse-garden-1639-native-redirect.yml
+      - .pse-garden-1639-native-redirect-request
+permissions:
+  contents: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): redirect exact Joomla Garden 1639 to published Garden category'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-garden-1639-native-redirect.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): redirect exact Joomla Garden 1639 to published Garden category'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft backup before exact original 1639 redirect
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Verify rollback availability for strictly scoped WordPress routing
+        run: echo "PSE_1639_FRESH_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Redirect only the source-equivalent original Joomla Garden family
+        run: node --check scripts/pse-garden-1639-native-redirect.mjs && node scripts/pse-garden-1639-native-redirect.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-joomla-1639-garden-original-redirect
+          path: artifacts/pse-garden-1639/
+          if-no-files-found: warn
+          retention-days: 30
