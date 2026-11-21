@@ -8,7 +8,20 @@ import { readFile } from "node:fs/promises";
 
 const evt = JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const message = String(evt.head_commit?.message||"").trim();
-const command = message.match(/^(audit|cms)\(pse\): gallery (\d+) batch (\d+)$/);
+// Explicit one-time four-gallery recovery is a separate owner-authorized
+// commit gate, never enabled by environmental inputs alone. The existing
+// individual batch markers remain completely unchanged.
+const bulkAuthorized=message==="cms(pse): complete four verified historical galleries"&&
+ process.env.GITHUB_REPOSITORY==="ngocnhanvo/psevn-actions"&&
+ process.env.GITHUB_REF==="refs/heads/main";
+let command=message.match(/^(audit|cms)\(pse\): gallery (\d+) batch (\d+)$/);
+if(bulkAuthorized){
+ const id=String(process.env.PSE_GALLERY_ID||"");
+ const batch=String(process.env.PSE_GALLERY_BATCH||"");
+ if(!["1053","990","980","975"].includes(id)||!/^(?:0|[1-9][0-9]?)$/.test(batch))
+  throw Error("Unsafe four-gallery recovery task");
+ command=["cms(pse): gallery "+id+" batch "+batch,"cms",id,batch];
+}
 const galleries = new Map([
   [1053,{slug:"1053-ngay-hoi-truyen-thong-2014",title:"Ngày Hội Truyền Thống 2014",countMin:76}],
   [990,{slug:"990-dai-hoi-chi-doan-2010",title:"Đại hội chi đoàn 2010",countMin:80}],
@@ -28,6 +41,8 @@ const galleries = new Map([
 ]);
 if(!command){console.log("PSE_GALLERY_BATCH=NOT_REQUESTED; code_ready=true; noWordPressWrite=true");process.exit(0)}
 const mode=command[1],id=Number(command[2]),batch=Number(command[3]),entry=galleries.get(id);
+if(bulkAuthorized&&batch>=Math.ceil((({1053:76,990:98,980:180,975:110})[id]||0)/48))
+ throw Error("Out-of-range source-verified gallery batch");
 if(!entry||!Number.isSafeInteger(batch)||batch<0||batch>100)throw Error("Unknown approved source album/batch");
 // After the original 12-photo galleries are complete, use source-verified
 // 48-item batches only for the four remaining large albums. Preserve all
