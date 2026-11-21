@@ -44,3 +44,4 @@ Verified final fertilizer product description restoration batch 6 (four source-m
 2026-11-21 approved: SOP preflight #44839060275 PASS. Source has no Joomla ID; native WP 44 has no SOP. Create exactly one native Product and verified original PNG in category #1762, no Astro build.
 
 2026-11-21: Source group has one no-ID Nong Lam row; canonical Joomla #1669 WP Product #80946 currently in Dam category 1763 only. Read-only audit #44839559972 proved missing category #1762. Restore exactly product_cat [1762,1763], preserve title, content, excerpt, date, media and status, NO Astro build.
+2026-11-21 SOP detail live 404 verified after signed Astro build #44840492571 (QA #44841473808): WP #82837 currently slug kali-phu-my-sop lacks Joomla numeric ID; existing native WordPress Product URL rewrite only matches 3-5 digit suffix. Preflight exact native WP-ID suffix kali-phu-my-sop-82837, preserve all Product/Media fields; no CMS writes.
