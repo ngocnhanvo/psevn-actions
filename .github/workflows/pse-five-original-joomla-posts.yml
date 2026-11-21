@@ -1,0 +1,73 @@
+name: PSE five original Joomla gallery-backed posts native CMS guarded restore
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-five-joomla-original-gallery-post-recovery.mjs
+      - .github/workflows/pse-five-original-joomla-posts.yml
+      - .pse-five-original-joomla-posts-trigger
+permissions:
+  contents: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): recover five original Joomla photo-backed posts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Audit original dates, CMS taxonomy, Media hashes and missing Post slugs without writes
+        run: node --check scripts/pse-five-joomla-original-gallery-post-recovery.mjs && node scripts/pse-five-joomla-original-gallery-post-recovery.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-five-original-joomla-posts-readonly
+          path: artifacts/pse-five-original-joomla-posts/report.json
+          if-no-files-found: ignore
+          retention-days: 30
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): recover five original Joomla photo-backed posts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    concurrency:
+      group: pse-wp-photo-import
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Publish exactly five original Posts only after verified complete source and Media
+        run: node --check scripts/pse-five-joomla-original-gallery-post-recovery.mjs && node scripts/pse-five-joomla-original-gallery-post-recovery.mjs
+      - name: Persist exact successful Joomla source identities through the serialized SHA checkpoint
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node --check scripts/pse-legacy-migration-save.mjs && node scripts/pse-legacy-migration-save.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-five-original-joomla-posts-publication
+          path: artifacts/pse-five-original-joomla-posts/report.json
+          if-no-files-found: ignore
+          retention-days: 30
