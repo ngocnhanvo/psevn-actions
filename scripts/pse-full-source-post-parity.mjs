@@ -28,10 +28,11 @@ const full=async({route,fields})=>{
 const result={schema:"pse-legacy-804-article-public-post-inventory-v1",sourceCheckpointCount:Object.keys(checkpoint.articles).length,
  createdAt:"2026-11-21",readOnly:true,wordpress:{},groups:[],entries:[],summary:{}};
 try{
- const [posts,products,categories]=await Promise.all([
+ const [posts,products,categories,pages]=await Promise.all([
   full({route:"posts",fields:"status=publish&_fields=id,slug,status,date,categories"}),
   full({route:"product",fields:"status=publish&_fields=id,slug,title,product_cat,featured_media"}),
-  full({route:"categories",fields:"hide_empty=false&_fields=id,slug,parent"})
+  full({route:"categories",fields:"hide_empty=false&_fields=id,slug,parent"}),
+  full({route:"pages",fields:"status=publish&_fields=id,slug,status,acf,content"})
  ]);
  const byId=new Map(posts.map(p=>[p.id,p])),bySlug=new Map();
  for(const p of posts){if(!bySlug.has(p.slug))bySlug.set(p.slug,[]);bySlug.get(p.slug).push(p)}
@@ -48,33 +49,45 @@ try{
   const sourceProduct=/\/hoat-dong-kinh-doanh\/san-pham\//.test(family);
   const sourceGallery=/\/tin-tuc-su-kien\/thu-vien\/anh$/.test(family);
   const alternativeProduct=sourceProduct?products.filter(p=>String(p.slug).endsWith("-"+sourceId)):[];
+  // Distribution source items 1031 and 1568 were independently migrated as native
+  // WordPress Pages (see PSE_DISTRIBUTION_MODERN_UI_2026-10-25.md), not Posts.
+  const distributorPage=(family==="/hoat-dong-kinh-doanh/kenh-phan-phoi"&&
+    ((sourceId==="1031"&&slug==="he-thong-kho")||
+     (sourceId==="1568"&&slug==="quy-che-nha-phan-phoi")));
+  const nativePages=distributorPage?pages.filter(p=>p.slug===slug&&p.status==="publish"&&
+    p.acf?.action==="PublicPage"&&p.acf?.key==="pse-business-"+slug&&
+    String(p.content?.rendered||"").replace(/<[^>]+>/g,"").trim().length>15):[];
   let status="NOT_PUBLIC";
   let current=postsExact[0]||null;
   if(current)status="PUBLISHED_ID";
   else if(postsSlug.length===1){current=postsSlug[0];status="PUBLISHED_SLUG"}
   else if(alternativeProduct.length===1)status="NATIVE_PRODUCT";
+  else if(nativePages.length===1)status="NATIVE_PAGE";
   else if(sourceGallery)status="PHOTO_GALLERY_SOURCE";
   const expectedCategory=catBySlug.get(family.split("/").at(-1));
   const taxonomyMismatch=!!current&&!!expectedCategory&&!current.categories.includes(expectedCategory.id);
   const entry={sourceId:Number(sourceId),sourcePath:path,sourceFamily:family,
    checkpointStatus:item.status,wpId:item.wp_id||null,matchedWpId:current?.id||null,
+   matchedNativePageId:nativePages.length===1?nativePages[0].id:null,
    status,expectedCategoryId:expectedCategory?.id||null,taxonomyMismatch,
    reason:status==="NOT_PUBLIC"?item.reason||null:null};
   result.entries.push(entry);statuses[status]=(statuses[status]||0)+1;
-  if(!groups.has(family))groups.set(family,{source:0,published:0,missing:0,nativeProduct:0,gallery:0,taxonomyMismatch:0,unpublishedSourceIds:[]});
+  if(!groups.has(family))groups.set(family,{source:0,published:0,missing:0,nativeProduct:0,nativePage:0,gallery:0,taxonomyMismatch:0,unpublishedSourceIds:[]});
   const g=groups.get(family);g.source++;
   if(status.startsWith("PUBLISHED"))g.published++;
   else if(status==="NATIVE_PRODUCT")g.nativeProduct++;
+  else if(status==="NATIVE_PAGE")g.nativePage++;
   else if(status==="PHOTO_GALLERY_SOURCE")g.gallery++;
   else{g.missing++;g.unpublishedSourceIds.push(Number(sourceId))}
   if(taxonomyMismatch)g.taxonomyMismatch++;
  }
- result.wordpress={publishedPostCount:posts.length,publishedProductCount:products.length,categoryCount:categories.length};
+ result.wordpress={publishedPostCount:posts.length,publishedProductCount:products.length,
+  publishedPageCount:pages.length,categoryCount:categories.length};
  result.groups=[...groups].map(([family,g])=>({family,...g})).sort((a,b)=>b.source-a.source);
  result.summary={...statuses,source:result.entries.length,
   taxonomyMismatch:result.entries.filter(x=>x.taxonomyMismatch).length};
  console.log("PSE_ALL_LEGACY_POST_SOURCE_PARITY="+JSON.stringify({summary:result.summary,wordpress:result.wordpress,
-  groups:result.groups.map(g=>({family:g.family,source:g.source,published:g.published,missing:g.missing,nativeProduct:g.nativeProduct,gallery:g.gallery,taxonomyMismatch:g.taxonomyMismatch,missingIds:g.unpublishedSourceIds.slice(0,35)}))}));
+  groups:result.groups.map(g=>({family:g.family,source:g.source,published:g.published,missing:g.missing,nativeProduct:g.nativeProduct,nativePage:g.nativePage,gallery:g.gallery,taxonomyMismatch:g.taxonomyMismatch,missingIds:g.unpublishedSourceIds.slice(0,35)}))}));
  console.log("PSE_ALL_LEGACY_POST_SOURCE_AUDIT=PASS; read_only=true; no_cms_write=true; no_astro_build=true");
 }finally{
  await mkdir("artifacts/pse-content-parity",{recursive:true});
