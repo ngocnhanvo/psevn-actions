@@ -1,0 +1,2 @@
+05b21fb0487e7ce1ed0d8af44085b1f3205bc180
+2026-11-21: Deploy ONLY reviewed mu-plugin REST Post/Page mutation build-log preservation. Read-only /wp/v2/posts remains lightweight, CLI regression tests all methods, protected FTPS immutable source SHA, remote SHA-256 readback and rollback. Source WP PHP master 05b21fb...; no Astro build.
