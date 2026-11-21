@@ -1,38 +1,38 @@
 # Latest ChatGPT response — pse.vn
 
-Time: 2026-11-21 20:10 Asia/Ho_Chi_Minh
+Time: 2026-11-21 20:23 Asia/Ho_Chi_Minh
 Project: pse.vn
 Repository: `ngocnhanvo/psevn-actions`
 Branch: `main`
-Source code: `ngocnhanvo/psevn-astro@master`, `ngocnhanvo/psevn-php@master`
-Verified: read-only workflow 44907222569 SUCCESS; exact Joomla #341 article-body empty and suspect unrelated injected links; CMS unchanged, production build not triggered.
-Status: PARTIAL — 13 original article sources, gallery #975 original publish date, four product article redirect aliases unverified.
+Verified: source evidence read-only runs 44907801086, 44908124489, 44908317772, 44908497036 SUCCESS; no WP writes/build. Checkpoint 2dbedc2a.
+Status: PARTIAL — missing original source bytes/date, semantic aliases.
 
 ## Nội dung phản hồi dự định gửi (nguyên văn)
 
-## Kết quả tiếp tục công việc PSE — 21/11/2026
+## Tiếp tục đồng bộ PSE — 21/11/2026
 
-Đã kiểm tra repository, checkpoint và lịch sử GitHub Actions mới nhất.
+Mình đã kiểm tra lại HEAD của 4 repo, checkpoint và GitHub Actions. Không có thay đổi mới cần triển khai lại trên Astro/PHP.
 
-**Những phần đã hoàn tất được giữ nguyên:**
-- 757 bài viết WordPress đã xuất bản, 53 sản phẩm WooCommerce.
-- Bài Joomla #204 đã khôi phục đủ nội dung, 3 ảnh gốc và chuyển hướng 301 thành công.
-- 15/16 album ảnh đã xuất bản.
-- Build và triển khai production gần nhất đã thành công: [Actions #44905783639](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44905783639).
+**Đã hoàn tất thêm một bước xác minh bài Joomla #341:**
 
-**Phần xử lý mới:** Mình đã bổ sung chẩn đoán cấu trúc HTML nguồn cho bài Joomla #341, thay vì nhập nội dung suy đoán.
+- Tạo phép kiểm tra lịch sử riêng, commit [`83aa8832`](https://github.com/ngocnhanvo/psevn-actions/commit/83aa88320ae8df3f4b64c3146765f03b6bbcb895).
+- [GitHub Actions #44907801086](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44907801086) chạy thành công.
+- Kiểm tra 4 biến thể địa chỉ nguồn, tìm thấy 3 bản lưu trữ từ năm 2024–2026.
+- **Cả 3 bản đều không có nội dung bài viết gốc**, chỉ còn tiêu đề. Vì vậy #341 vẫn phải cách ly; không thể nhập một bài viết suy đoán.
 
-Commit: [`a9a5043e`](https://github.com/ngocnhanvo/psevn-actions/commit/a9a5043ef910aa7b73cb20e4100f9d066f762bd1).
+Không có dữ liệu WordPress nào bị thay đổi và không phát sinh build production.
 
-Thay đổi nằm trong `psevn-actions/main`, không sửa nội dung Astro hoặc WordPress.
+## Kết quả rà soát album và sản phẩm
 
-**Kết quả chẩn đoán bổ sung:** [Actions #44907222569](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44907222569) PASS. Bài #341 có tiêu đề hợp lệ nhưng vùng nội dung Joomla rỗng; trang còn xuất hiện liên kết rác không liên quan. Mình không nhập dữ liệu này vào WordPress.
+- **Album #975:** [Actions #44908124489](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44908124489) PASS về kiểm tra nguồn; 7 snapshot được đối chiếu nhưng không có ngày đăng gốc đáng tin cậy. Album chưa thể xuất bản đúng chuẩn dữ liệu.
+- **Bài NPK #1434:** đã đối chiếu 6.108 ký tự nội dung, 20 ảnh với danh mục NPK hiện tại. [Actions #44908317772](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44908317772) PASS về kiểm tra; **19/20 ảnh gốc hợp lệ**, một ảnh từ `dpm.vn` trả HTTP 404.
+- Trang Joomla #1434 không tương đương hoàn toàn với trang tổng quan danh mục, vì vậy chưa tự động chuyển hướng hay chèn nội dung vào WordPress.
 
-Mình cũng tìm được một bài báo cùng tiêu đề trên Báo Chính phủ, nhưng chưa có bằng chứng nội dung trùng khớp tuyệt đối với bản Joomla, nên không dùng để thay thế. <Cite ref="turn904078search0" />
+**Ảnh còn thiếu của #1434:** [Actions #44908497036](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44908497036) đã kiểm tra 4 biến thể URL trên kho lưu trữ, không tìm thấy bản gốc chính xác. Một ảnh PNG tại đường dẫn khác của nhà phát hành vẫn truy cập được, nhưng chưa chứng minh được tương đương với thumbnail cũ nên không sử dụng thay thế.
 
-Checkpoint mới đã lưu tại [`43255d75`](https://github.com/ngocnhanvo/psevn-actions/commit/43255d7597c98ba9714cc959f584946b7118fb25), không có thay đổi CMS hay đợt build mới.
+Đã lưu [checkpoint mới, commit `2dbedc2a`](https://github.com/ngocnhanvo/psevn-actions/commit/2dbedc2a42f8eb5b905ce30c7fe75156f3138b50). Không có thao tác ghi WordPress, không thay đổi Astro/PHP hoặc chạy build production.
 
-**Còn vướng:** 13 bài Joomla chưa khôi phục đủ dữ liệu xác thực (trong đó #202 thiếu ảnh gốc và #341 rỗng), album #975 thiếu ngày xuất bản đáng tin cậy, cùng 4 đường dẫn sản phẩm cũ chưa xác định chính xác bản đích. Cần backup Joomla hoặc file gốc từ nhà xuất bản để tiếp tục các mục này; không thể đánh dấu đồng bộ 100% khi chưa có bằng chứng.
+**Còn chưa hoàn tất:** 13 bài Joomla thiếu dữ liệu gốc đủ xác thực, ngày xuất bản album #975 và 4 URL sản phẩm cũ cần ánh xạ đúng; riêng #1434 thiếu một ảnh nguồn đã xác minh. Muốn đạt đồng bộ 100% cần thêm bản sao lưu Joomla hoặc file/metadata chính xác từ nguồn, không thể tự tạo dữ liệu thay thế.
 
 Bản ghi phản hồi: SAVED tại `chatgpt/latest-response.md`.
 
