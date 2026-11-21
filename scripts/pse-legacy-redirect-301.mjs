@@ -9,7 +9,10 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const msg=String(event.head_commit?.message||"").split("\n")[0];
 const applyThreeProductAliases=msg==="cms(pse): apply three verified product aliases";
-const apply=msg==="cms(pse): apply source-verified legacy 301 redirects"||applyThreeProductAliases;
+const applyRecentPublishedPosts=msg==="cms(pse): apply verified published Joomla Post redirects";
+const auditRecentPublishedPosts=msg==="audit(pse): check verified published Joomla Post redirects";
+const recentPostsOnly=applyRecentPublishedPosts||auditRecentPublishedPosts;
+const apply=msg==="cms(pse): apply source-verified legacy 301 redirects"||applyThreeProductAliases||applyRecentPublishedPosts;
 const identityOnly=msg==="audit(pse): verify exact legacy 301 source identity";
 const vars=String(process.env.ENV_FILE||"").split(/\r?\n/)
   .map(s=>s.trim().replace(/^export\s+/,""));
@@ -267,6 +270,7 @@ try{
   // draft/quarantined records can share slugs with unrelated published posts.
   const publishedById=new Map(posts.map(p=>[Number(p.id),p]));
   const manifestIdentity=new Map();
+  const verifiedPublishedPostAliases=new Map();
   const mismatchedPublishedSlugs=[];
   if(legacyInventory){
     for(const entry of Object.values(legacyInventory.articles||{})){
@@ -290,9 +294,10 @@ try{
       // status=publish REST response, plus destination 200/canonical.
       const approvedState=["imported","existing","draft_needs_date"].includes(status);
       manifestIdentity.set(from,{status,wpId,exactPublished,approvedState,slug});
-      if(approvedState&&exactPublished)
+      if(approvedState&&exactPublished){
         add(from,"/"+slug,"joomla-id+verified-wp-id+published-status");
-      else if(sameSlug)
+        verifiedPublishedPostAliases.set(from,{to:"/"+slug,wpId,sourceStatus:status});
+      }else if(sameSlug)
         mismatchedPublishedSlugs.push({from,status,wpId,
           sameSlugPublishedId:Number(sameSlug.id),
           exactPublished,approvedState});
@@ -361,7 +366,9 @@ try{
   const outcomes=new Array(candidates.length);
   // Audits can verify every target. Writes use resumable batches to stay well
   // below the Actions 55-minute limit and retain per-run rollback inventory.
-  const maxApplyTargetChecks=100;
+  // Cap one scoped CMS writer to 25 redirects: existing WordPress REST registry
+  // is re-read for every new entry. Resume only after read-back/artifact PASS.
+  const maxApplyTargetChecks=recentPostsOnly?25:100;
   let applyTargetChecks=0;
   let cursor=0;
   const verify=async()=>{
@@ -385,11 +392,14 @@ try{
       if(applyThreeProductAliases&&!exactProductAliasDestinations.has(proposal.from)){
         outcomes[i]={kind:"outOfScope",data:proposal};continue;
       }
-      if(apply&&applyTargetChecks>=maxApplyTargetChecks){
+      if(recentPostsOnly&&verifiedPublishedPostAliases.get(proposal.from)?.to!==proposal.to){
+        outcomes[i]={kind:"outOfScope",data:proposal};continue;
+      }
+      if((apply||auditRecentPublishedPosts)&&applyTargetChecks>=maxApplyTargetChecks){
         outcomes[i]={kind:"deferred",data:{...proposal,reason:"next-guarded-apply-batch"}};
         continue;
       }
-      if(apply)applyTargetChecks++;
+      if(apply||auditRecentPublishedPosts)applyTargetChecks++;
       try{
         const u=new URL(proposal.to,front);
         const res=await fetch(u,{redirect:"manual",signal:AbortSignal.timeout(14000)});
@@ -399,8 +409,9 @@ try{
         const html=await res.text();
         const canonical=html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
           html.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
-        if(canonical&&new URL(canonical,front).pathname!==proposal.to){
-          outcomes[i]={kind:"skip",data:{...proposal,reason:"canonical mismatch",canonicalPath:new URL(canonical,front).pathname}};continue;
+        const parsed=canonical?new URL(canonical,front):null;
+        if(!parsed||parsed.origin!==front||parsed.pathname!==proposal.to||parsed.search||parsed.hash){
+          outcomes[i]={kind:"skip",data:{...proposal,reason:"canonical missing or mismatched",canonicalPath:parsed?.pathname||null}};continue;
         }
         outcomes[i]={kind:"verified",data:proposal};
       }catch(e){
@@ -427,8 +438,16 @@ try{
     targetVerified:checked.length,alreadyCorrect:report.unchanged.length,
     skipped:report.skipped.length,deferred:report.deferred.length,outOfScope:report.outOfScope.length,
     verifiedProductAliases:checked.filter(x=>exactProductAliasDestinations.get(x.from)===x.to).length,
-    maxApplyTargetChecks,apply,applyThreeProductAliases
+    maxApplyTargetChecks,apply,applyThreeProductAliases,
+    recentPostsOnly,verifiedPostAliases:verifiedPublishedPostAliases.size,
+    verifiedPostNew:checked.filter(x=>verifiedPublishedPostAliases.get(x.from)?.to===x.to).length,
+    sample:recentPostsOnly?checked.slice(0,4).map(x=>({from:x.from,to:x.to})):undefined
   }));
+  if(applyRecentPublishedPosts&&(
+      checked.length<1||checked.length>25||
+      checked.some(x=>verifiedPublishedPostAliases.get(x.from)?.to!==x.to)||
+      report.skipped.length||report.issues.length||unsafePublished.length
+    ))throw Error("Scoped Post redirects fail closed: no CMS writes");
   if(applyThreeProductAliases&&(
       exactProductAliasDestinations.size!==3||checked.length!==3||
       checked.some(x=>exactProductAliasDestinations.get(x.from)!==x.to)||
@@ -489,7 +508,8 @@ try{
     mode:report.mode,retired:report.retired.length,published:report.published.length,
     alreadyCorrect:report.unchanged.length,sourceUnmatched:notMatched.length,
     targetSkipped:report.skipped.length,deferred:report.deferred.length,
-    outOfScope:report.outOfScope.length,issues:report.issues.length,noBuild:true
+    outOfScope:report.outOfScope.length,issues:report.issues.length,noBuild:true,
+    recentPostsOnly,verifiedPostAliasCount:verifiedPublishedPostAliases.size
   }));
   }
 }finally{
