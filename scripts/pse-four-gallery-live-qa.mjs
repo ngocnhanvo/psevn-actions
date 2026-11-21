@@ -9,14 +9,18 @@ function origin(key){const a=lines.filter(x=>x.startsWith(key+"="));if(a.length!
  return u.origin}
 const front=origin("WC_URL_CLIENT"),wp=origin("WC_URL");
 if(front===wp)throw Error("Frontend origin must differ from WordPress");
-const targets=[
+const allTargets=[
  {id:1053,slug:"1053-ngay-hoi-truyen-thong-2014",images:76},
  {id:990,slug:"990-dai-hoi-chi-doan-2010",images:98},
  {id:980,slug:"980-cong-trinh-dtn-kho-chua-dong-nai",images:180},
  {id:975,slug:"975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013",images:110}
 ];
+// Explicit partial acceptance never changes default full four-album QA.
+const threeOnly=process.argv.includes("--published-three-only");
+const targets=threeOnly?allTargets.filter(x=>x.id!==975):allTargets;
+const totalImages=targets.reduce((n,x)=>n+x.images,0);
 const browser=await chromium.launch({headless:true});
-const report={schema:"pse-four-original-albums-live-v1",readOnly:true,front,rows:[],listing:[],sourceOracle:[],failures:[],imageGetChecks:[]};
+const report={schema:"pse-four-original-albums-live-v1",readOnly:true,scope:threeOnly?"published-three-only":"all-four",deferredSourceIds:threeOnly?[975]:[],front,rows:[],listing:[],sourceOracle:[],failures:[],imageGetChecks:[]};
 try{
  // Read and extract an independent original Joomla URL/order oracle, separate
  // from the importer manifests and WordPress. Literal source hrefs determine
@@ -118,7 +122,7 @@ try{
    }
    for(const target of targets)if(![...found].some(p=>String(p).includes(target.slug)))
     throw Error("Original album missing from WordPress SSR archive "+target.id);
-   report.listing.push({pages:visited.size,uniqueCards:found.size,fourSourceAlbums:true});
+   report.listing.push({pages:visited.size,uniqueCards:found.size,verifiedSourceAlbums:targets.length});
   }
   await page.close();
  }
@@ -133,9 +137,9 @@ try{
  }));
  await request.close();
  report.imageGetChecks=checks;
- if(checks.length!==12||checks.some(x=>x.http!==200||!x.mime.startsWith("image/")))
+ if(checks.length!==targets.length*3||checks.some(x=>x.http!==200||!x.mime.startsWith("image/")))
   throw Error("Original WordPress media network GET sampling failed");
- console.log("PSE_FOUR_GALLERY_LIVE_PASS="+JSON.stringify({originalAlbums:4,originalPhotos:464,widths:2,checks:report.rows.length,
+ console.log((threeOnly?"PSE_THREE_PUBLISHED_GALLERIES_LIVE_PASS=":"PSE_FOUR_GALLERY_LIVE_PASS=")+JSON.stringify({originalAlbums:targets.length,originalPhotos:totalImages,deferredSourceIds:report.deferredSourceIds,widths:2,checks:report.rows.length,
    mediaGetPass:checks.length,archivePages:report.listing[0]?.pages,wordpressOwned:true,readOnly:true}));
 }finally{
  await mkdir("artifacts/pse-four-original-gallery-live",{recursive:true});
