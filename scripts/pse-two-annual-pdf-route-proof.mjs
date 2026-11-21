@@ -54,7 +54,7 @@ for(const row of files){
  const correct=front+"/api/files"+row.file;
  const native=cms+row.file;
  const originalHtml=String(post.content?.rendered||"");
- const refs=[...originalHtml.matchAll(/\\b(?:href|src)\\s*=\\s*["']([^"']+)["']/gi)].map(m=>m[1]);
+ const refs=[...originalHtml.matchAll(/\b(?:href|src)\s*=\s*["']([^"']+)["']/gi)].map(m=>m[1]);
  const originalRefs=refs.filter(raw=>{try{return new URL(raw.replace(/&amp;/gi,"&"),cms).href===wrong}catch{return false}});
  const occurrences=originalRefs.length;
  if(occurrences!==1)throw Error("Unexpected exact link identity "+row.wpId+"="+occurrences+
