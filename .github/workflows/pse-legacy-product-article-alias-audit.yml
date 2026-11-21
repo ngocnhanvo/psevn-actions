@@ -5,6 +5,7 @@ on:
     paths:
       - .pse-legacy-product-article-alias-request
       - scripts/pse-legacy-product-article-alias-audit.mjs
+      - .github/workflows/pse-legacy-product-article-alias-audit.yml
 permissions:
   contents: read
 concurrency:
