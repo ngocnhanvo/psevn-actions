@@ -137,7 +137,7 @@ try{
  const nonce=await admin.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});if(!r.ok)throw Error("WordPress nonce unavailable");return(await r.text()).trim()});
  const api=(path,method="GET",body)=>admin.evaluate(async({path,method,body,nonce})=>{
   const r=await fetch(path,{method,credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
-  return {http:r.status,data:await r.json().catch(()=>({}))};
+  return {http:r.status,pages:Number(r.headers.get("X-WP-TotalPages")||0),data:await r.json().catch(()=>({}))};
  },{path,method,body,nonce});
  // Only GET is retryable. Never blindly repeat an upload, Post publication,
  // or native REST write after a transport interruption.
@@ -176,15 +176,48 @@ try{
  let post=posts.data[0];
  if(post&&(!post.categories.includes(category)||post.acf?.key!=="ssr-post"||post.acf?.action!=="PostDetails"||!String(post.content?.raw||"").includes('data-pse-gallery-id="'+id+'"')))
    throw Error("Existing Post does not match verified gallery provenance");
- // Read only native attachment registry first, preserving already imported bytes.
- await scanMedia(items,async item=>{
-  const m=await readNative("/wp-json/wp/v2/media?context=edit&search="+item.marker+"&per_page=50&_fields=id,slug,mime_type,source_url,media_details");
-  if(m.http!==200||!Array.isArray(m.data))throw Error("WP media search denied");
-  const found=m.data.filter(x=>x.slug===item.marker);
-  if(found.length>1)throw Error("Ambiguous existing gallery image");
-  item.id=found[0]?.id||null;
-  item.nativeMedia=found[0]||null;
- });
+ // Native attachment slug is not an immutable file identity. WordPress
+ // generated numeric slugs for #975 IDs 83320–83429. Take one complete
+ // ascending-ID registry snapshot and match exact source-derived filenames.
+ // Never infer absence from search or slug; reject duplicate filenames.
+ const byFilename=new Map(),expectedNames=new Set(items.map(i=>i.filename));
+ const idsSeen=new Set();
+ let lastMediaId=0;
+ for(let n=1;n<=80;n++){
+  const res=await readNative("/wp-json/wp/v2/media?context=edit&per_page=100&page="+n+
+   "&orderby=id&order=asc&_fields=id,slug,mime_type,source_url,media_details");
+  if(res.http!==200||!Array.isArray(res.data))throw Error("Complete native Media registry unavailable page "+n);
+  for(const m of res.data){
+   const mediaId=Number(m.id);
+   if(!Number.isSafeInteger(mediaId)||mediaId<1||mediaId<=lastMediaId||idsSeen.has(mediaId))
+    throw Error("Native Media registry changed or is not strictly ordered");
+   idsSeen.add(mediaId);lastMediaId=mediaId;
+   const file=String(m.media_details?.file||"").split("/").at(-1);
+   if(!expectedNames.has(file))continue;
+   if(byFilename.has(file))throw Error("Ambiguous original native filename "+file);
+   byFilename.set(file,m);
+  }
+  if(!Number.isSafeInteger(res.pages)||res.pages<1||res.pages>80)throw Error("Native Media registry page count invalid");
+  if(n>=res.pages)break;
+  if(n===80)throw Error("Native Media registry exceeds safe complete scan bound");
+ }
+ for(const item of items){
+  const m=byFilename.get(item.filename);
+  if(m&&m.mime_type!==(item.ext==="jpg"?"image/jpeg":"image/"+item.ext))
+   throw Error("Existing native Media MIME mismatch "+item.filename);
+  item.id=m?.id||null;item.nativeMedia=m||null;
+ }
+ console.log("PSE_GALLERY_REGISTRY_RECONCILED id="+id+" exactExisting="+byFilename.size+" expected="+items.length+" slugIndependent=true");
+ // #975 has all 110 originals from the completed source audit but no
+ // verified publication day (Joomla created 2011 vs title October 2013).
+ // Until that source conflict is resolved, do not create/publish or upload.
+ if(id===975){
+  if(items.length!==110||byFilename.size!==110)
+   throw Error("Gallery 975 requires exact existing 110 Media; no uploads authorized");
+  console.log("PSE_GALLERY_BATCH=DATE_DEFERRED id=975 media=110 noCmsWrites=true");
+  process.exitCode=0;
+  await network.dispose();await browser.close();process.exit(0);
+ }
  // A second agent/session may enqueue the same marker before the first
  // import finishes. Published, source-complete galleries are immutable for
  // this run; do not repeat media HEAD requests or POST write/readback.
