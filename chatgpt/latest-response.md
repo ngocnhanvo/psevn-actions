@@ -1,36 +1,47 @@
 # Latest ChatGPT response — pse.vn
 
-Time: 2026-11-21 20:30 Asia/Ho_Chi_Minh
+Time: 2026-11-21 20:37 Asia/Ho_Chi_Minh
 Project: pse.vn
-Repository: `ngocnhanvo/psevn-actions`
-Branch: `main`
-Verified: read-only source QA #44909006809 completed/success, three exact source images #382 not archived; report bbb2ebd8 and checkpoint 8e25a8f7 committed/readback verified.
-Status: PARTIAL — 13 original Joomla missing Posts, album #975, 4 legacy Product aliases; source data unavailable.
+Repository: ngocnhanvo/psevn-actions
+Branch: main
+Verified: Joomla RSS/Atom read-only QA #44909587901 SUCCESS, source date conflict #975; #379 no exact feed item; checkpoint ad1f58cc verified.
+Status: PARTIAL — original Joomla source assets/database and date provenance still missing.
 
-## Nội dung phản hồi dự định gửi (nguyên văn)
+## Nội dung phản hồi dự định gửi
 
-## Tiến độ đồng bộ PSE — 21/11/2026
+## 1. Đã khôi phục trạng thái dự án PSE
 
-Mình đã kiểm tra lại 4 repository và toàn bộ checkpoint gần nhất. Astro/PHP production không có commit mới cần triển khai lại.
+Mình đã đọc lại quy tắc knowledge, checkpoint và lịch sử GitHub Actions của dự án PSE.
 
-**Đã hoàn tất thêm việc kiểm tra 3 ảnh gốc của bài Joomla #382:**
+Trạng thái đồng bộ hiện tại: PARTIAL (checkpoint cập nhật lúc 20:30 ngày 21/11/2026).
+- 757 bài viết WordPress
+- 53 sản phẩm WooCommerce
+- 25 trang WordPress
 
-- Commit kiểm tra: [`6a4cc33a`](https://github.com/ngocnhanvo/psevn-actions/commit/6a4cc33a20beb8c908145862a69b22ebadddcbac).
-- [GitHub Actions #44909006809](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44909006809): **SUCCESS**.
-- Đã đối chiếu đúng ba tên ảnh `Áo_2.JPG`, `Ba_Lan.JPG` và ảnh mỏ muối Wieliczka.
-- Kết quả: **0/3 ảnh có bản lưu trữ nguồn xác minh được**. Cả ba vẫn cần file gốc hoặc bản sao lưu Joomla.
+Các phần đã hoàn thành và không cần chạy lại gồm: khôi phục bài Joomla #204, chuyển hướng 301, đồng bộ 53 sản phẩm, xử lý 8 sản phẩm Phú Mỹ Garden và kiểm thử các album ảnh đã xuất bản.
 
-Không có thao tác sửa WordPress, không thay ảnh bằng nội dung không rõ nguồn và không phát sinh build production.
+Các phần chưa đạt parity toàn bộ là 13 bài Joomla, album #975 và 4 URL mô tả sản phẩm lịch sử chưa xác định chắc chắn đích ánh xạ.
 
-**Đã đồng bộ lại báo cáo thiếu dữ liệu:** [`bbb2ebd8`](https://github.com/ngocnhanvo/psevn-actions/commit/bbb2ebd8aedf6766894cd49a59a1b1cf507c1b3c). Bản cũ vẫn ghi #204 là chưa xong, trong khi bài này đã khôi phục đầy đủ và chuyển hướng 301 thành công.
+| Repository | Branch | HEAD đã kiểm tra |
+|---|---|---|
+| psevn-astro | master | e213d006 |
+| psevn-php | master | 05b21fb0 |
+| psevn-actions | main | aaea6fc4 (đầu lượt), ad1f58cc (checkpoint mới) |
 
-Checkpoint mới: [`8e25a8f7`](https://github.com/ngocnhanvo/psevn-actions/commit/8e25a8f7996f9e504d7ac8fa63d059d146d24bbe).
+Build production và kiểm thử 301 của bài #204 trước đó đều thành công. Không có lý do để build lại chỉ nhằm kiểm tra các nội dung chưa khôi phục được.
 
-**Chưa thể hoàn tất toàn bộ:** còn 13 bài Joomla thiếu bằng chứng nội dung/ảnh/ngày gốc, album #975 thiếu ngày xuất bản và 4 URL mô tả sản phẩm chưa xác minh được trang đích. Trong các repo và tệp Project/Library được truy cập, mình chưa tìm thấy bản sao lưu Joomla gốc.
+## 2. Công việc tiếp tục trong lượt này
 
-Để đóng các mục này đúng chuẩn, cần **backup cơ sở dữ liệu Joomla và thư mục ảnh gốc**, hoặc file nguồn xác thực từ đơn vị xuất bản. Không nên điền ngày hoặc ảnh phỏng đoán chỉ để đạt 100%.
+Mình đã viết và chạy kiểm thử độc lập RSS/Atom Joomla cho album #975 và bài #379. Workflow chỉ đọc #44909587901 **SUCCESS**; source commit 9488a29f, workflow commit ededbd4b.
 
-Bản ghi phản hồi: SAVED tại `chatgpt/latest-response.md`.
+- Album #975: RSS và Atom mỗi feed tìm thấy đúng URL album, cùng ghi ngày 2011-03-05 (UTC); Joomla com_search trước ghi 2011-03-06. Hai mốc rất gần nhưng đều trước sự kiện tháng 10/2013 được ghi trong tên album. Không thể coi đó là ngày xuất bản hợp lệ để đưa album lên website mới khi mâu thuẫn nội dung còn tồn tại.
+- Bài #379: feed nguồn RSS/Atom 10 mục không có item URL của bài; WordPress draft #82119 vẫn chưa có ngày nguồn chính xác.
+
+Checkpoint được cập nhật và đọc lại thành công: commit ad1f58cc. Không sửa dữ liệu WordPress, không cập nhật Astro/PHP, không deploy.
+
+## 3. Còn vướng gì để khép parity
+
+Cần bản sao lưu Joomla gốc (cơ sở dữ liệu chứa metadata bài viết, thư mục ảnh/media gốc) hoặc nguồn xuất bản tin cậy cho 13 bài thiếu nội dung/ảnh/ngày; cần ngày chính xác album #975; và chứng minh ngữ nghĩa đích cho bốn alias 1425, 1426, 1434, 1678. Không thêm ảnh tương tự, không đoán ngày, không redirect đến sản phẩm gần giống.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
