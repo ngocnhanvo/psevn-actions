@@ -6,3 +6,5 @@
 2026-11-21: Source-recovery candidates Joomla #1641 and #1651 have third-party images reachable by HEAD in #44851260617. Prove full binary/MIME/hash and independently authenticated Joomla-created date before considering any scoped WordPress import. Read-only; do not build.
 
 2026-11-21: Rerun exact Joomla source #1641/#1651 after correcting H2/document-title lookup; verify independent original day and full remote image bytes without WordPress writes.
+
+2026-11-21: After verified source #1641 -> WP #82846 and #1651 -> #82840, independently recount all 804 Joomla identities against public WordPress posts/products/pages, verify residual groups and no taxonomy mismatch; read only, no build.
