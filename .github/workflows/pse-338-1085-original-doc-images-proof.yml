@@ -1,0 +1,29 @@
+name: PSE original shareholder notices 338 and 1085 scanned photo evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-338-1085-original-doc-images-proof.mjs
+      - .github/workflows/pse-338-1085-original-doc-images-proof.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-338-1085-original-doc-images-proof.mjs && node scripts/pse-338-1085-original-doc-images-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-exact-original-investor-notice-scans
+          path: artifacts/pse-investor-two-notices/report.json
+          retention-days: 30
+          if-no-files-found: warn
