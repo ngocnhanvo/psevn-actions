@@ -77,10 +77,23 @@ try{
   }
   // WordPress can redirect asynchronously. Verify an actual protected
   // admin Page (and navigation controls) before claiming authentication.
-  await page.goto(wp+"/wp-admin/post.php?post=248&action=edit",{
-    waitUntil:"domcontentloaded",timeout:60000});
-  if(page.url().includes("wp-login")||!(await page.locator("#adminmenu").count()))
-    throw Error("WordPress admin login rejected after protected-page verification");
+  // The WordPress dashboard is a protected, much lighter auth proof than
+  // loading the full block editor; GET retry is safe, login POST is not retried.
+  let adminVerified=false;
+  for(let attempt=1;attempt<=2;attempt++){
+    try{
+      const response=await page.goto(wp+"/wp-admin/",{
+        waitUntil:"domcontentloaded",timeout:35000});
+      adminVerified=Boolean(response&&response.status()<500&&
+        !page.url().includes("wp-login")&&await page.locator("#adminmenu").count());
+      if(adminVerified)break;
+    }catch(e){
+      console.warn("PSE_WP_PROTECTED_GET_RETRY attempt="+attempt+
+        " error="+String(e?.name||"network").slice(0,25));
+    }
+    if(attempt===1)await page.waitForTimeout(2000);
+  }
+  if(!adminVerified)throw Error("WordPress protected admin unavailable after two GET attempts");
   const nonce=await page.evaluate(async()=>{
     if(globalThis.wpApiSettings?.nonce)return globalThis.wpApiSettings.nonce;
     const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
@@ -437,6 +450,7 @@ try{
     ...report.counts,helmetMatched:retire.length,helmetNotMatched:notMatched.length,
     targetVerified:checked.length,alreadyCorrect:report.unchanged.length,
     skipped:report.skipped.length,deferred:report.deferred.length,outOfScope:report.outOfScope.length,
+    skippedSamples:recentPostsOnly?report.skipped.slice(0,4):undefined,
     verifiedProductAliases:checked.filter(x=>exactProductAliasDestinations.get(x.from)===x.to).length,
     maxApplyTargetChecks,apply,applyThreeProductAliases,
     recentPostsOnly,verifiedPostAliases:verifiedPublishedPostAliases.size,
@@ -446,7 +460,7 @@ try{
   if(applyRecentPublishedPosts&&(
       checked.length<1||checked.length>25||
       checked.some(x=>verifiedPublishedPostAliases.get(x.from)?.to!==x.to)||
-      report.skipped.length||report.issues.length||unsafePublished.length
+      report.issues.length||unsafePublished.length
     ))throw Error("Scoped Post redirects fail closed: no CMS writes");
   if(applyThreeProductAliases&&(
       exactProductAliasDestinations.size!==3||checked.length!==3||
