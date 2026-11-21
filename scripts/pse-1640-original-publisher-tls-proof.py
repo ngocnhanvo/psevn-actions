@@ -84,10 +84,34 @@ for source in ORIGINALS:
             })
             if not legacy and "unsafe legacy renegotiation" not in str(exc).lower():
                 break
+    # Independently probe the publisher's own canonical apex host using
+    # EXACTLY the original path/filename. This is a lead, not byte equivalence
+    # of the old www link, and never authorizes WordPress publication.
+    item["apexSamePath"] = None
+    if not item["verified"]:
+        apex = source.replace(
+            "https://www.baobariavungtau.com.vn/",
+            "https://baobariavungtau.com.vn/", 1)
+        if apex == source:
+            raise ValueError("Unexpected original publisher host")
+        for legacy in (False, True):
+            try:
+                evidence = get_original(apex, legacy)
+                item["apexSamePath"] = {"url": apex, "evidence": evidence}
+                break
+            except (OSError, ValueError, urllib.error.URLError) as exc:
+                item.setdefault("apexAttempts", []).append({
+                    "mode": "legacy-ca-verified" if legacy else "strict-ca-verified",
+                    "ok": False, "error": str(exc)[:210]
+                })
+                error = str(exc).lower().replace("_", " ")
+                if not legacy and "unsafe legacy renegotiation" not in error:
+                    break
     rows.append(item)
     print("PSE_1640_ORIGINAL_TLS_ROW=" + json.dumps({
         "source": source, "verified": item["verified"], "evidence": item["evidence"],
-        "attempts": item["attempts"]
+        "attempts": item["attempts"], "apexSamePath": item["apexSamePath"],
+        "apexAttempts": item.get("apexAttempts", [])
     }, ensure_ascii=False))
 
 report = {
@@ -95,11 +119,13 @@ report = {
     "readOnly": True, "noCmsWrites": True, "noBuild": True,
     "noCertificateVerificationBypass": True, "rows": rows,
     "verifiedOriginalJPEGs": sum(r["verified"] for r in rows),
+    "publisherApexSamePathLeads": sum(r["apexSamePath"] is not None for r in rows),
 }
 path = Path("artifacts/pse-1640-original-tls/report.json")
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print("PSE_1640_ORIGINAL_TLS_SUMMARY=" + json.dumps({
     "verifiedOriginalJPEGs": report["verifiedOriginalJPEGs"],
-    "expected": len(ORIGINALS), "certVerificationRequired": True, "readOnly": True
+    "expected": len(ORIGINALS), "publisherApexSamePathLeads": report["publisherApexSamePathLeads"],
+    "certVerificationRequired": True, "readOnly": True
 }))
