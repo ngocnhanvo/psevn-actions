@@ -59,6 +59,16 @@ jobs:
             echo "PSE_SOURCE_RECOVERY_ALBUM_PUBLISHED id=$gallery"
           done
           echo "PSE_FOUR_VERIFIED_GALLERIES_CMS=PASS originalPhotos=464 nativePostAlbums=4"
+      - name: Independently compare all 464 original image identities and order on live SSR
+        run: node --check scripts/pse-four-gallery-live-qa.mjs && node scripts/pse-four-gallery-live-qa.mjs
+      - name: Preserve independent public parity QA even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-four-original-albums-public-parity
+          path: artifacts/pse-four-original-gallery-live/report.json
+          if-no-files-found: warn
+          retention-days: 30
       - name: Preserve original evidence on success or failure
         if: always()
         uses: actions/upload-artifact@v4
