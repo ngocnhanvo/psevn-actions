@@ -51,11 +51,12 @@ for(const p of posts){
   const tag=m[1].toLowerCase(),raw=tag==="a"?attr(m[0],"href"):
    tag==="object"?attr(m[0],"data"):attr(m[0],"src");
   if(!raw)continue;
-  let url;try{url=new URL(decode(raw),cms+"/")}catch{continue}
+  let url;try{const ref=decode(raw);url=new URL(ref,ref.startsWith("/api/files/wp-content/uploads/")?front+"/":cms+"/")}catch{continue}
   if(!["http:","https:"].includes(url.protocol)||!asset.test(url.pathname))continue;
   if(url.username||url.password)continue;
   const path=url.pathname;
   let kind=url.origin===cms&&path.startsWith("/wp-content/uploads/")?"WP_NATIVE_UPLOAD":
+   url.origin===front&&path.startsWith("/api/files/wp-content/uploads/")?"FRONTEND_PROXY":
    url.origin===front&&path.startsWith("/wp-content/uploads/")?"FRONTEND_UPLOAD":
    ["pse.vn","www.pse.vn"].includes(url.hostname)&&path.startsWith("/images/")?"ORIGINAL_JOOMLA_FILE":
    url.origin===cms?"WP_OTHER_FILE":"EXTERNAL_FILE";
@@ -68,19 +69,21 @@ for(const p of posts){
 const resources=[...links.values()].sort((a,b)=>a.url.localeCompare(b.url));
 const countByKind={};for(const item of resources)countByKind[item.kind]=(countByKind[item.kind]||0)+1;
 const eligible=resources.filter(x=>x.kind==="WP_NATIVE_UPLOAD"||x.kind==="FRONTEND_UPLOAD");
-// Resume only the 147 not yet tested; prior successful GET-only HEAD run
-// #44917101264 proved the first 250 under this exact stable inventory.
+const proxies=resources.filter(x=>x.kind==="FRONTEND_PROXY");
+// WordPress relative /api/files URLs resolve on ASTRO public site, not WP CMS.
+// Previously verified 397 native HEAD: #44917101264 + #44917251484.
+// Exact annual proxy↔WP PDF SHA and live href QA: #44917675053, #44917814607.
 if(posts.length!==758||documentTagRefs!==503||resources.length!==400||
  eligible.length!==397||countByKind.WP_NATIVE_UPLOAD!==397||
- resources.filter(x=>x.kind==="EXTERNAL_FILE").length!==1)
- throw Error("PSE native document inventory changed; resume is unsafe");
-const priorRunId=44917101264,priorVerifiedNativeHEAD=250;
-const toCheck=eligible.slice(priorVerifiedNativeHEAD);
+ proxies.length!==2||countByKind.EXTERNAL_FILE!==1)
+ throw Error("Native Posts/document inventory drift; cannot reuse previous evidence");
+const priorRunIds=[44917101264,44917251484],priorVerifiedNativeHEAD=397;
+const toCheck=proxies;
 const checks=[];let cursor=0;
 await Promise.all(Array.from({length:5},async()=>{for(;;){
  const i=cursor++;if(i>=toCheck.length)return;
  const item=toCheck[i],u=new URL(item.url);
- if(![cms,front].includes(u.origin)||!u.pathname.startsWith("/wp-content/uploads/"))
+ if(u.origin!==front||!u.pathname.startsWith("/api/files/wp-content/uploads/"))
   throw Error("Unexpected native media url");
  const checked={url:item.url,wpIds:item.posts.map(x=>x.wpId),kind:item.kind,status:null,mime:null,length:null,reason:null};
  try{
@@ -101,21 +104,19 @@ await Promise.all(Array.from({length:5},async()=>{for(;;){
 const issues=checks.filter(x=>x.reason);
 const originalLinks=resources.filter(x=>x.kind==="ORIGINAL_JOOMLA_FILE");
 const insecure=resources.filter(x=>new URL(x.url).protocol==="http:");
-const result={schema:"pse-all-published-758-wordpress-document-link-inventory-v1",readOnly:true,noCmsWrites:true,noBuild:true,
- notes:"HEAD validates only response status/metadata and never proves PDF bytes. Original Joomla document links remain provenance evidence and must not be silently rewritten. When capped, unchecked local documents are NOT claimed PASS.",
+const result={schema:"pse-all-published-758-wordpress-document-link-inventory-v2",readOnly:true,noCmsWrites:true,noBuild:true,
+ notes:"A relative /api/files route must be resolved against the public Astro domain, not against WordPress REST origin. 2014+2016 public annual link QA and PDF byte SHA PASS. HEAD only checks response status/type.",
  postCount:posts.length,documentTagRefs,uniqueDocumentUrls:resources.length,byKind:countByKind,
- wpUploadEligible:resources.filter(x=>["WP_NATIVE_UPLOAD","FRONTEND_UPLOAD"].includes(x.kind)).length,
- wpUploadHeadChecked:checks.length,wpUploadPriorVerified:priorVerifiedNativeHEAD,
- priorRunId,wpUploadCombinedChecked:checks.length+priorVerifiedNativeHEAD,
- wpUploadHeadUnchecked:Math.max(0,eligible.length-priorVerifiedNativeHEAD-checks.length),
+ wpUploadEligible:eligible.length,wpUploadPriorVerified:priorVerifiedNativeHEAD,
+ wpUploadPriorRunIds:priorRunIds,wpUploadHeadUnchecked:0,
+ frontendProxyUrls:proxies.length,frontendProxyHeadChecked:checks.length,
  issueCounts:Object.fromEntries([...new Set(issues.map(x=>x.reason))].map(x=>[x,issues.filter(y=>y.reason===x).length])),
  issues,originalLegacyFileUrls:originalLinks,insecureHttpDocs:insecure,
  checkedNativeFiles:checks,resources};
 console.log("PSE_758_PUBLISHED_DOCUMENT_LINK_SUMMARY="+JSON.stringify({
  posts:result.postCount,documentTagRefs,uniqueDocumentUrls:resources.length,byKind:countByKind,
- nativeEligible:result.wpUploadEligible,nativeHeadCheckedThisRun:checks.length,
- priorVerifiedRunId:priorRunId,priorVerifiedCount:priorVerifiedNativeHEAD,
- nativeCombinedHeadChecked:result.wpUploadCombinedChecked,nativeUnchecked:result.wpUploadHeadUnchecked,
+ nativePreviouslyVerified:priorVerifiedNativeHEAD,priorRunIds,
+ proxyCheckedThisRun:checks.length,nativeUnchecked:0,
  originalJoomlaDocuments:originalLinks.length,insecureHttpDocuments:insecure.length,
  issues:result.issueCounts,readOnly:true,noCmsWrites:true}));
 for(const item of issues.slice(0,25))console.log("PSE_758_NATIVE_DOCUMENT_ISSUE="+JSON.stringify(item).slice(0,850));
