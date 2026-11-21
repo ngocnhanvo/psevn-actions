@@ -1,0 +1,32 @@
+name: PSE original NPK 1434 publisher thumbnail exact historical bytes (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-1434-publisher-thumbnail-archive.mjs
+      - .github/workflows/pse-1434-publisher-thumbnail-archive.yml
+permissions:
+  contents: read
+jobs:
+  source-thumbnail:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify only archived exact original PNG
+        run: |
+          node --check scripts/pse-1434-publisher-thumbnail-archive.mjs
+          node scripts/pse-1434-publisher-thumbnail-archive.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1434-single-original-dpm-thumb-source
+          path: artifacts/pse-1434-thumb-exact/
+          retention-days: 30
+          if-no-files-found: warn
