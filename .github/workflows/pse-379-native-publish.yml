@@ -1,0 +1,52 @@
+name: PSE Joomla 379 exact RSS date native WordPress publication (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-379-native-publish.yml
+      - .pse-379-source-date-native-publish-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message != 'cms(pse): publish Joomla 379 using verified RSS date'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-379-native-readonly-preflight.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish Joomla 379 using verified RSS date'
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft database rollback before Joomla 379 native write
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Authorize only existing Joomla 379 WP Post date/status update
+        run: echo "PSE_379_FRESH_DB_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Guard source content/images and publish only WP 82119
+        run: node --check scripts/pse-379-native-readonly-preflight.mjs && node scripts/pse-379-native-readonly-preflight.mjs --apply
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-379-original-native-source-date
+          path: artifacts/pse-379-native-preflight/report.json
+          retention-days: 30
+          if-no-files-found: warn
