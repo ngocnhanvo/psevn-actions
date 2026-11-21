@@ -13,3 +13,5 @@ Signed Astro production release #40143412040 PASS. Re-run 9 target live Product/
 2026-11-21: Read-only QA after signed production deployment #44842527166 (Astro master 532fb8af); verify live native fertilizer catalog, 7 manuals, 390/768/1440 layout and featured images, including new Kali Phu My SOP. No CMS write, no build.
 
 2026-11-21: Repeat postdeploy fertilizer live QA with current SSR catalog pagination 16+16+13 and 45 native products instead of stale #product-grid/Load More selectors; footer CTA is conditional. Previous run #44850438039 failed stale tests; signed deploy unchanged. Read-only.
+
+2026-11-21: Revalidate Product SSR QA after source test change 085a70526a6ad8f54b76c4f6247193832a73c905; six Joomla categories require 45 unique published Products before Garden apply, and after eight exact native Garden Product slugs publish they require 53 unique across four SSR pages. This is a READ-ONLY test marker, not a CMS writer or production build.
