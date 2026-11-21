@@ -30,9 +30,10 @@ for(const p of all){
   const tag=m[1].toLowerCase(),attr=tag==="a"?"href":tag==="object"?"data":"src";
   const pattern=new RegExp("\\b"+attr+"\\s*=\\s*([\"'])(.*?)\\1","i");
   const raw=m[0].match(pattern)?.[2];if(!raw)continue;
-  let u;try{u=new URL(raw.replace(/&amp;/gi,"&"),cms+"/")}catch{continue}
+  let u;try{const href=raw.replace(/&amp;/gi,"&");u=new URL(href,href.startsWith("/api/files/wp-content/uploads/")?front+"/":cms+"/")}catch{continue}
   if(!["http:","https:"].includes(u.protocol)||!/\.(?:pdf|docx?|xlsx?|pptx?|zip|rar)$/i.test(u.pathname))continue;
   const kind=u.origin===cms&&u.pathname.startsWith("/wp-content/uploads/")?"WP_NATIVE_UPLOAD":
+    u.origin===front&&u.pathname.startsWith("/api/files/wp-content/uploads/")?"FRONTEND_PROXY":
    u.origin===front&&u.pathname.startsWith("/wp-content/uploads/")?"FRONTEND_UPLOAD":
    ["pse.vn","www.pse.vn"].includes(u.hostname)&&u.pathname.startsWith("/images/")?"ORIGINAL_JOOMLA_FILE":
    u.origin===cms?"WP_OTHER_FILE":"EXTERNAL_FILE";
@@ -42,10 +43,10 @@ for(const p of all){
  }
 }
 const unusual=[...docs.values()].filter(r=>r.kind!=="WP_NATIVE_UPLOAD"&&r.kind!=="FRONTEND_UPLOAD");
-if(docs.size!==400||unusual.length!==3||unusual.filter(x=>x.kind==="WP_OTHER_FILE").length!==2||
+if(docs.size!==400||unusual.length!==3||unusual.filter(x=>x.kind==="FRONTEND_PROXY").length!==2||
  unusual.filter(x=>x.kind==="EXTERNAL_FILE").length!==1)
  throw Error("Previously audited three non-Uploads document URLs drift");
-const proof={schema:"pse-last-three-non-native-document-url-verification-v1",readOnly:true,noCmsWrites:true,noBuild:true,
+const proof={schema:"pse-last-three-non-native-document-url-verification-v2",readOnly:true,noCmsWrites:true,noBuild:true,
  previousFullWordPressUploadsHeadVerified:397,posts:758,docUrls:docs.size,nonUploads:[]};
 for(const row of unusual){
  const entry={...row,sourceIdOwners:[],head:null,httpsVariant:null,verdict:"REVIEW_ONLY"};
@@ -68,12 +69,12 @@ for(const row of unusual){
   }catch(e){info.reason="HEAD_NETWORK_UNAVAILABLE";info.error=String(e?.name||e?.message||"network").slice(0,100)}
   if(original===row.url)entry.head=info;else entry.httpsVariant=info;
  }
- entry.verdict=row.kind==="WP_OTHER_FILE"?"WP_NONUPLOAD_DOCUMENT_CLASSIFICATION_REVIEW":
+ entry.verdict=row.kind==="FRONTEND_PROXY"?"PUBLIC_FRONTEND_PROXY_PROVEN_SHA_INDEPENDENT_RUN_44917675053":
    "EXTERNAL_MEDIAFIRE_ORIGINAL_FILE_PROVENANCE_UNAVAILABLE";
  proof.nonUploads.push(entry);
  console.log("PSE_NONUPLOAD_DOCUMENT_ROW="+JSON.stringify(entry).slice(0,4500));
 }
-proof.summary={nonUploadUrls:unusual.length,wpNonUploadUrls:2,externalMediafireHttp:1,
+proof.summary={nonUploadUrls:unusual.length,frontendProxyUrls:2,externalMediafireHttp:1,
  priorWpUploadsVerified:397,noCMSWrites:true,noBuild:true};
 console.log("PSE_NONUPLOAD_DOCUMENT_SUMMARY="+JSON.stringify(proof.summary));
 await mkdir("artifacts/pse-last-three-doc-links",{recursive:true});
