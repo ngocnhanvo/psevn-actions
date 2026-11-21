@@ -79,8 +79,8 @@ try{
     const target=await page.request.get(front+destination,{
       timeout:30000,maxRedirects:0,failOnStatusCode:false});
     const rendered=target.status()===200?await target.text():"";
-    const canonical=rendered.match(/<link\\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
-      rendered.match(/<link\\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+    const canonical=rendered.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+      rendered.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
     let canonicalOkay=false;
     if(canonical){
       const parsed=new URL(canonical,front);
