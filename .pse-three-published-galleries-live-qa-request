@@ -1,0 +1,1 @@
+Strict partial QA 354 images; record exact failed URL HTTP status/MIME/byte count if browser decoding fails (d9c16645). No build or CMS mutations.
