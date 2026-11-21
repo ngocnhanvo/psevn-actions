@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - scripts/pse-1640-original-media-mirror-proof.mjs
+      - scripts/pse-1640-original-publisher-tls-proof.py
       - .github/workflows/pse-1640-original-media-mirror-proof.yml
 permissions:
   contents: read
@@ -20,10 +21,14 @@ jobs:
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - run: node --check scripts/pse-1640-original-media-mirror-proof.mjs && node scripts/pse-1640-original-media-mirror-proof.mjs
+      - name: Probe source JPEG bytes through CA-verified strict and publisher-only legacy TLS
+        run: python3 -m py_compile scripts/pse-1640-original-publisher-tls-proof.py && python3 scripts/pse-1640-original-publisher-tls-proof.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pse-1640-source-publisher-media-evidence
-          path: artifacts/pse-1640-source-mirror/report.json
+          path: |
+            artifacts/pse-1640-source-mirror/report.json
+            artifacts/pse-1640-original-tls/report.json
           retention-days: 14
           if-no-files-found: ignore
