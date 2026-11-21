@@ -44,7 +44,7 @@ try{
  if(!Array.isArray(published)||published.length!==1||published[0].status!=="publish"||
  published[0].slug!==slug||published[0].date?.slice(0,10)!==day||
  !Array.isArray(categories)||categories.length!==1||categories[0].id!==1742||
- !published[0].categories?.includes(1742)||!published[0].categories?.includes(categories[0].parent))
+ !published[0].categories?.includes(1742)||Number(categories[0].parent)!==0)
  throw Error("Native original #1640 date/title/taxonomy publication missing");
  const post=published[0];
  if(!Number.isSafeInteger(Number(post.id))||!Number.isSafeInteger(Number(post.featured_media))||
