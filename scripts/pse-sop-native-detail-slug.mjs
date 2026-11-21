@@ -66,7 +66,19 @@ try{
   throw Error("SOP original Product/Media identity and contents changed; refusing slug edit");
  if(products.data.some(x=>x.id!==expected.id&&x.slug===nextSlug))
   throw Error("Target WordPress Product slug collision");
- const numeric=routes.data.filter(x=>
+ const allRoutes=[...routes.data];
+ for(let pageNo=2;pageNo<=20&&allRoutes.length===(pageNo-1)*100;pageNo++){
+  const page2=await api("/wp-json/wp/v2/chuyen-huong-link?context=edit&status=any&per_page=100&page="+pageNo+"&_fields=id,acf,status,route_priority");
+  if(page2.http!==200||!Array.isArray(page2.data))throw Error("WordPress redirect registry pagination failed");
+  allRoutes.push(...page2.data);
+  if(page2.data.length<100)break;
+ }
+ const numericCandidates=allRoutes.filter(x=>String(x.acf?.from_link||"").includes("san-pham")||String(x.acf?.to_link||"").includes("/ssr/products"));
+ console.log("PSE_SOP_NUMERIC_ROUTE_REGISTRY="+JSON.stringify({total:allRoutes.length,
+  related:numericCandidates.map(x=>({id:x.id,from:x.acf?.from_link,to:x.acf?.to_link,
+   type:x.acf?.type,matchType:x.acf?.match_type,enabled:x.acf?.enable,
+   status:x.status,priority:x.route_priority})).slice(0,35)}).slice(0,6800));
+ const numeric=allRoutes.filter(x=>
   x.acf?.from_link==="^/san-pham/([a-z0-9-]+-[0-9]{3,5})$"&&
   x.acf?.to_link==="/ssr/products/$1/detail"&&
   x.acf?.match_type==="Regex"&&
