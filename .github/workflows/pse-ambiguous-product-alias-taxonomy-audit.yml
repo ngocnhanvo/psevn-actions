@@ -1,0 +1,31 @@
+name: PSE five historical Product articles versus native categories (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-ambiguous-product-alias-taxonomy-audit.mjs
+      - .github/workflows/pse-ambiguous-product-alias-taxonomy-audit.yml
+permissions:
+  contents: read
+jobs:
+  taxonomy:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-ambiguous-product-alias-taxonomy-audit.mjs && node scripts/pse-ambiguous-product-alias-taxonomy-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-five-ambiguous-original-product-taxonomy
+          path: artifacts/pse-product-alias-taxonomy/report.json
+          retention-days: 14
+          if-no-files-found: ignore
