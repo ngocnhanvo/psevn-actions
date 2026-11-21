@@ -45,7 +45,15 @@ jobs:
             for (( batch=0; batch<count; batch++ )); do
               export PSE_GALLERY_ID="$gallery" PSE_GALLERY_BATCH="$batch"
               echo "PSE_SOURCE_RECOVERY_BEGIN gallery=$gallery batch=$batch of=$count"
-              node scripts/pse-photo-album-batch.mjs
+              log="$RUNNER_TEMP/pse-source-gallery-$gallery-$batch.log"
+              node scripts/pse-photo-album-batch.mjs | tee "$log"
+              # Never claim an album is complete merely because the process
+              # returned 0. Require the native verified end-of-batch marker.
+              if (( batch == count-1 )); then
+                grep -Eq 'PSE_GALLERY_BATCH=(COMPLETE|ALREADY_DONE)' "$log"
+              else
+                grep -Eq 'PSE_GALLERY_BATCH=(PARTIAL|ALREADY_DONE)' "$log"
+              fi
               echo "PSE_SOURCE_RECOVERY_BATCH_PASS gallery=$gallery batch=$batch"
             done
             echo "PSE_SOURCE_RECOVERY_ALBUM_PUBLISHED id=$gallery"
