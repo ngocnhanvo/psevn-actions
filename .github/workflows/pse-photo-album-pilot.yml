@@ -16,7 +16,7 @@ concurrency:
   # Source-only syntax/read-only source audits must never evict a pending
   # native WordPress CMS writer (GitHub allows only one pending per group).
   # Only exact owner-authorized photo CMS markers take the shared WP lock.
-  group: ${{ startsWith(github.event.head_commit.message, 'cms(pse): gallery ') || github.event.head_commit.message == 'cms(pse): import verified three-photo album pilot' && 'pse-wp-photo-import' || 'pse-wp-photo-ci-readonly' }}
+  group: ${{ (startsWith(github.event.head_commit.message, 'cms(pse): gallery ') || github.event.head_commit.message == 'cms(pse): import verified three-photo album pilot') && 'pse-wp-photo-import' || 'pse-wp-photo-ci-readonly' }}
   cancel-in-progress: false
 jobs:
   pilot:
