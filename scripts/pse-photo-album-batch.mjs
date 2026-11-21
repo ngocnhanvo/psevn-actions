@@ -88,6 +88,8 @@ try{
  });
  const links=[...new Set(info.links)];
  if(links.length<entry.countMin||links.length>350)throw Error("Unverified gallery count "+links.length+" for "+id);
+ if(bulkAuthorized&&links.length!==({1053:76,990:98,980:180,975:110})[id])
+  throw Error("Four-gallery original source count changed, refusing CMS writes "+id);
  if(offset>=links.length)throw Error("Batch offset exceeds gallery count");
  const items=links.map((url,n)=>{
   const u=new URL(url);
