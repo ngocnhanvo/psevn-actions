@@ -10,7 +10,10 @@ import {searchDate} from "./pse-legacy-search-date.mjs";
 
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const message=String(event.head_commit?.message||"").split("\n")[0];
-const apply=message==="cms(pse): recover five original Joomla photo-backed posts";
+const twoCohort=message==="audit(pse): verify two additional gallery-backed Joomla Posts"||
+ message==="cms(pse): recover two additional gallery-backed Joomla Posts";
+const apply=message==="cms(pse): recover five original Joomla photo-backed posts"||
+ message==="cms(pse): recover two additional gallery-backed Joomla Posts";
 const repository=process.env.GITHUB_REPOSITORY,ref=process.env.GITHUB_REF;
 if(repository!=="ngocnhanvo/psevn-actions"||ref!=="refs/heads/main")
  throw Error("Wrong PSE Actions main branch");
@@ -18,7 +21,10 @@ const statePath="docs/pse-legacy-migration-state.json";
 const state=JSON.parse(await readFile(statePath,"utf8"));
 if(state.schema!=="pse-legacy-article-migration-v1"||!state.backup_verified||state.tracker_issue!==3)
  throw Error("Original Joomla source and WordPress rollback guard failed");
-const targets=[
+const targets=twoCohort?[
+ {id:227,album:993,count:11,day:"2011-10-13",category:"tin-tong-hop"},
+ {id:229,album:995,count:11,day:"2011-10-25",category:"tin-tong-hop"}
+]:[
  {id:205,album:991,count:10,day:"2011-08-23",category:"tin-tong-hop"},
  {id:226,album:992,count:1,day:"2011-10-06",category:"tin-tong-hop"},
  {id:230,album:997,count:2,day:"2011-10-25",category:"hoat-dong-cong-doan-doan-tn-nu-cong"},
@@ -27,8 +33,20 @@ const targets=[
 ];
 const albumSlug=new Map([
  [991,"991-ngay-hoi-truyen-thong-2011"],[992,"992-mau-bao-bi"],
+ [993,"993-ngay-truyen-thong"],[995,"995-phu-nu-viet-nam"],
  [996,"996-hoc-van-hoa-doanh-nghiep"],[997,"997-truong-sa"]
 ]);
+// Six native Media have descriptive attachment slugs but full source-derived
+// stored filenames. Their unique Media ID/file linkage was independently
+// enumerated across all 3460 WP Media in audit #44867530822.
+const originalMediaByExactFilename=Object.freeze({
+ "pse-gallery-993-9559deff9296b224":81130,
+ "pse-gallery-993-f0e750ded9d81e11":81126,
+ "pse-gallery-993-0a21c2f4c3e191fe":81127,
+ "pse-gallery-993-5b540cadae19063d":81128,
+ "pse-gallery-993-5a97a6939da05ad7":81129,
+ "pse-gallery-995-32db1458721c1301":81072
+});
 if(targets.some(x=>{
  const a=state.articles[x.id];return a?.status!=="quarantined"&&a?.status!=="imported"||
  (!a?.source_url?.startsWith("https://www.pse.vn/"))||a?.group_hint!=="company"||
@@ -184,9 +202,19 @@ try{
      "&per_page=50&_fields=id,slug,mime_type,source_url,media_details");
    if(media.status!==200||!Array.isArray(media.data))throw Error("Authenticated native photo registry unavailable "+def.id);
    const files=media.data.filter(m=>m.slug===marker);
-   if(files.length!==1||files[0].mime_type!==(ext==="jpg"?"image/jpeg":"image/"+ext))
-    throw Error("Source original photo ID not unique in WP "+def.id+" marker="+marker);
-   const m=files[0],file=String(m.media_details?.file||"").replace(/^\/+/,"");
+   if(files.length>1)throw Error("Original WordPress photo search ambiguous "+marker);
+   let m=files[0]||null;
+   if(!m&&twoCohort&&Object.hasOwn(originalMediaByExactFilename,marker)){
+    const verifiedId=originalMediaByExactFilename[marker];
+    const byId=await readWp("/wp-json/wp/v2/media/"+verifiedId+
+      "?context=edit&_fields=id,slug,mime_type,source_url,media_details");
+    if(byId.status!==200||Number(byId.data?.id)!==verifiedId)
+     throw Error("Exact original WP Media ID no longer exists "+marker);
+    m=byId.data;
+   }
+   if(!m||m.mime_type!==(ext==="jpg"?"image/jpeg":"image/"+ext))
+    throw Error("Source original photo ID not proven in WP "+def.id+" marker="+marker);
+   const file=String(m.media_details?.file||"").replace(/^\/+/,"");
    if(file.split("/").at(-1)!==marker+"."+ext)throw Error("Source original WP filename mismatch "+def.id);
    // PSE custom Media REST returns a root-relative source_url. Resolve it
    // against the authenticated WP origin, never against the public Astro host.
@@ -275,9 +303,12 @@ try{
   report.entries.push(prepared);
   console.log("PSE_FIVE_ORIGINAL_POST_PREFLIGHT="+JSON.stringify(report.prepared.at(-1)));
  }
- if(report.entries.length!==5||report.entries.reduce((n,x)=>n+x.originalLinks.length,0)!==24)
-  throw Error("Incorrect five-Post guarded original content/image count");
- console.log("PSE_FIVE_ORIGINAL_POSTS_READONLY_PASS=5; images=24; date_created_exact=true");
+ const expectedPosts=twoCohort?2:5,expectedImages=twoCohort?22:24;
+ if(report.entries.length!==expectedPosts||
+  report.entries.reduce((n,x)=>n+x.originalLinks.length,0)!==expectedImages)
+  throw Error("Guarded Joomla article cohort/image count changed");
+ console.log("PSE_FIVE_ORIGINAL_POSTS_READONLY_PASS="+expectedPosts+
+  "; images="+expectedImages+"; date_created_exact=true; cohort="+(twoCohort?"two":"five"));
  if(apply){
   for(const e of report.entries){
    const excerpt=e.excerpt.length>=35?e.excerpt:e.title+". "+e.excerpt;
@@ -351,7 +382,8 @@ try{
   }
   state.runs=Number(state.runs||0)+1;
   await writeFile(statePath,JSON.stringify(state,null,2)+"\n","utf8");
-  console.log("PSE_FIVE_ORIGINAL_POSTS_CMS_PASS=5; mediaReused=24; createdDatesPreserved=true; migrationCheckpointReady=true");
+  console.log("PSE_FIVE_ORIGINAL_POSTS_CMS_PASS="+expectedPosts+
+   "; mediaReused="+expectedImages+"; createdDatesPreserved=true; migrationCheckpointReady=true; cohort="+(twoCohort?"two":"five"));
  }
 }finally{
  await mkdir("artifacts/pse-five-original-joomla-posts",{recursive:true});
