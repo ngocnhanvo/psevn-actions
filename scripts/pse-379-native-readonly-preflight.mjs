@@ -136,6 +136,18 @@ try{
   throw Error("Native draft omitted original text");
  if(native.images.length!==j.images.length||native.documents.length!==j.documents.length)
   throw Error("Native draft omits mandatory source images/documents");
+ // Exact source URL -> recorded native attachment URL, in original image order.
+ // Length-only parity is insufficient: do not publish five wrong lookalikes.
+ const strictMedia=j.images.map((original,i)=>({
+   index:i,original,expectedNative:state.media?.[original]?.url||null,actualNative:native.images[i]
+ }));
+ report.imageParity={sourceCount:strictMedia.length,fullyMapped:strictMedia.filter(x=>
+  x.expectedNative&&x.expectedNative===x.actualNative).length,
+  unresolved:strictMedia.filter(x=>!x.expectedNative||x.expectedNative!==x.actualNative)
+   .map(x=>({index:x.index,original:x.original,expectedNative:x.expectedNative,actualNative:x.actualNative}))};
+ console.log("PSE_379_MEDIA_MAP_PROOF="+JSON.stringify({sourceImages:strictMedia.length,
+  exactSourceURLNativeMatches:report.imageParity.fullyMapped,unresolved:report.imageParity.unresolved}));
+ if(report.imageParity.unresolved.length)throw Error("Original Joomla 379 media URL/native mapping not verified");
  const assets=Array.isArray(entry.assets)?entry.assets:[];
  for(const a of assets)if(!state.media?.[a]?.url||!wpHtml.includes(state.media[a].url))
   throw Error("Native draft missing verified legacy media mapping");
