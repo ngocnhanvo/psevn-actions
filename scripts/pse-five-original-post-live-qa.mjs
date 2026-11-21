@@ -27,11 +27,31 @@ if(wp===front)throw Error("CMS/frontend origin overlap");
 const browser=await chromium.launch({headless:true});
 const network=await request.newContext({timeout:50000});
 const report={schema:"pse-seven-original-posts-live-v1",readOnly:true,sourceBacked:true,front,rows:[],imageGet:[]};
+ // Retry idempotent transport failures/5xx only; leave 4xx and actual
+ // content/identity assertions strict. Never expose cookies or credentials.
+ const verifiedGet=async(url,options={})=>{
+  let last="unknown";
+  for(let attempt=1;attempt<=3;attempt++){
+   try{
+    const r=await network.get(url,options);
+    if(r.status()<500||attempt===3)return r;
+    last="HTTP"+r.status();
+    await r.dispose();
+   }catch(e){
+    if(!/ECONNRESET|ETIMEDOUT|socket hang up|Timeout/i.test(String(e?.message||e)))throw e;
+    last=String(e?.code||e?.name||"network");
+    if(attempt===3)throw Error("Read-only source/target GET retries exhausted "+new URL(url).pathname+" reason="+last);
+   }
+   console.warn("PSE_POST_QA_GET_RETRY path="+new URL(url).pathname+" attempt="+attempt+" reason="+last);
+   await new Promise(r=>setTimeout(r,attempt*1200));
+  }
+  throw Error("Read-only GET failed "+last);
+ };
 try{
  const originals=[];
  for(const t of targets){
   const source=state.articles[t.id].source_url;
-  const resp=await network.get(source,{timeout:50000});
+  const resp=await verifiedGet(source,{timeout:50000});
   if(resp.status()!==200)throw Error("Joomla original Article not available "+t.id);
   const raw=await resp.text();
   if(raw.length<200||raw.length>8000000)throw Error("Unsafe source body");
@@ -57,7 +77,7 @@ try{
    return "pse-gallery-"+album+"-"+createHash("sha256").update(full).digest("hex").slice(0,16)+"."+ext;
   });
   const slug=new URL(source).pathname.split("/").at(-1).replace(/^\d+-/,"").replace(/\.html$/i,"");
-  const r=await network.get(wp+"/wp-json/wp/v2/posts?slug="+encodeURIComponent(slug)+
+  const r=await verifiedGet(wp+"/wp-json/wp/v2/posts?slug="+encodeURIComponent(slug)+
     "&per_page=5&_fields=id,slug,status,date,acf,content,featured_media,categories");
   if(r.status()!==200)throw Error("Native public WP Post not visible "+t.id);
   const posts=await r.json();
@@ -115,7 +135,7 @@ try{
  }
  const checks=[];
  for(const x of report.imageGet){
-  const r=await network.get(x.url,{timeout:25000,failOnStatusCode:false});
+  const r=await verifiedGet(x.url,{timeout:25000,failOnStatusCode:false});
   checks.push({sourceId:x.sourceId,status:r.status(),mime:String(r.headers()["content-type"]||"")});
  }
  if(checks.some(x=>x.status!==200||!x.mime.toLowerCase().startsWith("image/")))
