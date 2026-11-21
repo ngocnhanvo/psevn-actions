@@ -1,0 +1,29 @@
+name: PSE exact missing Joomla source images archive evidence (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-missing-media-web-archive-readonly.mjs
+      - .github/workflows/pse-original-missing-media-web-archive-readonly.yml
+permissions:
+  contents: read
+jobs:
+  source-archive:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Strict verified-source archive discovery (NO CMS writes)
+        run: |
+          node --check scripts/pse-original-missing-media-web-archive-readonly.mjs
+          node scripts/pse-original-missing-media-web-archive-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-exact-original-missing-media-archive-evidence
+          path: artifacts/pse-original-archive/report.json
+          retention-days: 30
+          if-no-files-found: warn
