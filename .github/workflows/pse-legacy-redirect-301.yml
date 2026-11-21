@@ -4,7 +4,8 @@ on:
     branches: [main]
     paths:
       - .pse-legacy-redirect-301-trigger
-      - scripts/pse-legacy-redirect-301.mjs
+      # Use explicit scoped marker for WordPress-connected parity scans;
+      # source edits are verified by the next bounded audit/apply request.
       - .github/workflows/pse-legacy-redirect-301.yml
 permissions:
   contents: read
