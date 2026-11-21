@@ -49,7 +49,7 @@ try{
    const nameMatch=full.match(/(?:NPK\s*\d+\s*-\s*\d+\s*-\s*\d+(?:\+\d+S)?(?:\s*vi sinh)?(?:\s*\+TE)?|Đạm Phú Mỹ\s*\+\s*Kebo)/i);
    const crop=full.match(/Loại cây trồng\s*:\s*(.{3,90}?)(?:Đặt hàng\s*:|$)/i);
    const weight=full.match(/(?:trọng lượng tịnh|trọng lượng)\s*([\d.,]+\s*(?:kg|gr|g)\s*\/\s*túi)/i);
-   return{sourceImage:new URL(img.getAttribute("src"),location.href).href,
+   return{sourceImage:img.src,
     sourceAlt:String(img.alt||"").trim().slice(0,140),
     label:nameMatch?.[0]?.replace(/\s+/g," ").trim()||full.slice(0,110),
     crop:crop?.[1]?.trim()||null,packaging:weight?.[1]?.trim()||null,
