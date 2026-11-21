@@ -118,6 +118,27 @@ const mayRetryVerifiedDisclosure1670=(id,r)=>id==="1670" && r?.group_hint==="sha
  r.source_url==="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin/1670-20260403-cbtt-thu-moi-tai-lieu-dhdcd-va-thong-bao-de-cu-ung-cu-thanh-vien-hdqt-bks-nhiem-ky-2026-2031.html" &&
  !r.wp_id && r.status==="quarantined" && r.reason==="Unexpected oversized disclosure asset" &&
  !r.disclosure_four_pdf_retry_attempted;
+const VERIFIED_2025_REMOTE=Object.freeze({
+  "1641": {
+    "day": "2025-05-14",
+    "title": "“Miền Đông khúc ca tự hào” - Từ bản hùng ca lịch sử đến khát vọng phát triển tương lai",
+    "source": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1641-mien-dong-khuc-ca-tu-hao-tu-ban-hung-ca-lich-su-den-khat-vong-phat-trien-tuong-lai.html",
+    "media": {
+      "https://cdn.petrotimes.vn/stores/news_dataimages/2025/042025/29/08/in_article/421a759520250429080639.jpg?rt=20250429080724": 260790,
+      "https://cdn.petrotimes.vn/stores/news_dataimages/2025/042025/29/08/in_article/421a753420250429080637.jpg?rt=20250429080738": 168609,
+      "https://cdn.petrotimes.vn/stores/news_dataimages/2025/042025/29/08/421a761020250429080642.jpg?rt=20250429091645": 404803
+    }
+  },
+  "1651": {
+    "day": "2025-08-18",
+    "title": "Ứng dụng “Phú Mỹ”: Gia tăng tương tác và trải nghiệm cho bà con nông dân",
+    "source": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1651-ung-dung-phu-my-gia-tang-tuong-tac-va-trai-nghiem-cho-ba-con-nong-dan.html",
+    "media": {
+      "https://www.dpm.vn/public_folder/files_upload/202508/1755251403-ung-dung-phu-my-tich-diem-doi-qua-gia-tang-tuong-tac-va-trai-nghiem-cho-ba-con-nong-danpng.webp": 80656,
+      "https://www.dpm.vn/public_folder/files_upload/202508/1755251374-qr-de-tai-app-phu-mypng.webp": 54338
+    }
+  }
+});
 const candidates=financeScope
  ? ["1738","1148","337","199","1666","1650","1480","298","1137"].filter(id=>
   !state.articles[id]?.wp_id&&(!state.articles[id]?.finance_scope_terminal||
@@ -231,6 +252,12 @@ try{
     break;
   }
   const item=state.articles[id];
+  const proof2025=VERIFIED_2025_REMOTE[id];
+  const verified2025=!!proof2025&&item.remote_verified_proof_run===44851880729&&
+    item.source_url===proof2025.source&&item.source_created_date===proof2025.day&&
+    item.date_source==="joomla_com_search_created"&&item.date_precision==="day"&&
+    item.group_hint==="company";
+  if(proof2025&&!verified2025)throw Error("Unverified 2025 original Joomla source "+id);
   // Exact source 1137 is a title-only report without linked document.
   if(financeScope&&id==="1137"&&isFinance(id,item)&&item.finance_scope_terminal&&!item.finance_exception_attempted){
    item.finance_exception_attempted=true;
@@ -558,9 +585,15 @@ try{
      const rawText=(copy.textContent||"").replace(/\s+/g," ").trim();
      const assets=[...new Set([...copy.querySelectorAll("img[src],a[href]")].map(el=>el.getAttribute(el.tagName==="IMG"?"src":"href")).filter(x=>x&&
        /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?)(\?|#|$)/i.test(x)))];
-     return {title,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages,repairedDisclosureLink};
+     const sourceHeading=(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent||"").replace(/\s+/g," ").trim();
+     return {title,sourceHeading,html:copy.innerHTML.trim(),bodyText:rawText,chars:rawText.length,dates:expectedTitle?[]:rawDates,assets,omittedImages,repairedDisclosureLink};
     },{expectedTitle:inlineTitle,brokenImageUrl,disclosure1670:id==="1670"&&disclosureSource});
    }finally{await original.close()}
+   if(verified2025){
+    if(article.sourceHeading!==proof2025.title||article.chars<500)
+      throw Error("Joomla 2025 verified title or body unexpectedly changed "+id);
+    article.title=article.sourceHeading;
+   }
    if(id==="1670"&&disclosureSource){
     if(!article.repairedDisclosureLink||article.assets.length!==4||
        article.assets.includes("https://www.pse.vn/images/uy_quyen.pdf"))
@@ -651,6 +684,8 @@ try{
    // created days were independently verified in audit #40488038617.
    // Refuse any extra/different external URL; do not generalize to all hosts.
    const recoveredRemoteBySource={
+    "1641":{day:VERIFIED_2025_REMOTE["1641"].day,urls:Object.keys(VERIFIED_2025_REMOTE["1641"].media)},
+    "1651":{day:VERIFIED_2025_REMOTE["1651"].day,urls:Object.keys(VERIFIED_2025_REMOTE["1651"].media)},
     "1363":{
      day:"2019-07-16",
      urls:[
@@ -679,15 +714,19 @@ try{
    const verified1363=id==="1363" && item.source_url==="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1363-khai-truong-khu-luu-niem-cong-trinh-dau-khi-dau-tien-tai-viet-nam.html" &&
       item.remote_verified_proof_run===44835072340;
    const marketExternalCase=item.source_url.startsWith("https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/"+id+"-");
-   const remoteAllowed=!!verifiedRemote&&(verified1363||marketExternalCase)&&
+   const remoteAllowed=!!verifiedRemote&&(verified1363||marketExternalCase||verified2025)&&
       item.source_created_date===verifiedRemote.day&&
       item.date_source==="joomla_com_search_created"&&item.date_precision==="day";
    const expectedRemote=remoteAllowed?new Set(verifiedRemote.urls):new Set();
+   if(verified2025 && article.assets.filter(u=>expectedRemote.has(u)).length!==expectedRemote.size)
+     throw Error("Verified original 2025 media asset list changed "+id);
    if(!originalDate && remoteAllowed && verifiedRemote.day===item.source_created_date){
     // Dates are NOT guesses; independently evidenced original Joomla search result.
     originalDate=verifiedRemote.day+"T00:00:00";
     console.log("PSE_LEGACY_VERIFIED_MARKET_DAY="+id+"; day="+verifiedRemote.day);
    }
+   if(verified2025 && (!originalDate||originalDate.slice(0,10)!==proof2025.day))
+     throw Error("Verified 2025 source-created day did not survive import "+id);
    const actualRemote=article.assets.filter(u=>{
     try{const x=new URL(u);return !["pse.vn","www.pse.vn"].includes(x.hostname)}
     catch{return true}
@@ -779,6 +818,8 @@ try{
      if(ext==="pdf" && !buf.subarray(0,8).toString("latin1").startsWith("%PDF-"))
        throw Error("Original PDF signature invalid");
      if(expectedRemote.has(assetUrl)){
+      if(verified2025 && buf.length!==proof2025.media[assetUrl])
+        throw Error("2025 source photo byte size differs from independent audit "+id);
       // No HTML/placeholder/redirected fake assets are accepted as photos.
       const head=buf.subarray(0,16);
       const validImage=(["jpg","jpeg"].includes(ext)&&head.subarray(0,3).toString("hex")==="ffd8ff")||
@@ -789,7 +830,9 @@ try{
       if(!validImage||!String(download.headers()["content-type"]||"").toLowerCase().startsWith("image/"))
        throw Error("Verified external source image rejected id="+id);
       const finalUrl=new URL(download.url());
-      const hosts=verified1363?["petrovietnam.petrotimes.vn"]:["giacaphe.com","www.giacaphe.com"];
+      const hosts=verified1363?["petrovietnam.petrotimes.vn"]:
+       verified2025?[id==="1641"?"cdn.petrotimes.vn":"www.dpm.vn"]:
+       ["giacaphe.com","www.giacaphe.com"];
       if(!["http:","https:"].includes(finalUrl.protocol)||!hosts.includes(finalUrl.hostname))
        throw Error("Verified source asset redirected outside approved host");
      }
@@ -843,6 +886,16 @@ try{
        throw Error("Finance media source/local binary mismatch");
      }
      if(!obj?.id||!obj.source_url)throw Error("WP Media returned no URL");
+     if(verified2025){
+      const saved=new URL(obj.source_url,wp);
+      if(saved.origin!==wp||!saved.pathname.startsWith("/wp-content/uploads/"))
+       throw Error("2025 source media was not uploaded to local WordPress");
+      const actual=await context.request.get(saved.href,{timeout:90000});
+      if(actual.status()!==200 ||
+       createHash("sha256").update(await actual.body()).digest("hex")!==
+       createHash("sha256").update(buf).digest("hex"))
+       throw Error("2025 source/local uploaded media binary differs "+id);
+     }
      state.media[assetUrl]={id:obj.id,url:obj.source_url,sha256:createHash("sha256").update(buf).digest("hex"),
        ...(financeScope?{source_filename:decodeURIComponent(new URL(assetUrl).pathname.split("/").at(-1))}:{})};
      console.log("PSE_LEGACY_MEDIA=PASS; article="+id+"; media_id="+obj.id);

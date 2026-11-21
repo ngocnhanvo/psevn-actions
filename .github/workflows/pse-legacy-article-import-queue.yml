@@ -13,6 +13,7 @@ on:
       - "scripts/pse-legacy-attribution-clean.mjs"
       - "scripts/pse-legacy-migration-save.mjs"
       - "scripts/pse-legacy-migration-next.mjs"
+      - ".pse-legacy-import-2025-trigger"
   workflow_dispatch:
 permissions:
   contents: write
@@ -113,6 +114,23 @@ jobs:
                   raise SystemExit('Unverified source or status for '+id)
           print('PSE_TIN_TONG_HOP_5_SOURCE_SCOPE=PASS; exact_ids=5')
           PY
+      - name: Confirm independently proven 2025 Joomla originals before CMS writes
+        if: github.event_name == 'push' && github.event.head_commit.message == 'Nhập hai bài năm 2025 kèm ảnh gốc đã xác minh'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          s=json.load(open('docs/pse-legacy-migration-state.json',encoding='utf-8'))
+          expected={'1641':'2025-05-14','1651':'2025-08-18'}
+          waiting={id for id,row in s['articles'].items() if row['status'] in ('pending','media')}
+          if waiting!=set(expected) or s.get('backup_verified') is not True:raise SystemExit('Unverified or overlapping import queue')
+          for id,day in expected.items():
+              row=s['articles'][id]
+              if row.get('status')!='pending' or row.get('attempts')!=0 or row.get('group_hint')!='company' or row.get('wp_id') or row.get('remote_verified_proof_run')!=44851880729 or row.get('date_source')!='joomla_com_search_created' or row.get('source_created_date')!=day or row.get('date_precision')!='day' or not row.get('source_url','').startswith('https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/'+id+'-'):
+                  raise SystemExit('Source provenance mismatch '+id)
+          print('PSE_2025_EXTERNAL_SOURCE_PROOF=PASS; articles=1641,1651; original_images=5; independent_run=44851880729')
+          PY
       - name: Browser tools (container Chromium is pinned)
         if: env.PSE_IMPORT_WORK == 'yes'
         run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
@@ -159,6 +177,9 @@ jobs:
           PY
       - name: Fresh verified WordPress DB-only backup before source 1363 import
         if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Nhập bài dầu khí năm 2019 kèm bốn ảnh gốc'
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Fresh WordPress database backup for verified 2025 external media posts
+        if: env.PSE_IMPORT_WORK == 'yes' && github.event_name == 'push' && github.event.head_commit.message == 'Nhập hai bài năm 2025 kèm ảnh gốc đã xác minh'
         run: node scripts/pse-template-updraft-backup.mjs
       - name: Confirm local Updraft DB backup before first migration write
         if: env.PSE_IMPORT_WORK == 'yes'

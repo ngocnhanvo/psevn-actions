@@ -9751,11 +9751,14 @@
       "status": "quarantined"
     },
     "1641": {
-      "attempts": 1,
+      "attempts": 0,
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1641-mien-dong-khuc-ca-tu-hao-tu-ban-hung-ca-lich-su-den-khat-vong-phat-trien-tuong-lai.html",
-      "status": "quarantined"
+      "status": "pending",
+      "remote_verified_proof_run": 44851880729,
+      "source_created_date": "2025-05-14",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "1642": {
       "attempts": 1,
@@ -9864,11 +9867,14 @@
       "wp_id": 82562
     },
     "1651": {
-      "attempts": 1,
+      "attempts": 0,
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
       "source_url": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1651-ung-dung-phu-my-gia-tang-tuong-tac-va-trai-nghiem-cho-ba-con-nong-dan.html",
-      "status": "quarantined"
+      "status": "pending",
+      "remote_verified_proof_run": 44851880729,
+      "source_created_date": "2025-08-18",
+      "date_source": "joomla_com_search_created",
+      "date_precision": "day"
     },
     "1652": {
       "attempts": 1,
