@@ -101,7 +101,13 @@ try{
  .filter(x=>/\.(?:pdf|docx?|zip|xlsx?)(?:[?#]|$)/i.test(x||""))}));
  await local.close();
  const opening=normalized(j.text).slice(0,90),text=normalized(native.text);
- if(!text.includes(opening)||text.length<normalized(j.text).length*0.7)
+ const comparison={sourceChars:normalized(j.text).length,nativeChars:text.length,
+  sourceStart:normalized(j.text).slice(0,170),nativeStart:text.slice(0,170),
+  openingFound:!!opening&&text.includes(opening),
+  lengthRatio:normalized(j.text).length?Number((text.length/normalized(j.text).length).toFixed(3)):0};
+ report.textComparison=comparison;
+ console.log("PSE_379_NATIVE_TEXT_COMPARISON="+JSON.stringify(comparison));
+ if(!comparison.openingFound||comparison.lengthRatio<0.7)
   throw Error("Native draft omitted original text");
  if(native.images.length!==j.images.length||native.documents.length!==j.documents.length)
   throw Error("Native draft omits mandatory source images/documents");
