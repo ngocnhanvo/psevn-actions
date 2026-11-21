@@ -111,3 +111,11 @@ Initial pre-import snapshot: **PRODUCT PARITY PASS / LIVE PRODUCT QA PASS / POST
 - Date #379 source-only metadata probe [#44860392519](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44860392519) PASS as a **negative**: source HTTP200 but no genuine Joomla created/published metadata; HTTP Last-Modified reflects server response, not publication. Keep WP #82119 DRAFT. Five other ambiguous legacy Product-description aliases still lack exact Product identity; category description overlap alone is not sufficient; **27 historical Posts remain unresolved, do not fabricate original date/media**.
 - Current overall parity: **PARTIAL** due 27 source gaps, five ambiguous alias identities, four large photo albums pending original source-to-WP migration and unverified final43/apply/build. Never claim DONE from a trigger or read-only source-only PASS.
 
+
+
+
+## 2026-11-21 — 1640 publisher media mirror source diagnostics
+
+- Original Joomla article #1640 source URL `https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1640-nhung-giai-dieu-dep-ve-dong-nam-bo.html`, body 4427 chars, article title same as independent Vietnamese mirror `https://www.vietnam.vn/nhung-giai-dieu-dep-ve-dong-nam-bo`. Read-only audit [#44861958361](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44861958361) PASS: body token overlap 90.2%, exactly two matching editorial alt captions in original order, original PSE HTML still points to two `baobariavungtau.com.vn` images from May 2025; independent mirrored variants on `vstatic.vietnam.vn` HTTP200 JPEG (171037 and 208802 bytes).
+- **Original image fetch remains BLOCKED by third-party TLS unsafe-legacy-renegotiation (`EPROTO`)**, not by nonexistence; cannot compare image hashes, so original-to-mirror pixel equivalence remains UNVERIFIED and #1640 must NOT be automatically published or substituted without original authoritative photo proof. Source Post remains historical content gap. This mirror is evidence to investigate, **not permission to fabricate or waive mandatory source media**.
+- Original #379 has no dateCreated metadata (negative #44860392519), remains draft, and five ambiguous legacy Product-description URL mappings remain excluded. Keep full parity PARTIAL despite verified live gallery #989 and Post 301 progress.
