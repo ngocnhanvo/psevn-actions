@@ -21,6 +21,20 @@ const targets=threeOnly?allTargets.filter(x=>x.id!==975):allTargets;
 const totalImages=targets.reduce((n,x)=>n+x.images,0);
 const browser=await chromium.launch({headless:true});
 const report={schema:"pse-four-original-albums-live-v1",readOnly:true,scope:threeOnly?"published-three-only":"all-four",deferredSourceIds:threeOnly?[975]:[],front,rows:[],listing:[],sourceOracle:[],failures:[],imageGetChecks:[]};
+ // The public site occasionally times out at the network/navigation layer
+ // during FTPS releases. Retry navigation ONCE only for transport timeouts;
+ // never downgrade 404, content, original photo identity or pixel failures.
+ const visit=async(page,url)=>{
+  for(let attempt=1;attempt<=2;attempt++){
+   try{return await page.goto(url,{waitUntil:"domcontentloaded",timeout:65000})}
+   catch(error){
+    const reason=String(error?.message||error);
+    if(attempt===2||!/Timeout|ECONNRESET|ERR_CONNECTION_RESET|socket hang up/i.test(reason))throw error;
+    console.warn("PSE_GALLERY_NAV_RETRY="+JSON.stringify({path:new URL(url).pathname,attempt,reason:"transient-navigation"}));
+   }
+  }
+  throw Error("Public gallery navigation failed");
+ };
 try{
  // Read and extract an independent original Joomla URL/order oracle, separate
  // from the importer manifests and WordPress. Literal source hrefs determine
@@ -61,7 +75,7 @@ try{
   const wpRequests=[];
   page.on("request",r=>{try{if(new URL(r.url()).origin===wp)wpRequests.push("leak")}catch{}});
   for(const target of targets){
-   const response=await page.goto(front+"/"+target.slug,{waitUntil:"domcontentloaded",timeout:65000});
+   const response=await visit(page,front+"/"+target.slug);
    if(response?.status()!==200)throw Error("Gallery detail HTTP "+response?.status()+" "+target.slug);
    const images=page.locator("#article-content img");
    const count=await images.count();
@@ -127,7 +141,7 @@ try{
     if(visited.has(url.href))continue;
     if(visited.size>=20)throw Error("Too many archive pages");
     visited.add(url.href);
-    const response=await page.goto(url.href,{waitUntil:"domcontentloaded",timeout:65000});
+    const response=await visit(page,url.href);
     if(response?.status()!==200)throw Error("Gallery category listing HTTP "+response?.status());
     for(const a of await page.locator("#posts-grid .pse-media-card a[href]").all()){
       found.add(await a.getAttribute("href"));
