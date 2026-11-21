@@ -10,6 +10,7 @@ on:
       - PSE original Phu My Garden eight native WordPress Products (GUARDED)
       - PSE native WordPress Garden eight public Product rewrite repair (GUARDED)
       - PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)
+      - PSE Joomla 1640 two verified original publisher archive photos native WP (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -44,6 +45,10 @@ jobs:
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): redirect exact Joomla Garden 1639 to published Garden category')
+           ||
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE Joomla 1640 two verified original publisher archive photos native WP (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): restore Joomla 1640 original article with two exact publisher archives')
          ))
       )
     runs-on: ubuntu-latest
@@ -128,6 +133,9 @@ jobs:
           elif (name=="PSE Joomla 1639 exact Garden family redirect native WP (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect exact Joomla Garden 1639 to published Garden category"):
               cohort="SOURCE_PROVEN_GARDEN_1639_ALIAS"
+          elif (name=="PSE Joomla 1640 two verified original publisher archive photos native WP (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): restore Joomla 1640 original article with two exact publisher archives"):
+              cohort="SOURCE_PROVEN_ORIGINAL_1640_TWO_PUBLISHER_ARCHIVES"
           else:
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_UNAPPROVED_CMS_COHORT")
           url=f"https://api.github.com/repos/ngocnhanvo/psevn-actions/actions/runs/{run['id']}/jobs?per_page=100"
