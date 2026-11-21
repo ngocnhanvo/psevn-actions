@@ -46,7 +46,7 @@ try{
   const r=await fetch(path,{method,credentials:"same-origin",
    headers:{"X-WP-Nonce":nonce,Accept:"application/json",...(data?{"Content-Type":"application/json"}:{})},
    ...(data?{body:JSON.stringify(data)}:{})});
-  return{http:r.status,data:await r.json().catch(()=>null)};
+  return{http:r.status,pages:Number(r.headers.get("X-WP-TotalPages")||1),data:await r.json().catch(()=>null)};
  },{path,method,data,nonce});
  const [p,products,routes,media]=await Promise.all([
   api("/wp-json/wp/v2/product/"+expected.id+"?context=edit&_fields=id,slug,title,status,date,excerpt,content,product_cat,featured_media"),
@@ -67,7 +67,8 @@ try{
  if(products.data.some(x=>x.id!==expected.id&&x.slug===nextSlug))
   throw Error("Target WordPress Product slug collision");
  const allRoutes=[...routes.data];
- for(let pageNo=2;pageNo<=20&&allRoutes.length===(pageNo-1)*100;pageNo++){
+ if(!Number.isInteger(routes.pages)||routes.pages<1||routes.pages>20)throw Error("Unbounded WordPress routing registry");
+ for(let pageNo=2;pageNo<=routes.pages;pageNo++){
   const page2=await api("/wp-json/wp/v2/chuyen-huong-link?context=edit&status=any&per_page=100&page="+pageNo+"&_fields=id,acf,status,route_priority");
   if(page2.http!==200||!Array.isArray(page2.data))throw Error("WordPress redirect registry pagination failed");
   allRoutes.push(...page2.data);
