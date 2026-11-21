@@ -1,0 +1,71 @@
+name: PSE two further original gallery-backed Joomla Posts guarded recovery
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-two-original-joomla-posts-trigger
+permissions:
+  contents: read
+jobs:
+  source-only:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'audit(pse): verify two additional gallery-backed Joomla Posts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Preflight exact Joomla 227 and 229 dates and twenty-two original WP Media records
+        run: node --check scripts/pse-five-joomla-original-gallery-post-recovery.mjs && node scripts/pse-five-joomla-original-gallery-post-recovery.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-two-original-joomla-posts-readonly
+          path: artifacts/pse-five-original-joomla-posts/report.json
+          if-no-files-found: ignore
+          retention-days: 21
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): recover two additional gallery-backed Joomla Posts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    concurrency:
+      group: pse-wp-photo-import
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Publish only two verified original Joomla articles 227 and 229
+        run: node --check scripts/pse-five-joomla-original-gallery-post-recovery.mjs && node scripts/pse-five-joomla-original-gallery-post-recovery.mjs
+      - name: Save source-authentic importer checkpoint only after both Posts pass
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node --check scripts/pse-legacy-migration-save.mjs && node scripts/pse-legacy-migration-save.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-two-original-joomla-posts-publication
+          path: artifacts/pse-five-original-joomla-posts/report.json
+          if-no-files-found: ignore
+          retention-days: 21
