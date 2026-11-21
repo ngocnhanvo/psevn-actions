@@ -48,17 +48,25 @@ try{
   // (which also includes pager and unrelated article links after the real post).
   const root=document.querySelector('[itemprop="articleBody"]');
   if(!root)throw Error("Original Joomla articleBody missing");
+  // Native importer excludes Joomla's related-articles tail, which is NOT
+  // part of the author-owned article content. Preserve all preceding content.
+  const clean=root.cloneNode(true);
+  const tail=clean.querySelector(".extranews_box");
+  if(tail && !/các bài viết khác/i.test(tail.textContent||""))
+   throw Error("Unrecognized related article box");
+  if(tail)tail.remove();
+  clean.querySelectorAll(".extranews_separator").forEach(x=>x.remove());
   const txt=s=>String(s||"").replace(/\s+/g," ").trim();
   return{title:txt(document.querySelector(".item-page h1,.item-page h2,h1")?.textContent),
-   text:txt(root?.textContent),
+   text:txt(clean.textContent),
    rootLabel:root?.getAttribute("itemprop")||root?.className||root?.tagName,
    hasExplicitArticleBody:!!document.querySelector(".item-page [itemprop=articleBody]"),
    sections:[...(root?.children||[])].slice(0,22).map((c,i)=>({
     index:i,tag:c.tagName,className:String(c.className||"").slice(0,90),
     bodyChars:txt(c.textContent).length,start:txt(c.textContent).slice(0,140)
    })),
-   images:[...(root?.querySelectorAll("img[src]")||[])].map(x=>new URL(x.getAttribute("src"),document.baseURI).href),
-   documents:[...(root?.querySelectorAll("a[href]")||[])].map(x=>x.href).filter(x=>/\.(?:pdf|docx?|zip|xlsx?)(?:[?#]|$)/i.test(x))};
+   images:[...clean.querySelectorAll("img[src]")].map(x=>new URL(x.getAttribute("src"),document.baseURI).href),
+   documents:[...clean.querySelectorAll("a[href]")].map(x=>x.href).filter(x=>/\.(?:pdf|docx?|zip|xlsx?)(?:[?#]|$)/i.test(x))};
  });
  await original.close();
  if(j.text.length<130||normalized(j.title)!==normalized(found[0].title))
