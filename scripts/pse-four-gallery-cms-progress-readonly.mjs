@@ -2,7 +2,8 @@
  * four-original-gallery importer runs. READ ONLY. Pagination can move during
  * uploads: numbers are observations, not final parity or permission to build.
  */
-import {chromium} from "playwright";
+import {chromium,request} from "playwright";
+import {createHash} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 if(process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions")
  throw Error("Wrong PSE Actions repo");
@@ -21,11 +22,39 @@ if(url.protocol!=="https:"||url.username||url.password||url.port||url.search||ur
 const origin=url.origin;
 const report={schema:"pse-four-gallery-native-progress-readonly-v1",readOnly:true,
  wordpressWrites:0,astroBuilds:0,observedAt:new Date().toISOString(),
- paginationMayChangeDuringConcurrentImport:true,mediaPagesRead:0,wpMediaTotal:null,
+ paginationMayChangeDuringConcurrentImport:true,stableAscendingMediaId:true,mediaPagesRead:0,wpMediaTotal:null,
  mediaRecordsObserved:0,albums:[],errors:[]};
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1366,height:820}});
+const source=await request.newContext({timeout:45000});
+const inert=await browser.newContext({javaScriptEnabled:false});
+await inert.route("**/*",route=>route.abort());
 try{
+ // An independent original URL -> filename oracle distinguishes exact
+ // expected source media from merely similar gallery-id-prefixed files.
+ const expectedByAlbum=new Map();
+ const sourcePage=await inert.newPage();
+ for(const a of albums){
+  const orig="https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/"+a.slug+".html";
+  const r=await source.get(orig,{timeout:45000,maxRedirects:2});
+  if(r.status()!==200)throw Error("Original gallery HTTP "+r.status()+" id="+a.id);
+  const html=await r.text();
+  if(html.length<250||html.length>8000000)throw Error("Invalid gallery source body");
+  await sourcePage.setContent('<base href="'+orig+'">'+html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,""),{waitUntil:"domcontentloaded",timeout:25000});
+  const urls=await sourcePage.evaluate(()=>{
+   const root=document.querySelector(".item-page [itemprop=articleBody],.item-page,article,.blog")||document.body;
+   return [...new Set([...root.querySelectorAll("a[href]")].map(e=>e.href).filter(h=>{
+    try{const u=new URL(h);return u.hostname==="www.pse.vn"&&u.pathname.startsWith("/images/gallery/")&&/\.(?:jpe?g|png|webp)$/i.test(u.pathname)}catch{return false}
+   }))];
+  });
+  if(urls.length!==a.expected)throw Error("Original gallery image count changed id="+a.id+" got="+urls.length);
+  const names=urls.map(u=>"pse-gallery-"+a.id+"-"+createHash("sha256").update(u).digest("hex").slice(0,16)+"."+new URL(u).pathname.split(".").at(-1).toLowerCase().replace("jpeg","jpg"));
+  if(new Set(names).size!==a.expected)throw Error("Original media filename collision");
+  expectedByAlbum.set(a.id,new Set(names));
+ }
+ await inert.close();
+ report.sourceOracleVerified=true;
+ report.observedAt=new Date().toISOString();
  await page.goto(origin+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
  if(await page.locator("#user_login").count()){
   await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
@@ -56,15 +85,15 @@ try{
    total:Number(r.headers.get("X-WP-Total")||0),data:await r.json().catch(()=>null)};
  },{path,nonce});
  const byId=new Map(albums.map(x=>[x.id,{...x,observedMedia:0,
-  exactFilenameCount:0,duplicateFilenames:[],sampleMediaIds:[],publishedPost:null}]));
- const filenames=new Map();
- let pagesExpected=null;
+  exactFilenameCount:0,duplicateFilenames:[],unexpectedFilenames:[],missingFilenames:[],sampleMediaIds:[],publishedPost:null}]));
+ const filenames=new Map(), seenMediaIds=new Set();
+ let pagesExpected=null,lastMediaId=0;
  for(let n=1;n<=65;n++){
   let data,last="unavailable";
   for(let attempt=1;attempt<=3;attempt++){
    try{
     data=await get("/wp-json/wp/v2/media?context=edit&per_page=100&page="+n+
-     "&_fields=id,slug,mime_type,media_details");
+     "&orderby=id&order=asc&_fields=id,slug,mime_type,media_details");
     if(data.http===200||data.http<500)break;
     last="HTTP "+data.http;
    }catch(e){last=String(e?.name||"network").slice(0,80)}
@@ -77,16 +106,22 @@ try{
   report.mediaPagesRead++;
   report.mediaRecordsObserved+=data.data.length;
   for(const media of data.data){
+   const mediaId=Number(media.id);
+   if(!Number.isSafeInteger(mediaId)||mediaId<1)throw Error("Unexpected native media ID");
+   if(seenMediaIds.has(mediaId))continue;
+   if(mediaId<lastMediaId)throw Error("Native Media response ignored ascending ID order");
+   lastMediaId=mediaId;seenMediaIds.add(mediaId);
    const basename=String(media.media_details?.file||"").split("/").at(-1);
    const m=basename.match(/^pse-gallery-(1053|990|980|975)-[0-9a-f]{16}\.(?:jpe?g|png|webp)$/i);
    if(!m)continue;
    const id=Number(m[1]),row=byId.get(id);
    row.observedMedia++;
+   if(!expectedByAlbum.get(id).has(basename)){row.unexpectedFilenames.push(basename);continue;}
    if(!filenames.has(basename))filenames.set(basename,[]);
    filenames.get(basename).push(Number(media.id));
    if(row.sampleMediaIds.length<5)row.sampleMediaIds.push(Number(media.id));
   }
-  if(n>=data.pages)break;
+  if(n>=pagesExpected)break;
  }
  for(const [filename,ids] of filenames){
   const id=Number(filename.match(/^pse-gallery-(\d+)-/)[1]);
@@ -106,21 +141,24 @@ try{
     throw Error("WordPress Post source identity mismatch "+row.id);
    row.publishedPost={id:post.id,status:post.status};
   }
-  row.observedComplete=row.exactFilenameCount>=row.expected &&
+  row.missingFilenames=[...expectedByAlbum.get(row.id)].filter(x=>!filenames.has(x));
+  row.observedComplete=row.exactFilenameCount===row.expected && row.unexpectedFilenames.length===0 &&
    row.duplicateFilenames.length===0&&row.publishedPost?.status==="publish";
   report.albums.push(row);
-  console.log("PSE_FOUR_GALLERY_PROGRESS_ROW="+JSON.stringify(row));
+  console.log("PSE_FOUR_GALLERY_PROGRESS_ROW="+JSON.stringify({...row,missingFilenames:undefined,missingCount:row.missingFilenames.length}));
  }
  report.totalObservedOriginalPhotos=report.albums.reduce((n,r)=>n+r.exactFilenameCount,0);
  report.expectedOriginalPhotos=464;
+ report.uniqueMediaIdsObserved=seenMediaIds.size;
+ report.finishedAt=new Date().toISOString();
  console.log("PSE_FOUR_GALLERY_PROGRESS_SUMMARY="+JSON.stringify({
   mediaPagesRead:report.mediaPagesRead,wordpressMediaTotal:report.wpMediaTotal,
   observedOriginalPhotos:report.totalObservedOriginalPhotos,expectedOriginalPhotos:464,
   albums:report.albums.map(x=>({id:x.id,observed:x.exactFilenameCount,expected:x.expected,
-    published:x.publishedPost?.status==="publish"})),readOnly:true,notFinalSourceParity:true
+    published:x.publishedPost?.status==="publish",missing:x.missingFilenames.length,duplicateFilenames:x.duplicateFilenames.length,unexpectedFilenames:x.unexpectedFilenames.length})),sourceOracleVerified:true,stableAscendingMediaId:true,uniqueMediaIdsObserved:seenMediaIds.size,observedAt:report.observedAt,finishedAt:report.finishedAt,readOnly:true,notFinalSourceParity:true
  }));
 }finally{
  await mkdir("artifacts/pse-four-gallery-progress",{recursive:true});
  await writeFile("artifacts/pse-four-gallery-progress/report.json",JSON.stringify(report,null,2)+"\n");
- await browser.close();
+ await source.dispose();await inert.close().catch(()=>{});await browser.close();
 }
