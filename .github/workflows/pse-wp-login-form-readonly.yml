@@ -1,0 +1,53 @@
+name: PSE WordPress login form inspection (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-wp-login-form-readonly.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - name: Inspect public login HTML without submitting credentials
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          import urllib.request,urllib.error,os,re,json
+          from urllib.parse import urlparse
+          lines=[x.strip() for x in os.environ.get('ENV_FILE','').splitlines()]
+          val=[x.split('=',1)[1].strip().strip('"').strip("'") for x in lines if x.startswith('WC_URL=')]
+          if len(val)!=1: raise SystemExit('WP origin not uniquely configured')
+          u=urlparse(val[0])
+          if u.scheme!='https' or not u.hostname or u.path not in ('','/') or u.username or u.password:
+              raise SystemExit('Unexpected WordPress origin')
+          class Form(HTMLParser):
+              def __init__(self): super().__init__();self.in_form=False;self.fields=[];self.text=[];self.errors=[]
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='form' and a.get('id')=='loginform':self.in_form=True
+                  if self.in_form and tag=='input':
+                      self.fields.append({'name':a.get('name','')[:48],'id':a.get('id','')[:48],'type':a.get('type','text')[:16]})
+                  if tag in ('iframe',) and 'captcha' in str(attrs).lower():self.errors.append('captcha_iframe')
+              def handle_endtag(self,tag):
+                  if tag=='form':self.in_form=False
+              def handle_data(self,data):
+                  if data.strip():self.text.append(data.strip())
+          try:
+              resp=urllib.request.urlopen(urllib.request.Request(u.scheme+'://'+u.hostname+'/wp-login.php',headers={'User-Agent':'Mozilla/5.0','Accept':'text/html'}),timeout=20)
+              html=resp.read(150000).decode('utf-8','replace')
+              obj=Form();obj.feed(html)
+              text=' '.join(obj.text)
+              expression=re.search(r'(\\d+)\\s*([+\\-x×*])\\s*(\\d+)\\s*(?:=|\\?)',text)
+              print('PSE_LOGIN_SURFACE='+json.dumps({'status':resp.status,'path':urlparse(resp.url).path,'hasLoginForm':bool(obj.fields),
+                 'fields':obj.fields,'arithmeticExpressionPresent':bool(expression),
+                 'captchaKeywordPresent':'captcha' in html.lower(),'challengeIframe':bool(obj.errors),
+                 'visibleTextBytes':len(text)},ensure_ascii=False))
+          except urllib.error.HTTPError as e:print('PSE_LOGIN_SURFACE='+json.dumps({'http':e.code}));raise
+          PY
