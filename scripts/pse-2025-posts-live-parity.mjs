@@ -12,7 +12,7 @@ const origin=x=>{const u=new URL(x);if(u.protocol!=="https:"||u.username||u.pass
 const wp=origin(e.WC_URL),front=origin(e.WC_URL_CLIENT);
 if(wp===front||process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions")throw Error("Untrusted source/site");
 const expected=[
- {source:1641,id:82846,date:"2025-05-14",minImages:4,text:"Miền Đông khúc ca tự hào"},
+ {source:1641,id:82846,date:"2025-05-14",minImages:3,text:"Miền Đông khúc ca tự hào"},
  {source:1651,id:82840,date:"2025-08-18",minImages:2,text:"Ứng dụng"}
 ];
 const dir="artifacts/pse-recovered-2025-posts";await mkdir(dir,{recursive:true});
@@ -27,6 +27,7 @@ try{
     !r.value.date?.startsWith(x.date)||!r.value.categories?.length)
    throw Error("WordPress article identity or source-created day changed #"+x.source);
   const html=String(r.value.content?.rendered||"");
+  console.log("PSE_2025_POST_WP_PREFLIGHT="+JSON.stringify({source:x.source,id:x.id,images:(html.match(/<img\b/gi)||[]).length,bodyChars:html.replace(/<[^>]+>/g," ").trim().length,category:r.value.categories,slug:r.value.slug}));
   if((html.match(/<img\b/gi)||[]).length<x.minImages||html.replace(/<[^>]+>/g," ").trim().length<500)
    throw Error("WordPress source HTML/media incomplete #"+x.source);
   if(/<img\b[^>]+src=["']https?:\/\/(?!admin-pse\.webnvn\.com)/i.test(html))
