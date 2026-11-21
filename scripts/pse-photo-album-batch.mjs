@@ -200,8 +200,26 @@ try{
   const pathParts=nativeFile.split("/");
   if(pathParts.some(x=>!x||x==="."||x===".."||!/^[-a-z0-9._]+$/i.test(x)))throw Error("Invalid WP Media path");
   const native=wp+"/wp-content/uploads/"+nativeFile;
-  const head=await network.head(native,{timeout:40000});
-  if(!head.ok()||!(head.headers()["content-type"]||"").startsWith("image/"))throw Error("WordPress gallery image unavailable");
+  // Original images were already verified by native Media read-back.
+  // An occasional upstream HEAD ECONNRESET after successful upload is not
+  // evidence of absent bytes. Retry only this idempotent GET-like probe.
+  let nativeMediaVerified=false;
+  for(let attempt=1;attempt<=3;attempt++){
+   try{
+    const head=await network.head(native,{timeout:30000,maxRedirects:2});
+    if(head.ok()&&(head.headers()["content-type"]||"").toLowerCase().startsWith("image/")){
+     nativeMediaVerified=true;break;
+    }
+    if(head.status()<500)throw Error("Native Media HEAD rejected HTTP "+head.status());
+   }catch(e){
+    if(attempt===3)throw Error("Native Media HEAD transient failures exhausted sourceIndex="+item.index+
+      " cause="+String(e?.code||e?.name||"network").slice(0,40));
+    console.warn("PSE_GALLERY_NATIVE_HEAD_RETRY sourceIndex="+item.index+" attempt="+attempt+
+      " reason="+String(e?.code||e?.name||"network").slice(0,40));
+   }
+   if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*750));
+  }
+  if(!nativeMediaVerified)throw Error("WordPress gallery image HEAD never confirmed sourceIndex "+item.index);
   item.native=native;
   console.log("PSE_GALLERY_IMPORTED id="+id+" sourceIndex="+item.index+" wpMediaId="+item.id+" bytesVerified=true");
  };
