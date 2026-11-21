@@ -1,0 +1,56 @@
+name: PSE Joomla 204 original three archive-backed publisher images native WP (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-204-three-original-archive-native-import.mjs
+      - .github/workflows/pse-204-three-original-archive-native-import.yml
+      - .pse-204-three-original-archive-import-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  syntax:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): restore Joomla 204 original article with three exact publisher archives'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-204-three-original-archive-native-import.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore Joomla 204 original article with three exact publisher archives'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verified fresh Updraft WordPress DB rollback before original #204 writes
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Authorize exact Joomla #204 three archive media after backup success
+        run: echo "PSE_204_FRESH_DB_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Source owned exact three original JPEGs and one native Post (idempotent)
+        run: node --check scripts/pse-204-three-original-archive-native-import.mjs && node scripts/pse-204-three-original-archive-native-import.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-204-three-publisher-archive-wordpress
+          path: artifacts/pse-original-204-native/report.json
+          retention-days: 30
+          if-no-files-found: warn
