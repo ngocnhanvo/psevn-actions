@@ -1,0 +1,57 @@
+name: PSE 2012 reviewed financial report native Stockbiz PDF repair (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-298-stockbiz-native-cms-repair.mjs
+      - .github/workflows/pse-298-stockbiz-native-cms-repair.yml
+      - .pse-298-stockbiz-native-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message != 'cms(pse): restore 2012 reviewed PSE PDF via verified Stockbiz alternative'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: node --check scripts/pse-298-stockbiz-native-cms-repair.mjs
+  apply:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore 2012 reviewed PSE PDF via verified Stockbiz alternative'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh backup before scoped native finance Post write
+        shell: bash
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_298_FRESH_UPDRAFT_DB_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Source SHA and exact native Post 82548 repair
+        run: node --check scripts/pse-298-stockbiz-native-cms-repair.mjs && node scripts/pse-298-stockbiz-native-cms-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-298-2012-reviewed-stockbiz-native-repair
+          path: artifacts/pse-298-reviewed-native/report.json
+          retention-days: 21
+          if-no-files-found: warn
