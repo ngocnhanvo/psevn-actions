@@ -1,0 +1,40 @@
+name: PSE two verified Joomla Posts register native WordPress build revisions
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-2025-post-build-log-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  native-post-revision:
+    if: "github.repository == 'ngocnhanvo/psevn-actions' && github.event.head_commit.message == 'repair(pse): reconcile two verified WordPress Post build revisions'"
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Verify exactly two original Joomla Post IDs and verified PHP patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq '44853005827' .pse-2025-post-build-log-request
+          node --check scripts/pse-2025-post-rest-dirty-reconcile.mjs
+          test -n "$ENV_FILE"
+          test -n "$WP_ADMIN_USERNAME" && test -n "$WP_ADMIN_PASSWORD"
+      - name: Use pinned Playwright Chromium driver
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Register native Post saved revisions; preserve original Joomla content and dates
+        run: node scripts/pse-2025-post-rest-dirty-reconcile.mjs
