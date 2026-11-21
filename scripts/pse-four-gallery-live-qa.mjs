@@ -85,7 +85,25 @@ try{
     const img=images.nth(i);await img.scrollIntoViewIfNeeded();
     await img.evaluate(async e=>{if(!e.complete)await new Promise(resolve=>{
       e.addEventListener("load",resolve,{once:true});e.addEventListener("error",resolve,{once:true});setTimeout(resolve,12000)})});
-    if(!(await img.evaluate(e=>e.complete&&e.naturalWidth>0)))throw Error("Gallery image pixel decode failed "+target.id+" index "+i);
+    if(!(await img.evaluate(e=>e.complete&&e.naturalWidth>0))){
+     // Preserve original browser evidence. Probe the exact same public URL,
+     // not a replacement asset. A successful network probe alone is NOT PASS.
+     const state=await img.evaluate(e=>({src:e.src,currentSrc:e.currentSrc,complete:e.complete,naturalWidth:e.naturalWidth,loading:e.loading}));
+     const u=new URL(state.currentSrc||state.src,front);
+     const diagnostic={id:target.id,width,index:i,path:u.pathname,complete:state.complete,naturalWidth:state.naturalWidth,loading:state.loading,http:null,mime:null};
+     if(u.origin===front&&u.href===srcs[i]){
+      try{
+       const r=await page.request.get(u.href,{timeout:35000,failOnStatusCode:false,maxRedirects:0});
+       diagnostic.http=r.status();
+       diagnostic.mime=String(r.headers()["content-type"]||"");
+       diagnostic.bytes=(await r.body()).length;
+       await r.dispose();
+      }catch(e){diagnostic.networkError=String(e?.code||e?.name||"network")}
+     }
+     report.failures.push(diagnostic);
+     console.log("PSE_GALLERY_PIXEL_DIAGNOSTIC="+JSON.stringify(diagnostic));
+     throw Error("Gallery image pixel decode failed "+target.id+" index "+i);
+    }
    }
    await images.first().click();
    const dialog=page.locator("[data-pse-gallery-dialog]");
