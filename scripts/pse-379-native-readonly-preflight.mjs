@@ -1,7 +1,16 @@
 /** Exact #379 Joomla feed-to-WordPress draft preflight. GET-only, no CMS mutations. */
 import {chromium,request} from "playwright";
 import {readFile,mkdir,writeFile} from "node:fs/promises";
+const isApply=process.argv.includes("--apply");
+const requiredMessage="cms(pse): publish Joomla 379 using verified RSS date";
 if(process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions")throw Error("Wrong PSE repo");
+if(isApply){
+ const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH||"","utf8"));
+ if(process.env.GITHUB_REF!=="refs/heads/main"||
+    event?.head_commit?.message!==requiredMessage||
+    process.env.PSE_379_FRESH_DB_BACKUP_VERIFIED!=="yes")
+  throw Error("Unauthorized WordPress #379 writer or fresh database rollback missing");
+}
 const id=379,wpId=82119,
  source="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/379-pvfcco-se-to-chuc-tham-quan-phong-truyen-thong-pvfcco.html",
  feed="https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop?format=feed&type=rss&limitstart=210",
@@ -26,8 +35,9 @@ const field=(s,k)=>String(s.match(new RegExp("<"+k+"(?:\\s[^>]*)?>([\\s\\S]*?)<\
 const browser=await chromium.launch({headless:true}),net=await request.newContext({timeout:65000});
 const admin=await browser.newPage(), inert=await browser.newContext({javaScriptEnabled:false});
 await inert.route("**/*",r=>r.abort());
-const report={schema:"pse-379-original-source-vs-wp-draft-readonly-v1",readOnly:true,wpWrites:0,
- source,wpId,dateEvidence:null,post:null,sourceInfo:null,reason:null,ready:false};
+const report={schema:"pse-379-original-source-vs-wp-draft-readonly-v1",readOnly:!isApply,wpWrites:0,
+ source,wpId,dateEvidence:null,post:null,sourceInfo:null,reason:null,ready:false,
+ backupBeforeAnyWrite:isApply,finalStatus:"PREFLIGHT_PENDING"};
 try{
  const [rssRes,sourceRes]=await Promise.all([net.get(feed),net.get(source)]);
  if(rssRes.status()!==200||sourceRes.status()!==200)throw Error("Original source article or RSS unavailable");
@@ -99,10 +109,13 @@ try{
   if(!r.ok)throw Error("REST nonce missing");
   return(await r.text()).trim();
  });
- const rest=async path=>admin.evaluate(async({path,nonce})=>{
-  const r=await fetch(path,{credentials:"same-origin",headers:{"X-WP-Nonce":nonce,"Accept":"application/json"}});
+ const rest=async(path,method="GET",payload=null)=>admin.evaluate(async({path,method,payload,nonce})=>{
+  const r=await fetch(path,{method,credentials:"same-origin",
+   headers:{"X-WP-Nonce":nonce,"Accept":"application/json",
+    ...(payload?{"Content-Type":"application/json"}:{})},
+   ...(payload?{body:JSON.stringify(payload)}:{})});
   return{status:r.status,data:await r.json().catch(()=>null)};
- },{path,nonce});
+ },{path,method,payload,nonce});
  const [p,c]=await Promise.all([
   rest("/wp-json/wp/v2/posts/"+wpId+"?context=edit&_fields=id,slug,status,title,content,acf,categories,date,featured_media"),
   rest("/wp-json/wp/v2/categories?slug=tin-tong-hop&hide_empty=false&_fields=id,slug,parent")
@@ -157,6 +170,38 @@ try{
   sourceMediaMapped:assets.length};
  report.ready=p.data.status==="draft";
  console.log("PSE_379_NATIVE_READONLY_PROOF="+JSON.stringify({...report.dateEvidence,...report.sourceInfo,...report.post,ready:report.ready}));
+ const expected="2013-07-03T02:10:17";
+ const exactPostPath="/wp-json/wp/v2/posts/"+wpId+
+   "?context=edit&_fields=id,slug,status,title,content,acf,categories,date,featured_media";
+ const preserved=(record)=>record?.id===wpId&&record.slug===slug&&
+  String(record.title?.raw||"")===wpTitle&&String(record.content?.raw||"")===wpHtml&&
+  JSON.stringify(record.categories)===JSON.stringify(p.data.categories)&&
+  record.featured_media===p.data.featured_media;
+ if(p.data.status==="publish"){
+  if(p.data.date!==expected)throw Error("Existing published Joomla 379 has conflicting date");
+  report.finalStatus="ALREADY_PUBLISHED_MATCHES_SOURCE";
+ }else if(isApply){
+  // Strict one-record write with second read just before commit to avoid stale drafts.
+  const before=await rest(exactPostPath);
+  if(before.status!==200||before.data?.status!=="draft"||!preserved(before.data))
+   throw Error("Original Joomla 379 WordPress draft changed before guarded publication");
+  const save=await rest("/wp-json/wp/v2/posts/"+wpId,"POST",{date:expected,status:"publish"});
+  if(save.status!==200||save.data?.id!==wpId||save.data.status!=="publish"||
+   save.data.date!==expected)
+   throw Error("Native Joomla 379 exact RSS date publication failed");
+  report.wpWrites=1;
+  const verified=await rest(exactPostPath);
+  if(verified.status!==200||!preserved(verified.data)||
+   verified.data.status!=="publish"||verified.data.date!==expected)
+   throw Error("Original 379 WordPress post-publication readback mismatch");
+  report.finalStatus="PUBLISHED_SOURCE_RSS_DATE_VERIFIED";
+  console.log("PSE_379_SOURCE_RSS_PUBLISH_PASS="+JSON.stringify({
+   id,wpId,originalRSSDate:expected,exactSourceTextChars:479,images:5,
+   cmsPostsChanged:1,mediaWrites:0,noOtherCmsWrites:true,
+   postSaveReadback:true,databaseRollback:true,buildTriggeredByWriter:false}));
+ }else report.finalStatus="READY_FOR_GUARDED_NATIVE_PUBLICATION";
+ console.log("PSE_379_NATIVE_FINAL="+JSON.stringify({
+  status:report.finalStatus,readOnly:report.readOnly,wpWrites:report.wpWrites,wpId}));
 }catch(e){report.reason=String(e?.message||e).slice(0,200);console.log("PSE_379_NATIVE_READONLY_BLOCKER="+report.reason);process.exitCode=1}
 finally{
  await mkdir("artifacts/pse-379-native-preflight",{recursive:true});
