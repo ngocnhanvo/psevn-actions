@@ -2,7 +2,7 @@
 import {chromium} from "playwright";
 import {mkdir} from "node:fs/promises";
 const base="https://pse.webnvn.com",cat="/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my";
-const product="/san-pham/kali-phu-my-sop",name="Kali Phú Mỹ (SOP)";
+const product="/san-pham/kali-phu-my-sop-82837",name="Kali Phú Mỹ (SOP)";
 const nonIdTitle="Đạm Phú Mỹ ( Chuyên dùng cho Nông, lâm trường)";
 const browser=await chromium.launch({headless:true});
 const out="artifacts/pse-sop-live-qa";
@@ -47,6 +47,8 @@ try{
   await page.screenshot({path:out+"/category-"+width+".png",fullPage:true,timeout:40000});
   const detail=await context.newPage();
   const actualDetailUrl=section.sopHref||base+product;
+  if(new URL(actualDetailUrl).pathname!==product)
+   throw Error("SOP card canonical URL not updated to native WP ID suffix: "+actualDetailUrl);
   console.log("PSE_SOP_DETAIL_LINK="+JSON.stringify({width,actualDetailUrl,source:section.sopHref?"product-card":"fallback"}));
   const rd=await detail.goto(actualDetailUrl,{waitUntil:"domcontentloaded",timeout:60000});
   if(rd?.status()!==200)throw Error("SOP product card points to a broken detail HTTP "+rd?.status()+" at "+width+" url="+actualDetailUrl);
