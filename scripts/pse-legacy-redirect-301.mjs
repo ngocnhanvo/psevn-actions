@@ -12,7 +12,8 @@ const applyThreeProductAliases=msg==="cms(pse): apply three verified product ali
 const finishVerifiedPosts=msg==="cms(pse): finish remaining verified Joomla Post redirects";
 const applyRecentPublishedPosts=msg==="cms(pse): apply verified published Joomla Post redirects"||finishVerifiedPosts;
 const auditRecentPublishedPosts=msg==="audit(pse): check verified published Joomla Post redirects";
-const recentPostsOnly=applyRecentPublishedPosts||auditRecentPublishedPosts;
+const auditFinalVerifiedPosts=msg==="audit(pse): verify remaining 43 Joomla Post redirects";
+const recentPostsOnly=applyRecentPublishedPosts||auditRecentPublishedPosts||auditFinalVerifiedPosts;
 const apply=msg==="cms(pse): apply source-verified legacy 301 redirects"||applyThreeProductAliases||applyRecentPublishedPosts;
 const identityOnly=msg==="audit(pse): verify exact legacy 301 source identity";
 const vars=String(process.env.ENV_FILE||"").split(/\r?\n/)
@@ -406,7 +407,7 @@ try{
   // Standard scopes stay capped to 25. A separately message-gated final batch
   // may inspect at most 50, locked to the 43 exact post aliases proven earlier.
   // Every WordPress registry write remains serialized and REST-read back.
-  const maxApplyTargetChecks=finishVerifiedPosts?50:recentPostsOnly?25:100;
+  const maxApplyTargetChecks=finishVerifiedPosts||auditFinalVerifiedPosts?50:recentPostsOnly?25:100;
   let applyTargetChecks=0;
   let cursor=0;
   const verify=async()=>{
@@ -477,7 +478,7 @@ try{
     skipped:report.skipped.length,deferred:report.deferred.length,outOfScope:report.outOfScope.length,
     skippedSamples:recentPostsOnly?report.skipped.slice(0,4):undefined,
     verifiedProductAliases:checked.filter(x=>exactProductAliasDestinations.get(x.from)===x.to).length,
-    maxApplyTargetChecks,apply,applyThreeProductAliases,
+    maxApplyTargetChecks,apply,applyThreeProductAliases,finishVerifiedPosts,auditFinalVerifiedPosts,
     recentPostsOnly,verifiedPostAliases:verifiedPublishedPostAliases.size,
     verifiedCollisionAliasCount:verifiedCollisionDestinations.size,
     verifiedPostNew:checked.filter(x=>verifiedPublishedPostAliases.get(x.from)?.to===x.to).length,
@@ -488,10 +489,11 @@ try{
       checked.some(x=>verifiedPublishedPostAliases.get(x.from)?.to!==x.to)||
       report.issues.length||unsafePublished.length
     ))throw Error("Scoped Post redirects fail closed: no CMS writes");
-  if(finishVerifiedPosts&&(
+  if((finishVerifiedPosts||auditFinalVerifiedPosts)&&(
       checked.length!==43||report.unchanged.length!==722||report.skipped.length||
-      report.deferred.length||verifiedCollisionDestinations.size!==1
-    ))throw Error("Final 43 source-verified Joomla Post 301 scope changed; refusing all writes");
+      report.deferred.length||verifiedCollisionDestinations.size!==1||
+      unsafePublished.length||report.issues.length
+    ))throw Error("Final 43 source-verified Joomla Post 301 scope changed; no CMS writes");
   if(applyThreeProductAliases&&(
       exactProductAliasDestinations.size!==3||checked.length!==3||
       checked.some(x=>exactProductAliasDestinations.get(x.from)!==x.to)||
