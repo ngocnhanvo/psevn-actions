@@ -1,3 +1,4 @@
 2026-11-21 Read-only all historical source articles versus live published WordPress posts, preserve exact source identity; report missing and taxonomy separately. No CMS writes and no Astro build.
 2026-11-21 retry after URL-decoding parser support: historical Joomla #1159/#1184 have percent-encoded Vietnamese slugs; compare exact numeric identity with public WordPress registry. Prior run 44839460801 was no-write and failed at URL syntax guard.
 2026-11-21: Reconcile 804 historical Joomla source identities with published WP Posts, Products, and source-verified distributor Pages #1031/#1568. Correct source-vs-target missing count without reimporting native Pages. Read-only.
+2026-11-21 inspect 17 historical Joomla article media blockers: verify actual external image/PDF host reachability and source metadata without altering CMS, source content, or publication dates. Run source-media probe before individual recovery.
