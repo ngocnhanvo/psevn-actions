@@ -121,7 +121,7 @@ try{
    throw Error("Conflicting original agriculture redirect "+d.id);
   d.existing=existing?{id:existing.id,status:existing.status}:null;
  }
- console.log("PSE_AGRICULTURE_TWO_301_PREFLIGHT="+JSON.stringify({sourceIds:[344,348,370],
+ console.log("PSE_AGRICULTURE_THREE_301_PREFLIGHT="+JSON.stringify({sourceIds:[344,348,370],
   originalPosts:rows.map(x=>x.wpId),legacyStatuses:rows.map(x=>x.legacyStatus),
   existingRoutes:rows.map(x=>x.existing),targetCanonicalsVerified:true,freshDBBackup:true}));
  await mkdir("artifacts/pse-original-agriculture-301",{recursive:true});
@@ -162,7 +162,7 @@ try{
  }
  if(report.rows.length!==3)throw Error("Three original agriculture redirect rows not published");
  success=true;
- console.log("PSE_AGRICULTURE_TWO_EXACT_301_APPLY_PASS="+JSON.stringify({sourceIds:[344,348,370],
+ console.log("PSE_AGRICULTURE_THREE_EXACT_301_APPLY_PASS="+JSON.stringify({sourceIds:[344,348,370],
   sourceRoutes:report.rows.map(x=>x.redirectId),otherLinksUnchanged:true,nativeWordPress:true,
   publishedSourcePosts:3,freshDBBackup:true,buildTriggered:false,writes:report.writes.length}));
 }finally{
