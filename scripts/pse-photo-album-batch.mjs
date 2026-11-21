@@ -82,17 +82,21 @@ try{
  if(await admin.locator("#user_login").count()){
   await admin.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
   await admin.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD||"");
-  let text=await admin.locator("body").innerText();
-  const m=text.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i)||text.match(/(\d+)\s*([+\-x×*])\s*(\d+)/i);
+  const loginText=(await admin.locator("#loginform").innerText()).slice(0,500);
+  const m=loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/i);
   if(m){
-   let a=+m[1],b=+m[3],n=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];
-   let field=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[name*="arith" i],#loginform input[type="number"]').first();
+   const a=+m[1],b=+m[3],n=({"+":a+b,"-":a-b,x:a*b,"×":a*b,"*":a*b})[m[2]];
+   const field=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
    if(!await field.count())throw Error("WordPress auth challenge not found");
    await field.fill(String(n));
   }
-  await Promise.all([admin.waitForLoadState("domcontentloaded"),admin.locator("#wp-submit").click()]);
+  await admin.locator("#wp-submit").click();
  }
- if(admin.url().includes("wp-login"))throw Error("WordPress authorization unavailable");
+ // Verify the actual protected editor after the asynchronous login redirect.
+ await admin.goto(wp+"/wp-admin/post.php?post=248&action=edit",{
+  waitUntil:"domcontentloaded",timeout:60000});
+ if(admin.url().includes("wp-login")||!(await admin.locator("#adminmenu").count()))
+  throw Error("WordPress authorization failed on protected-page readback");
  const nonce=await admin.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});if(!r.ok)throw Error("WordPress nonce unavailable");return(await r.text()).trim()});
  const api=(path,method="GET",body)=>admin.evaluate(async({path,method,body,nonce})=>{
   const r=await fetch(path,{method,credentials:"same-origin",headers:{"X-WP-Nonce":nonce,Accept:"application/json",...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
