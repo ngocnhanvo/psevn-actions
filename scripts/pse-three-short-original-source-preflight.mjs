@@ -38,8 +38,18 @@ try{
     p=await page.evaluate(()=>{
      const root=document.querySelector(".item-page [itemprop=articleBody]")||
       document.querySelector(".item-page")||document.querySelector("article");
-     if(!root)return null;
      const norm=s=>String(s||"").replace(/\s+/g," ").trim();
+     if(!root){
+      const selectors=["main","#content",".blog",".item-page","article","[itemprop=articleBody]"];
+      const candidateRoots=selectors.map(selector=>{
+       const el=document.querySelector(selector);
+       return {selector,found:!!el,textChars:norm(el?.textContent).length,
+        opening:norm(el?.textContent).slice(0,160)};
+      });
+      return {missingBody:true,title:norm(document.title),text:"",
+       sourceHints:{h1h2:[...document.querySelectorAll("h1,h2")].slice(0,6).map(e=>norm(e.textContent)),
+        bodyTextChars:norm(document.body?.textContent).length,candidateRoots}};
+     }
      const refs=[...root.querySelectorAll("img[src],a[href],iframe[src],object[data],embed[src]")].map(el=>{
       const a=el.getAttribute("src")||el.getAttribute("href")||el.getAttribute("data")||"";
       let u;try{u=new URL(a,document.baseURI)}catch{return null}
@@ -52,6 +62,10 @@ try{
       refs,contentBlocks:root.querySelectorAll("p,h2,h3,ul,ol,table").length};
     });
    }finally{await page.close()}
+   if(p?.missingBody){
+    row.title=p.title;row.sourceHints=p.sourceHints;
+    throw Error("Source original articleBody absent (diagnostic only; no substitution)");
+   }
    if(!p||!p.title||p.text.length<10)throw Error("Source original body missing");
    row.title=p.title;row.bodyChars=p.text.length;row.bodySample=p.text.slice(0,200);
    row.htmlBytes=p.htmlBytes;row.contentBlocks=p.contentBlocks;
@@ -73,7 +87,8 @@ try{
   }catch(e){row.error=String(e?.message||e).slice(0,200)}
   console.log("PSE_THREE_SHORT_SOURCE_ROW="+JSON.stringify({id:row.id,http:row.http,
     title:row.title,bodyChars:row.bodyChars,contentBlocks:row.contentBlocks,
-    media:row.media,sourceCreatedDay:row.sourceCreatedDay,decision:row.decision,error:row.error}).slice(0,5000));
+    media:row.media,sourceCreatedDay:row.sourceCreatedDay,sourceHints:row.sourceHints||null,
+    decision:row.decision,error:row.error}).slice(0,5000));
  }
  report.summary={sourceCount:3,source200:report.rows.filter(r=>r.http===200).length,
    contentWithDay:report.rows.filter(r=>r.sourceCreatedDay&&r.bodyChars>=180).map(r=>r.id),
