@@ -97,8 +97,15 @@ try{
    const selected=[0,Math.floor((count-1)/4),Math.floor((count-1)/2),Math.floor((count-1)*3/4),count-1];
    for(const i of selected){
     const img=images.nth(i);await img.scrollIntoViewIfNeeded();
+    const startWait=Date.now();
     await img.evaluate(async e=>{if(!e.complete)await new Promise(resolve=>{
-      e.addEventListener("load",resolve,{once:true});e.addEventListener("error",resolve,{once:true});setTimeout(resolve,12000)})});
+      e.addEventListener("load",resolve,{once:true});
+      e.addEventListener("error",resolve,{once:true});
+      // WordPress image proxy can queue for up to 25s during release QA.
+      // Don't label a still-pending network resource as corrupted at 12s.
+      setTimeout(resolve,35000)})});
+    const waitedMs=Date.now()-startWait;
+    if(waitedMs>12000)console.warn("PSE_GALLERY_IMAGE_SLOW="+JSON.stringify({id:target.id,width,index:i,waitedMs}));
     if(!(await img.evaluate(e=>e.complete&&e.naturalWidth>0))){
      // Preserve original browser evidence. Probe the exact same public URL,
      // not a replacement asset. A successful network probe alone is NOT PASS.
