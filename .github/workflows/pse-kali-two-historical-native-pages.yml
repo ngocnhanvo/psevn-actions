@@ -44,6 +44,12 @@ jobs:
           path: inputs/kali-two
           run-id: 44990978357
           github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-kali-two-link-proof
+          path: inputs/link-proof
+          run-id: 44992472748
+          github-token: ${{ github.token }}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Fresh database backup before scoped historical Page restoration
         run: node scripts/pse-template-updraft-backup.mjs
