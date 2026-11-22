@@ -1,10 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-#198 DONE WP83516 + redirect83518, QA #44986075425 PASS. Không nhập/build lại.
+#198 DONE WP83516 + redirect83518, QA #44986075425 PASS. Không nhập/build lại. #1090 18/24 ảnh có bằng chứng phù hợp, gồm archive 7.JPG artifact 14740179112; sáu ảnh chưa xác minh, không lặp replay không có evidence mới.
 
-#1090: [#44987758615](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44987758615) SUCCESS, exact original 7.JPG archive 20150419091957, JPEG 308723 bytes 867×768, archive digest matches XQIE5GRV6YMDJEWLPLRQHDPDXATBLTFH and SHA256 dc947052e9cc7e7ddc869b897d77955736ca2105d3fc380d3165b24ef94466b0. Artifact 14740179112 downloaded, hash confirmed, image visually inspected: cổng Hội mùa Phú Mỹ, EXIF 07/03/2015 13:54:16. Different from wrong modern DPM 7.JPG. Remaining six ambiguous names 5.JPG,2(1).JPG,3.JPG,4.JPG,6.JPG,8.jpg all exact CDX 2015–19 no rows. 17 other publisher relocated files with event/article evidence plus one exact archived original; six unresolved, no import yet. No current test in progress. Avoid repeated no-evidence probes. Need new source evidence, Joomla/publisher backup or explicit editorial exception.
+#186 đã tìm đúng bài báo Dân Việt https://danviet.vn/npk-phu-my-se-day-lui-hang-kem-chat-luong-777764602-d214903.html, ngày 08/07/2011, exact title/interview/captions, hai ảnh chính thức liên kết CDN mới có tên tương ứng hai ảnh Joomla; public web fetch 404, chưa phục hồi bytes. PSE source date 12/07/2011.
 
-[Checkpoint 6a84d61a](https://github.com/ngocnhanvo/psevn-actions/commit/6a84d61a567ed23cb53b070f6d60574fcc8dcad5), [updated report 33d4856b](https://github.com/ngocnhanvo/psevn-actions/commit/33d4856b9e79f27a354e0bac756523c5ad411f61). #237 no matching publisher article. Still 11 ordinary posts unpublished, #975, four aliases and #225. No unapproved editorial substitution.
+[#44988375181](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44988375181) IN_PROGRESS: GET-only exact PSE/Dân Việt title/body/order, 2 exact new CDN media URLs direct then CDX exact archive, image decode/SHA/visual proof. Next inspect real results, only import with source proof. No CMS writes/build. [Checkpoint e5125f24](https://github.com/ngocnhanvo/psevn-actions/commit/e5125f245cecc41bf23a1402dfb445a3291452f3). 11 ordinary posts, #975, four aliases, #225 unchanged.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
