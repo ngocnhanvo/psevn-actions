@@ -1,12 +1,14 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-Four prior owner-priority related links /san-pham/dam-phu-my end-to-end DONE; live QA #44990280099 PASS all four exact 301, canonical HTTP200, 1366/390, ten original tables and four cards.
+Four prior owner-priority related links /san-pham/dam-phu-my end-to-end DONE, #44990280099 PASS all four exact 301, canonical HTTP200, 1366/390, ten original tables/four cards.
 
-Kali #1678 **native Page apply PASS** #44990349434 job 137109851164, fresh Updraft DB backup, published Page 83524 (kali-phu-my-mo-ta-va-hdsd), Media 83523 exact original PNG SHA256 58c823c48ee04c595116945f7bf11bb7b6aae3dbe5d22446195659f726294cee, two original tables and full text preserved. Artifact 14742035031. No repeat.
+Kali #1678 native Page83524/Media83523 apply #44990349434 SUCCESS; source exact 66704-byte PNG SHA256 58c823c48ee04c595116945f7bf11bb7b6aae3dbe5d22446195659f726294cee and two tables. Normal signed build #44990670112 SUCCESS, generated /kali-phu-my-mo-ta-va-hdsd/index.html. No repeat.
 
-Signed normal build request #44990588866 PASS; WordPress pending_count=1, no force, dispatch accepted 05:44:04Z. Actual production #44990670112 job 137110812125 IN_PROGRESS at Astro build step. Do not duplicate trigger. Next inspect actual deploy and verify success before final fifth link marker. Final link script f54e3737/workflow af255d30 syntax-only #44990633157 PASS. Create .pse-kali-1678-fifth-link-request only after deploy success with commit message 'cms(pse): repair fifth Dam Phu My related link', pinned source/apply proof; fresh backup, live Page body/table/original image/desktop/mobile QA before CMS changes, category 1763 one href and exact old context 301, preserve all other four and ten tables. No new Product. Then signed normal build, all-five final QA script abc8c92f via existing .pse-dam-phu-my-final-qa-request marker. If QA fails inspect exact mismatch; do not retry original Page import.
+Fifth link request 30462365, actual #44990901832 apply job137111531443 IN_PROGRESS; fresh DB backup PASS, script now running. Must pass live original Page QA before writing category 1763 one exact href and native exact context 301. Existing signed build chain extended 98c9b13d before apply completion; inspect actual apply log/artifact, then look for automatic build request first, do not duplicate. If PASS deploy and final all-five QA using abc8c92f + .pse-dam-phu-my-final-qa-request; if FAIL diagnose actual guard/partial records without repeating Page creation.
 
-Global strict migration remains PARTIAL: 11 historical Posts, #975 chronology, 4 semantic historical aliases (#1678 pending exact mapping), #225 external photo. Previous homepage/search and seven Posts/46 images PASS. Full checkpoint 461ad7c7 plus next update.
+New read-only remaining Kali #1425/#1426 and #1678 manifest-context source check #44990978357 (script 7dada6b1, workflow 98044278) queued/in progress, using pinned archived body/title and ordered PNG evidence with new direct non-www source availability. Inspect actual report; no CMS writes. Full checkpoint f1262e5d.
+
+Global parity PARTIAL: 11 historical Posts, #975 chronology, old aliases, #225 external JPEG. Do not repeat already failed probes or guess source media/dates. Homepage/search and seven Posts/46 images previous PASS.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
