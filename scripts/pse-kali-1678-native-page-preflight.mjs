@@ -40,7 +40,8 @@ try{
  const q=await net.get(wp+"/wp-json/wp/v2/product/80938?_fields=id,slug,status,featured_media");
  const p=await q.json();if(q.status()!==200||p.id!==80938||p.status!=="publish"||!p.featured_media)throw Error("Native candidate product changed");
  const mr=await net.get(wp+"/wp-json/wp/v2/media/"+p.featured_media+"?_fields=id,source_url,media_details");
- const m=await mr.json(),mu=new URL(m.source_url);if(mr.status()!==200||mu.origin!==wp||!mu.pathname.startsWith("/wp-content/uploads/"))throw Error("Native media identity mismatch");
+ const m=await mr.json();if(mr.status()!==200||m.id!==p.featured_media||typeof m.source_url!=="string"||!m.source_url.trim())throw Error("Native media identity mismatch");
+ const mu=new URL(m.source_url,wp+"/");if(mu.origin!==wp||!mu.pathname.startsWith("/wp-content/uploads/")||mu.username||mu.password)throw Error("Native media identity mismatch");
  const nativeR=await net.get(mu.href,{maxRedirects:0,failOnStatusCode:false});if(nativeR.status()!==200)throw Error("Native media unavailable");
  const nb=await nativeR.body();if(nb.length>12000000)throw Error("Native media too large");
  report.nativeMedia={productId:p.id,id:m.id,url:mu.href,sha256:sha(nb),sourceByteMatch:!!imageBytes&&sha(nb)===sha(imageBytes)};
