@@ -1,0 +1,6 @@
+source_id=1678
+preflight_run=44990223813
+preflight_artifact=14741418029
+source_body_sha256=21ff53b4019c5349a0d010ca5fc8b0b9ce7600097ac9ce4c2620dfdfc83e3a53
+source_image_sha256=58c823c48ee04c595116945f7bf11bb7b6aae3dbe5d22446195659f726294cee
+write_scope=one historical WordPress Page and its one exact original Media; fresh backup and exact readback required; no Product/category/redirect writes in this phase.
