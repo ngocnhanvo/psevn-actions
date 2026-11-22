@@ -29,8 +29,26 @@ try{
    const c=await p.evaluate(()=>{const n=x=>String(x||'').normalize('NFKC').replace(/\s+/g,' ').trim(),root=document.querySelector('.item-page [itemprop=articleBody]');if(!root)return null;const core=root.cloneNode(true);core.querySelectorAll('.extranews_box,.extranews_separator').forEach(x=>x.remove());return {title:n(document.querySelector('.item-page h1,.item-page h2,h1')?.textContent),body:n(core.textContent),full:n(root.textContent),html:root.innerHTML,images:[...core.querySelectorAll('img[src]')].map(i=>new URL(i.getAttribute('src'),document.baseURI).pathname),tables:[...root.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(x=>n(x.textContent)))),links:[...root.querySelectorAll('a[href]')].map(x=>({href:x.getAttribute('href'),url:x.href,text:n(x.textContent)})),canonical:document.querySelector('link[rel=canonical]')?.href??null}});
    if(!c){entry.reason='No article body';continue}
    entry.title=c.title;entry.bodySha=sha(c.body);entry.fullSha=sha(c.full);entry.images=c.images;entry.canonical=c.canonical;
-   if(!/kali phú mỹ/i.test(c.title)||c.body.length<180||!c.images.includes(a[0].images[0])){entry.reason='Title/body/anchor mismatch';continue}
-   const ir=await get(src+a[0].images[0]);if(ir.status()!==200||sha(await ir.body())!==expected.sha256){entry.reason='Exact source PNG mismatch';continue}
+   // Explicit core article ID 1430 returned original Bột MOP article; its
+   // historical detail image is different from the newer overview packaging.
+   const exact1430=id===1430&&path==='/index.php?option=com_content&view=article&id=1430'&&c.title==='Kali Phú Mỹ Bột MOP - Mô tả và HDSD'&&entry.bodySha==='cec036796daec93cad3ab8c7a19d7912f2a166bf4038f57ff1cdd5ce3cfb9417'&&entry.fullSha==='8910af2001ab1c69de8ff62adebd049981c1f86a164b538c60d6de75fd15ceb7'&&c.images.length===1&&decodeURIComponent(c.images[0].split('/').at(-1))==='5-KALI-BOT_Phu_My_2019_cai_tien.png';
+   const exact1427=id===1427&&c.title==='Kali Phú Mỹ Miểng MOP - Mô tả và HDSD'&&entry.bodySha==='142705cfe65f997ec5f1ad9aaf1cda5a13a4e2a64087d473ec8a2a959dfb7cc0'&&entry.fullSha==='f50b5fcbaed629bc03fbd6725df5b2207f0d4b64b002986fba01d07374e5fb35'&&c.images.length===1&&c.images[0]===a[0].images[0];
+   if(!exact1427&&!exact1430){entry.reason='Pinned exact article identity mismatch';continue}
+   const ir=await get(src+a[0].images[0]);if(ir.status()!==200||sha(await ir.body())!==expected.sha256){entry.reason='Overview exact PNG mismatch';continue}
+   row.detailImages=[];
+   for(const image of c.images){
+    if(!image.startsWith('/images/')||!image.endsWith('.png'))throw Error('Unexpected original detail path');
+    const rr=await get(src+image);if(rr.status()!==200)throw Error('Detail PNG unavailable '+id);
+    const bytes=await rr.body(),hash=sha(bytes);
+    if(bytes.length<180||bytes.length>12000000||bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a')throw Error('Invalid PNG');
+    if(id===1427&&hash!==expected.sha256)throw Error('1427 image identity changed');
+    const dims=await p.evaluate(async data=>{const im=new Image();im.src='data:image/png;base64,'+data;await im.decode();return {width:im.naturalWidth,height:im.naturalHeight}},bytes.toString('base64'));
+    if(!dims.width||!dims.height)throw Error('PNG decode failed');
+    const fileArtifact='original-'+hash.slice(0,16)+'.png';await writeFile(out+'/'+fileArtifact,bytes);
+    row.detailImages.push({url:src+image,file:decodeURIComponent(image.split('/').at(-1)),sha256:hash,bytes:bytes.length,fileArtifact,...dims});
+   }
+   row.identityRule=exact1430?'EXACT_EXPLICIT_JOOMLA_CORE_ARTICLE_ID_AND_PINNED_TITLE_BODY':'EXACT_MANIFEST_ARTICLE_AND_ANCHOR';
+   row.overviewImageDiffers=row.detailImages[0].sha256!==expected.sha256;
    row.source=base;row.title=c.title;row.bodySha=entry.bodySha;row.fullBodySha=entry.fullSha;row.images=c.images;row.links=c.links;row.tables=c.tables.length;row.ready=true;
    await writeFile(out+'/source-'+id+'.json',JSON.stringify(c,null,2)+'\n');break;
   }
