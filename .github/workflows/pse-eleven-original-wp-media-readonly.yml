@@ -1,0 +1,28 @@
+name: PSE eleven original SQL photos existing WP Media lookup (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-eleven-original-wp-media-readonly.mjs
+      - .github/workflows/pse-eleven-original-wp-media-readonly.yml
+permissions:
+  contents: read
+jobs:
+  lookup:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-eleven-original-wp-media-readonly.mjs
+      - run: node scripts/pse-eleven-original-wp-media-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-eleven-original-existing-wordpress-media-leads
+          path: artifacts/pse-eleven-existing-wp-media/report.json
+          retention-days: 14
+          if-no-files-found: warn
