@@ -16,7 +16,17 @@ const bulkAuthorized=message==="cms(pse): complete four verified historical gall
  process.env.GITHUB_REF==="refs/heads/main";
 if(message==="cms(pse): complete four verified historical galleries"&&!bulkAuthorized)
  throw Error("Untrusted repository or ref for four-gallery recovery");
+// Source-owned historical gallery #975: owner explicitly chose Joomla's stored
+// created timestamp; the title's event year is a separate editorial label.
+const approved975Message="cms(pse): publish gallery 975 using original Joomla created date";
+const approved975=message===approved975Message &&
+ process.env.GITHUB_REPOSITORY==="ngocnhanvo/psevn-actions" &&
+ process.env.GITHUB_REF==="refs/heads/main" &&
+ process.env.PSE_GALLERY_975_DB_BACKUP==="yes";
+if(message===approved975Message&&!approved975)
+ throw Error("Gallery 975 requires matching signed owner request and fresh WP DB backup");
 let command=message.match(/^(audit|cms)\(pse\): gallery (\d+) batch (\d+)$/);
+if(approved975)command=[approved975Message,"cms","975","0"];
 if(bulkAuthorized){
  const id=String(process.env.PSE_GALLERY_ID||"");
  const batch=String(process.env.PSE_GALLERY_BATCH||"");
@@ -171,7 +181,7 @@ try{
  const cat=await readNative("/wp-json/wp/v2/categories?slug=anh");
  if(cat.http!==200||cat.data?.length!==1||cat.data[0].slug!=="anh")throw Error("WP photo category changed");
  const category=cat.data[0].id;
- const posts=await readNative("/wp-json/wp/v2/posts?context=edit&slug="+entry.slug+"&per_page=5&_fields=id,slug,categories,status,content,acf,featured_media");
+ const posts=await readNative("/wp-json/wp/v2/posts?context=edit&slug="+entry.slug+"&per_page=5&_fields=id,slug,categories,status,content,acf,featured_media,date,title");
  if(posts.http!==200||!Array.isArray(posts.data)||posts.data.length>1)throw Error("WP Post slug collision");
  let post=posts.data[0];
  if(post&&(!post.categories.includes(category)||post.acf?.key!=="ssr-post"||post.acf?.action!=="PostDetails"||!String(post.content?.raw||"").includes('data-pse-gallery-id="'+id+'"')))
@@ -208,20 +218,25 @@ try{
   item.id=m?.id||null;item.nativeMedia=m||null;
  }
  console.log("PSE_GALLERY_REGISTRY_RECONCILED id="+id+" exactExisting="+byFilename.size+" expected="+items.length+" slugIndependent=true");
- // #975 has all 110 originals from the completed source audit but no
- // verified publication day (Joomla created 2011 vs title October 2013).
- // Until that source conflict is resolved, do not create/publish or upload.
  if(id===975){
   if(items.length!==110||byFilename.size!==110)
    throw Error("Gallery 975 requires exact existing 110 Media; no uploads authorized");
-  console.log("PSE_GALLERY_BATCH=DATE_DEFERRED id=975 media=110 noCmsWrites=true");
-  process.exitCode=0;
-  await network.dispose();await browser.close();process.exit(0);
+  if(!approved975){
+   console.log("PSE_GALLERY_BATCH=DATE_DEFERRED id=975 media=110 noCmsWrites=true");
+   process.exitCode=0;
+   await network.dispose();await browser.close();process.exit(0);
+  }
+  if(items.some(x=>!x.id))throw Error("Approved #975 has missing original WordPress media");
+  if(post && (post.date!=="2011-03-06T04:53:14"||
+    post.title?.raw!==entry.title||
+    Number(post.featured_media)!==Number(items[0].id)||
+    items.some(x=>!String(post.content?.raw||"").includes(x.filename))))
+   throw Error("Existing #975 Post source/date/image identity conflict");
  }
  // A second agent/session may enqueue the same marker before the first
  // import finishes. Published, source-complete galleries are immutable for
  // this run; do not repeat media HEAD requests or POST write/readback.
- if(post?.status==="publish" && items.every(item=>
+ if(!approved975 && post?.status==="publish" && items.every(item=>
    Boolean(item.id) && String(post.content?.raw||"").includes(item.filename))
    && Number(post.featured_media)===Number(items[0].id)){
    console.log("PSE_GALLERY_BATCH=ALREADY_DONE id="+id+" post="+post.id+
@@ -230,7 +245,8 @@ try{
    await browser.close();
    process.exit(0);
  }
- const subset=items.slice(offset,offset+size);
+ // #975 already owns all 110 independently verified photos; never reupload or edit Media.
+ const subset=approved975?[]:items.slice(offset,offset+size);
  let created=0;
  // Distinct source URL hashes guarantee disjoint native Media IDs. Two uploads
  // at once shorten large albums without changing WP Post publication order.
@@ -369,19 +385,68 @@ try{
    '<figure class="wp-block-image"><img src="'+esc(x.native)+'" alt="'+esc(entry.title+" – ảnh "+(i+1))+'" loading="lazy" decoding="async"></figure>').join("")+'</div>';
   let postId=post?.id;
   if(!postId){
-   const res=await api("/wp-json/wp/v2/posts","POST",{title:entry.title,slug:entry.slug,status:"draft",content:html,categories:[category],featured_media:items[0].id,acf:{action:"PostDetails",key:"ssr-post",origin_page_id:String(id)}});
+   const res=await api("/wp-json/wp/v2/posts","POST",{title:entry.title,slug:entry.slug,status:"draft",date:approved975?"2011-03-06T04:53:14":undefined,content:html,categories:[category],featured_media:items[0].id,acf:{action:"PostDetails",key:"ssr-post",origin_page_id:String(id)}});
    if(res.http!==201||!Number.isSafeInteger(Number(res.data?.id)))throw Error("Gallery Post draft create failed");
    postId=Number(res.data.id);
-  }else{
+  }else if(!approved975){
    const updated=await api("/wp-json/wp/v2/posts/"+postId,"POST",{content:html,featured_media:items[0].id});
    if(updated.http!==200)throw Error("Gallery Post content update failed");
   }
   const read=await readNative("/wp-json/wp/v2/posts/"+postId+"?context=edit");
-  if(read.http!==200||read.data.slug!==entry.slug||read.data.acf?.key!=="ssr-post"||read.data.acf?.action!=="PostDetails"||!read.data.categories.includes(category)||!items.every(x=>String(read.data.content?.raw||"").includes(x.filename)))
+  if(read.http!==200||read.data.slug!==entry.slug||read.data.acf?.key!=="ssr-post"||read.data.acf?.action!=="PostDetails"||!read.data.categories.includes(category)||!items.every(x=>String(read.data.content?.raw||"").includes(x.filename))||(approved975&&read.data.date!=="2011-03-06T04:53:14"))
     throw Error("Post native CMS readback failed");
   if(read.data.status!=="publish"){
-   const publish=await api("/wp-json/wp/v2/posts/"+postId,"POST",{status:"publish"});
+   const publish=await api("/wp-json/wp/v2/posts/"+postId,"POST",{status:"publish",...(approved975?{date:"2011-03-06T04:53:14"}:{})});
    if(publish.http!==200||publish.data.status!=="publish")throw Error("Gallery Post publish failed");
+  }
+  if(approved975){
+   const finalPost=await readNative("/wp-json/wp/v2/posts/"+postId+"?context=edit");
+   if(finalPost.http!==200||finalPost.data?.id!==postId||
+      finalPost.data?.status!=="publish"||finalPost.data?.date!=="2011-03-06T04:53:14"||
+      finalPost.data?.slug!==entry.slug||
+      finalPost.data?.acf?.action!=="PostDetails"||finalPost.data?.acf?.key!=="ssr-post"||
+      String(finalPost.data?.acf?.origin_page_id)!=="975"||
+      items.some(x=>!String(finalPost.data?.content?.raw||"").includes(x.filename)))
+    throw Error("Gallery 975 native Post/date/photos post-publication readback failed");
+   const originalPath=new URL(legacy).pathname,canonical="/"+entry.slug;
+   const endpoint="/wp-json/wp/v2/chuyen-huong-link",matches=[];
+   for(let pageNumber=1;pageNumber<=35;pageNumber++){
+    const res=await readNative(endpoint+"?context=edit&status=any&per_page=100&page="+pageNumber+"&_fields=id,status,acf");
+    if(res.http!==200||!Array.isArray(res.data)||res.pages<1||res.pages>35)
+     throw Error("Native 301 registry incomplete before original gallery 975 redirect");
+    matches.push(...res.data.filter(x=>x.status!=="trash"&&x.acf?.from_link===originalPath));
+    if(pageNumber>=res.pages)break;
+   }
+   if(matches.length>1||matches.some(x=>x.acf?.to_link!==canonical||x.acf?.type!=="301"||
+      x.acf?.match_type!=="Exact"||x.acf?.enable!==true||!["draft","publish"].includes(x.status)))
+    throw Error("Conflicting original Joomla gallery 975 native 301");
+   let redirectId=matches[0]?.id;
+   if(!redirectId){
+    const res=await api(endpoint,"POST",{title:"PSE Joomla original gallery 975 exact 301",
+      status:"draft",acf:{from_link:originalPath,to_link:canonical,type:"301",match_type:"Exact",enable:true}});
+    if(res.http!==201||!Number.isSafeInteger(Number(res.data?.id)))
+     throw Error("Original gallery 975 redirect draft creation failed");
+    redirectId=Number(res.data.id);
+   }
+   const verify=async()=>{
+    const r=await readNative(endpoint+"/"+redirectId+"?context=edit"),x=r.data||{};
+    if(r.http!==200||x.id!==redirectId||
+       x.acf?.from_link!==originalPath||x.acf?.to_link!==canonical||
+       x.acf?.type!=="301"||x.acf?.match_type!=="Exact"||x.acf?.enable!==true)
+     throw Error("Original gallery 975 redirect source/canonical readback mismatch");
+    return x;
+   };
+   const previous=await verify();
+   if(previous.status!=="publish"){
+    const result=await api(endpoint+"/"+redirectId,"POST",{status:"publish"});
+    if(result.http!==200||result.data?.id!==redirectId||result.data.status!=="publish")
+     throw Error("Original gallery 975 native 301 publish failed");
+   }
+   const finalRedirect=await verify();
+   if(finalRedirect.status!=="publish")throw Error("Original gallery 975 301 status readback failed");
+   console.log("PSE_GALLERY_975_OWNER_DATE_REDIRECT=PASS wpPost="+postId+
+     " wpRedirect="+redirectId+" images=110 date=2011-03-06T04:53:14"+
+     " originalPath="+originalPath+" canonical="+canonical+" mediaWrites=0");
   }
   console.log("PSE_GALLERY_BATCH=COMPLETE id="+id+" post="+postId+" photos="+items.length+" wordpressOwned=true");
  }
