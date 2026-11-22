@@ -12,6 +12,8 @@ class Tests(unittest.TestCase):
             z.writestr("website/administrator/components/com_blog/install.sql","CREATE TABLE t;\n")
             z.writestr("website/database/backups/site-dump.sql","INSERT INTO joomla_content VALUES (1);\n"*40000)
             z.writestr("website/images/img.jpg","image bytes")
+            z.writestr("website/images/web/Áo_2.JPG","original source photo")
+            z.writestr("website/other/Ba_Lan.JPG","not exact source directory")
         data=stream.getvalue()
         e=m.base.central_directory_location(data[-min(len(data),65557):],len(data))
         report=m.classify(data[e["cd_offset"]:e["cd_offset"]+e["cd_size"]],e["entries"])
@@ -22,6 +24,13 @@ class Tests(unittest.TestCase):
         self.assertTrue(report["raw_archive_paths_logged"] is False)
         self.assertNotIn("site-dump.sql",str(report))
         self.assertFalse(report["sql_body_accessed"])
+        imgs=report["original_382_image_candidates_in_zip"]
+        self.assertEqual(imgs[1]["basename_count"],1)
+        self.assertEqual(imgs[1]["source_path_count"],1)
+        self.assertEqual(imgs[2]["basename_count"],1)
+        self.assertEqual(imgs[2]["source_path_count"],0)
+        self.assertEqual(imgs[3]["basename_count"],0)
+        self.assertNotIn("Áo_2.JPG",str(imgs))
     def test_wrong_count_is_not_silently_accepted(self):
         with self.assertRaisesRegex(ValueError,"zip_entry_count_mismatch"):
             m.classify(b"",1)
