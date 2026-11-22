@@ -1,0 +1,42 @@
+name: PSE remaining original Kali native Page source preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-legacy-native-page-source-proof.mjs
+      - .github/workflows/pse-kali-legacy-native-page-source-proof.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-kali-archive-to-native-proof
+          path: inputs/archive
+          run-id: 44914636767
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-kali-1678-native-page-preflight
+          path: inputs/kali
+          run-id: 44990223813
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-kali-legacy-native-page-source-proof.mjs && node scripts/pse-kali-legacy-native-page-source-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-legacy-native-page-source-proof
+          path: artifacts/pse-kali-legacy-native-page-source-proof/
+          retention-days: 30
+          if-no-files-found: warn
