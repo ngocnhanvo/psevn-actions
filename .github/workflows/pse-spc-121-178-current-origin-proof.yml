@@ -1,0 +1,31 @@
+name: PSE SPC 121 and 178 current publisher domain exact media proof (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-spc-121-178-current-origin-proof.py
+      - .github/workflows/pse-spc-121-178-current-origin-proof.yml
+permissions:
+  contents: read
+jobs:
+  publisher-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check beautifulsoup4==4.13.4 pillow==11.3.0
+      - run: python -m py_compile scripts/pse-spc-121-178-current-origin-proof.py
+      - run: python scripts/pse-spc-121-178-current-origin-proof.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-spc-current-origin-proof
+          path: artifacts/pse-spc-current-origin-proof/
+          retention-days: 30
+          if-no-files-found: warn
