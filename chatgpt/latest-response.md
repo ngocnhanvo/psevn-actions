@@ -2,9 +2,9 @@
 
 #198 DONE, WP83516 + redirect83518, production QA #44986075425 PASS. Không nhập/build lại.
 
-[#44986504624](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986504624) SUCCESS: #1090 Joomla HTTP200 exact title, 5341 chars SHA ec7491b318f521d4b5c49ffc2dd13eca6d2df797691fa89e047915716a150e5a, full 24 original photos. Official DPM exact title https://dpm.vn/tin-tuc/pvfcco-to-chuc-thanh-cong-chuong-trinh-hoi-mua-phu-my-va-cham-soc-khach-hang-khu-vuc-tay-nguyen-1172 09/03/2015, 10 directly linked exact names, 14 more candidate filenames in same relocated directory. PSE RSS 14/03/2015. #237 source HTTP200 1410 chars exact title, 11 photos, still no official publisher article match, page 207 not yet inspected by prior run.
+#1090 [#44986757822](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986757822) SUCCESS: all 24/24 JPEGs HTTP200 decode and unique SHA; artifact 14740132540. Đã tải và thực sự xem cả hai contact sheets. Ảnh tên ngắn 5.JPG (Tết), 2(1).JPG (giàn khoan), 3.JPG/4.JPG (nhà máy, EXIF 2005), 6.JPG/7.JPG (từ thiện), 8.jpg (thành phố) có khả năng trùng tên sai ngữ cảnh; các ảnh còn lại phần lớn cùng sự kiện 08–09/03/2015. Không nhập tất cả chỉ vì trùng filename. #237 page207 HTTP200 không có bài cùng tiêu đề, chưa tìm thấy ảnh.
 
-[#44986757822](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986757822) IN_PROGRESS: GET-only all 24 exact #1090 names JPEG decode/SHA/EXIF/contact sheets, #237 DPM page207. Next inspect real report and visual proof; only guarded native WP recovery if verified. No CMS writes yet. [Checkpoint 16be8089](https://github.com/ngocnhanvo/psevn-actions/commit/16be8089b780cbbc7f6b9a66d240583dd4ca2043). Còn 11 bài, album #975, 4 alias và ảnh #225.
+[#44987020279](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44987020279) IN_PROGRESS: GET-only đối chiếu chú thích/alt/ngữ cảnh HTML của đủ 24 ảnh Joomla với bài DPM chính thức, body SHA pin, artifact pin. Tiếp theo đọc report và xác minh từng ảnh nghi vấn; không kích trùng, không ghi CMS khi chưa xác minh provenance. [Checkpoint 9265f234](https://github.com/ngocnhanvo/psevn-actions/commit/9265f234abbe2c2bc25446fd81d98a5ea5cd143c). Còn 11 bài, album #975, 4 alias và ảnh #225.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
