@@ -1,0 +1,83 @@
+name: PSE original Joomla SQL eleven private WordPress draft staging (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-eleven-native-drafts.mjs
+      - .github/workflows/pse-original-eleven-native-drafts.yml
+      - .pse-original-eleven-native-preflight-request
+      - .pse-original-eleven-native-apply-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-original-eleven-native-drafts.mjs
+  preflight:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): preflight native drafts from original Joomla DB'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read-only original DB and native WP slug/category/ACF collision inspection
+        run: node scripts/pse-original-eleven-native-drafts.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-eleven-native-draft-preflight
+          path: artifacts/pse-original-eleven-native-drafts/report.json
+          retention-days: 30
+          if-no-files-found: warn
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): stage eleven source-authenticated Joomla posts as private drafts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh database rollback snapshot before 11-source drafts
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Grant exactly 11 verified-source draft records after backup
+        run: echo "PSE_ELEVEN_FRESH_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Create missing private drafts ONLY, with native readback and no publish
+        run: node scripts/pse-original-eleven-native-drafts.mjs --apply
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-eleven-native-draft-apply
+          path: artifacts/pse-original-eleven-native-drafts/report.json
+          retention-days: 30
+          if-no-files-found: warn
