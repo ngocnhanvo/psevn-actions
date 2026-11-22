@@ -1,0 +1,53 @@
+name: PSE original Joomla 382 recovered article exact native 301 (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-382-published-native-exact-301.mjs
+      - .github/workflows/pse-382-published-native-exact-301.yml
+      - .pse-382-published-native-exact-301-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-382-published-native-exact-301.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): activate exact Joomla 382 legacy 301 after native publication'
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft snapshot before activating one WordPress redirect
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_382_REDIRECT_BACKUP_READY=yes" >> "$GITHUB_ENV"
+      - name: Verify original 3 photo hashes and publish only native old Joomla redirect
+        run: node scripts/pse-382-published-native-exact-301.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-382-published-native-redirect-301-readback-evidence
+          path: artifacts/pse-382-final-native-original-redirect/report.json
+          retention-days: 30
+          if-no-files-found: warn
