@@ -66,9 +66,17 @@ const fetchCandidate=async id=>{
   if(res.http!==200)throw Error("Mapped native WordPress Post not public "+id+" HTTP"+res.http);
   owner=JSON.parse(res.body);
   kind=id>=980&&id<=1053?"native-photo-album":"native-post";
+  if(id===1159)console.log("PSE_1159_PUBLIC_POST_SANITIZED="+JSON.stringify({
+    id:owner.id,slug:owner.slug,status:owner.status,
+    acfAction:owner.acf?.action||null,acfKey:owner.acf?.key||null,
+    titleChars:String(owner.title?.rendered||"").trim().length,
+    originPageId:owner.acf?.origin_page_id||null
+   }));
+  const safeNativeSlug=typeof owner.slug==="string"&&owner.slug.length>=6&&
+   owner.slug.length<=240&&!/[/?#\\\s]/.test(owner.slug);
   if(owner.id!==wpPosts[id]||owner.status!=="publish"||
    owner.acf?.action!=="PostDetails"||owner.acf?.key!=="ssr-post"||
-   !/^[a-z0-9-]{6,200}$/.test(owner.slug)||
+   !safeNativeSlug||
    !String(owner.title?.rendered||"").trim())
    throw Error("Source-owned WordPress Post identity changed "+id);
   if(kind==="native-photo-album"&&
