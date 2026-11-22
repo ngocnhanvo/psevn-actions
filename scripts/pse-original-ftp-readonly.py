@@ -158,7 +158,7 @@ def discover(client,root):
     return {
         "joomla_configuration_php_present":"configuration.php" in root_names,
         "joomla_root_markers":sorted(root_names & ROOT_MARKERS),
-        "source_webroot_probable":len(root_names & ROOT_MARKERS)>=3,
+        "source_webroot_probable":all(x in root_names for x in ("configuration.php","administrator","components")) and ("images" in root_names or "media" in root_names),
         "truncated":truncated,
         "directories_inspected":len(seen),
         "entries_encountered":entries,
@@ -180,6 +180,49 @@ def discover(client,root):
         "downloaded_files":0,"modified_files":0,"deleted_files":0
     }
 
+def discover_with_candidate_roots(client,configured_root):
+    """Check only known webroots for the explicitly named pse.vn original site.
+
+    Never traverse other hosted domains or arbitrary private directories.
+    """
+    base=discover(client,configured_root)
+    base["root_candidate"]="configured"
+    base["root_candidates_attempted"]=0
+    if base["source_webroot_probable"] or configured_root!="/":
+        return base
+    try:
+        top={name.casefold() for name,kind,_ in client.listdir("/") if kind=="dir"}
+    except Exception:
+        return base
+    options=[
+      ("domains_pse_public","/domains/pse.vn/public_html","domains"),
+      ("domains_pse_private","/domains/pse.vn/private_html","domains"),
+      ("pse_public","/pse.vn/public_html","pse.vn"),
+      ("pse_root","/pse.vn","pse.vn"),
+      ("public_html","/public_html","public_html"),
+      ("httpdocs","/httpdocs","httpdocs"),
+      ("www","/www","www"),
+    ]
+    attempts=0
+    for label,remote,needed_root_entry in options:
+        if needed_root_entry not in top:
+            continue
+        attempts+=1
+        try:
+            rows=client.listdir(remote)
+        except (ftplib.all_errors,OSError):
+            continue
+        names={name.casefold() for name,kind,_ in rows}
+        if not all(x in names for x in ("configuration.php","administrator","components")) or not ("images" in names or "media" in names):
+            continue
+        result=discover(client,remote)
+        result["root_candidate"]=label
+        result["root_candidates_attempted"]=attempts
+        return result
+    base["root_candidates_attempted"]=attempts
+    base["known_root_layout_hints"]={n:n in top for n in ("domains","pse.vn","public_html","httpdocs","www")}
+    return base
+
 def main():
     if os.getenv("GITHUB_REPOSITORY")!="ngocnhanvo/psevn-actions":
         raise ValueError("wrong_repository")
@@ -191,11 +234,11 @@ def main():
     client=None
     try:
         client=FTPS(host,port,user,password) if scheme=="ftps" else SFTP(host,port,user,password)
-        result=discover(client,root)
+        result=discover_with_candidate_roots(client,root)
         result.update(schema="pse-original-ftp-readonly-v1",protocol=scheme,certificate_or_hostkey_verified=True,no_credentials_or_server_path_in_artifact=True)
         OUT.mkdir(parents=True,exist_ok=True)
         (OUT/"summary.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
-        minimal={x:result[x] for x in ("source_webroot_probable","joomla_configuration_php_present","joomla_root_markers","truncated","directories_inspected","entries_encountered","categories","backup_candidate_sizes","source_filename_candidate_matches","directory_errors_by_type","downloaded_files","modified_files","deleted_files")}
+        minimal={x:result[x] for x in ("root_candidate","root_candidates_attempted","known_root_layout_hints","source_webroot_probable","joomla_configuration_php_present","joomla_root_markers","truncated","directories_inspected","entries_encountered","categories","backup_candidate_sizes","source_filename_candidate_matches","directory_errors_by_type","downloaded_files","modified_files","deleted_files") if x in result}
         print("PSE_ORIGINAL_FTP_READONLY="+json.dumps(minimal,ensure_ascii=False))
         if not result["source_webroot_probable"]:raise ValueError("original_joomla_root_not_verified")
     finally:
