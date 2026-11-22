@@ -22,7 +22,8 @@ jobs:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.ref == 'refs/heads/main' &&
-      github.event.head_commit.message == 'cms(pse): restore two original Kali historical native pages'
+      (github.event.head_commit.message == 'cms(pse): restore two original Kali historical native pages' ||
+       github.event.head_commit.message == 'cms(pse): restore verified Kali 1425 historical native page')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
