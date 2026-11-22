@@ -16,5 +16,8 @@
     45036362535
   ],
   "legacyRedirect": "/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
-  "onlyPostId": 83543
+  "onlyPostId": 83543,
+  "diagnosticsRevision": 1,
+  "previousRun": 45036660462,
+  "reason": "Audit native media source URL before one-Post 382 publication; prior guard rejected URL after backup, no publication"
 }
