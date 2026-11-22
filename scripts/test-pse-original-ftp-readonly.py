@@ -53,6 +53,37 @@ class SourceReadOnlyTests(unittest.TestCase):
         self.assertEqual(got["deleted_files"],0)
         self.assertEqual(len(remote.calls),4)
         self.assertNotIn("configuration.php",str(got.get("source_filename_candidate_matches")))
+    def test_only_original_pse_domain_root_is_auto_scanned(self):
+        fixture=NoWriteFixture(["unrelated.jpg"])
+        fixture.catalog["/"]=[
+            ("domains","dir",-1),("backups","dir",-1),
+            ("unrelated-client","dir",-1),
+        ]
+        fixture.catalog["/domains/pse.vn/public_html"]=[
+            ("configuration.php","file",100),
+            ("administrator","dir",-1),("components","dir",-1),
+            ("images","dir",-1),("media","dir",-1),
+        ]
+        fixture.catalog["/domains/pse.vn/public_html/images"]=[]
+        result=mod.discover_with_candidate_roots(fixture,"/")
+        self.assertTrue(result["source_webroot_probable"])
+        self.assertEqual(result["root_candidate"],"domains_pse_public")
+        self.assertGreaterEqual(result["root_candidates_attempted"],1)
+        self.assertTrue(all("unrelated-client" not in path for path in fixture.calls))
+        self.assertEqual(result["downloaded_files"],0)
+        self.assertEqual(result["modified_files"],0)
+        self.assertEqual(result["deleted_files"],0)
+
+    def test_false_joomla_root_is_rejected(self):
+        fixture=NoWriteFixture(["unrelated.jpg"])
+        fixture.catalog["/"]=[("domains","dir",-1)]
+        fixture.catalog["/domains/pse.vn/public_html"]=[
+            ("images","dir",-1),("media","dir",-1),("components","dir",-1)
+        ]
+        result=mod.discover_with_candidate_roots(fixture,"/")
+        self.assertFalse(result["source_webroot_probable"])
+        self.assertTrue(result["known_root_layout_hints"]["domains"])
+
     def test_source_path_scope(self):
         self.assertEqual(mod.validated_root("/domains/pse.vn/public_html/"),"/domains/pse.vn/public_html")
         for value in ("/../private","/images/./config","relative","/a\\b","/file?q=1"):
