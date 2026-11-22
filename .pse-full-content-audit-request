@@ -1,9 +1,13 @@
 {
-  "schema": "pse-all-804-original-identity-public-rest-audit-request-v1",
-  "goal": "Reconcile 804 original Joomla source IDs to current WordPress published native Posts, Products, Pages and Galleries; stop reimporting already published content",
-  "originalCheckpoint": "docs/pse-legacy-migration-state.json",
-  "lastPublicDeployRun": 45041558507,
-  "preserveThirdPartySourceURLs": true,
-  "strictReadOnly": true,
-  "noWordPressWrites": true
+  "schema": "pse-original-804-independent-native-content-inventory-v2",
+  "productionRun": 45047656628,
+  "verifiedNativePages": [
+    83528,
+    83572,
+    83593
+  ],
+  "priorInventoryRun": 45042854764,
+  "readOnly": true,
+  "noBuild": true,
+  "noCMSWrites": true
 }
