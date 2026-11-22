@@ -99,8 +99,8 @@ const fetchCandidate=async id=>{
   const variants=[target,decodeURIComponent(target),encodeURI(target)];
   const checks=await Promise.all([...new Set(variants)].map(async variant=>{
    const v=await get(front+variant);
-   const c=v.body.match(/<link\\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
-     v.body.match(/<link\\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+   const c=v.body.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+     v.body.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
    return{variant,http:v.http,location:v.location,canonical:c.slice(0,230)};
   }));
   console.log("PSE_1159_TARGET_CANONICAL_DIAGNOSTIC="+JSON.stringify({
