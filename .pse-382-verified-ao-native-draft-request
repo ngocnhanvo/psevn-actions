@@ -1,0 +1,11 @@
+{
+  "schema": "pse-original-image-publish-guard-v1",
+  "sourceJoomlaArticleId": 382,
+  "targetWordPressDraftId": 83543,
+  "mediaOnly": true,
+  "sourceOriginalImage": "Ao_2.JPG",
+  "sha256": "7a190b8e1c4144e8b9f4aeab0a7aedf415cc74281212ce100cc61dd31db08964",
+  "proofRun": 45035599397,
+  "remainingUnverifiedImage": "Mỏ_muối_Wieliczka_dưới_mặt_đất_135m_-_Ba_lan.JPG",
+  "doNotPublish": true
+}
