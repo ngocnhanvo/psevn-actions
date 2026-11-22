@@ -1,0 +1,27 @@
+{
+  "schema": "pse-two-original-source-page-redirect-release-request-v1",
+  "sourceIds": [
+    1426,
+    1434
+  ],
+  "nativePageIds": [
+    83572,
+    null
+  ],
+  "sourceProof": {
+    "kaliOriginal": "3 PNG verified",
+    "npkOriginal": "19 owner assets and 1 exact external image retained"
+  },
+  "previousSyntaxWorkflowRun": 45045578573,
+  "previousWordPressPageApplies": [
+    45044832598,
+    45045362671
+  ],
+  "ownerEditorialRule": "original external URLs retained without media download",
+  "existingPipelineOnly": true,
+  "scopedNativeWordPress301": true,
+  "authorizeOnlyTwoExactOriginalSourcePaths": true,
+  "protectedPrewrite": "fresh Updraft database backup, native WP Page title/body/ACF/date/image SHA verification and 301 collision check",
+  "rollback": "native WordPress Updraft database backup",
+  "noAstroHardcode": true
+}
