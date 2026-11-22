@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - scripts/pse-original-ftp-readonly.py
+      - scripts/test-pse-original-ftp-readonly.py
       - .github/workflows/pse-original-ftp-readonly.yml
       - .pse-original-ftp-readonly-request
   workflow_dispatch:
@@ -30,6 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - run: python3 -m py_compile scripts/pse-original-ftp-readonly.py
+      - run: python3 scripts/test-pse-original-ftp-readonly.py
   inspect:
     needs: syntax
     if: >-
