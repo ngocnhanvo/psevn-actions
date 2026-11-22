@@ -1,0 +1,36 @@
+{
+  "schema": "pse-owner-external-thirdparty-images-ten-aliases-v1",
+  "ownerApproval": "Keep existing third-party source image URLs; no WordPress Media import necessary",
+  "sources": [
+    114,
+    121,
+    127,
+    178,
+    186,
+    196,
+    202,
+    237,
+    341,
+    1090
+  ],
+  "posts": [
+    83534,
+    83535,
+    83536,
+    83537,
+    83538,
+    83539,
+    83540,
+    83541,
+    83542,
+    83544
+  ],
+  "publicSourceImageOccurrences": 56,
+  "tenPostPublicationRun": 45040550927,
+  "allowPostsWrite": false,
+  "allowMediaWrite": false,
+  "allowOnlyExactNativeWordPressRedirects": true,
+  "requireAllPostPublicHttp200AndMatchedH1": true,
+  "requireFreshUpdraft": true,
+  "buildGate": "existing owner WordPress Build Website after successful native redirect QA"
+}
