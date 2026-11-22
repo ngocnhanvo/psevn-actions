@@ -1,11 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-Theo yêu cầu người dùng, đã giải thích cụ thể danh sách 12 Joomla Posts chưa xuất bản: #114 (2 ảnh), #121 (3), #127 (2), #178 (5), #186 (2), #196 (5), #198 (10), #202 (1), #237 (11), #382 (3), #1090 (ít nhất 6 ảnh mẫu, cần kiểm đủ inventory), #341 (thiếu body). Ít nhất 50 tham chiếu ảnh thiếu ở 11 bài. Danh sách tên bài, URL gốc và từng file trong [báo cáo](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/reports/pse-tin-tong-hop-source-gaps-2026-11-21.md).
-- Album #975 “Đại hội công đoàn nhiệm kỳ II 10/2013”: 110/110 ảnh đã WP media; EXIF 2010-09-11, source RSS 2011-03-05 UTC, Joomla created day 2011-03-06, title 10/2013. Cần xác nhận ngày/biên tập.
-- Alias #1425,1426,1434,1678: không phải 4 sản phẩm thiếu; cần xác nhận đích nội dung. #1434 có 19/20 ảnh, file full-size cùng publisher có thể là phương án thay thế cần phê duyệt; #1425 và #1678 có ứng viên MOP bột và miểng nhưng chưa chứng minh tương đương; #1426 có nhiều biến thể.
-- #225 WP #79574 đã xuất bản ngày hiển thị 28/09/2011: [bài mới](https://pse.webnvn.com/pse-tang-nha-van-hoa-cho-nguoi-dan-vung-sau), chỉ thiếu ảnh Tuổi Trẻ ThumbnailID=521979, không thiếu bài.
-- Đề xuất xin xác nhận biên tập cho nhập bài đủ nội dung/ngày nhưng bỏ ảnh lỗi, xử lý #975 và các URL sản phẩm theo đích được duyệt, bỏ ảnh lỗi #225 nếu không có nguồn. Chưa có phê duyệt, chưa sửa CMS/code/build. #341 cần body thật; #1090 cần inventory/body. Không tuyên bố parity gốc tuyệt đối nếu dùng phương án biên tập thay thế.
-- Kiểm tra ảnh nội bộ 3242/3242 HEAD PASS, checkpoint 0bee4d71 không thay đổi.
+Đã tìm được manh mối mới thay vì quét lại dữ liệu đã PASS:
+- #341: [Báo Điện tử Chính phủ 06/03/2013](https://baochinhphu.vn/du-nuoc-tuoi-cho-633000-ha-lua-xuan-2013-102139394.htm) có bài trùng tiêu đề. Chưa có bằng chứng Joomla đăng nguyên văn.
+- #198: [bài DPM chính thức](https://dpm.vn/tin-tuc/nha-may-dam-phu-my-don-tan-san-pham-ure-thu-5-trieu-1954) còn ảnh [110814 E1.jpg](https://dpm.vn/static/upload/users/dpm.vn/2011/08-13/110814%20E1.jpg) cùng tên gốc nhưng đường dẫn mới. Tạo probe 10 file theo đường dẫn mới, GET-only, SHA256, guard. [Run #44983863130](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44983863130) đã kích hoạt; chưa có kết quả đầy đủ.
+- #196 SGGP và #202 Báo Bình Phước có bài cùng sự kiện; chưa xác minh ảnh gốc.
+- Đã lưu [checkpoint 85c64e8e](https://github.com/ngocnhanvo/psevn-actions/commit/85c64e8e6c550740a249e9586caec882f83a513b). Bước tiếp theo đọc kết quả #44983863130, xử lý nếu có evidence đủ. Không chạy trùng, không sửa CMS khi chưa đủ chứng cứ. Audit 3242/3242 HEAD đã DONE. Chưa có phê duyệt ngoại lệ biên tập.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
