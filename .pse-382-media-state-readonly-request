@@ -1,3 +1,5 @@
 Actual guarded source FTPS Ba_Lan.JPG import #45030996234 completed fresh Updraft backup and private exact FTP transfer (163574 bytes, pinned SHA) but writer failed at `Media output provenance invalid` AFTER WordPress media upload likely succeeded. Do not blindly retry or create duplicate. Diagnose existing WordPress Media URL origin/mime/id/byte SHA and WP draft 83543 original image src in READ ONLY mode. No CMS or FTP writes.
 
 After 45031380222 read-only found single WordPress Media83545 with canonical Ba_Lan.jpg image/jpeg WP own origin, post83543 draft unchanged, node anonymous net failed PlaywrightError. Updated diagnostic cfce1d69 to verify exact bytes from authenticated same-origin browser. No CMS writes; do not rerun importer until check passes.
+
+Post-release source Media QA: writer #45032077695 PASS, exactly original FTP JPEG Media83545 reused byte-for-byte and Post83543 draft single original image src replaced, two missing original image refs unchanged. Check read-only WP REST draft body, correct one Media SHA256, original two still present, 0 duplicates, no publish or redirects. Source-only 11 publication still blocked.
