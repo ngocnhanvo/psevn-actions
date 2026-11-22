@@ -21,6 +21,7 @@ on:
       - PSE original Joomla 198 exact native WordPress 301 redirect (GUARDED)
       - PSE four proven Dam Phu My related links native repair (GUARDED)
       - PSE fifth Dam Phu My related link exact native repair (GUARDED)
+      - PSE Kali 1678 owner product redirect (GUARDED)
       - PSE two historical Kali original exact 301 (GUARDED)
       - PSE two exact original Kali historical native Pages (GUARDED)
       - PSE Joomla 198 verified relocated DPM originals native WP (GUARDED)
@@ -108,6 +109,10 @@ jobs:
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE two historical Kali original exact 301 (GUARDED)' &&
              (github.event.workflow_run.head_commit.message == 'cms(pse): redirect two verified historical Kali pages' || github.event.workflow_run.head_commit.message == 'cms(pse): redirect verified historical Kali 1425 page'))
+            ||
+            (github.event.workflow_run.event == 'push' &&
+             github.event.workflow_run.name == 'PSE Kali 1678 owner product redirect (GUARDED)' &&
+             github.event.workflow_run.head_commit.message == 'cms(pse): point Kali 1678 to existing WooCommerce product')
             ||
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE fifth Dam Phu My related link exact native repair (GUARDED)' &&
@@ -244,6 +249,9 @@ jobs:
           elif (name=="PSE two historical Kali original exact 301 (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message") in ("cms(pse): redirect two verified historical Kali pages","cms(pse): redirect verified historical Kali 1425 page")):
               cohort="SOURCE_PROVEN_TWO_KALI_EXACT_301"
+          elif (name=="PSE Kali 1678 owner product redirect (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): point Kali 1678 to existing WooCommerce product"):
+              cohort="OWNER_KALI_1678_EXISTING_PRODUCT"
           elif (name=="PSE fifth Dam Phu My related link exact native repair (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): repair fifth Dam Phu My related link"):
               cohort="SOURCE_PROVEN_DAM_FIFTH_RELATED_LINK"
