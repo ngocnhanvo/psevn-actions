@@ -1,0 +1,50 @@
+name: PSE original Joomla 11 article images ZIP filename inventory (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-ftp-joomla-image-basename-map.py
+      - scripts/test-pse-original-ftp-joomla-image-basename-map.py
+      - .github/workflows/pse-original-ftp-joomla-image-basename-map.yml
+      - .pse-original-ftp-joomla-image-basename-map-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-original-ftp-joomla-image-basename-map.py
+      - run: python3 scripts/test-pse-original-ftp-joomla-image-basename-map.py
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): scan original Joomla archive for 11 article image paths'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    concurrency:
+      group: pse-original-joomla-source-readonly
+      cancel-in-progress: false
+    env:
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_FTP_PROTOCOL: ftps
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify owner article image basenames within original ZIP TOC only
+        run: python3 scripts/pse-original-ftp-joomla-image-basename-map.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-joomla-11-article-image-archive-candidates
+          path: artifacts/pse-original-ftp-joomla-image-matches/summary.json
+          retention-days: 14
+          if-no-files-found: warn
