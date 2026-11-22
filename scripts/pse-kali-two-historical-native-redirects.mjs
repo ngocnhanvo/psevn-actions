@@ -54,7 +54,7 @@ try{
    if(id===1425&&p.links.filter(l=>l.from===owner1678&&l.to===ownerOld).length!==1)
     throw Error('Pinned old owner 1678 reference changed');
    const expectedLinks=p.links.map(l=>id===1425&&l.from===owner1678&&l.to===ownerOld?ownerTarget:l.to);
-   if(compact(result.text)!==compact(d.full)||JSON.stringify(result.tables.map(t=>t.map(r=>r.map(compact))))!==JSON.stringify(d.tables.map(t=>t.map(r=>r.map(compact))))||result.overflow>5||expectedLinks.some(l=>!result.links.includes(l))||result.links.includes(ownerOld))throw Error('Live body/table/link/overflow mismatch '+id+' '+width);
+   if(compact(result.text)!==compact(d.full)||JSON.stringify(result.tables.map(t=>t.map(r=>r.map(compact))))!==JSON.stringify(d.tables.map(t=>t.map(r=>r.map(compact))))||result.overflow>5||expectedLinks.some(l=>!result.links.includes(l))||(id===1425&&result.links.includes(ownerOld)))throw Error('Live body/table/link/overflow mismatch '+id+' '+width);
    const images=[];
    for(let i=0;i<sources.length;i++){
     const el=root.locator('img').nth(i),o=sources[i];
