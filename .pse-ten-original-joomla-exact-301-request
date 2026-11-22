@@ -32,5 +32,8 @@
   "allowOnlyExactNativeWordPressRedirects": true,
   "requireAllPostPublicHttp200AndMatchedH1": true,
   "requireFreshUpdraft": true,
-  "buildGate": "existing owner WordPress Build Website after successful native redirect QA"
+  "buildGate": "existing owner WordPress Build Website after successful native redirect QA",
+  "retryRevision": 1,
+  "previousRun": 45040850738,
+  "previousResult": "ZERO redirect writes; 8 of 10 public article destinations passed; transient ECONNRESET at #341; retry transport only"
 }
