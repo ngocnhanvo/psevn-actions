@@ -36,11 +36,26 @@ try{
  if(admin.url().includes('wp-login')||!await admin.locator('#adminmenu').count())throw Error('No WP session');
  const nonce=await admin.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;const r=await fetch('/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'same-origin'});if(!r.ok)throw Error('REST nonce unavailable');return(await r.text()).trim()});
  if(!/^[A-Za-z0-9]{8,24}$/.test(nonce))throw Error('Bad REST nonce');
- const api=async(path,method='GET',body)=>{const r=await ctx.request.fetch(wp+'/wp-json/wp/v2/'+path,{method,headers:{'X-WP-Nonce':nonce,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{data:body}:{})});return {http:r.status(),pages:Number(r.headers()['x-wp-totalpages']||1),data:await r.json().catch(()=>null)}};
+ // Only idempotent GET requests may retry a transient transport failure.
+ // Never retry POST blindly or emit authenticated request headers in errors.
+ const api=async(path,method='GET',body)=>{
+  const attempts=method==='GET'?3:1;
+  for(let i=0;i<attempts;i++){
+   try{
+    const r=await ctx.request.fetch(wp+'/wp-json/wp/v2/'+path,{method,timeout:45000,headers:{'X-WP-Nonce':nonce,Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{data:body}:{})});
+    return {http:r.status(),pages:Number(r.headers()['x-wp-totalpages']||1),data:await r.json().catch(()=>null)};
+   }catch(e){
+    const transient=/ECONNRESET|ETIMEDOUT|socket hang up|Timeout|ECONNREFUSED/i.test(String(e?.code||'')+' '+String(e?.message||''));
+    if(method!=='GET'||!transient||i===attempts-1)throw Error('Native REST '+method+' '+path.split('?')[0]+' '+(transient?'transport failure; inspect native state before retry':'request failure'));
+    console.log('PSE_KALI_GET_RETRY='+JSON.stringify({resource:path.split('?')[0],attempt:i+1,reason:'transient transport'}));
+    await new Promise(r=>setTimeout(r,1000*(i+1)));
+   }
+  }
+ };
  const existing=new Map();
  for(const s of specs){
   const q='?context=edit&status=publish,draft,pending,private,future&slug='+s.slug+'&_fields=id,slug,status,title,acf,content,featured_media';
-  const [pa,po,pr]=await Promise.all(['pages','posts','product'].map(t=>api(t+q)));
+  const pa=await api('pages'+q),po=await api('posts'+q),pr=await api('product'+q);
   if([pa,po,pr].some(x=>x.http!==200||!Array.isArray(x.data))||po.data.length||pr.data.length||pa.data.length>1)throw Error('Native slug collision '+s.id);
   const p=pa.data[0];if(p&&(p.acf?.action!=='PublicPage'||p.acf?.key!=='pse-historical-kali-'+s.id||!['draft','publish'].includes(p.status)))throw Error('Unowned existing Page '+s.id);
   existing.set(s.id,p);
