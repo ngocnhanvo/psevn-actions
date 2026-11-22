@@ -198,5 +198,22 @@ def main():
 if __name__=="__main__":
     try:main()
     except Exception as e:
-        print("PSE_ORIGINAL_FTP_READONLY_ERROR="+e.__class__.__name__,file=sys.stderr)
+        # Expose only fixed failure codes. Never echo host, user, password,
+        # full path, SSH key, remote exception message or stack.
+        safe={
+            "missing_or_invalid_PSE_SOURCE_FTP_HOST":"SOURCE_HOST_NOT_CONFIGURED",
+            "missing_or_invalid_PSE_SOURCE_FTP_USERNAME":"SOURCE_USERNAME_NOT_CONFIGURED",
+            "missing_or_invalid_PSE_SOURCE_FTP_PASSWORD":"SOURCE_PASSWORD_NOT_CONFIGURED",
+            "missing_or_invalid_PSE_SOURCE_FTP_PROTOCOL":"SOURCE_PROTOCOL_NOT_CONFIGURED",
+            "missing_or_invalid_PSE_SOURCE_FTP_ROOT":"SOURCE_ROOT_NOT_CONFIGURED",
+            "missing_or_invalid_PSE_SOURCE_SFTP_KNOWN_HOSTS":"SOURCE_SFTP_HOSTKEY_NOT_CONFIGURED",
+            "source_host_unsafe":"SOURCE_HOST_INVALID_FORMAT",
+            "source_root_not_absolute":"SOURCE_ROOT_NOT_ABSOLUTE",
+            "source_root_unsafe":"SOURCE_ROOT_INVALID_FORMAT",
+            "secure_transport_required":"SOURCE_TRANSPORT_UNSUPPORTED",
+            "original_joomla_root_not_verified":"ORIGINAL_JOOMLA_ROOT_NOT_VERIFIED",
+            "original_source_gaps_report_missing":"ORIGINAL_SOURCE_REPORT_MISSING",
+            "wrong_repository":"WRONG_GITHUB_REPOSITORY"
+        }
+        print("PSE_ORIGINAL_FTP_READONLY_ERROR="+safe.get(str(e),e.__class__.__name__),file=sys.stderr)
         sys.exit(1)
