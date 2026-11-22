@@ -1,0 +1,63 @@
+name: PSE original Joomla 382 verified source photo native WP Media (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-382-verified-ba-lan-source-export.py
+      - scripts/pse-382-verified-ba-lan-native-media.mjs
+      - .github/workflows/pse-382-verified-ba-lan-native-media.yml
+      - .pse-382-verified-ba-lan-native-media-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-382-verified-ba-lan-source-export.py
+      - run: node --check scripts/pse-382-verified-ba-lan-native-media.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): stage exact original Ba_Lan photo in draft 382'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_FTP_PROTOCOL: ftps
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh WP rollback snapshot before any exact owner-source Media writes
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Authorize only exact source verified media transfer after backup
+        run: echo "PSE_382_BACKUP_READY=yes" >> "$GITHUB_ENV"
+      - name: Secure source FTPS single-image download to ephemeral private /tmp
+        run: python3 scripts/pse-382-verified-ba-lan-source-export.py
+      - name: Stage byte-exact original image in WP Media and private draft382 ONLY
+        run: node scripts/pse-382-verified-ba-lan-native-media.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-382-original-Ba-Lan-native-media-evidence
+          path: artifacts/pse-382-verified-original-media/report.json
+          retention-days: 30
+          if-no-files-found: warn
