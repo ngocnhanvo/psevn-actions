@@ -27,7 +27,7 @@ if(source.size!==11)throw Error("Source ID duplicates");
 const cats={
  75:{parent:"kien-thuc-nong-nghiep",child:"huong-dan-su-dung-phan-bon"},
  101:{parent:"tin-cong-ty",child:"tin-tong-hop"},
- 93:{parent:"hoat-dong-kinh-doanh",child:"thong-tin-thi-truong"}
+ 93:{parent:null,child:"thong-tin-thi-truong"}
 };
 const hash=s=>createHash("sha256").update(String(s)).digest("hex");
 const htmlText=async(page,html)=>page.evaluate(html=>{
@@ -88,16 +88,19 @@ try{
  },{path,method,payload,nonce});
  const categories={};
  for(const [id,map] of Object.entries(cats)){
-  const [p,c]=await Promise.all(["parent","child"].map(typ=>api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(map[typ])+"&hide_empty=false&_fields=id,slug,parent")));
+  const [p,c]=await Promise.all(["parent","child"].map(typ=>map[typ]?api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(map[typ])+"&hide_empty=false&_fields=id,slug,parent"):Promise.resolve({http:200,data:[]})));
   console.log("PSE_NATIVE_CATEGORY_INSPECT="+JSON.stringify({sourceCategory:id,
    expectedParentSlug:map.parent,expectedChildSlug:map.child,
    parentHTTP:p.http,childHTTP:c.http,
    parentRows:Array.isArray(p.data)?p.data.map(x=>({id:x.id,slug:x.slug,parent:x.parent})):[],
    childRows:Array.isArray(c.data)?c.data.map(x=>({id:x.id,slug:x.slug,parent:x.parent})):[]}));
-  if(p.http!==200||c.http!==200||p.data?.length!==1||c.data?.length!==1||
-    !Number.isSafeInteger(p.data[0].id)||c.data[0].parent!==p.data[0].id)
+  if(p.http!==200||c.http!==200||c.data?.length!==1||
+    !Number.isSafeInteger(c.data[0].id)||
+    (map.parent
+      ? p.data?.length!==1||!Number.isSafeInteger(p.data[0].id)||c.data[0].parent!==p.data[0].id
+      : p.data?.length!==0||c.data[0].parent!==0))
     throw Error("Native category taxonomy mismatch "+id);
-  categories[id]=[p.data[0].id,c.data[0].id];
+  categories[id]=map.parent?[p.data[0].id,c.data[0].id]:[c.data[0].id];
  }
  const reference=await api("/wp-json/wp/v2/posts/82119?context=edit&_fields=id,status,acf");
  if(reference.http!==200||reference.data?.id!==82119||reference.data?.status!=="publish"||
