@@ -1,0 +1,8 @@
+{
+  "schema": "pse-source-original-34-redirect-postrelease-v1",
+  "productionRun": 45049550363,
+  "cmsApplyRun": 45049074759,
+  "expected": 34,
+  "post1159AsciiCanonical": true,
+  "noWPWrites": true
+}
