@@ -1,1 +1,3 @@
 Owner-provided true Joomla DB public 11-article content has been safely selected as docs/source/pse-original-public-articles-11-2026-11-22.json (no users/passwords). Read-only check authenticated native WordPress categories parent/child, post slug collisions, ACF reference post 82119, and exact draft source body/date. Do not write, publish, redirect, upload image, trigger Astro build or edit source files. If preflight passes, next step is fresh Updraft backup before PRIVATE draft staging only. Source media remains release-blocked.
+
+Preflight retry after actual #45029750825 failed pre-write due to source category #93 parent mapping. Added bounded native taxonomy ids/parent diagnostics fe99899a. Do not touch WP until verified mapping, no user content/body in logs.
