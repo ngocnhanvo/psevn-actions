@@ -68,7 +68,14 @@ try{
     return {originalWidth:x.naturalWidth,originalHeight:x.naturalHeight,width:y.naturalWidth,height:y.naturalHeight,mae:sum/n,rmse:Math.sqrt(sq/n),aspectError:Math.abs(x.naturalWidth/x.naturalHeight-y.naturalWidth/y.naturalHeight)};
    },{a:original.toString('base64'),b:rendered.toString('base64')});
    imageProof={...imageProof,mode:'verified-responsive-webp',...metrics};report.imageProof=imageProof;await save();
-   if(metrics.aspectError>0.025||metrics.mae>8||metrics.rmse>18||metrics.width>metrics.originalWidth||metrics.width<40)throw Error('Optimized rendition differs visually '+JSON.stringify(metrics));
+   // Absolute CMS uploads use the existing runtime /api/images proxy.
+   // PHP esc-tool/image.php calls Imagick thumbnailImage(requestedWidth,0),
+   // which may enlarge a small source. Bound that case to the requested width;
+   // keep no-upscale for static Sharp outputs and strict pixel/aspect proof.
+   const runtimeWidth=Number(img.pathname.match(/^\/api\/images\/(\d+)\/png\//)?.[1]||0);
+   const widthOk=metrics.width>=40&&(runtimeWidth?metrics.width<=runtimeWidth:metrics.width<=metrics.originalWidth);
+   imageProof={...imageProof,runtimeWidth,widthOk};report.imageProof=imageProof;await save();
+   if(metrics.aspectError>0.025||metrics.mae>8||metrics.rmse>18||!widthOk)throw Error('Optimized rendition differs visually '+JSON.stringify({...metrics,runtimeWidth,widthOk}));
   }
   console.log('PSE_KALI_IMAGE_PROOF='+JSON.stringify(imageProof));
   for(const target of [...four.map(x=>x[1]),cat])if(!result.links.includes(front+target))throw Error('Live historical crosslink missing '+target);
