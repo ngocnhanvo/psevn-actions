@@ -93,7 +93,8 @@ try{
  if(photoOrigins.some(p=>p.origin!==wp||!p.uploadsPath)||sourceLegacyDouble||sourceLegacySingle)
   throw Error("One or more original photos still external/unmigrated");
  for(let i=0;i<3;i++){
-  const res=await net.get(photos[i],{timeout:45000,failOnStatusCode:false});
+  const verifiedMediaUrl=new URL(photos[i],wp).href;
+  const res=await net.get(verifiedMediaUrl,{timeout:45000,failOnStatusCode:false});
   if(res.status()!==200)throw Error("WP original image not reachable at index "+i);
   const b=await res.body();
   if(b.length!==expected[i].size||sha(b)!==expected[i].sha)
