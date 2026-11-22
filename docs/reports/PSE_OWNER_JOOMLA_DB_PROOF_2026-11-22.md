@@ -27,3 +27,11 @@ SQL dump đọc được, MySQL 5.7, tiền tố bảng `ckiv4_`, bảng `ckiv4_
 
 ## Hợp đồng tiếp tục
 Chỉ cập nhật CMS WordPress native, không hardcode Astro; đối chiếu source ID/category/date/HTML/media; importer idempotent + fresh DB backup + readback; khi đủ ảnh/đối chiếu mới publish/301 và QA live. Các ảnh chưa đủ bản gốc vẫn ở quarantine, status sitewide `PARTIAL`. Bộ 11 bài HTML công khai đã được tách khỏi SQL trên môi trường cuộc trò chuyện, không copy dữ liệu private SQL vào repository.
+
+## 341 — độc lập xác minh ảnh từ trang nhà xuất bản chính thức
+
+Từ bản SQL upload, ảnh Joomla có tên `Resize of lua xaun.jpg`, hotlink cũ `baodientu.chinhphu.vn`. Workflow Playwright read-only [#45028728852](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45028728852) **PASS** xác nhận cùng bài Báo Điện tử Chính phủ và có **hai file nguồn publisher cùng tên** hiện tải được:
+- `bcp.cdnchinhphu.vn`: JPEG 777×488, 73.412 bytes, SHA-256 `4ba6832aad7fab3799c93d56bb24a02795c5486ff8151153ffe7674c451d74b4`.
+- `bcp2.cdnchinhphu.vn`: JPEG 1200×630, 119.712 bytes, SHA-256 `d0ccf5f1153d51b63232b113ec310a71167dc85aaea157833b97c0e2db16ad12`.
+
+**HTTPS tới đúng đường dẫn ảnh lịch sử trả HTTP404**. Do đó đây là hai phiên bản ảnh có provenance mạnh từ trang nhà xuất bản, **chưa chứng minh byte-equal** với asset đã mất từ URL năm 2013. Không đồng nhất ảnh thumbnail 777×488 với bản 1200×630, không tự dùng phiên bản lớn làm original và không khai strict `original_media_sha_pass`. Script [88800899](https://github.com/ngocnhanvo/psevn-actions/commit/88800899867491bebb6b40b837581e6ce125be88) đã phân biệt rõ source publisher name-match và historical bytes.
