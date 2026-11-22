@@ -95,6 +95,18 @@ const fetchCandidate=async id=>{
  const canonical=dest.body.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
   dest.body.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
  const cn=canonical?new URL(canonical,front):null;
+ if(id===1159){
+  const variants=[target,decodeURIComponent(target),encodeURI(target)];
+  const checks=await Promise.all([...new Set(variants)].map(async variant=>{
+   const v=await get(front+variant);
+   const c=v.body.match(/<link\\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1]||
+     v.body.match(/<link\\b[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical/i)?.[1]||"";
+   return{variant,http:v.http,location:v.location,canonical:c.slice(0,230)};
+  }));
+  console.log("PSE_1159_TARGET_CANONICAL_DIAGNOSTIC="+JSON.stringify({
+   target,targetHttp:dest.http,actualCanonical:cn?.pathname||null,checks
+  }));
+ }
  if(dest.http!==200||!cn||cn.origin!==front||cn.pathname!==target||cn.search||cn.hash)
   throw Error("Target 200/canonical mismatch "+id);
  const row={sourceId:id,sourcePath:u.pathname,nativeKind:kind,nativeWpId:owner.id,
