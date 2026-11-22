@@ -62,8 +62,22 @@ try{
   const distributorPage=(family==="/hoat-dong-kinh-doanh/kenh-phan-phoi"&&
     ((sourceId==="1031"&&slug==="he-thong-kho")||
      (sourceId==="1568"&&slug==="quy-che-nha-phan-phoi")));
-  const nativePages=distributorPage?pages.filter(p=>p.slug===slug&&p.status==="publish"&&
-    p.acf?.action==="PublicPage"&&p.acf?.key==="pse-business-"+slug&&
+  // These are verified, owner-authored native Pages preserving distinct Joomla
+  // original article bodies; they MUST NOT be mistaken for unrelated Products.
+  // Exact native Page IDs, ACF ownership and original paths were independently
+  // source-proven before their guarded WordPress imports (#45044832598,
+  // #45045362671) and native Joomla 301 publication (#45047327023).
+  const originalHistoricalPages={
+    "1425":{slug:"kali-phu-my-bot-canada-mo-ta-va-hdsd",pageId:83528,key:"pse-historical-kali-1425"},
+    "1426":{slug:"kali-phu-my-mo-ta-cac-bien-the",pageId:83572,key:"pse-historical-kali-1426"},
+    "1434":{slug:"npk-phu-my",pageId:83593,key:"pse-historical-npk-1434"}
+  };
+  const nativeHistorical=sourceProduct?originalHistoricalPages[sourceId]:null;
+  const nativePages=(distributorPage||nativeHistorical)?pages.filter(p=>
+    p.status==="publish"&&p.acf?.action==="PublicPage"&&
+    (nativeHistorical
+     ?p.id===nativeHistorical.pageId&&p.slug===nativeHistorical.slug&&p.acf?.key===nativeHistorical.key
+     :p.slug===slug&&p.acf?.key==="pse-business-"+slug)&&
     String(p.content?.rendered||"").replace(/<[^>]+>/g,"").trim().length>15):[];
   let status="NOT_PUBLIC";
   let current=postsExact[0]||null;
