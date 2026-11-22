@@ -1,0 +1,43 @@
+name: PSE Joomla 341 government original publisher image provenance (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-341-official-image-evidence.mjs
+      - .github/workflows/pse-341-official-image-evidence.yml
+      - .pse-341-official-image-evidence-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-341-official-image-evidence.mjs
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): verify original publisher photo for Joomla 341'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify official article identity and bounded publisher JPEG candidates, no CMS writes
+        run: node scripts/pse-341-official-image-evidence.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-341-government-publisher-original-photo-evidence
+          path: artifacts/pse-341-official-photo-evidence/summary.json
+          retention-days: 14
+          if-no-files-found: warn
