@@ -1,0 +1,10 @@
+{
+  "schema": "pse-exact-original-image-stage-v1",
+  "sourceId": 382,
+  "wordpressDraftId": 83543,
+  "photo": "Wieliczka original mine photo",
+  "sourceImageSha256": "206537e10a6bf2a95c5943aa17140b0a83ccc3b8b9921b9f8d59c5d5eaffaa5b",
+  "proofRun": 45036115429,
+  "onlyPrivateDraft": true,
+  "doNotPublish": true
+}
