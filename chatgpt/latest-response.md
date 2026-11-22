@@ -1,10 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-#198 DONE WP83516 + redirect83518, QA #44986075425 PASS. #1090 18/24 ảnh supported, six ambiguous unresolved. #186 source body confirmed, publisher HTTP403; no repeat denied requests.
+Owner priority: repair five 404 related links on https://pse.webnvn.com/san-pham/dam-phu-my. [Audit #44989359696](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44989359696) SUCCESS, source exact five links HTTP200, new old paths HTTP404, rich term 1763 native description, 10 tables. Four exact mapped products 1668->80944,1669->80946,1676->80956,1677->80948 (code 05347, not 1679). Guarded native four href+exact 301 apply requested at marker fa9eadc636ba4806cb792f0d7634015cba47693d, [#44989637734](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44989637734) in_progress. Inspect actual apply, fresh backup/readback, signed build, live QA. Do not trigger duplicate.
 
-#121 và #178: xác nhận SPC hiện dùng tên miền chính thức spchcmc.vn (trước đây www.spchcmc.com.vn), có chuyên mục kỹ thuật/tài liệu nhưng chưa tìm được hai bài cùng tiêu đề. 8 exact historical image paths (3 café, 5 điều) được đưa vào bounded official domain relocation check [#44988954778](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44988954778) IN_PROGRESS, source title/body/order, current publisher identity, image decode/SHA/EXIF, stop on network/rate. Next inspect actual results, verify provenance if bytes found, no repeat if unavailable. No CMS writes/build.
+Kali #1678 original two tables/source image and code 00059/61% confirmed; WP80938 current industrial dosage different (50–800/50–1000 vs original 30–200/30–300), other variants not exact. Need faithful native historical detail page, image proof and routing, no duplicate Product or altering current dosing. User asked exact synchronization. [Checkpoint 53b7b73d](https://github.com/ngocnhanvo/psevn-actions/commit/53b7b73d8dce61d02692ae5e2dec446dc79613cd).
 
-[Checkpoint f92f0eb6](https://github.com/ngocnhanvo/psevn-actions/commit/f92f0eb6fa3bffaca767ae869b2dc2a20a71e9c8). Còn 11 ordinary posts, album #975, 4 aliases, #225. Không tự bỏ/thay ảnh hoặc tạo dữ liệu khác nguồn nếu chưa duyệt ngoại lệ.
+Prior #198 DONE. 11 historical ordinary Posts, album #975, old aliases and #225 still partial; SPC #44988954778 completed, not yet inspected. Prioritize user five links.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
