@@ -49,7 +49,7 @@ async function lookup(filename){
    if(res.status!==200){out.status="WP_MEDIA_LOOKUP_UNAVAILABLE";return out}
    if(page===1){
     totalPages=Number(res.headers.get("x-wp-totalpages")||"1");
-    if(!Number.isSafeInteger(totalPages)||totalPages<1)throw Error("Invalid WordPress media page count");
+    if(!Number.isSafeInteger(totalPages)||totalPages<0)throw Error("Invalid WordPress media page count"); // Empty WP result has X-WP-TotalPages: 0
    }
    const list=await res.json();
    if(!Array.isArray(list)||list.length>100)throw Error("unexpected WordPress media response");
