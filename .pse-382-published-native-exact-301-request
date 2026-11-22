@@ -1,0 +1,18 @@
+{
+  "schema": "pse-original-382-single-redirect-commit-v1",
+  "ownerSourceArticle": 382,
+  "wordpressPublishedPost": 83543,
+  "existingWordPressDraftRedirect": 83551,
+  "verifiedMedia": [
+    83547,
+    83545,
+    83549
+  ],
+  "mediaHashVerifiedRun": 45037994963,
+  "publicFrontReadOnlyRun": 45038387726,
+  "sourceURL": "/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
+  "targetURL": "/pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty",
+  "postWritesAllowed": 0,
+  "mediaWritesAllowed": 0,
+  "wordPressRedirectOnly": true
+}
