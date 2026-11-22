@@ -107,7 +107,7 @@ jobs:
             ||
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE two historical Kali original exact 301 (GUARDED)' &&
-             github.event.workflow_run.head_commit.message == 'cms(pse): redirect two verified historical Kali pages')
+             (github.event.workflow_run.head_commit.message == 'cms(pse): redirect two verified historical Kali pages' || github.event.workflow_run.head_commit.message == 'cms(pse): redirect verified historical Kali 1425 page'))
             ||
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE fifth Dam Phu My related link exact native repair (GUARDED)' &&
@@ -242,7 +242,7 @@ jobs:
                 and (run.get("head_commit") or {}).get("message") in ("cms(pse): restore two original Kali historical native pages","cms(pse): restore verified Kali 1425 historical native page")):
               cohort="SOURCE_PROVEN_TWO_KALI_HISTORICAL_NATIVE_PAGES"
           elif (name=="PSE two historical Kali original exact 301 (GUARDED)" and run.get("event")=="push"
-                and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect two verified historical Kali pages"):
+                and (run.get("head_commit") or {}).get("message") in ("cms(pse): redirect two verified historical Kali pages","cms(pse): redirect verified historical Kali 1425 page")):
               cohort="SOURCE_PROVEN_TWO_KALI_EXACT_301"
           elif (name=="PSE fifth Dam Phu My related link exact native repair (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): repair fifth Dam Phu My related link"):
