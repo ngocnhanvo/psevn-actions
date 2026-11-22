@@ -1,0 +1,11 @@
+{
+  "schema": "pse-original-804-route-coverage-read-only-qa-v1",
+  "productionRun": 45047656628,
+  "previousFull301Run": 45043136174,
+  "previousPublicInventoryRun": 45042854764,
+  "expectedSource": 804,
+  "previouslyVerifiedExactSourcePaths": 744,
+  "extraOriginalSourcePaths": 60,
+  "ownerExternalImagesRemainExternal": true,
+  "noCMSWrites": true
+}
