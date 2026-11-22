@@ -1,0 +1,92 @@
+name: PSE Joomla 198 verified relocated DPM originals native WP (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-198-relocated-native-import.mjs
+      - .github/workflows/pse-198-relocated-native-import.yml
+      - .pse-198-relocated-native-import-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preflight:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      PSE_198_PREFLIGHT_ONLY: 'yes'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-198-publisher-relocation-proof
+          path: inputs/pse198
+          run-id: 44983863130
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-198-relocated-preflight
+          path: inputs/pse198-proof
+          run-id: 44984132009
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-198-relocated-native-import.mjs
+      - run: node scripts/pse-198-relocated-native-import.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-198-exact-source-import-preflight
+          path: artifacts/pse-original-198-native/report.json
+          retention-days: 30
+          if-no-files-found: warn
+  apply:
+    needs: preflight
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore Joomla 198 from verified relocated DPM originals'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-198-publisher-relocation-proof
+          path: inputs/pse198
+          run-id: 44983863130
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-198-relocated-preflight
+          path: inputs/pse198-proof
+          run-id: 44984132009
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verified fresh WordPress DB backup before changes
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_198_FRESH_DB_BACKUP_VERIFIED=yes" >> "$GITHUB_ENV"
+      - name: Import at most one native source post and ten verified relocated media
+        run: node --check scripts/pse-198-relocated-native-import.mjs && node scripts/pse-198-relocated-native-import.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-198-relocated-native-import
+          path: artifacts/pse-original-198-native/report.json
+          retention-days: 30
+          if-no-files-found: warn
