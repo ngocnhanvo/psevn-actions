@@ -1,0 +1,53 @@
+name: PSE ten original Joomla Posts with external image URLs retained (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-ten-thirdparty-original-native-publication.mjs
+      - .github/workflows/pse-ten-thirdparty-original-native-publication.yml
+      - .pse-ten-thirdparty-original-native-publication-request
+permissions:
+  contents: read
+jobs:
+  preflight:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-ten-thirdparty-original-native-publication.mjs
+  publish:
+    needs: preflight
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish ten original Joomla posts retaining external media URLs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Updraft native WordPress rollback snapshot before scoped ten Post statuses
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_EXTERNAL_MEDIA_BACKUP_READY=yes" >> "$GITHUB_ENV"
+      - name: Publish only verified original ten Posts without altering external img URLs
+        run: node scripts/pse-ten-thirdparty-original-native-publication.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-ten-original-external-media-publication-readback
+          path: artifacts/pse-original-ten-external-link-publication/report.json
+          retention-days: 30
+          if-no-files-found: warn
