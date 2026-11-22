@@ -1,0 +1,42 @@
+name: PSE original Kali 1425 and owner product redirects live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1425-postrelease-qa.mjs
+      - .github/workflows/pse-kali-1425-postrelease-qa.yml
+      - .pse-kali-1425-postrelease-qa-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-kali-1425-postrelease-qa.mjs
+  public-acceptance:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): verify original Kali 1425 and owner product live redirects'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-kali-1425-postrelease-qa.mjs && node scripts/pse-kali-1425-postrelease-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-1425-owner-product-postrelease
+          path: artifacts/pse-kali-1425-postrelease/
+          retention-days: 30
+          if-no-files-found: warn
