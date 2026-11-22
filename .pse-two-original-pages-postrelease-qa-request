@@ -1,0 +1,15 @@
+{
+  "schema": "pse-two-original-page-content-postrelease-v1",
+  "productionRun": 45047656628,
+  "nativeRedirectRun": 45047327023,
+  "sourceIds": [
+    1426,
+    1434
+  ],
+  "pageIds": [
+    83572,
+    83593
+  ],
+  "keepOriginalExternalSource": true,
+  "readOnly": true
+}
