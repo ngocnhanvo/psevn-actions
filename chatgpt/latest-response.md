@@ -1,10 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-[#44984132009](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984132009) SUCCESS: #198 chính xác tiêu đề, 6092 ký tự nội dung Joomla, 10/10 JPEG decode và thứ tự tên ảnh gốc, tất cả 10 EXIF 14/08/2011. Đã xem contact sheet: cùng sự kiện thực tế. Ngày đăng RSS 15/08/2011 02:32:18 +07. Bằng chứng mạnh ảnh gốc chuyển thư mục DPM, chưa chứng minh byte equality với URL cũ.
+[#44984460079](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984460079) source-only preflight PASS: exact body SHA256 and 10 verified relocated DPM JPEGs, no CMS writes.
 
-Đã chuẩn bị guarded native importer: kiểm tra chính xác source hash, 10 SHA, nguồn/ngày/ID/category/slug, fresh backup, 1 Post và tối đa 10 Media, readback. [#44984460079](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984460079) đang preflight chỉ đọc, chưa ghi CMS. Sau khi PASS, kích marker đúng `cms(pse): restore Joomla 198 from verified relocated DPM originals` file `.pse-198-relocated-native-import-request`, backup và apply; chỉ build qua WordPress hiện có nếu thành công, QA và redirect exact. Không chạy trùng. [Checkpoint 6d672b37](https://github.com/ngocnhanvo/psevn-actions/commit/6d672b37478a61d6b9cc60d5f39771cb463280d7).
+Đã nối guarded apply với signed WordPress Build Website hiện có tại [e8176d1c](https://github.com/ngocnhanvo/psevn-actions/commit/e8176d1c562db8114e3064de81d6c8d1895dcf9c). Marker [13ebff8a](https://github.com/ngocnhanvo/psevn-actions/commit/13ebff8ac196ccf2b73516a9a684b3c7bb15f13d) đã kích hoạt [#44984705336](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984705336), đang chạy preflight, backup, native CMS import theo thứ tự. Chưa xác nhận xuất bản. Không kích trùng. Tiếp theo đọc kết quả apply, xác nhận post ID, 10 ảnh/date/body, signed deploy, exact legacy redirect và live QA; xử lý cụ thể lỗi nếu có. [Checkpoint 9d28894b](https://github.com/ngocnhanvo/psevn-actions/commit/9d28894b7102b1a03281a4b8cd581cfe9b7777dd).
 
-Vẫn 12 bài chưa xuất bản, album #975, 4 alias, ảnh #225; chưa phê duyệt ngoại lệ biên tập. Native inline image HEAD 3242/3242 đã DONE.
+Tổng vẫn 12 bài chưa xuất bản cho đến khi xác nhận kết quả thực tế; các nguồn thiếu khác và album/alias/photo còn giữ nguyên. Không tuyên bố old URL byte equality.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
