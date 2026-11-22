@@ -1,10 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-#198 DONE WP83516 + redirect83518, QA #44986075425 PASS. #1090 18/24 ảnh supported, exact archive 7.JPG artifact 14740179112; six ambiguous unresolved. Không nhập/build lại.
+#198 DONE WP83516 + redirect83518, QA #44986075425 PASS. #1090 18/24 ảnh supported, six ambiguous unresolved. #186 source body confirmed, publisher HTTP403; no repeat denied requests.
 
-#186 [#44988375181](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44988375181) FAILURE: source original HTTP200 exact title, body 4666 chars SHA256 62cc916c3ead5675311116cfea38f9e34b426c1415615d22f01e5c2bb02954c8, 2 exact original image URLs; official Dan Viet HTTP403, stop before media probes. No CMS writes, no retries against access restriction. #121 new same-title 7-page PDF listing https://dev.tailieu.vn/doc/nguyen-nhan-va-bien-phap-khac-phuc-benh-vang-va-rung-la-ca-phe-1107220.html, text corresponds to PSE source but listing timeout and canonical inaccessible, no PDF bytes or photo proof. User may provide lawful PDF copy.
+#121 và #178: xác nhận SPC hiện dùng tên miền chính thức spchcmc.vn (trước đây www.spchcmc.com.vn), có chuyên mục kỹ thuật/tài liệu nhưng chưa tìm được hai bài cùng tiêu đề. 8 exact historical image paths (3 café, 5 điều) được đưa vào bounded official domain relocation check [#44988954778](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44988954778) IN_PROGRESS, source title/body/order, current publisher identity, image decode/SHA/EXIF, stop on network/rate. Next inspect actual results, verify provenance if bytes found, no repeat if unavailable. No CMS writes/build.
 
-[Checkpoint f46df394](https://github.com/ngocnhanvo/psevn-actions/commit/f46df394c731fb325e57651f57e7878035c38086). Remaining 11 ordinary posts, #975 chronology, four aliases, #225. No active build/write. Need new source evidence or documented editorial approval; no repetitive failed probes. Do not assume generic continue authorizes omission or incorrect mapping. 
+[Checkpoint f92f0eb6](https://github.com/ngocnhanvo/psevn-actions/commit/f92f0eb6fa3bffaca767ae869b2dc2a20a71e9c8). Còn 11 ordinary posts, album #975, 4 aliases, #225. Không tự bỏ/thay ảnh hoặc tạo dữ liệu khác nguồn nếu chưa duyệt ngoại lệ.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
