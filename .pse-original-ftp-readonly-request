@@ -3,3 +3,5 @@ Owner requested source-backed PSE Joomla article/media/301 parity continuation. 
 Retry after error reporter hardening commit 0e6ade63: source-only one-time diagnostic with allowlisted non-secret failure code, no hidden credentials printed, no FTP writes/deletes/reads. Prior #45023401261 stopped ValueError and produced no source evidence.
 
 2026-11-22 owner provided screenshot confirming repository Actions secrets PSE_SOURCE_FTP_HOST, PSE_SOURCE_FTP_USERNAME, PSE_SOURCE_FTP_PASSWORD newly added. Authorized fresh ORIGINAL pse.vn read-only FTP metadata inventory; do not reuse production deploy secrets, no file content/download/write, no credential logging. Diagnose FTPS endpoint/root if fail; preserve security.
+
+2026-11-22 source account exists but TLS rejected certificate #45024573092. Retry once after newly added secret-safe OpenSSL verify-class classification, CA-trust option. The goal is certificate diagnosis, never disable hostname/cert validation and do not log host/username/pass. If source still untrusted, stop and obtain corrected certificate or CA.
