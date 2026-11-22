@@ -7,3 +7,5 @@ Retry after error reporter hardening commit 0e6ade63: source-only one-time diagn
 2026-11-22 source account exists but TLS rejected certificate #45024573092. Retry once after newly added secret-safe OpenSSL verify-class classification, CA-trust option. The goal is certificate diagnosis, never disable hostname/cert validation and do not log host/username/pass. If source still untrusted, stop and obtain corrected certificate or CA.
 
 2026-11-22 20:xx VN: owner explicitly changed ORIGINAL source FTPS host secret from IP address to domain name and requested immediate recheck. Run one fresh certificate-verified read-only inventory with new host, stop on TLS/hostname/FTP failure, no SSL downgrade, no source writes/downloads.
+
+2026-11-22: owner changed FTPS host to hostname; run #45025340887 verified TLS+login and root / accessible, but Joomla not at /. Newly tested bounded exact-domain webroot candidate discovery commit a98de926, syntax/offline PASS #45025508168. One fresh READ ONLY run to locate original /domains/pse.vn/public_html, /public_html or other strictly named candidate. No other domain traversal, no downloads/writes/deletes.
