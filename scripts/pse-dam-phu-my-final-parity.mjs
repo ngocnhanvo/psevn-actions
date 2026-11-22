@@ -29,7 +29,7 @@ try{
   [1669,'/san-pham/dam-phu-my-chuyen-dung-cho-nong-lam-truong-1669'],
   [1676,'/san-pham/sa-phu-my-1682'],
   [1677,'/san-pham/dap-phu-my-1677'],
-  [1678,'/kali-phu-my-mo-ta-va-hdsd']
+  [1678,'/san-pham/kali-phu-my-mieng-mop-1427']
  ];
  const sourceLinks=await s.locator('.item-page [itemprop="articleBody"] a[href]').evaluateAll(es=>es.map(a=>a.href));
  const plans=mappings.map(([id,to])=>{
@@ -52,6 +52,27 @@ try{
   report.relatedLinks.push({...plan,http:200,legacyHTTP:301,canonical});
  }
  report.checks.push('five_source_proven_related_targets_and_exact_301');
+ // Owner override: use existing WooCommerce Product, not historical Page.
+ const kali=plans.find(x=>x.id===1678),old='/kali-phu-my-mo-ta-va-hdsd',alias=kali.from.replace('/dam-phu-my/','/nhom-phan-don-va-phan-phuc-hop-phu-my/');
+ for(const from of [old,alias]){
+  const r=await desktop.request.get(origin+from,{maxRedirects:0,failOnStatusCode:false,timeout:30000});
+  if(r.status()!==301||!r.headers().location||new URL(r.headers().location,origin).href!==origin+kali.to)throw Error('Owner Kali direct 301 mismatch '+from);
+  report.relatedLinks.push({id:1678,from,to:kali.to,legacyHTTP:301,http:200,canonical:origin+kali.to});
+ }
+ const publicPage=await desktop.request.get(wp+'/wp-json/wp/v2/pages?slug=kali-phu-my-mo-ta-va-hdsd&_fields=id,slug,status',{timeout:30000});
+ if(publicPage.status()!==200||JSON.stringify(await publicPage.json())!=='[]')throw Error('Historical Kali Page still public');
+ const product=await desktop.request.get(wp+'/wp-json/wp/v2/product/80938?_fields=id,slug,status,featured_media',{timeout:30000});
+ const productData=await product.json();
+ if(product.status()!==200||productData.id!==80938||productData.status!=='publish'||productData.slug!==kali.to.split('/').at(-1)||!productData.featured_media)throw Error('WooCommerce product identity mismatch');
+ for(const width of [1366,390]){
+  const ctx=await b.newContext({viewport:{width,height:860}}),p=await ctx.newPage(),r=await p.goto(origin+kali.to,{waitUntil:'domcontentloaded',timeout:60000});
+  if(r?.status()!==200||p.url()!==origin+kali.to||await p.locator('link[rel=canonical]').getAttribute('href')!==origin+kali.to||await p.locator('[data-product-id="80938"]').count()!==1||await p.locator('#product-main-image').count()!==1)throw Error('Owner Product layout missing '+width);
+  await p.locator('#product-main-image').evaluate(i=>i.decode());
+  if(await p.evaluate(()=>document.documentElement.scrollWidth-innerWidth)>5)throw Error('Product overflow '+width);
+  await p.screenshot({path:out+'/kali-product-'+width+'.png',fullPage:true,timeout:45000});await ctx.close();
+ }
+ report.checks.push('owner_kali_product_80938_direct_redirects_old_page_not_public');
+
 
 
  const wr=await desktop.request.get(wp+'/wp-json/astro/v1/get-product-categories',{timeout:50000});
