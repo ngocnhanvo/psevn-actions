@@ -21,6 +21,7 @@ on:
       - PSE original Joomla 198 exact native WordPress 301 redirect (GUARDED)
       - PSE four proven Dam Phu My related links native repair (GUARDED)
       - PSE fifth Dam Phu My related link exact native repair (GUARDED)
+      - PSE two historical Kali original exact 301 (GUARDED)
       - PSE two exact original Kali historical native Pages (GUARDED)
       - PSE Joomla 198 verified relocated DPM originals native WP (GUARDED)
       - PSE Joomla 379 exact RSS date native WordPress publication (GUARDED)
@@ -103,6 +104,10 @@ jobs:
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE two exact original Kali historical native Pages (GUARDED)' &&
              github.event.workflow_run.head_commit.message == 'cms(pse): restore two original Kali historical native pages')
+            ||
+            (github.event.workflow_run.event == 'push' &&
+             github.event.workflow_run.name == 'PSE two historical Kali original exact 301 (GUARDED)' &&
+             github.event.workflow_run.head_commit.message == 'cms(pse): redirect two verified historical Kali pages')
             ||
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE fifth Dam Phu My related link exact native repair (GUARDED)' &&
@@ -236,6 +241,9 @@ jobs:
           elif (name=="PSE two exact original Kali historical native Pages (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): restore two original Kali historical native pages"):
               cohort="SOURCE_PROVEN_TWO_KALI_HISTORICAL_NATIVE_PAGES"
+          elif (name=="PSE two historical Kali original exact 301 (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect two verified historical Kali pages"):
+              cohort="SOURCE_PROVEN_TWO_KALI_EXACT_301"
           elif (name=="PSE fifth Dam Phu My related link exact native repair (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): repair fifth Dam Phu My related link"):
               cohort="SOURCE_PROVEN_DAM_FIFTH_RELATED_LINK"
