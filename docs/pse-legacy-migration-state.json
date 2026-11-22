@@ -93,7 +93,11 @@
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/114-phong-tru-benh-vang-lun-va-lun-xoan-la.html",
       "status": "imported",
       "verified_date": "2011-07-11T03:00:01",
-      "wp_id": 83534
+      "wp_id": 83534,
+      "seo_attempts": 1,
+      "seo_error": "Post is not in the mapped original category",
+      "attribution_attempts": 1,
+      "attribution_error": "WordPress post identity or taxonomy mismatch"
     },
     "115": {
       "attempts": 1,
@@ -123,7 +127,11 @@
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/121-nguyen-nhan-va-bien-phap-khac-phuc-benh-vang-va-rung-la-ca-phe.html",
       "status": "imported",
       "verified_date": "2011-07-11T03:00:01",
-      "wp_id": 83535
+      "wp_id": 83535,
+      "seo_attempts": 1,
+      "seo_error": "Post is not in the mapped original category",
+      "attribution_attempts": 1,
+      "attribution_error": "WordPress post identity or taxonomy mismatch"
     },
     "122": {
       "attempts": 1,
@@ -153,7 +161,11 @@
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/127-ky-thuat-trong-va-cham-soc-cay-cao-su.html",
       "status": "imported",
       "verified_date": "2011-07-11T02:56:40",
-      "wp_id": 83536
+      "wp_id": 83536,
+      "seo_attempts": 1,
+      "seo_error": "Post is not in the mapped original category",
+      "attribution_attempts": 1,
+      "attribution_error": "WordPress post identity or taxonomy mismatch"
     },
     "152": {
       "attempts": 1,
@@ -193,7 +205,11 @@
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/178-ky-thuat-trong-va-tham-canh-dieu.html",
       "status": "imported",
       "verified_date": "2011-07-11T02:56:40",
-      "wp_id": 83537
+      "wp_id": 83537,
+      "seo_attempts": 1,
+      "seo_error": "Post is not in the mapped original category",
+      "attribution_attempts": 1,
+      "attribution_error": "WordPress post identity or taxonomy mismatch"
     },
     "185": {
       "attempts": 1,
@@ -221,7 +237,11 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/186-npk-phu-my-se-day-lui-hang-kem-chat-luong.html",
       "status": "imported",
       "verified_date": "2011-07-12T05:49:12",
-      "wp_id": 83538
+      "wp_id": 83538,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "187": {
       "attempts": 1,
@@ -284,7 +304,11 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/196-pvfcco-se-dong-hanh-cung-mua-he-xanh.html",
       "status": "imported",
       "verified_date": "2011-08-08T07:11:57",
-      "wp_id": 83539
+      "wp_id": 83539,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "198": {
       "attempts": 1,
@@ -348,7 +372,11 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/202-hoi-thao-gioi-thieu-npk-phu-my-tai-binh-phuoc.html",
       "status": "imported",
       "verified_date": "2011-08-17T08:40:09",
-      "wp_id": 83540
+      "wp_id": 83540,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "204": {
       "attempts": 1,
@@ -359,19 +387,19 @@
     },
     "205": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-08-23",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/205-pvfcco-se-to-chuc-ngay-hoi-truyen-thong.html",
       "status": "imported",
       "verified_date": "2011-08-23",
-      "wp_id": 83430,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83430
     },
     "208": {
       "attempts": 1,
@@ -578,67 +606,67 @@
     },
     "226": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-10-06",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/226-thay-doi-thiet-ke-bao-bi-50kg-urea-phu-my.html",
       "status": "imported",
       "verified_date": "2011-10-06",
-      "wp_id": 83432,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83432
     },
     "227": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-10-13",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/227-pvfcco-se-voi-cac-hoat-dong-chao-mung-ngay-truyen-thong-tong-cong-ty-21092004-21092011.html",
       "status": "imported",
       "verified_date": "2011-10-13",
-      "wp_id": 83440,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83440
     },
     "229": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-10-25",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/229-pvfcco-se-to-chuc-le-ky-niem-81-nam-ngay-phu-nu-viet-nam-2010.html",
       "status": "imported",
       "verified_date": "2011-10-25",
-      "wp_id": 83442,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83442
     },
     "230": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-10-25",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/230-chi-doan-pvfcco-se-voi-chuong-trinh-moi-tin-nhan-mot-vien-da-xay-truong-sa.html",
       "status": "imported",
       "verified_date": "2011-10-25",
-      "wp_id": 83434,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83434
     },
     "231": {
       "attempts": 1,
@@ -731,7 +759,11 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/237-pvfcco-se-tang-qua-tet-cho-ho-ngheo-tai-lam-dong-va-dak-nong.html",
       "status": "imported",
       "verified_date": "2012-01-20T06:29:33",
-      "wp_id": 83541
+      "wp_id": 83541,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "238": {
       "attempts": 1,
@@ -760,19 +792,19 @@
     },
     "240": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2012-03-16",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/240-pvfcco-se-to-chuc-khoa-hoc-van-hoa-doanh-nghiep.html",
       "status": "imported",
       "verified_date": "2012-03-16",
-      "wp_id": 83436,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83436
     },
     "242": {
       "attempts": 1,
@@ -1747,19 +1779,19 @@
     },
     "321": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "day",
       "date_source": "joomla_com_search_created",
       "gallery_source_recovery_run": 44866220447,
       "group_hint": "company",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2012-12-04",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/hoat-dong-cong-doan-doan-tn-nu-cong/321-doan-thanh-nien-pvfcco-se-tham-gia-cuoc-thi-tim-hieu-ve-bien-dao.html",
       "status": "imported",
       "verified_date": "2012-12-04",
-      "wp_id": 83438,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83438
     },
     "322": {
       "attempts": 1,
@@ -1994,7 +2026,11 @@
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/341-du-nuoc-tuoi-cho-633000-ha-lua-xuan-2013.html",
       "status": "imported",
       "verified_date": "2013-03-13T09:42:44",
-      "wp_id": 83542
+      "wp_id": 83542,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "342": {
       "attempts": 1,
@@ -2409,7 +2445,11 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
       "status": "imported",
       "verified_date": "2013-09-05T09:13:25",
-      "wp_id": 83543
+      "wp_id": 83543,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "385": {
       "attempts": 1,
@@ -3685,7 +3725,11 @@
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1090-pvfcco-to-chuc-thanh-cong-chuong-trinh-hoi-mua-phu-my-va-cham-soc-khach-hang-khu-vuc-tay-nguyen.html",
       "status": "imported",
       "verified_date": "2015-03-14T02:51:41",
-      "wp_id": 83544
+      "wp_id": 83544,
+      "seo_cleaned": true,
+      "seo_error": null,
+      "attribution_cleaned": true,
+      "attribution_error": null
     },
     "1091": {
       "attempts": 1,
@@ -26271,7 +26315,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 257,
+  "runs": 258,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
