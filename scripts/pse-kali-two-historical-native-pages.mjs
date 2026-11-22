@@ -180,11 +180,34 @@ try{
   data.get(s.id).clean=cleaned;
  }
  const media=new Map();
- async function exactMedia(m,hash){
+ async function exactMedia(m,hash,expectedBytes){
   if(!m||m.mime_type!=='image/png'||!Number.isSafeInteger(m.id))return null;
   const list=[m.source_url,m.guid?.rendered],mf=String(m.media_details?.file||''),orig=m.media_details?.original_image;
   if(mf&&mf.split('/').every(x=>x&&x!=='.'&&x!=='..')&&!mf.includes('\\')){list.push('/wp-content/uploads/'+mf);if(orig&&!orig.includes('/')&&!orig.includes('\\')&&!['.','..'].includes(orig))list.push('/wp-content/uploads/'+mf.split('/').slice(0,-1).join('/')+'/'+orig)}
-  for(const raw of [...new Set(list.filter(Boolean))]){const u=new URL(raw,wp+'/');if(u.origin!==wp||!u.pathname.startsWith('/wp-content/uploads/')||u.search||u.hash||u.username||u.password)continue;const r=await net.get(u.href,{maxRedirects:0,failOnStatusCode:false});if(r.status()===200&&sha(await r.body())===hash)return {id:m.id,url:u.href,sha256:hash}}
+  for(const raw of [...new Set(list.filter(Boolean))]){
+   const u=new URL(raw,wp+'/');
+   if(u.origin!==wp||!u.pathname.startsWith('/wp-content/uploads/')||u.search||u.hash||u.username||u.password)continue;
+   // Size-filter nonidentical original Product media before expensive byte reads.
+   let length=null;
+   try{const h=await net.head(u.href,{maxRedirects:0,failOnStatusCode:false,timeout:22000});const v=Number(h.headers()['content-length']||0);
+    if(h.status()===200&&Number.isSafeInteger(v)&&v>0)length=v;
+   }catch(e){console.log('PSE_KALI_NATIVE_MEDIA_HEAD_UNAVAILABLE='+JSON.stringify({mediaId:m.id,kind:String(e?.name||'network').slice(0,25)}))}
+   if(length!==null&&length!==expectedBytes)continue;
+   for(let attempt=1;attempt<=2;attempt++){
+    try{
+     const r=await net.get(u.href,{maxRedirects:0,failOnStatusCode:false,timeout:90000});
+     if(r.status()!==200)break;
+     const bytes=await r.body();
+     if(bytes.length===expectedBytes&&sha(bytes)===hash)return {id:m.id,url:u.href,sha256:hash};
+     break;
+    }catch(e){
+     if(!/Timeout|ECONNRESET|ETIMEDOUT|socket hang up/i.test(String(e?.name||'')+' '+String(e?.message||''))||attempt===2)
+      throw Error('Native exact media byte probe unavailable ID '+m.id);
+     console.log('PSE_KALI_NATIVE_MEDIA_GET_RETRY='+JSON.stringify({mediaId:m.id,attempt}));
+     await new Promise(resolve=>setTimeout(resolve,1000*attempt));
+    }
+   }
+  }
   return null;
  }
  // Reuse only actual byte-identical native Product Media, without editing it.
@@ -193,19 +216,19 @@ try{
  const candidateMedia=[];for(const id of candidates){const r=await api('media/'+id+'?context=edit');if(r.http===200)candidateMedia.push(r.data)}
  for(const [hash,info] of files){
   let match=null;
-  for(const m of candidateMedia){match=await exactMedia(m,hash);if(match)break}
+  for(const m of candidateMedia){match=await exactMedia(m,hash,info.buf.length);if(match)break}
   const filename='pse-kali-source-'+hash.slice(0,12)+'.png',marker=filename.slice(0,-4);
   if(!match){
    const r=await api('media?context=edit&per_page=100&search='+marker);
    if(r.http!==200||!Array.isArray(r.data))throw Error('Media inventory unavailable');
    const own=r.data.filter(x=>x.slug===marker);if(own.length>1)throw Error('Duplicate own Media');
-   if(own.length){match=await exactMedia(own[0],hash);if(!match)throw Error('Owned Media not exact')}
+   if(own.length){match=await exactMedia(own[0],hash,info.buf.length);if(!match)throw Error('Owned Media not exact')}
   }
   if(!match){
    const r=await ctx.request.post(wp+'/wp-json/wp/v2/media',{data:info.buf,headers:{'X-WP-Nonce':nonce,'Content-Disposition':'attachment; filename="'+filename+'"','Content-Type':'image/png',Accept:'application/json'},timeout:90000});const m=await r.json();
    if(r.status()!==201||!Number.isSafeInteger(m.id))throw Error('Native Media upload failed '+r.status());
    report.writes.push({kind:'media',id:m.id,sha256:hash});await save();
-   const rr=await api('media/'+m.id+'?context=edit');if(rr.http!==200)throw Error('Native Media readback failed');match=await exactMedia(rr.data,hash);
+   const rr=await api('media/'+m.id+'?context=edit');if(rr.http!==200)throw Error('Native Media readback failed');match=await exactMedia(rr.data,hash,info.buf.length);
    if(!match)throw Error('Uploaded original PNG does not match');
   }
   media.set(hash,match);report.media.push(match);await save();
