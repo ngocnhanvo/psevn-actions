@@ -89,6 +89,11 @@ try{
  const categories={};
  for(const [id,map] of Object.entries(cats)){
   const [p,c]=await Promise.all(["parent","child"].map(typ=>api("/wp-json/wp/v2/categories?slug="+encodeURIComponent(map[typ])+"&hide_empty=false&_fields=id,slug,parent")));
+  console.log("PSE_NATIVE_CATEGORY_INSPECT="+JSON.stringify({sourceCategory:id,
+   expectedParentSlug:map.parent,expectedChildSlug:map.child,
+   parentHTTP:p.http,childHTTP:c.http,
+   parentRows:Array.isArray(p.data)?p.data.map(x=>({id:x.id,slug:x.slug,parent:x.parent})):[],
+   childRows:Array.isArray(c.data)?c.data.map(x=>({id:x.id,slug:x.slug,parent:x.parent})):[]}));
   if(p.http!==200||c.http!==200||p.data?.length!==1||c.data?.length!==1||
     !Number.isSafeInteger(p.data[0].id)||c.data[0].parent!==p.data[0].id)
     throw Error("Native category taxonomy mismatch "+id);
