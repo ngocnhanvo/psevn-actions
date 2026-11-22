@@ -1,0 +1,58 @@
+name: PSE two exact original Kali historical native Pages (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-two-historical-native-pages.mjs
+      - .github/workflows/pse-kali-two-historical-native-pages.yml
+      - .pse-kali-two-historical-native-pages-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-kali-two-historical-native-pages.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore two original Kali historical native pages'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-kali-legacy-native-page-source-proof
+          path: inputs/kali-two
+          run-id: 44990978357
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh database backup before scoped historical Page restoration
+        run: node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_KALI_FRESH_BACKUP=yes" >> "$GITHUB_ENV"
+      - run: node scripts/pse-kali-two-historical-native-pages.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-two-historical-native-pages
+          path: artifacts/pse-kali-two-historical-native-pages/
+          retention-days: 30
+          if-no-files-found: warn
