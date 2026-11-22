@@ -23,9 +23,9 @@ try{
   const get=(el,key)=>el.getAttribute(key)||"";
   const list=imgs.map(el=>({src:get(el,"src"),dataSrc:get(el,"data-src"),dataOriginal:get(el,"data-original"),srcset:get(el,"srcset"),alt:get(el,"alt")}));
   const og=document.querySelector('meta[property="og:image"]')?.getAttribute("content")||"";
-  return{heading,textStarts:text.slice(0,400),img:list,og};
+  return{heading,bodyMatches:text.includes("633.000")&&text.includes("2013"),img:list,og};
  });
- if(!found.heading.includes("Đủ nước tưới")||!found.heading.includes("633.000 ha")||!found.textStarts.includes("633.000") )throw Error("official article identity mismatch");
+ if(!found.heading.includes("Đủ nước tưới")||!found.heading.includes("633.000 ha")||!found.bodyMatches )throw Error("official article identity mismatch");
  report.sourceHtmlVerified=true;
  const pool=new Set();
  for(const im of found.img)for(const value of [im.src,im.dataSrc,im.dataOriginal,im.srcset?.split(",")[0]?.split(" ")[0]]){
