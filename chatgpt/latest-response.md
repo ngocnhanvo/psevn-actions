@@ -1,18 +1,34 @@
-# PSE owner Joomla full-source content recovery — 22/11/2026 ~21:26 VN
+# PSE — Joomla → WordPress/Astro source parity hoàn tất — 23/11/2026 (Asia/Ho_Chi_Minh)
 
-**CURRENT confirmed native CMS state**: Owner supplied authentic Joomla DB `psevn_2028_1795354143.sql.gz`, earlier extracted exactly 11 PUBLIC Joomla article data records into `docs/source/pse-original-public-articles-11-2026-11-22.json` (no private database users/credentials). [Native WP writer #45030205633](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45030205633) SUCCESS after fresh Updraft DB backup: **11 true WordPress Posts as PRIVATE DRAFTS**, source IDs to WP IDs: 114→83534;121→83535;127→83536;178→83537;186→83538;196→83539;202→83540;237→83541;341→83542;382→83543;1090→83544. Original dates, title/body, category 75→1755/1756, 93→1743, 101→1742/1746, ACF PostDetails/ssr-post readback PASS. Independent draft public visibility read-only #45030583088 PASS, none leaked via public REST. They are **NOT PUBLISHED**. No 301s to draft/404.
+Project: pse.vn
+Repository: ngocnhanvo/psevn-actions
+Branch: main
+Source: https://www.pse.vn/
+Production: https://pse.webnvn.com/
+Current status: DONE — 804/804 original Joomla content URL redirects independently verified HTTP301 → same-origin canonical HTTP200; 4/4 large albums 464/464 photos verified.
 
-**ACTUAL source photo native recovery #382**: verified exact owner original Joomla FTP `/domains/pse.vn/public_html/images/web/Ba_Lan.JPG` SHA `f2587f776be8f888ae78cae1de5c0c5767855d2e01309245182d62cb1d3c1fe3`, bytes163574, JPEG, staged as native WP Media83545 (first guarded attempt created Media but failed due relative URL; see #45030996234 and read-only #45031573631). Fixed script URL base [5584c574](https://github.com/ngocnhanvo/psevn-actions/commit/5584c574941ad4770e0abbb32516d20c50155a33), guarded fresh-backup [#45032077695](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45032077695) SUCCESS, reuses unique Media83545 (NO duplicate) and replaces exactly one `Ba_Lan.JPG` inline src only in private Post83543, maintains other 2 unavailable image references. **Independent post-write [#45032696824](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45032696824) SUCCESS** confirms WP Media83545 same SHA and 163574 bytes served JPEG HTTP200, Post83543 still draft, native source src count1, old Ba_Lan src count0, two remaining links intact, 0 publication/301.
+Owner approved using exact original Joomla stored created timestamp `2011-03-06T04:53:14` for gallery #975 (despite the original gallery title referring to October 2013). Original 110 WordPress Media reused with no duplicates. Native Post #83638 published, native `chuyen-huong-link` redirect #83640 published, fresh Updraft DB backup and authenticated readback PASS: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45051211559 (attempt 2; attempt 1 failed pre-write at WordPress login timeout).
 
-**Full source image coverage baseline checked**: owner SQL public Post bodies contain 59 IMG occurrences across 11 posts, including 3 local #382. Strict original Joomla ZIP source directory [#45032275613](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45032275613) SUCCESS: 21,658 TOC items (read ~3.5 MB metadata only; NOT full 1.256GB ZIP), six filename matches for 59 images (one in #382, 5 in #1090), **only ONE exact Joomla source path** #382 Ba_Lan. Other 5 generic filename coincidences are NOT photo provenance. #382 two other original image basenames absent entire ZIP and exact FTP directory.
-Exact original external URL reachability [#45032419680](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45032419680) SUCCESS: 56 outside-origin IMG occurrences, 55 distinct exact owner source image URLs, zero direct image bytes available; result statuses 45 HTTP unavailable, 8 request errors, 3 redirect to unverified origin. **Do not claim all historic photos are definitively lost**; publisher/Wayback variants may still exist but require exact provenance/hash or explicit editorial exception. Source image manifest `docs/reports/PSE_11_JOOMLA_ORIGINAL_IMAGE_PROOF_2026-11-22.json` has 59 per-image source URLs/order/source_id. Official 341 contemporary publisher 2 same-name JPEGs without historic exact byte equality; #1090 1 archived exact 7.JPG photo hash from prior run but other 23 not recovered. 11 posts are still media RELEASE_BLOCKED as complete parity.
+Existing signed WordPress Build Website: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45051804029 — SUCCESS.
+Existing Astro production build + Python FTPS + signed activation + smoke: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45051898907 — SUCCESS.
 
-**Other open items**: album #975 source DB created 2011 vs title October2013 (unresolved original inconsistency), #225 external original image, #1434 historical Woo Product thumbnail; other historical Joomla product aliases, independent global redirect parity (765 exact known 301 rules previously PASS only those routes). Product catalog 53/53 previously PASS and Kali original-to-Woo redirect PASS, do not redo.
+Independent read-only QA:
+- Source native WP inventory 804 original identities / 771 published Posts / 53 Products / 28 Pages / 16 source galleries, taxonomy mismatches 0: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45052161634 — PASS. Five strict identity aliases correspond to existing canonical Product/Page/Category destinations, not missing Products.
+- 744 previously independently checked original URLs + 60/60 new checked old paths = **804/804 HTTP301→HTTP200/canonical, no unresolved**: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45052157873 — PASS. Original #975 now routes to https://pse.webnvn.com/975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013
+- Four source-owned galleries, 464 original photos, 2 responsive viewports: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45052137407 — PASS.
+- Seven historic Posts + 46 images regression: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45052137403 — PASS.
+- Homepage/search: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45052137388 — PASS.
 
-**No Astro/PHP production code changes this turn**. Only Actions code/checkpoint and genuine native WordPress private data staged. Do not publish 11 incomplete source articles or create 301 to drafts. If user authorizes explicit editorial deviations (omit/replace historically missing images), scope per Post/asset and preserve metadata and source exception; otherwise continue legitimate Wayback/original media archive recovery bounded by rate limits. Before any further media import: verify original byte identity, WP filename conflict/Media readback, fresh Updraft rollback, one source asset per write, independently QA. Then publish only media-complete posts, exact legacy 301, signed existing production pipeline, live desktop+mobile parity. For recurring task do not rerun passed FTP/media source checks.
+Ledger updated at commit b40c670276b8763740d6387468884dc72c81a4c4: #975 now imported, Post ID83638, redirect ID83640 and date/QA proof. Earlier ledger statuses for other records are migration bookkeeping, not evidence of missing public content.
+Final checkpoint at commit 33c1ee87be0f74453630b076d95ff134facc7115, path `docs/checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md`. Do not repeat existing imports, redirects or build without a real change.
+Owner-approved exception: genuine third-party original image URLs remain external, so this does not promise third-party image bytes are still available. PSE-owned gallery media verified.
 
-Checkpoint [75c1dc60](https://github.com/ngocnhanvo/psevn-actions/commit/75c1dc60659ddc397479d7dc5d78336a3cdf6968). Code source gateway bypass/auto-build.
+## Phản hồi cuối cùng dự định gửi người dùng
+
+Bài kiểm thử album cuối cùng cũng đã **PASS**: **4/4 album, 464/464 ảnh gốc** ở desktop/mobile, không còn album bị hoãn. Kiểm thử hồi quy 7 bài nguồn và 46 ảnh cũng PASS. Mình đã lưu sổ đồng bộ (commit `b40c670`) và checkpoint kết thúc (commit `33c1ee8`) để phiên tiếp theo không làm lại việc đã hoàn tất.
+
+Album #975 đã xuất bản theo đúng ngày tạo Joomla **06/03/2011, 04:53:14**, giữ nguyên tên, 110 ảnh, redirect 301; website production đã triển khai và **804/804 URL Joomla** đều chuyển đến trang mới HTTP 200 đúng canonical. Các ảnh từ dịch vụ bên thứ ba tiếp tục dùng nguồn gốc theo chỉ đạo trước đó; độ sẵn có của máy chủ ngoài không nằm trong kiểm định này.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
-Trạng thái: PARTIAL — chưa hoàn tất
+Trạng thái: DONE — hoàn tất
