@@ -1,10 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-[#44984460079](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984460079) source-only preflight PASS: exact body SHA256 and 10 verified relocated DPM JPEGs, no CMS writes.
+**Đã xuất bản #198 vào WordPress ID 83516.** [#44984705336](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984705336) SUCCESS: fresh DB backup, Joomla title/body/date 15/08/2011, 10/10 relocated DPM photos verified native SHA256, exact order and body readback. 12 -> 11 bài lịch sử chưa xuất bản. Không tuyên bố old historical URL byte equality.
 
-Đã nối guarded apply với signed WordPress Build Website hiện có tại [e8176d1c](https://github.com/ngocnhanvo/psevn-actions/commit/e8176d1c562db8114e3064de81d6c8d1895dcf9c). Marker [13ebff8a](https://github.com/ngocnhanvo/psevn-actions/commit/13ebff8ac196ccf2b73516a9a684b3c7bb15f13d) đã kích hoạt [#44984705336](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984705336), đang chạy preflight, backup, native CMS import theo thứ tự. Chưa xác nhận xuất bản. Không kích trùng. Tiếp theo đọc kết quả apply, xác nhận post ID, 10 ảnh/date/body, signed deploy, exact legacy redirect và live QA; xử lý cụ thể lỗi nếu có. [Checkpoint 9d28894b](https://github.com/ngocnhanvo/psevn-actions/commit/9d28894b7102b1a03281a4b8cd581cfe9b7777dd).
+[WordPress build request #44985219171](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44985219171) SUCCESS. [Production deployment #44985322207](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44985322207) đang chạy. Đã chuẩn bị exact 301 native script syntax PASS #44985322674 và live QA #44985356725 syntax-only; nối signed build khi redirect apply thực tế thành công. Chưa ghi redirect. Bước tiếp theo kiểm tra #44985322207 đã SUCCESS và public target sẵn sàng, sau đó marker `.pse-198-original-301-native-request` message `cms(pse): original Joomla 198 exact native 301 to verified published Post`; kiểm apply, signed build, rồi marker `.pse-198-original-live-qa-request` message `test(pse): verify original Joomla 198 ten relocated DPM photos postrelease`. Không kích trùng, không nhập lại #198.
 
-Tổng vẫn 12 bài chưa xuất bản cho đến khi xác nhận kết quả thực tế; các nguồn thiếu khác và album/alias/photo còn giữ nguyên. Không tuyên bố old URL byte equality.
+[Checkpoint 018ea9d8](https://github.com/ngocnhanvo/psevn-actions/commit/018ea9d84fa98f39a6394b998061a55b15866795). Album #975, 4 alias, 11 bài khác, ảnh #225 còn thiếu nguồn. Audit 3242/3242 HEAD trước nhập #198 DONE.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
