@@ -1,0 +1,38 @@
+name: PSE 1090 seven previously skipped exact original image archives (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-1090-ambiguous-original-archive-proof.py
+      - .github/workflows/pse-1090-ambiguous-original-archive-proof.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  archive-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-1090-relocated-proof
+          path: inputs/pse1090
+          run-id: 44986757822
+          github-token: ${{ github.token }}
+      - run: python -m pip install --disable-pip-version-check pillow==11.3.0
+      - run: python -m py_compile scripts/pse-1090-ambiguous-original-archive-proof.py
+      - run: python scripts/pse-1090-ambiguous-original-archive-proof.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1090-ambiguous-original-archive-proof
+          path: artifacts/pse-1090-ambiguous-original-archive-proof/
+          retention-days: 30
+          if-no-files-found: warn
