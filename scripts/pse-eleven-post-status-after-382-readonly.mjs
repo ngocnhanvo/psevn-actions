@@ -64,11 +64,19 @@ try{
   const p=r.data||{},body=String(p.content?.raw||"");
   const remaining=original.inline_image_src.filter(src=>body.includes(src));
   const expectedStatus=sourceId===382?"publish":"draft";
-  const valid=r.http===200&&p.id===wpId&&p.slug===original.slug&&p.status===expectedStatus&&
-    p.title?.raw===original.title&&p.date===original.created_at_joomla.replace(" ","T")&&
-    p.acf?.action==="PostDetails"&&p.acf?.key==="ssr-post";
+  const checks={
+   http:r.http===200,id:p.id===wpId,slug:p.slug===original.slug,
+   status:p.status===expectedStatus,
+   title:p.title?.raw===original.title||
+    (sourceId===178&&p.title?.raw===original.title.trimEnd()),
+   date:p.date===original.created_at_joomla.replace(" ","T"),
+   acfAction:p.acf?.action==="PostDetails",acfKey:p.acf?.key==="ssr-post"
+  };
+  const valid=Object.values(checks).every(Boolean);
   const row={sourceId,wpPostId:wpId,expectedStatus,actualStatus:p.status||null,
-    publicContentIdentityValid:valid,originalImageOccurrences:original.inline_image_src.length,
+    publicContentIdentityValid:valid,identityChecks:checks,
+    sourceTitleTrailingSpaceNormalized:sourceId===178&&p.title?.raw===original.title.trimEnd(),
+    originalImageOccurrences:original.inline_image_src.length,
     originalSourceUrlsStillPresent:remaining.length,expectedMigratedSourcePhotoCount:sourceId===382?3:0,
     nativePhotoReferences:sourceId===382?["Ao_2.jpg","Ba_Lan.jpg","Mo_muoi_Wieliczka_duoi_mat_dat_135m_-_Ba_lan.jpg"].filter(s=>body.includes(s)).length:0,
     wpWrites:0};
