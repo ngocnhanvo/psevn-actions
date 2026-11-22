@@ -86,28 +86,34 @@ try{
    try{const u=x.source_url||"",name=decodeURIComponent(u.split("?")[0].split("/").at(-1)||"");
     return name.toLowerCase()==="ba_lan.jpg";}catch{return false}
  });
- if(exact.length>1)throw Error("Ambiguous existing original filename in WP Media");
- let media=exact[0]||null;
- if(media){
-   const r=await net.get(media.source_url,{timeout:40000,maxRedirects:2});
-   if(r.status()!==200||sha(await r.body())!==expectedSha)throw Error("Existing Media filename contents differ from original");
-   report.mediaReused=true;
- }else{
-   const uploaded=await ctx.request.post(wp+"/wp-json/wp/v2/media",{timeout:90000,
-    headers:{"X-WP-Nonce":nonce,"Content-Disposition":'attachment; filename="Ba_Lan.JPG"',"Content-Type":"image/jpeg"},
-    data:bytes});
-   if(uploaded.status()!==201)throw Error("Native WordPress Media upload failed "+uploaded.status());
-   media=await uploaded.json();
-   report.mediaCreated=true;report.wpWrites++;
-   report.wpMediaId=media.id;
-   await save();
- }
- if(!Number.isSafeInteger(media.id)||!media.source_url?.startsWith(wp+"/wp-content/uploads/")||
-    media.mime_type!=="image/jpeg")throw Error("Media output provenance invalid");
- report.wpMediaId=media.id;
- const imageRes=await net.get(media.source_url,{timeout:40000,maxRedirects:2});
- if(imageRes.status()!==200||sha(await imageRes.body())!==expectedSha)
-  throw Error("WordPress Media byte-exact SHA readback failed");
+ // Previous guarded apply created exact verified original JPEG Media83545,
+ // but its immediate REST response did not satisfy an overly strict URL
+ // guard. Real read-only browser audit #45031573631 proved Media83545:
+ // original sha256, original byte length, WP own origin, image/jpeg.
+ // Reuse ONLY that immutable Media; never upload a duplicate.
+ if(exact.length!==1||exact[0].id!==83545)throw Error("Existing proven Media83545 not uniquely found");
+ const media=exact[0];
+ const u=new URL(media.source_url);
+ if(u.origin!==wp||u.protocol!=="https:"||!u.pathname.startsWith("/wp-content/uploads/")||
+    decodeURIComponent(u.pathname.split("/").at(-1)||"").toLowerCase()!=="ba_lan.jpg"||
+    media.mime_type!=="image/jpeg")throw Error("Media83545 actual canonical origin/path/mime mismatch");
+ const proof=await page.evaluate(async uri=>{
+  const u=new URL(uri,location.href);
+  if(u.origin!==location.origin||!u.pathname.startsWith("/wp-content/uploads/"))
+   throw Error("Media URL not same-origin uploads");
+  const response=await fetch(u.href,{credentials:"same-origin"});
+  if(!response.ok||!String(response.headers.get("content-type")||"").startsWith("image/jpeg"))
+   throw Error("WP image not served as original JPEG");
+  const buffer=await response.arrayBuffer();
+  if(buffer.byteLength>500000)throw Error("Unexpected image length");
+  const checksum=await crypto.subtle.digest("SHA-256",buffer);
+  return{size:buffer.byteLength,sha256:[...new Uint8Array(checksum)].map(x=>x.toString(16).padStart(2,"0")).join("")};
+ },media.source_url);
+ if(proof.size!==expectedLen||proof.sha256!==expectedSha)
+  throw Error("WP Media83545 bytes differ from exact owner-source JPEG");
+ report.mediaReused=true;
+ report.wpMediaId=83545;
+ await save();
  let desired=baseBody;
  if(!baseBody.includes(media.source_url)){
    if(baseBody.split('src="'+oldSrc+'"').length!==2)throw Error("Source draft Ba_Lan src not unique");
