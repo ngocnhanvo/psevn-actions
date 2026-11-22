@@ -1,0 +1,25 @@
+name: PSE ten original external src posts and Joomla 301 production QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-ten-thirdparty-postrelease-qa-request
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-ten-thirdparty-postrelease-qa.mjs
+      - run: node scripts/pse-ten-thirdparty-postrelease-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-ten-original-thirdparty-images-redirects-live
+          path: artifacts/pse-ten-thirdparty-postrelease-live-qa/report.json
+          retention-days: 30
+          if-no-files-found: warn
