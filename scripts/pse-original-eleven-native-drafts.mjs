@@ -2,7 +2,7 @@
  * Strict read-only preflight unless signed --apply + fresh Updraft backup.
  * Never publish, redirect, upload images, change Astro/PHP or touch unrelated Posts.
  */
-import {chromium} from "playwright";
+import {chromium,request} from "playwright";
 import {readFile,mkdir,writeFile} from "node:fs/promises";
 import {createHash} from "node:crypto";
 const apply=process.argv.includes("--apply");
@@ -51,6 +51,7 @@ if(front!=="https://pse.webnvn.com")throw Error("Frontend target mismatch");
 const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1366,height:860}});
 const page=await ctx.newPage();
+const publicNet=await request.newContext({timeout:30000});
 const report={schema:"pse-original-eleven-native-drafts-v1",target:wp,readOnly:!apply,
  sourceFile:"owner-provided Joomla DB public-article selection",scopedIds:ids,
  status:"NOT_TESTED",preflight:[],created:[],existingVerified:[],blocked:[],wpWrites:0,mediaWrites:0,published:0,redirects:0};
@@ -146,8 +147,22 @@ try{
   newDraftsExpected:11-report.existingVerified.length,categoryMap:categories,
   noOriginalMediaProven:true,readOnly:!apply,backup:apply
  }));
- if(!apply)process.exitCode=0;
- else{
+ if(!apply){
+  const visibility=[];
+  for(const row of report.preflight){
+   if(!row.alreadyDraft)continue;
+   const raw=await publicNet.get(wp+"/wp-json/wp/v2/posts?slug="+encodeURIComponent(row.slug)+
+     "&_fields=id,slug,status",{failOnStatusCode:false,timeout:30000});
+   const publicData=await raw.json().catch(()=>null);
+   if(raw.status()!==200||!Array.isArray(publicData)||publicData.length!==0)
+    throw Error("Original quarantined draft is visible in public REST "+row.sourceId);
+   visibility.push({sourceId:row.sourceId,publicRESTAbsent:true});
+  }
+  report.visibility=visibility;
+  await save();
+  console.log("PSE_SQL_ELEVEN_PUBLIC_REST_GUARD="+JSON.stringify({
+   checked:visibility.length,allDraftsPrivate:true,wpPublished:0,restReadOnly:true}));
+ }else{
   for(const row of report.preflight){
    const src=source.get(row.sourceId);
    if(row.alreadyDraft)continue;
@@ -183,4 +198,4 @@ try{
 }catch(e){
  report.status="FAILED";report.blocked.push({errorType:e.constructor?.name||"Error",errorMessage:String(e.message||"").slice(0,160)});
  await save();throw e;
-}finally{await ctx.close();await browser.close()}
+}finally{await publicNet.dispose();await ctx.close();await browser.close()}
