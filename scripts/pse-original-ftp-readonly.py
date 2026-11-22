@@ -37,7 +37,13 @@ def validated_host(scheme):
 
 class FTPS:
     def __init__(self,host,port,user,password):
-        self.c=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=35)
+        # Optional, operator-provided trust anchor. Always verify the server
+        # certificate chain AND hostname. Do not fall back to plaintext FTP
+        # or disable TLS checks on self-signed/shared-host certificates.
+        ca=os.getenv("PSE_SOURCE_FTP_CA_PEM","").strip()
+        if ca and ("-----BEGIN CERTIFICATE-----" not in ca or "-----END CERTIFICATE-----" not in ca):
+            raise ValueError("source_ca_pem_invalid")
+        self.c=ftplib.FTP_TLS(context=ssl.create_default_context(cadata=ca or None),timeout=35)
         self.c.connect(host,port,timeout=35)
         self.c.auth()
         self.c.login(user,password)
@@ -213,7 +219,23 @@ if __name__=="__main__":
             "secure_transport_required":"SOURCE_TRANSPORT_UNSUPPORTED",
             "original_joomla_root_not_verified":"ORIGINAL_JOOMLA_ROOT_NOT_VERIFIED",
             "original_source_gaps_report_missing":"ORIGINAL_SOURCE_REPORT_MISSING",
-            "wrong_repository":"WRONG_GITHUB_REPOSITORY"
+            "wrong_repository":"WRONG_GITHUB_REPOSITORY",
+            "source_ca_pem_invalid":"SOURCE_CA_PEM_INVALID"
         }
-        print("PSE_ORIGINAL_FTP_READONLY_ERROR="+safe.get(str(e),e.__class__.__name__),file=sys.stderr)
+        if isinstance(e,ssl.SSLCertVerificationError):
+            # OpenSSL verify codes are public protocol diagnostics, not secret values.
+            codes={
+                9:"SOURCE_FTPS_CERT_NOT_YET_VALID",
+                10:"SOURCE_FTPS_CERT_EXPIRED",
+                18:"SOURCE_FTPS_SELF_SIGNED_LEAF",
+                19:"SOURCE_FTPS_SELF_SIGNED_CHAIN",
+                20:"SOURCE_FTPS_UNKNOWN_ISSUER",
+                21:"SOURCE_FTPS_CERT_CHAIN_INCOMPLETE",
+                62:"SOURCE_FTPS_HOSTNAME_MISMATCH",
+                64:"SOURCE_FTPS_IP_HOSTNAME_MISMATCH"
+            }
+            err=codes.get(getattr(e,"verify_code",None),"SOURCE_FTPS_CERT_VERIFICATION_FAILED")
+        else:
+            err=safe.get(str(e),e.__class__.__name__)
+        print("PSE_ORIGINAL_FTP_READONLY_ERROR="+err,file=sys.stderr)
         sys.exit(1)
