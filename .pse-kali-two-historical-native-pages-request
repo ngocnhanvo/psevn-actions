@@ -1,0 +1,6 @@
+source_ids=1425,1426
+source_proof_run=44990978357
+source_proof_artifact=14742056336
+previous_production=44991814710:success
+previous_five_link_qa=44992008617:success
+scope=two historical native PublicPage entries plus exact original PNG media reuse/import only; full source title/body/table/image parity; fresh database backup; no Woo Product/category/redirect writes; existing signed normal build after actual apply success.
