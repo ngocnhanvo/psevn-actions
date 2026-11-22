@@ -1,0 +1,45 @@
+name: PSE original Joomla #382 Ao 2 ZIP metadata identity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-382-ao-zip-fuzzy-proof.py
+      - scripts/test-pse-original-382-ao-zip-fuzzy-proof.py
+      - .github/workflows/pse-original-382-ao-zip-fuzzy-proof.yml
+permissions:
+  contents: read
+jobs:
+  test:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-original-382-ao-zip-fuzzy-proof.py scripts/test-pse-original-382-ao-zip-fuzzy-proof.py
+      - run: python3 scripts/test-pse-original-382-ao-zip-fuzzy-proof.py
+  proof:
+    needs: test
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: pse-original-joomla-source-readonly
+      cancel-in-progress: false
+    env:
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_FTP_PROTOCOL: ftps
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 scripts/pse-original-382-ao-zip-fuzzy-proof.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-382-ao-fuzzy-archive-evidence
+          path: artifacts/pse-original-382-ao-zip-fuzzy-proof/report.json
+          retention-days: 14
+          if-no-files-found: warn
