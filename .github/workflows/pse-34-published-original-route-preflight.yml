@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/pse-34-published-original-route-preflight.mjs
       - .github/workflows/pse-34-published-original-route-preflight.yml
+      - .pse-34-original-native-301-postrelease-qa-request
 permissions: {contents: read}
 jobs:
   audit:
