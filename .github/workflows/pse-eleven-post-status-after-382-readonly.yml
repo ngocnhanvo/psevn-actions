@@ -1,0 +1,34 @@
+name: PSE 11 owner SQL native Posts statuses after #382 publication (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-eleven-post-status-after-382-readonly.mjs
+      - .github/workflows/pse-eleven-post-status-after-382-readonly.yml
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-eleven-post-status-after-382-readonly.mjs
+      - run: node scripts/pse-eleven-post-status-after-382-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-eleven-posts-after-382-native-readonly-proof
+          path: artifacts/pse-eleven-after-382-public-qa/report.json
+          retention-days: 14
+          if-no-files-found: warn
