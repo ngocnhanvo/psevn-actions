@@ -210,7 +210,7 @@ def discover_with_candidate_roots(client,configured_root):
         attempts+=1
         try:
             rows=client.listdir(remote)
-        except (ftplib.all_errors,OSError):
+        except (ftplib.error_perm,ftplib.error_temp,ftplib.error_proto,ftplib.error_reply,OSError):
             continue
         names={name.casefold() for name,kind,_ in rows}
         if not all(x in names for x in ("configuration.php","administrator","components")) or not ("images" in names or "media" in names):
