@@ -114,8 +114,19 @@ try{
     !["draft","publish"].includes(existing.status)))
    throw Error("Conflicting existing Joomla redirect "+row.id);
   known.set(row.id,existing||null);
-  const live=await net.get(site+row.target,{failOnStatusCode:false,timeout:40000,maxRedirects:2});
-  if(live.status()!==200)throw Error("Published WordPress canonical route not ready "+row.id);
+  let live=null;
+  for(let retry=0;retry<3;retry++){
+   try{
+    live=await net.get(site+row.target,{failOnStatusCode:false,timeout:40000,maxRedirects:2});
+    break;
+   }catch(e){
+    // Only retry temporary connection failures, never content mismatches or bad HTTP status.
+    if(retry>=2||!/(ECONNRESET|ETIMEDOUT|ECONNABORTED|socket hang up)/i.test(String(e?.message||"")))throw e;
+    console.log("PSE_ORIGINAL_ARTICLE_FRONT_NETWORK_RETRY="+JSON.stringify({sourceId:row.id,attempt:retry+1,kind:"transient_transport"}));
+    await new Promise(resolve=>setTimeout(resolve,(retry+1)*1000));
+   }
+  }
+  if(!live||live.status()!==200)throw Error("Published WordPress canonical route not ready "+row.id);
   const rendered=await live.text();
   const h1=(rendered.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1]||"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
   if(!h1.includes(row.title.slice(0,20)))
