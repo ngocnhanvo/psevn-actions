@@ -50,6 +50,57 @@ try{
  for(let i=1;i<=40;i++){const r=await api('chuyen-huong-link?context=edit&status=publish&per_page=100&page='+i+'&orderby=id&order=asc&_fields=id,status,acf');if(r.http!==200||!Array.isArray(r.data)||r.pages<1||r.pages>40)throw Error('Redirect registry incomplete');registry.push(...r.data);if(i===r.pages)break}
  const rootLinks=new Map(),known=new Map(specs.map(s=>[new URL(data.get(s.id).r.source).pathname,'/'+s.slug]));
  known.set('/hoat-dong-kinh-doanh/san-pham/dam-phu-my/8-trang-chu/1678-kali-phu-my-mo-ta-va-hdsd.html','/kali-phu-my-mo-ta-va-hdsd');
+ // The five alternate context paths were independently source-proven in
+ // #44992472748. Require the exact pinned report AND the already-deployed
+ // canonical source-context 301, not a slug guess.
+ const aliases=JSON.parse(await readFile('inputs/link-proof/report.json','utf8'));
+ const destinations=new Map([[1668,'/san-pham/dam-phu-my-chuyen-dung-cho-drone-1668'],[1669,'/san-pham/dam-phu-my-chuyen-dung-cho-nong-lam-truong-1669'],[1676,'/san-pham/sa-phu-my-1682'],[1677,'/san-pham/dap-phu-my-1677'],[1678,'/kali-phu-my-mo-ta-va-hdsd']]);
+ if(!aliases.readOnly||aliases.aliasProof.length!==5||new Set(aliases.aliasProof.map(a=>a.id)).size!==5)throw Error('Pinned alias proof incomplete');
+ for(const a of aliases.aliasProof){
+  if(!destinations.has(a.id)||!a.equal||a.left?.http!==200||a.right?.http!==200||a.left.hash!==a.right.hash||a.left.structure!==a.right.structure||a.left.title!==a.right.title||!a.from.startsWith('/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/'+a.id+'-')||a.from.replace('/nhom-phan-don-va-phan-phuc-hop-phu-my/','/dam-phu-my/')!==a.context)throw Error('Alias proof mismatch '+a.id);
+  const rr=await net.get(front+a.context,{maxRedirects:0,failOnStatusCode:false});
+  if(rr.status()!==301||!rr.headers().location||new URL(rr.headers().location,front).href!==front+destinations.get(a.id))throw Error('Production proven context changed '+a.id);
+  known.set(a.from,destinations.get(a.id));
+ }
+ const state=JSON.parse(await readFile('docs/pse-legacy-migration-state.json','utf8'));
+ const getCore=async(url)=>{
+  const u=new URL(url);if(!['pse.vn','www.pse.vn'].includes(u.hostname)||u.protocol!=='https:'||u.username||u.password)throw Error('Untrusted Joomla GET');
+  const res=await net.get(src+u.pathname+u.search,{maxRedirects:0,failOnStatusCode:false});
+  if(res.status()!==200)throw Error('Original link HTTP '+res.status()+' '+u.pathname+u.search);
+  await parser.setContent('<base href="'+src+u.pathname+u.search+'">'+(await res.text()).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,''),{waitUntil:'domcontentloaded'});
+  return parser.evaluate(()=>{const n=x=>String(x||'').normalize('NFKC').replace(/\s+/g,' ').trim(),root=document.querySelector('.item-page [itemprop=articleBody]');if(!root)throw Error('No original core article');const c=root.cloneNode(true);c.querySelectorAll('.extranews_box,.extranews_separator').forEach(x=>x.remove());return {title:n(document.querySelector('.item-page h1,.item-page h2,h1')?.textContent),body:n(c.textContent),images:[...c.querySelectorAll('img[src]')].map(e=>new URL(e.getAttribute('src'),document.baseURI).pathname),tables:[...c.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(x=>n(x.textContent))))}});
+ };
+ const queryLink=async u=>{
+  if(u.pathname!=='/hoat-dong-kinh-doanh/san-pham/kali-phu-my.html'||!['?id=1425','?id=1427','?id=1430'].includes(u.search)||u.hash)throw Error('Unapproved original query '+u.pathname+u.search);
+  const id=Number(u.searchParams.get('id')),actual=await getCore(src+u.pathname+u.search);
+  let target=src+u.pathname+u.search,kind='preserved-original-query';
+  if(id===1425){
+   const row=data.get(id).r;
+   if(actual.title!==row.title||sha(actual.body)!==row.bodySha||JSON.stringify(actual.images)!==JSON.stringify(row.images.map(i=>new URL(i.url).pathname)))throw Error('Query 1425 does not match pinned original');
+   target=front+'/'+row.slug;kind='verified-native-query';
+  }else{
+   // Match the precise manifest article and an existing exact native redirect
+   // only when the source variants really represent the same content.
+   const historical=state.articles?.[id]?.source_url;
+   if(historical){
+    const h=new URL(historical);
+    if(['pse.vn','www.pse.vn'].includes(h.hostname)&&!h.search&&!h.hash&&h.pathname.includes('/'+id+'-')){
+     const prior=registry.filter(x=>x.acf?.from_link===h.pathname&&x.acf?.match_type==='Exact'&&String(x.acf?.type)==='301'&&x.acf?.enable===true);
+     if(prior.length>1)throw Error('Conflicting exact product alias '+id);
+     if(prior.length===1){
+      const original=await getCore(src+h.pathname);
+      if(actual.title===original.title&&actual.body===original.body&&JSON.stringify(actual.images)===JSON.stringify(original.images)&&JSON.stringify(actual.tables)===JSON.stringify(original.tables)){
+       const t=new URL(prior[0].acf.to_link,front);if(t.origin!==front||t.search||t.hash)throw Error('Unsafe native query destination');
+       const rr=await net.get(front+h.pathname,{maxRedirects:0,failOnStatusCode:false}),live=await net.get(t.href,{maxRedirects:0,failOnStatusCode:false});
+       if(rr.status()===301&&rr.headers().location&&new URL(rr.headers().location,front).href===t.href&&live.status()===200){target=t.href;kind='verified-native-query'}
+      }
+     }
+    }
+   }
+  }
+  console.log('PSE_KALI_QUERY_PROOF='+JSON.stringify({id,title:actual.title,bodySha:sha(actual.body),images:actual.images,target,kind}));
+  return {target,kind};
+ };
  for(const s of specs){
   const {r,d}=data.get(s.id),links=[],seen=new Set();
   for(const l of d.links){
@@ -57,7 +108,7 @@ try{
    const u=new URL(l.url);if(!['http:','https:'].includes(u.protocol)||u.username||u.password)throw Error('Untrusted source link');
    let target=u.href,kind='original-external';
    if(['pse.vn','www.pse.vn'].includes(u.hostname)){
-    if(u.search)throw Error('Unverified source query');
+    if(u.search){({target,kind}=await queryLink(u));links.push({from:l.href,to:target,kind});continue}
     const matches=registry.filter(x=>x.acf?.from_link===u.pathname&&x.acf?.match_type==='Exact'&&String(x.acf?.type)==='301'&&x.acf?.enable===true);
     if(matches.length>1)throw Error('Conflicting mapped source link');
     const mapped=known.get(u.pathname)||matches[0]?.acf?.to_link;
