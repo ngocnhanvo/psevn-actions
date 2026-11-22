@@ -4,11 +4,21 @@ on:
     branches: [main]
     paths: [.pse-dam-phu-my-final-qa-request]
   workflow_dispatch:
+  workflow_run:
+    workflows: [PSE Astro build and deploy via WordPress GitHub Trigger]
+    types: [completed]
 permissions:
   contents: read
 jobs:
   parity:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.id == 44991814710 &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'repository_dispatch' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container:
@@ -21,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {ref: main, persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Verify original ten HTML tables and four products on desktop and mobile
+      - name: Verify all five legacy 301s, ten original tables and four products on desktop and mobile
         run: node --check scripts/pse-dam-phu-my-final-parity.mjs && node scripts/pse-dam-phu-my-final-parity.mjs
       - uses: actions/upload-artifact@v4
         if: always()
