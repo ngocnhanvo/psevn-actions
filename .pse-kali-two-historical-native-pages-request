@@ -13,8 +13,8 @@
     "legacy404VerifiedRun": 45043192023
   },
   "productionBuildChainExisting": true,
-  "retryRevision": 2,
-  "previousRun": 45043754370,
-  "previousFailure": "Original Joomla query /hoat-dong-kinh-doanh/san-pham/kali-phu-my.html?id=1425 returns HTTP404; numeric IDs 1425/1427 are source-proven original article paths, id1430 is explicit Joomla core article with pinned body SHA. Preserve working 1430 original source link.",
+  "retryRevision": 3,
+  "previousRun": 45044248316,
+  "previousFailure": "After verified 1425/1427/1430 source original query fallback and source-only link plan, slow WordPress PNG GET hit 45-second Playwright timeout. Explicit Media HEAD content length size-filter and GET 90s bounded retry added; no CMS writes in failed run.",
   "newExpected1678Target": "/san-pham/kali-phu-my-mieng-mop-1427"
 }
