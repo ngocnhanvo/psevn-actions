@@ -3,12 +3,12 @@ import {chromium,request} from 'playwright';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const ev=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
-if(process.env.GITHUB_REPOSITORY!=='ngocnhanvo/psevn-actions'||process.env.GITHUB_REF!=='refs/heads/main'||ev.head_commit?.message!=='cms(pse): redirect two verified historical Kali pages'||process.env.PSE_KALI_FRESH_BACKUP!=='yes')throw Error('Write scope denied');
+if(process.env.GITHUB_REPOSITORY!=='ngocnhanvo/psevn-actions'||process.env.GITHUB_REF!=='refs/heads/main'||!['cms(pse): redirect two verified historical Kali pages','cms(pse): redirect verified historical Kali 1425 page'].includes(ev.head_commit?.message)||process.env.PSE_KALI_FRESH_BACKUP!=='yes')throw Error('Write scope denied');
 const wp='https://admin-pse.webnvn.com',front='https://pse.webnvn.com',sha=b=>createHash('sha256').update(b).digest('hex');
 for(const [k,v] of [['WC_URL',wp],['WC_URL_CLIENT',front]]){const a=String(process.env.ENV_FILE||'').split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith(k+'='));if(a.length!==1||new URL(a[0].slice(k.length+1).replace(/^['"]|['"]$/g,'')).origin!==v)throw Error('Origin mismatch '+k)}
 const original=JSON.parse(await readFile('inputs/source/report.json','utf8')),applied=JSON.parse(await readFile('inputs/applied/report.json','utf8'));
-const ids=[1425,1426],expected={1425:'kali-phu-my-bot-canada-mo-ta-va-hdsd',1426:'kali-phu-my-mo-ta-cac-bien-the'};
-if(!original.readOnly||!original.noCmsWrites||!applied.pass||!applied.noProductWrites||!applied.noCategoryWrites||applied.pages.length!==2)throw Error('Pinned proof invalid');
+const ids=ev.head_commit?.message==='cms(pse): redirect verified historical Kali 1425 page'?[1425]:[1425,1426],expected={1425:'kali-phu-my-bot-canada-mo-ta-va-hdsd',1426:'kali-phu-my-mo-ta-cac-bien-the'};
+if(!original.readOnly||!original.noCmsWrites||!applied.pass||!applied.noProductWrites||!applied.noCategoryWrites||applied.pages.length!==ids.length)throw Error('Pinned proof invalid');
 const plans=[];
 for(const id of ids){
  const r=original.rows.find(x=>x.id===id),p=applied.pages.find(x=>x.sourceId===id),d=JSON.parse(await readFile('inputs/source/source-'+id+'.json','utf8'));
