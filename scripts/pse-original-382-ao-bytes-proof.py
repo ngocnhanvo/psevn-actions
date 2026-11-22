@@ -10,8 +10,8 @@ ftpbase=importlib.util.module_from_spec(spec);spec.loader.exec_module(ftpbase)
 ROOT="/domains/pse.vn/public_html"
 EXPECTED_BYTES=269085
 PATH_HASHES={
- "images/web":"3ed23465173338e05687d2b3e5cb19df2d5a922c03e2c98def55f9fcaf45b6de",
- "images/tin-tuc":"94e1a8b035c3050a21fae53f3df49dc1244616b452331f0918c364cc1c9533d2",
+ "images/web":"94e1a8b035c3050a21fae53f3df49dc1244616b452331f0918c364cc1c9533d2",
+ "images/tin-tuc":"3ed23465173338e05687d2b3e5cb19df2d5a922c03e2c98def55f9fcaf45b6de",
 }
 OUT=Path("artifacts/pse-original-382-ao-bytes-proof/report.json")
 def jpeg_dimensions(data):
