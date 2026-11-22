@@ -45,7 +45,16 @@ try{
    const root=page.locator('.pse-historical-kali-'+id);
    if(await root.count()!==1||await root.locator('img').count()!==sources.length)throw Error('Live content/image count mismatch '+id);
    const result=await root.evaluate(el=>({text:el.textContent,tables:[...el.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(c=>c.textContent))),links:[...el.querySelectorAll('a[href]')].map(a=>a.href),overflow:document.documentElement.scrollWidth-innerWidth}));
-   if(compact(result.text)!==compact(d.full)||JSON.stringify(result.tables.map(t=>t.map(r=>r.map(compact))))!==JSON.stringify(d.tables.map(t=>t.map(r=>r.map(compact))))||result.overflow>5||p.links.some(l=>!result.links.includes(l.to)))throw Error('Live body/table/link/overflow mismatch '+id+' '+width);
+   // Owner has since superseded only #1678's old Page link with native Woo Product80938.
+   // Pinned #1425 source proof remains immutable; validate this single authorized
+   // link change exactly, and require every other source-proven link unchanged.
+   const owner1678='/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/1678-kali-phu-my-mo-ta-va-hdsd.html';
+   const ownerOld=front+'/kali-phu-my-mo-ta-va-hdsd';
+   const ownerTarget=front+'/san-pham/kali-phu-my-mieng-mop-1427';
+   if(id===1425&&p.links.filter(l=>l.from===owner1678&&l.to===ownerOld).length!==1)
+    throw Error('Pinned old owner 1678 reference changed');
+   const expectedLinks=p.links.map(l=>id===1425&&l.from===owner1678&&l.to===ownerOld?ownerTarget:l.to);
+   if(compact(result.text)!==compact(d.full)||JSON.stringify(result.tables.map(t=>t.map(r=>r.map(compact))))!==JSON.stringify(d.tables.map(t=>t.map(r=>r.map(compact))))||result.overflow>5||expectedLinks.some(l=>!result.links.includes(l))||result.links.includes(ownerOld))throw Error('Live body/table/link/overflow mismatch '+id+' '+width);
    const images=[];
    for(let i=0;i<sources.length;i++){
     const el=root.locator('img').nth(i),o=sources[i];
@@ -92,7 +101,17 @@ try{
  const registry=[];
  for(let i=1;i<=40;i++){const r=await api('chuyen-huong-link?context=edit&status=any&per_page=100&page='+i+'&orderby=id&order=asc&_fields=id,status,acf');if(r.http!==200||!Array.isArray(r.data)||r.pages<1||r.pages>40)throw Error('Incomplete redirect registry');registry.push(...r.data);if(i===r.pages)break}
  const matches=(x,p)=>x.acf?.from_link===p.from&&x.acf?.to_link===p.to&&String(x.acf?.type)==='301'&&x.acf?.match_type==='Exact'&&x.acf?.enable===true;
- for(const p of plans){const prior=registry.filter(x=>x.acf?.from_link===p.from);if(prior.length>1||prior.some(x=>!matches(x,p)))throw Error('Conflicting redirect '+p.id);p.existing=prior[0]||null}
+ for(const p of plans){
+  const prior=registry.filter(x=>x.acf?.from_link===p.from);
+  if(prior.length>1||prior.some(x=>!matches(x,p)))throw Error('Conflicting redirect '+p.id);
+  p.existing=prior[0]||null;
+  // Refuse to replace a different published destination from another router.
+  const current=await net.get(front+p.from,{maxRedirects:0,failOnStatusCode:false,timeout:45000});
+  const code=current.status();
+  const location=current.headers().location?new URL(current.headers().location,front).href:null;
+  if(code!==404&&!(code===301&&location===front+p.to))
+   throw Error('Existing public original URL routing conflict '+p.id+' HTTP '+code);
+ }
  await writeFile(out+'/rollback.json',JSON.stringify(plans.map(({id,from,to,existing})=>({id,from,to,existing})),null,2)+'\n');
  for(const p of plans){
   let id=p.existing?.id;if(!id){const r=await api('chuyen-huong-link','POST',{status:'draft',title:'PSE: Kali Phú Mỹ - bài gốc '+p.id,acf:{from_link:p.from,to_link:p.to,type:'301',match_type:'Exact',enable:true}});if(r.http!==201||!Number.isSafeInteger(r.data?.id))throw Error('Redirect draft failed '+p.id);id=r.data.id;report.writes.push({kind:'redirect-draft',id,sourceId:p.id});await save()}
