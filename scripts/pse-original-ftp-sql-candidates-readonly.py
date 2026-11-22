@@ -5,7 +5,7 @@ Reads only ZIP central directory over certificate-validated FTPS REST.
 Reports file sizes, entry *hashes*, and classification, never filenames, SQL
 contents, login values, source config, or file bytes.
 """
-import collections,hashlib,importlib.util,json,os,struct,sys
+import collections,hashlib,importlib.util,json,os,struct,sys,unicodedata
 from pathlib import Path
 spec=importlib.util.spec_from_file_location("ziptoc",Path("scripts/pse-original-ftp-zip-toc-readonly.py"))
 base=importlib.util.module_from_spec(spec)
@@ -17,6 +17,11 @@ def classify(buf, expected_entries):
     SQL_ENDINGS=(".sql",".sql.gz",".mysql",".dump")
     counters=collections.Counter()
     max_sql=0
+    # Only exact source-known image paths; filename-only candidates never prove identity.
+    target_images=("Áo_2.JPG","Ba_Lan.JPG","Mỏ_muối_Wieliczka_dưới_mặt_đất_135m_-_Ba_lan.JPG")
+    normalize=lambda p:unicodedata.normalize("NFC",p).casefold()
+    wanted={normalize(name):i for i,name in enumerate(target_images,1)}
+    image_matches={i:{"basename_count":0,"source_path_count":0,"source_entries":[]} for i in (1,2,3)}
     cursor=0
     entries=0
     while cursor<len(buf):
@@ -30,6 +35,20 @@ def classify(buf, expected_entries):
         name=raw.decode("utf-8","replace").replace("\\","/")
         low=name.lower()
         if not name.endswith("/"):
+            basename=normalize(name.rsplit("/",1)[-1])
+            idx=wanted.get(basename)
+            if idx is not None:
+                candidate=image_matches[idx]
+                candidate["basename_count"]+=1
+                if normalize(name).endswith("/images/web/"+basename):
+                    candidate["source_path_count"]+=1
+                    candidate["source_entries"].append({
+                      "entry_key_sha256":hashlib.sha256(raw).hexdigest(),
+                      "uncompressed_bytes":uncomp,
+                      "compressed_bytes":comp,
+                      "compression_method":method,
+                      "encrypted":bool(flags&1)
+                    })
             for ext in SQL_ENDINGS:
                 if low.endswith(ext):
                     counters[ext]+=1
@@ -63,6 +82,7 @@ def classify(buf, expected_entries):
        "sql_installer_pattern_count":sum(bool(x["known_extension_installer_pattern"]) for x in candidates),
        "plausible_database_dump_candidates":sum(bool(x["plausible_database_dump"]) for x in candidates),
        "largest_sql_uncompressed_bytes":max_sql,
+       "original_382_image_candidates_in_zip":image_matches,
        "top_bounded_sql_candidates":chosen,
        "raw_archive_paths_logged":False,
        "sql_body_accessed":False,
