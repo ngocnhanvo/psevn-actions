@@ -1,0 +1,60 @@
+name: PSE 34 verified original Joomla source URLs native 301 and 1159 slug repair (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-34-original-native-301-apply.mjs
+      - .github/workflows/pse-34-original-native-301-apply.yml
+      - .pse-34-original-native-301-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-34-original-native-301-apply.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore 34 original Joomla source redirects and encoded 1159 permalink'
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 45048604092
+          name: pse-original-34-published-post-product-gallery-301-preflight
+          path: inputs/preflight
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh Updraft native WP DB backup before 34 redirects and 1159 slug-only write
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_ORIGINAL_34_FRESH_UPDRAFT=yes" >> "$GITHUB_ENV"
+      - name: Reconcile all original native source identities then apply exact WordPress 301s
+        run: node --check scripts/pse-34-original-native-301-apply.mjs && node scripts/pse-34-original-native-301-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-34-native-wordpress-301s-and-1159-slug
+          path: artifacts/pse-34-original-joomla-native-301s/report.json
+          retention-days: 30
+          if-no-files-found: warn
