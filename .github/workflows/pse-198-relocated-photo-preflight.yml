@@ -1,0 +1,45 @@
+name: PSE 198 relocated photos decoded provenance preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-198-relocated-photo-preflight.py
+      - .github/workflows/pse-198-relocated-photo-preflight.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preflight:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Confirm pinned successful evidence run and artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/ngocnhanvo/psevn-actions/actions/runs/44983863130 | jq -e '.conclusion=="success" and .head_sha=="5de062a9126251c53355a67c302d750a62b36795"'
+          gh api repos/ngocnhanvo/psevn-actions/actions/runs/44983863130/artifacts | jq -e '.artifacts | any(.id==14739271441 and .name=="pse-198-publisher-relocation-proof" and .expired==false)'
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-198-publisher-relocation-proof
+          path: inputs/pse198
+          run-id: 44983863130
+          github-token: ${{ github.token }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check Pillow==11.3.0 beautifulsoup4==4.13.4
+      - run: python -m py_compile scripts/pse-198-relocated-photo-preflight.py
+      - run: python scripts/pse-198-relocated-photo-preflight.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-198-relocated-preflight
+          path: artifacts/pse-198-relocated-preflight/
+          retention-days: 30
+          if-no-files-found: warn
