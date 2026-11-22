@@ -1,0 +1,39 @@
+name: PSE Kali 1678 original native historical Page preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1678-native-page-preflight.mjs
+      - .github/workflows/pse-kali-1678-native-page-preflight.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preflight:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-dam-related-links-audit
+          path: inputs/dam
+          run-id: 44989359696
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-kali-1678-native-page-preflight.mjs
+      - run: node scripts/pse-kali-1678-native-page-preflight.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-1678-native-page-preflight
+          path: artifacts/pse-kali-1678-native-page-preflight/
+          retention-days: 30
+          if-no-files-found: warn
