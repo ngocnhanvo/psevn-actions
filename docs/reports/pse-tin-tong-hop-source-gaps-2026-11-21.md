@@ -1,5 +1,121 @@
 # PSE — Tin tổng hợp: parity, kết quả và dữ liệu nguồn còn thiếu (21/11/2026)
 
+## Cập nhật 22/11/2026 — danh sách bàn giao nguồn còn thiếu (thay thế các số liệu lịch sử bên dưới)
+
+**Trạng thái đồng bộ toàn site: PARTIAL.** Baseline đã xác minh 758 Posts, 53 Woo Products, 25 Pages, 15/16 album. #379 và #204 đã hoàn thành; không nhập lại các bài đã xác minh. Còn đúng **12 bài thường**, album #975, bốn URL mô tả sản phẩm lịch sử, và một ảnh ngoài site thuộc bài đã xuất bản #225.
+
+### Danh sách cần tìm lại file gốc (41 đường dẫn chính xác từ log cho 9 bài)
+
+Bằng chứng: [Actions #44899904722](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44899904722). Các URL dưới đây là danh tính nguồn lịch sử, KHÔNG khẳng định truy cập hiện tại thành công. Không dùng tên file giống nhau làm chứng cứ đủ để thay ảnh.
+
+#### #114 — Phòng trừ bệnh vàng lùn và lùn xoắn lá
+
+[Bài Joomla](https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/114-phong-tru-benh-vang-lun-va-lun-xoan-la.html) · 2 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://www.sieuthinongnghiep.com/plugins/content/contentoptimizer/55934f70a3114526d93b19ad57172630489f8dfc_261x247_Q75.jpeg`
+- `http://www.sieuthinongnghiep.com/plugins/content/contentoptimizer/72139d6a0fa2dab137315af3128c7bd53a98e90f_282x312_Q75.jpeg`
+
+#### #121 — Nguyên nhân và biện pháp khắc phục bệnh vàng và rụng lá cà phê
+
+[Bài Joomla](https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/121-nguyen-nhan-va-bien-phap-khac-phuc-benh-vang-va-rung-la-ca-phe.html) · 3 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/cafe2.jpg`
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/cafe3.jpg`
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/cafe4.jpg`
+
+#### #127 — Kỹ thuật trồng và chăm sóc cây cao su
+
+[Bài Joomla](https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/127-ky-thuat-trong-va-cham-soc-cay-cao-su.html) · 2 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://dateh.lamdong.gov.vn/images/stories/hinh_chuyen_muc/hinh_khkt/caosu.jpg`
+- `http://dateh.lamdong.gov.vn/plugins/content/imagesresizecache/22f8baa4d56c104fb795ce6547f28184.jpeg`
+
+#### #178 — Kỹ thuật trồng và thâm canh điều
+
+[Bài Joomla](https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/178-ky-thuat-trong-va-tham-canh-dieu.html) · 5 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/kythuat1.jpg`
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/kythuat2.jpg`
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/kythuat3.jpg`
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/kythuat4.jpg`
+- `http://www.spchcmc.com.vn/upload/images/vn/TTNN/kythuat55.jpg`
+
+#### #186 — NPK Phú Mỹ sẽ đẩy lùi hàng kém chất lượng
+
+[Bài Joomla](https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/186-npk-phu-my-se-day-lui-hang-kem-chat-luong.html) · 2 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://images.danviet.vn/CMSImage/Resources/Uploaded/baogiay2/162_13_bon-phan-NPK-cho-lua.jpg`
+- `http://images.danviet.vn/CMSImage/Resources/Uploaded/baogiay2/162_13_ong-Nguyen-Hong-Vinh.jpg`
+
+#### #196 — PVFCCo-SE: Đồng hành cùng Mùa hè xanh
+
+[Bài Joomla](https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/196-pvfcco-se-dong-hanh-cung-mua-he-xanh.html) · 5 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://library.petrotimes.vn/petrotimes_cdn/wp-content/uploads/2011/08/muahexanh_1.jpg`
+- `http://library.petrotimes.vn/petrotimes_cdn/wp-content/uploads/2011/08/muahexanh_2.jpg`
+- `http://library.petrotimes.vn/petrotimes_cdn/wp-content/uploads/2011/08/muahexanh_3.jpg`
+- `http://library.petrotimes.vn/petrotimes_cdn/wp-content/uploads/2011/08/muahexanh_4.jpg`
+- `http://library.petrotimes.vn/petrotimes_cdn/wp-content/uploads/2011/08/muahexanh_5.jpg`
+
+#### #198 — Nhà máy Đạm Phú Mỹ đón tấn sản phẩm urê thứ 5 triệu
+
+[Bài Joomla](https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/198-nha-may-dam-phu-my-don-tan-san-pham-ure-thu-5-trieu.html) · 10 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://dpm.vn/Portals/0/110814%20E1.jpg`
+- `http://dpm.vn/Portals/0/110814%20E2.jpg`
+- `http://dpm.vn/Portals/0/110814%20E3.jpg`
+- `http://dpm.vn/Portals/0/110814%20E4.jpg`
+- `http://dpm.vn/Portals/0/110814%20E5.jpg`
+- `http://dpm.vn/Portals/0/110814%20E5_1.jpg`
+- `http://dpm.vn/Portals/0/110814%20E6.jpg`
+- `http://dpm.vn/Portals/0/110814%20E7.jpg`
+- `http://dpm.vn/Portals/0/110814%20E8.jpg`
+- `http://dpm.vn/Portals/0/110814%20E9.jpg`
+
+#### #202 — Hội thảo giới thiệu NPK Phú Mỹ tại Bình Phước
+
+[Bài Joomla](https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/202-hoi-thao-gioi-thieu-npk-phu-my-tai-binh-phuoc.html) · 1 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://baobinhphuoc.com.vn/resources/newsimg/Nam%202011/8-2011/14/congty.jpg`
+
+#### #237 — PVFCCo SE Tặng quà tết cho hộ nghèo tại Lâm Đồng và Đắk Nông
+
+[Bài Joomla](https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/237-pvfcco-se-tang-qua-tet-cho-ho-ngheo-tai-lam-dong-va-dak-nong.html) · 11 ảnh bắt buộc chưa có exact original bytes.
+
+- `http://dpm.vn/sites/default/files/image001_25.jpg`
+- `http://dpm.vn/sites/default/files/image002_21.jpg`
+- `http://dpm.vn/sites/default/files/image003_20.jpg`
+- `http://dpm.vn/sites/default/files/image004_12.jpg`
+- `http://dpm.vn/sites/default/files/image005_10.jpg`
+- `http://dpm.vn/sites/default/files/image006_3.jpg`
+- `http://dpm.vn/sites/default/files/image007_4.jpg`
+- `http://dpm.vn/sites/default/files/image008.jpg`
+- `http://dpm.vn/sites/default/files/image009_0.jpg`
+- `http://dpm.vn/sites/default/files/image010_0.jpg`
+- `http://dpm.vn/sites/default/files/image011_0.jpg`
+
+### Các bản ghi còn lại
+
+| ID | Cần cung cấp / xác minh | Bằng chứng |
+|---|---|---|
+| 1090 | Ít nhất 6 tên ảnh mẫu từ www.dpm.vn: NDK_0393.JPG, NDK_0441.JPG, 5.JPG, 1(1).JPG, 2(1).JPG, 3.JPG. Cần toàn bộ bài gốc và inventory đầy đủ; phép thử sau báo source body/media inventory changed. | [#44833855640](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44833855640), [#44899904722](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44899904722) |
+| 382 | Ba ảnh Joomla gốc trong /images/web/: Áo_2.JPG; Ba_Lan.JPG; Mỏ_muối_Wieliczka_dưới_mặt_đất_135m_-_Ba_lan.JPG. | [#44909006809](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44909006809) |
+| 341 | Nội dung articleBody gốc và metadata; trang trực tuyến và ba snapshot đã kiểm tra đều không có body thật. Không sử dụng liên kết rác chèn vào trang. | [#44907801086](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44907801086) |
+| 975 | Đủ 110 JPEG đã ở WP Media; cần xác minh ngày xuất bản và tên sự kiện do EXIF 2010, metadata Joomla 2011, tiêu đề 10/2013 mâu thuẫn. Không cần tải lại 110 ảnh. | [Checkpoint](../checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md) |
+| 225 | Ảnh ngoài site gốc: `http://images1.tuoitre.vn/tianyon/ImageView.aspx?ThumbnailID=521979`. Bài đã xuất bản; không tạo Post trùng. | [Checkpoint](../checkpoints/PSE_SOURCE_CONTENT_PARITY_2026-11-21.md) |
+| 1425 | Kali Phú Mỹ Bột CANADA — xác nhận đích mô tả bản thể gốc, không tự map sang 80954. | [#44914636767](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44914636767) |
+| 1426 | Kali Phú Mỹ — bài nguồn mô tả nhiều biến thể; cần xác nhận đích nhóm/biên tập. | [#44914636767](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44914636767) |
+| 1434 | NPK Phú Mỹ — thiếu đúng 1 thumbnail nguồn trong 20 ảnh, cần xác nhận phạm vi nội dung/đích category. | [#44908497036](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44908497036) |
+| 1678 | Kali Phú Mỹ — cần xác nhận đích nội dung gốc; không tự map sang 80938 theo tên ảnh. | [#44914636767](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44914636767) |
+
+**Bộ dữ liệu cần xin:** export Joomla bảng content (id/title/alias/introtext/fulltext/created/modified/publish_up/state/catid), danh mục liên quan và bản sao thư mục images/media; với các ảnh URL báo chí ngoài Joomla, cần bản gốc từ nhà xuất bản hoặc bản lưu nội bộ có bằng chứng nguồn. Không gửi mật khẩu hoặc đưa backup chứa dữ liệu riêng tư vào Git. Các file này chưa được cung cấp. Common Crawl #44976225726 dừng sau một truy vấn, không chứng minh nguồn không tồn tại.
+
+Quy trình tiếp nhận: so khớp source ID/URL, body/ngày và file bytes thật, ghi SHA-256, backup WP, upsert đúng bản ghi native, read-back, signed build nếu cần, QA live. Không lặp lại những probe đã thất bại khi không có bằng chứng mới.
+
+**Quét URL nội bộ:** 840/3242 đã PASS HEAD; [#44980204547](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44980204547) đang chạy phần còn lại. Không coi HEAD thành kiểm chứng byte ảnh Joomla. Không chạy thêm workflow trùng.
+
+---
+
 ## Cập nhật 21/11/2026 20:29 VN — dữ liệu toàn site sau phục hồi
 
 > **Đính chính phạm vi:** Bảng bên dưới là *snapshot lịch sử của riêng chuyên mục Tin tổng hợp*, không còn là danh sách toàn site mới nhất. Mục #204 trong bảng đã được khôi phục hoàn toàn và kiểm chứng HTTP 301; các mục #205/#226/#227/#229/#240 cũng đã có các đợt phục hồi thành công trong ngày. Không chạy lại importer theo danh sách cũ.
