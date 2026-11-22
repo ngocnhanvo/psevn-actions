@@ -24,6 +24,34 @@ try{
  });
  if(expected.length!==10)throw Error('Expected source ten technical/usage tables, got '+expected.length);
  report.checks.push('source_technical_tables_10');
+ const mappings=[
+  [1668,'/san-pham/dam-phu-my-chuyen-dung-cho-drone-1668'],
+  [1669,'/san-pham/dam-phu-my-chuyen-dung-cho-nong-lam-truong-1669'],
+  [1676,'/san-pham/sa-phu-my-1682'],
+  [1677,'/san-pham/dap-phu-my-1677']
+ ];
+ const sourceLinks=await s.locator('.item-page [itemprop="articleBody"] a[href]').evaluateAll(es=>es.map(a=>a.href));
+ const plans=mappings.map(([id,to])=>{
+  const prefix=new URL(original).origin+'/hoat-dong-kinh-doanh/san-pham/dam-phu-my/8-trang-chu/'+id+'-';
+  const hits=[...new Set(sourceLinks.filter(u=>u.startsWith(prefix)&&u.endsWith('.html')))];
+  if(hits.length!==1)throw Error('Exact source related link not unique '+id);
+  return {id,from:new URL(hits[0]).pathname,to};
+ });
+ const origin=new URL(current).origin;
+ report.relatedLinks=[];
+ for(const plan of plans){
+  const redirect=await desktop.request.get(origin+plan.from,{maxRedirects:0,failOnStatusCode:false,timeout:30000});
+  const location=redirect.headers().location;
+  if(redirect.status()!==301||!location||new URL(location,origin).href!==origin+plan.to)throw Error('Exact legacy 301 mismatch '+plan.id+' HTTP '+redirect.status());
+  const target=await desktop.newPage();
+  const tr=await target.goto(origin+plan.to,{waitUntil:'domcontentloaded',timeout:30000});
+  const canonical=await target.locator('link[rel="canonical"]').getAttribute('href');
+  if(tr?.status()!==200||canonical!==origin+plan.to||target.url()!==origin+plan.to)throw Error('Canonical target mismatch '+plan.id);
+  await target.close();
+  report.relatedLinks.push({...plan,http:200,legacyHTTP:301,canonical});
+ }
+ report.checks.push('four_source_proven_related_targets_and_exact_301');
+
 
  const wr=await desktop.request.get(wp+'/wp-json/astro/v1/get-product-categories',{timeout:50000});
  if(wr.status()!==200)throw Error('Public WP category data HTTP '+wr.status());
@@ -73,6 +101,13 @@ try{
    throw Error('Technical table content does not match independently crawled Joomla source at width '+width+
     '; count='+found.tables.length+' mismatch='+found.tables.findIndex((x,i)=>n(x)!==n(expected[i])));
   if(found.cards!==4)throw Error('Existing four product cards not preserved width '+width+' got '+found.cards);
+  const liveHrefs=await p.locator('.pse-category-editorial a[href]').evaluateAll(es=>es.map(a=>a.href));
+  for(const plan of plans){
+   if(liveHrefs.filter(u=>u===origin+plan.to).length!==1||liveHrefs.includes(origin+plan.from))
+     throw Error('Rendered related link mismatch '+plan.id+' width '+width);
+  }
+  report.checks.push('four_repaired_related_links_live_'+width);
+
   if(found.legacyImages)throw Error('Legacy image hotlink present in category content');
   if(found.horizontalOverflow>5)throw Error('Page horizontal overflow at width '+width+': '+found.horizontalOverflow);
   if(found.textLength<2500)throw Error('Category technical text unexpectedly short');
