@@ -1,0 +1,63 @@
+name: PSE original NPK 1434 native Page with exact owned photos (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-npk-1434-native-page.mjs
+      - .github/workflows/pse-original-npk-1434-native-page.yml
+      - .pse-original-npk-1434-native-page-request
+permissions: {contents: read, actions: read}
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-original-npk-1434-native-page.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore original NPK 1434 Page and owned photos'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-1434-original-source-and-media
+          path: inputs/npk
+          run-id: 45044968038
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-1434-original-published-date
+          path: inputs/date
+          run-id: 45045041016
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Native WordPress Updraft snapshot before only original #1434 Page/Media
+        run: node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_NPK_ORIGINAL_FRESH_BACKUP=yes" >> "$GITHUB_ENV"
+      - run: node scripts/pse-original-npk-1434-native-page.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1434-native-original-npk-page-and-media
+          path: artifacts/pse-native-original-npk-1434/report.json
+          retention-days: 30
+          if-no-files-found: warn
