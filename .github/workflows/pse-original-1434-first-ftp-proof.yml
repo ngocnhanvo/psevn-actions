@@ -1,0 +1,45 @@
+name: PSE 1434 exact first owned original PNG from Joomla FTPS (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-1434-first-ftp-proof.py
+      - .github/workflows/pse-original-1434-first-ftp-proof.yml
+      - .pse-original-1434-first-ftp-proof-request
+permissions: {contents: read}
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-original-1434-first-ftp-proof.py
+  read-original:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): prove NPK 1434 first original PNG from Joomla FTP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: pse-original-joomla-source-readonly
+      cancel-in-progress: false
+    env:
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_FTP_PROTOCOL: ftps
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 scripts/pse-original-1434-first-ftp-proof.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1434-first-source-png-original
+          path: artifacts/pse-original-1434-first-ftp/
+          retention-days: 30
+          if-no-files-found: warn
