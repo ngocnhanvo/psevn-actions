@@ -29,6 +29,7 @@ const results=new Map();
 const cleanFile=s=>{try{return decodeURIComponent(s.split("?")[0].split("/").at(-1)||"").toLowerCase()}catch{return ""}};
 const report={schema:"pse-eleven-original-native-wordpress-media-leads-v1",readOnly:true,noWpWrites:true,noSourceWrites:true,images:[],summary:{}};
 let cursor=0;
+const normalizedBasename=s=>cleanFile(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/[^a-z0-9]/g,"");
 async function lookup(filename){
  const stem=filename.replace(/\.[^.]+$/,"");
  const search=stem.replace(/[_()-]+/g," ").trim();
@@ -36,23 +37,40 @@ async function lookup(filename){
  uri.searchParams.set("search",search);
  uri.searchParams.set("per_page","100");
  uri.searchParams.set("_fields","id,slug,source_url,media_details");
- const out={filename,query:search,restStatus:null,mediaCandidates:[],possiblyTruncated:false,status:""};
+ const out={filename,query:search,restStatus:null,mediaCandidates:[],possiblyTruncated:false,pagesInspected:0,status:""};
  try{
-  const res=await fetch(uri,{redirect:"manual",signal:AbortSignal.timeout(25000),headers:{Accept:"application/json"}});
-  out.restStatus=res.status;
-  if(res.status!==200){out.status="WP_MEDIA_LOOKUP_UNAVAILABLE";return out}
-  if(Number(res.headers.get("x-wp-totalpages")||"1")>1)out.possiblyTruncated=true;
-  const list=await res.json();
-  if(!Array.isArray(list)||list.length>100)throw Error("unexpected WordPress media response");
-  for(const x of list){
-   const path=String(x.media_details?.file||"");
-   if(cleanFile(path)===filename||cleanFile(x.source_url||"")===filename)
-    out.mediaCandidates.push({id:x.id,fileBasename:cleanFile(path)});
+  let totalPages=1;
+  const seen=new Set();
+  const maxPages=12; // Bounded. If WP has more, explicitly report incomplete.
+  for(let page=1;page<=Math.min(totalPages,maxPages);page++){
+   uri.searchParams.set("page",String(page));
+   const res=await fetch(uri,{redirect:"manual",signal:AbortSignal.timeout(25000),headers:{Accept:"application/json"}});
+   out.restStatus=res.status;
+   if(res.status!==200){out.status="WP_MEDIA_LOOKUP_UNAVAILABLE";return out}
+   if(page===1){
+    totalPages=Number(res.headers.get("x-wp-totalpages")||"1");
+    if(!Number.isSafeInteger(totalPages)||totalPages<1)throw Error("Invalid WordPress media page count");
+   }
+   const list=await res.json();
+   if(!Array.isArray(list)||list.length>100)throw Error("unexpected WordPress media response");
+   out.pagesInspected++;
+   for(const x of list){
+    const path=String(x.media_details?.file||"");
+    const itemName=cleanFile(path)||cleanFile(x.source_url||"");
+    const exact=itemName===filename;
+    const similar=!exact&&normalizedBasename(itemName)===normalizedBasename(filename);
+    if((exact||similar)&&!seen.has(x.id)){
+     seen.add(x.id);
+     out.mediaCandidates.push({id:x.id,fileBasename:itemName,matchClass:exact?"EXACT_BASENAME":"SIMILAR_BASENAME_ONLY"});
+    }
+   }
   }
-  out.status=out.mediaCandidates.length?"EXACT_FILENAME_LEAD_NOT_BYTE_PROOF":out.possiblyTruncated?"SEARCH_RESULTS_INCOMPLETE":"NO_MATCH_IN_PUBLIC_MEDIA_SEARCH";
+  out.possiblyTruncated=out.pagesInspected<totalPages;
+  out.status=out.mediaCandidates.length?"POSSIBLE_MEDIA_REUSE_NEEDS_BYTE_PROOF":out.possiblyTruncated?"SEARCH_RESULTS_INCOMPLETE":"NO_MATCH_IN_PUBLIC_MEDIA_SEARCH";
  }catch(e){out.status="WP_MEDIA_LOOKUP_UNAVAILABLE";out.error=String(e?.name||"network").slice(0,60)}
  return out;
 }
+
 try{
  await Promise.all(Array.from({length:3},async()=>{
   for(;;){const i=cursor++;if(i>=distinct.length)break;
