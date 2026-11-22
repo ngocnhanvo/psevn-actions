@@ -1,0 +1,45 @@
+name: PSE Joomla 382 exact Media state after failed validation (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-382-media-state-readonly.mjs
+      - .github/workflows/pse-382-media-state-readonly.yml
+      - .pse-382-media-state-readonly-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-382-media-state-readonly.mjs
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): diagnose original Joomla 382 Media identity'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node scripts/pse-382-media-state-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-382-media-state-readonly
+          path: artifacts/pse-382-media-state-readonly/report.json
+          retention-days: 14
+          if-no-files-found: warn
