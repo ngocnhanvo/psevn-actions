@@ -81,6 +81,8 @@
     },
     "114": {
       "attempts": 1,
+      "attribution_attempts": 2,
+      "attribution_error": "WordPress post identity or taxonomy mismatch",
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -89,15 +91,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_attempts": 2,
+      "seo_error": "Post is not in the mapped original category",
       "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/114-phong-tru-benh-vang-lun-va-lun-xoan-la.html",
       "status": "imported",
       "verified_date": "2011-07-11T03:00:01",
-      "wp_id": 83534,
-      "seo_attempts": 1,
-      "seo_error": "Post is not in the mapped original category",
-      "attribution_attempts": 1,
-      "attribution_error": "WordPress post identity or taxonomy mismatch"
+      "wp_id": 83534
     },
     "115": {
       "attempts": 1,
@@ -115,6 +115,8 @@
     },
     "121": {
       "attempts": 1,
+      "attribution_attempts": 2,
+      "attribution_error": "WordPress post identity or taxonomy mismatch",
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -123,15 +125,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_attempts": 2,
+      "seo_error": "Post is not in the mapped original category",
       "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/121-nguyen-nhan-va-bien-phap-khac-phuc-benh-vang-va-rung-la-ca-phe.html",
       "status": "imported",
       "verified_date": "2011-07-11T03:00:01",
-      "wp_id": 83535,
-      "seo_attempts": 1,
-      "seo_error": "Post is not in the mapped original category",
-      "attribution_attempts": 1,
-      "attribution_error": "WordPress post identity or taxonomy mismatch"
+      "wp_id": 83535
     },
     "122": {
       "attempts": 1,
@@ -149,6 +149,8 @@
     },
     "127": {
       "attempts": 1,
+      "attribution_attempts": 2,
+      "attribution_error": "WordPress post identity or taxonomy mismatch",
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -157,15 +159,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_attempts": 2,
+      "seo_error": "Post is not in the mapped original category",
       "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/127-ky-thuat-trong-va-cham-soc-cay-cao-su.html",
       "status": "imported",
       "verified_date": "2011-07-11T02:56:40",
-      "wp_id": 83536,
-      "seo_attempts": 1,
-      "seo_error": "Post is not in the mapped original category",
-      "attribution_attempts": 1,
-      "attribution_error": "WordPress post identity or taxonomy mismatch"
+      "wp_id": 83536
     },
     "152": {
       "attempts": 1,
@@ -193,6 +193,8 @@
     },
     "178": {
       "attempts": 1,
+      "attribution_attempts": 2,
+      "attribution_error": "WordPress post identity or taxonomy mismatch",
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -201,15 +203,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_attempts": 2,
+      "seo_error": "Post is not in the mapped original category",
       "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/178-ky-thuat-trong-va-tham-canh-dieu.html",
       "status": "imported",
       "verified_date": "2011-07-11T02:56:40",
-      "wp_id": 83537,
-      "seo_attempts": 1,
-      "seo_error": "Post is not in the mapped original category",
-      "attribution_attempts": 1,
-      "attribution_error": "WordPress post identity or taxonomy mismatch"
+      "wp_id": 83537
     },
     "185": {
       "attempts": 1,
@@ -225,6 +225,8 @@
     },
     "186": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -233,15 +235,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-07-12",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/186-npk-phu-my-se-day-lui-hang-kem-chat-luong.html",
       "status": "imported",
       "verified_date": "2011-07-12T05:49:12",
-      "wp_id": 83538,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83538
     },
     "187": {
       "attempts": 1,
@@ -292,6 +292,8 @@
     },
     "196": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -300,15 +302,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-08-08",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/196-pvfcco-se-dong-hanh-cung-mua-he-xanh.html",
       "status": "imported",
       "verified_date": "2011-08-08T07:11:57",
-      "wp_id": 83539,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83539
     },
     "198": {
       "attempts": 1,
@@ -360,6 +360,8 @@
     },
     "202": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -368,15 +370,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2011-08-17",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/202-hoi-thao-gioi-thieu-npk-phu-my-tai-binh-phuoc.html",
       "status": "imported",
       "verified_date": "2011-08-17T08:40:09",
-      "wp_id": 83540,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83540
     },
     "204": {
       "attempts": 1,
@@ -747,6 +747,8 @@
     },
     "237": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -755,15 +757,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2012-01-20",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/237-pvfcco-se-tang-qua-tet-cho-ho-ngheo-tai-lam-dong-va-dak-nong.html",
       "status": "imported",
       "verified_date": "2012-01-20T06:29:33",
-      "wp_id": 83541,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83541
     },
     "238": {
       "attempts": 1,
@@ -2013,6 +2013,8 @@
     },
     "341": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -2021,16 +2023,14 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_cleaned": true,
+      "seo_error": null,
       "short_content_rechecked": true,
       "source_created_date": "2013-03-13",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/341-du-nuoc-tuoi-cho-633000-ha-lua-xuan-2013.html",
       "status": "imported",
       "verified_date": "2013-03-13T09:42:44",
-      "wp_id": 83542,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83542
     },
     "342": {
       "attempts": 1,
@@ -2433,6 +2433,8 @@
     },
     "382": {
       "attempts": 3,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "three_original_sha256_verified",
@@ -2441,15 +2443,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "All 3 exact original Joomla site photos restored and live 301 verified",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2013-09-05",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
       "status": "imported",
       "verified_date": "2013-09-05T09:13:25",
-      "wp_id": 83543,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83543
     },
     "385": {
       "attempts": 1,
@@ -2480,23 +2480,27 @@
     },
     "975": {
       "attempts": 1,
-      "group_hint": "company",
-      "reason": "Owner approved literal Joomla created timestamp; 110 authentic already-uploaded gallery photos reused, native WordPress Post83638 published, exact old301 WP83640, production/4-gallery/live-804 QA PASS",
-      "source_url": "https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013.html",
-      "status": "imported",
-      "wp_id": 83638,
-      "native_wp_redirect_id": 83640,
-      "source_created_date": "2011-03-06",
-      "verified_date": "2011-03-06T04:53:14",
       "date_precision": "second",
       "date_source": "owner_approved_original_joomla_sql_created",
-      "owner_approved_joomla_created_date": true,
-      "original_photo_count": 110,
-      "original_media_policy": "pse_owned_110_existing_native_wordpress_media",
+      "group_hint": "company",
       "legacy_301_verified": true,
-      "production_http_200_verified": true,
+      "legacy_804_route_qa_run": 45052157873,
+      "native_wp_redirect_id": 83640,
       "original_gallery_live_qa_run": 45052137407,
-      "legacy_804_route_qa_run": 45052157873
+      "original_media_policy": "pse_owned_110_existing_native_wordpress_media",
+      "original_photo_count": 110,
+      "owner_approved_joomla_created_date": true,
+      "production_http_200_verified": true,
+      "reason": "Owner approved literal Joomla created timestamp; 110 authentic already-uploaded gallery photos reused, native WordPress Post83638 published, exact old301 WP83640, production/4-gallery/live-804 QA PASS",
+      "source_created_date": "2011-03-06",
+      "source_url": "https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013.html",
+      "status": "imported",
+      "verified_date": "2011-03-06T04:53:14",
+      "wp_id": 83638,
+      "seo_attempts": 1,
+      "seo_error": "Post slug differs from original migration",
+      "attribution_attempts": 1,
+      "attribution_error": "WordPress post identity or taxonomy mismatch"
     },
     "980": {
       "attempts": 1,
@@ -3726,6 +3730,8 @@
     },
     "1090": {
       "attempts": 1,
+      "attribution_cleaned": true,
+      "attribution_error": null,
       "date_precision": "second",
       "date_source": "owner_verified_joomla_sql_created_at",
       "external_media_health": "third_party_url_reachability_not_guaranteed",
@@ -3734,15 +3740,13 @@
       "legacy_301_verified": true,
       "production_http_200_verified": true,
       "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "seo_cleaned": true,
+      "seo_error": null,
       "source_created_date": "2015-03-14",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1090-pvfcco-to-chuc-thanh-cong-chuong-trinh-hoi-mua-phu-my-va-cham-soc-khach-hang-khu-vuc-tay-nguyen.html",
       "status": "imported",
       "verified_date": "2015-03-14T02:51:41",
-      "wp_id": 83544,
-      "seo_cleaned": true,
-      "seo_error": null,
-      "attribution_cleaned": true,
-      "attribution_error": null
+      "wp_id": 83544
     },
     "1091": {
       "attempts": 1,
@@ -26328,7 +26332,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 258,
+  "runs": 259,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
