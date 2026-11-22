@@ -24,7 +24,7 @@ def inspect(client):
                 "expected":len(NAMES),"exact_matches":0,"verified_original_images":0,
                 "files_read":0,"modified_files":0,"deleted_files":0}
     results=[]
-    listed={norm(name):[(name,kind,size) for name,kind,size in directory if norm(name)==norm(wanted)]
+    listed={norm(wanted):[(name,kind,size) for name,kind,size in directory if norm(name)==norm(wanted)]
             for wanted in NAMES}
     for index,wanted in enumerate(NAMES,1):
         records=listed[norm(wanted)]
