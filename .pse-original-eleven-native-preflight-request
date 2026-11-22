@@ -3,3 +3,5 @@ Owner-provided true Joomla DB public 11-article content has been safely selected
 Preflight retry after actual #45029750825 failed pre-write due to source category #93 parent mapping. Added bounded native taxonomy ids/parent diagnostics fe99899a. Do not touch WP until verified mapping, no user content/body in logs.
 
 Real WP category proof #45029905983: Joomla source category75 WP 1755/1756, category93 "thong-tin-thi-truong" WP 1743 is ROOT (parent=0), no "hoat-dong-kinh-doanh" WP category. Genuine source-code fix 1bd74112 uses native root category. Recheck all mappings and unpublished slug collisions before any CMS changes.
+
+After real CMS write run #45030205633 SUCCESS, 11 source-authenticated public article records now native drafts 83534..83544. Owner wants site migration correctness; run independent authenticated native draft readback (11 identical content/date/category/ACF) + unauthenticated public WordPress REST GET slug must return [] for each. This is read-only QA; no duplicate write or publication. Source verifier b24c48f3.
