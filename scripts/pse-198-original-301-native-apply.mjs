@@ -128,16 +128,7 @@ try{
  console.log("PSE_198_NATIVE_301_APPLY_PASS="+JSON.stringify({sourceId:198,wpId:83516,redirectId:id,
    from,to,otherRoutesUnchanged:true,wpOwned:true,writes:report.writes.length,noBuildTriggered:true}));
 }finally{
- if(createdId&&!published&&api&&false){
-  try{const r=await api("/wp-json/wp/v2/chuyen-huong-link/"+createdId+"?context=edit&_fields=id,status,acf");
-   if(r.http===200&&r.data?.status==="draft"&&r.data.acf?.from_link===from){
-    const d=await api("/wp-json/wp/v2/chuyen-huong-link/"+createdId+"?force=true","DELETE");
-    const after=await api("/wp-json/wp/v2/chuyen-huong-link/"+createdId+"?context=edit");
-    if(d.http!==200||after.http!==404)throw Error("Draft cleanup residue");
-    console.log("PSE_198_301_TEMP_CLEANUP_PASS id="+createdId);
-   }else console.warn("PSE_198_301_UNCERTAIN_PUBLISHED_DRAFT_REVIEW id="+createdId);
-  }catch(e){console.warn("PSE_198_301_TEMP_CLEANUP_REVIEW="+String(e?.message||e).slice(0,130))}
- }
+ if(createdId&&!published)report.reconciliationRequired={createdId,reason:"Uncertain mutation; preserve exact record for readback before retry"};
  await mkdir("artifacts/pse-original-198-301",{recursive:true});
  await writeFile("artifacts/pse-original-198-301/report.json",JSON.stringify(report,null,2)+"\n");
  await net.dispose();await browser.close();
