@@ -30,3 +30,10 @@ Kết quả `source_webroot_probable=true` chỉ cho biết đã thấy dấu hi
 Phạm vi còn cần chứng cứ theo checkpoint: Joomla Posts #114, #121, #127, #178, #186, #196, #202, #237, #341, #382, #1090; gallery #975 có 110 Media nhưng thiếu ngày phát hành chính xác; liên kết mô tả sản phẩm lịch sử còn cần nhận diện ngữ nghĩa; ảnh ngoài site của Post #225; thumbnail gốc #1434. Workflow crawl cũ [#45009563704](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45009563704) báo `NO_PENDING; discovered=804` (không phải 804/804 đã xong). Không tự tạo Post rỗng hoặc ảnh giả.
 
 Chỉ chạy kiểm kê từ **tài khoản pse.vn gốc đã xác minh**. Không xem cú pháp PASS là đã kết nối được server.
+
+## Actual connectivity diagnostic — 22/11/2026 VN
+
+- First explicit read-only source probe [#45023401261](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45023401261) failed before directory inspection; no source data read.
+- Sanitized diagnostic fix [0e6ade63](https://github.com/ngocnhanvo/psevn-actions/commit/0e6ade63b6980d4fd79562de33cefc7e71264626), offline tests PASS [#45023453710](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45023453710).
+- Second actual source probe [#45023498334](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45023498334) failed with exact **`SOURCE_HOST_NOT_CONFIGURED`**, i.e. `PSE_SOURCE_FTP_HOST` is not available in this workflow. It did **not** attempt a remote FTP connection, did **not** enumerate Joomla files, and did **not** modify anything.
+- **Do not repeat this probe without a new secret configuration.** Configure the distinct original `pse.vn` FTPS/SFTP host and remaining credentials in GitHub Actions Secrets, then explicitly run the guarded workflow once. Existing production-deploy credentials are unrelated and must not be reused without source ownership proof.
