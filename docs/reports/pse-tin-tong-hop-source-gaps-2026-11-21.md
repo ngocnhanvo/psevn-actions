@@ -1,5 +1,12 @@
 # PSE — Tin tổng hợp: parity, kết quả và dữ liệu nguồn còn thiếu (21/11/2026)
 
+## Cập nhật 22/11/2026 — nguồn ba bài mô tả Kali đã được xác minh
+
+- #1678: native WordPress Page 83524, Media 83523, đúng toàn bộ nội dung và hai bảng gốc; [production #44990670112](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44990670112) SUCCESS. Đường dẫn cũ trong danh mục Đạm Phú Mỹ trùng đường dẫn manifest; chưa xác nhận 301. Ảnh native và frontend proxy SHA256 chính xác; ảnh WebP qua Imagick có MAE 3,16/255, RMSE 7,68, tỉ lệ gần như bằng tuyệt đối, kích thước được phóng theo yêu cầu runtime (khác với Sharp static). QA đang kiểm tra lại đúng giới hạn requested width, không thay thế ảnh.
+- #1425 và #1426: [#44990978357](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44990978357) PASS, artifact 14742056336, bản HTML trực tiếp HTTPS pse.vn trùng archived body/title, ba PNG duy nhất đều tải/decode/SHA đúng, 4 lần xuất hiện. Không còn thiếu nguồn của hai bài này. Chưa nhập WP, dừng chờ chuỗi production ưu tiên #1678; native Page import đã chuẩn bị và syntax PASS #44991260940.
+- #1434 vẫn thiếu đúng một thumbnail DPM, #975 metadata thời gian, #225 ảnh báo ngoài và 11 Posts chưa xuất bản không đổi. Không coi đủ nguồn là đã xuất bản, không tạo Woo Product trùng, không thay ảnh thiếu bằng ảnh đoán.
+
+
 ## Cập nhật 22/11/2026 — #1090: đã phục hồi đúng một ảnh archive, còn sáu ảnh nghi vấn
 
 - [#44986504624](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986504624) xác nhận toàn bộ 24 ảnh thứ tự Joomla #1090, title/body chính xác (5.341 ký tự, SHA256 ec7491b318f521d4b5c49ffc2dd13eca6d2df797691fa89e047915716a150e5a). [DPM cùng bài](https://dpm.vn/tin-tuc/pvfcco-to-chuc-thanh-cong-chuong-trinh-hoi-mua-phu-my-va-cham-soc-khach-hang-khu-vuc-tay-nguyen-1172), 24 tệp JPEG cùng tên đã tải thành công, nhưng bảy tên chung có ngữ cảnh ảnh bất thường. Không đánh đồng filename match với ảnh đúng.
