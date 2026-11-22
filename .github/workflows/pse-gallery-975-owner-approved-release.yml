@@ -1,0 +1,55 @@
+name: PSE owner-approved Joomla gallery 975 native publication and exact 301 (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-photo-album-batch.mjs
+      - .github/workflows/pse-gallery-975-owner-approved-release.yml
+      - .pse-gallery-975-owner-approved-request
+permissions:
+  contents: read
+  actions: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-photo-album-batch.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish gallery 975 using original Joomla created date'
+    concurrency:
+      group: pse-wp-photo-import
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install matching browser driver without downloading Chromium
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh native WordPress Updraft DB snapshot for gallery 975 and exact 301
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - name: Authorize only source Joomla created 2011-03-06 04:53:14 after backup
+        run: echo "PSE_GALLERY_975_DB_BACKUP=yes" >> "$GITHUB_ENV"
+      - name: Reuse 110 verified native photos; publish dated Post and exact WordPress 301
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/pse-photo-album-batch.mjs 2>&1 | tee "$RUNNER_TEMP/pse-gallery-975-release.log"
+          grep -q 'PSE_GALLERY_975_OWNER_DATE_REDIRECT=PASS' "$RUNNER_TEMP/pse-gallery-975-release.log"
+          grep -q 'PSE_GALLERY_BATCH=COMPLETE id=975' "$RUNNER_TEMP/pse-gallery-975-release.log"
+          echo "PSE_GALLERY_975_NATIVE_CMS=PASS date=2011-03-06T04:53:14 mediaReused=110"
