@@ -12,3 +12,5 @@ Original fertilizer Product records row-by-row source verification and native RE
 2026-11-21 postdeploy UI follow-card QA: 11 category cards and original SOP image webp verified previous run #44841127043; static assumed /san-pham/kali-phu-my-sop returned HTTP 404. Navigate exact publicly rendered product card href, detect wrong link if any; run UI first to fail fast, then full source rows. Read-only.
 
 2026-11-21 after deployment #44842527166: verify exact 49 Joomla rows against 45 native WP Products and SOP corrected canonical /san-pham/kali-phu-my-sop-82837; verify category membership and screenshots at 390/768/1366. Read-only.
+
+2026-11-22 owner requests complete missing-product recheck following exact Kali 1678 Product80938 redirect and signed production #44995644585. Read-only compare all six original fertilizer family row inventories, distinct IDs/no-ID products and category memberships; distinguish historical article aliases from actual product rows, report every unmapped item, no CMS writes or build.
