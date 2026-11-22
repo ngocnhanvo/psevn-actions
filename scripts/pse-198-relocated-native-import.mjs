@@ -7,9 +7,10 @@ import {readFile,mkdir,writeFile} from "node:fs/promises";
 
 const message="cms(pse): restore Joomla 198 from verified relocated DPM originals";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
+const preflightOnly=process.env.PSE_198_PREFLIGHT_ONLY==="yes";
 if(process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||
- process.env.GITHUB_REF!=="refs/heads/main"||event.head_commit?.message!==message||
- process.env.PSE_198_FRESH_DB_BACKUP_VERIFIED!=="yes")
+ process.env.GITHUB_REF!=="refs/heads/main"||(!preflightOnly&&(event.head_commit?.message!==message||
+ process.env.PSE_198_FRESH_DB_BACKUP_VERIFIED!=="yes")))
  throw Error("Unapproved Joomla #198 source CMS writer or missing fresh backup");
 const legacy=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
 const entry=legacy.articles?.["198"];
@@ -41,8 +42,8 @@ function origin(key){const rows=env.filter(x=>x.startsWith(key+"="));if(rows.len
  const u=new URL(rows[0].slice(key.length+1).replace(/^['"]|['"]$/g,""));
  if(u.protocol!=="https:"||u.username||u.password||u.port||u.search||u.hash||!["","/"].includes(u.pathname))
   throw Error("Unexpected WP/frontend origin");return u.origin;}
-const wp=origin("WC_URL"),front=origin("WC_URL_CLIENT");
-if(wp===front)throw Error("WordPress frontend origin overlap");
+const wp=preflightOnly?null:origin("WC_URL"),front=preflightOnly?null:origin("WC_URL_CLIENT");
+if(!preflightOnly&&wp===front)throw Error("WordPress frontend origin overlap");
 const sha=b=>createHash("sha256").update(b).digest("hex");
 const sameOriginalURL=(a,b)=>{
  const x=new URL(a),y=new URL(b);
@@ -60,7 +61,7 @@ let api=null,postId=null,postPublished=false,createdDraftId=null;
 const newlyUploadedMedia=[];
 const report={schema:"pse-original-198-relocated-publisher-native-import-v1",sourceId:198,
  source,originalCreatedDay:sourceDay,sourceDateMethod:"joomla_rss_pubDate_verified_run_44910276016",
- backup:true,scope:{maxPosts:1,maxMedia:10,otherWpWrites:0},media:[],cmsPost:null,
+ backup:!preflightOnly,preflightOnly,scope:{maxPosts:1,maxMedia:10,otherWpWrites:0},media:[],cmsPost:null,
  didBuild:false,success:false,cleanup:[],sourceProvenance:"same-publisher-relocation-exact-filenames-EXIF-and-visual-event",originalHistoricalUrlByteParityNotVerified:true};
 try{
  const sourceRes=await net.get(source,{timeout:65000,maxRedirects:2});
@@ -91,6 +92,8 @@ try{
    throw Error("Pinned relocated DPM image digest mismatch "+p.index);
   p.originalBytes=buf;
  }
+ if(preflightOnly){report.success=true;console.log("PSE_198_NATIVE_SOURCE_PREFLIGHT_PASS="+JSON.stringify({sourceId:198,bodySha256:bodyHash,images:10,pinnedArtifact:true,noCMSWrites:true}));}
+ else {
  // Only protected WP REST, via the standard authenticated WordPress admin.
  await admin.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
  if(await admin.locator("#user_login").count()){
@@ -139,6 +142,15 @@ try{
   posts.http!==200||!Array.isArray(posts.data)||posts.data.length>1)
   throw Error("Native Joomla 198 WordPress taxonomy/slug ownership changed");
  const existingPost=posts.data[0]||null;
+ // Verify no other registered WP post carries source ID 198 under another slug.
+ const owners=[];
+ for(let page=1;page<=30;page++){
+  const rr=await api("/wp-json/wp/v2/posts?context=edit&status=any&per_page=100&page="+page+"&orderby=id&order=asc&_fields=id,slug,acf,status");
+  if(rr.http!==200||!Array.isArray(rr.data)||!Number.isInteger(rr.pages)||rr.pages<1||rr.pages>30)throw Error("Post identity registry incomplete");
+  for(const row of rr.data)if(String(row.acf?.origin_page_id||"")==="198")owners.push(row);
+  if(page===rr.pages)break;
+ }
+ if(owners.length>1||(owners.length===1&&owners[0].id!==existingPost?.id))throw Error("Conflicting original ID registry");
  if(existingPost&&String(existingPost.acf?.origin_page_id||"")!=="198")
   throw Error("Conflicting native WordPress Post with original slug");
  if(existingPost&&existingPost.status!=="publish")throw Error("Existing original #198 draft requires manual review; no overwrite");
@@ -207,8 +219,7 @@ try{
  const page2=await ctx.newPage();
  await page2.setContent('<base href="'+source+'">'+raw.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,""),{waitUntil:"domcontentloaded"});
  const article=await page2.evaluate(mapping=>{
-  const root=document.querySelector(".item-page [itemprop=articleBody]")||
-   document.querySelector(".item-page")||document.querySelector("article");
+  const root=document.querySelector("[itemprop=articleBody]");
   if(!root)throw Error("Missing exact source articleBody");
   const copy=root.cloneNode(true);
   copy.querySelectorAll("script,style,noscript,.extranews_box,.extranews_separator").forEach(x=>x.remove());
@@ -250,11 +261,22 @@ try{
    article.text!==info.bodyText||article.html.length<150)
   throw Error("Sanitized exact Joomla source body and native media parity failed");
  const desc=article.text.slice(0,159).trim();
+ async function verifyNativeContent(data){
+  const html=data?.content?.raw;
+  if(typeof html!=="string"||html.length<150)throw Error("Native raw content unavailable");
+  const p=await ctx.newPage();
+  try{
+   await p.setContent(html,{waitUntil:"domcontentloaded"});
+   const parsed=await p.evaluate(()=>({text:(document.body.textContent||"").replace(/\s+/g," ").trim(),images:[...document.body.querySelectorAll("img[src]")].map(x=>x.getAttribute("src"))}));
+   if(parsed.text!==article.text||parsed.images.length!==10||parsed.images.some((x,i)=>x!==pictures[i].native))throw Error("Native source text or ordered images differ");
+  }finally{await p.close()}
+ }
  if(existingPost?.status==="publish"){
   if(!existingPost.categories?.includes(1742)||!existingPost.categories?.includes(1746)||
    existingPost.date?.slice(0,10)!==sourceDay||Number(existingPost.featured_media)!==pictures[0].wpId||
    pictures.some(x=>!String(existingPost.content?.raw||"").includes(x.filename)))
    throw Error("Published original #198 exists but source parity differs; refuse overwrite");
+  await verifyNativeContent(existingPost);
   postId=existingPost.id;postPublished=true;
   console.log("PSE_198_ALREADY_PUBLISHED_POST_SOURCE_PASS="+JSON.stringify({id:postId,photos:10,noPostWrite:true}));
  }else{
@@ -276,6 +298,7 @@ try{
     read.data.date?.slice(0,10)!==sourceDay||(!read.data.categories?.includes(1742)||!read.data.categories?.includes(1746))||Number(read.data.featured_media)!==pictures[0].wpId||
     pictures.some(x=>!String(read.data.content?.raw||"").includes(x.filename)))
    throw Error("Native original 198 draft readback did not preserve source");
+  await verifyNativeContent(read.data);
   const pub=await api("/wp-json/wp/v2/posts/"+postId,"POST",{status:"publish"});
   if(pub.http!==200||pub.data?.status!=="publish")
    throw Error("Native original 198 publication failed");
@@ -288,6 +311,7 @@ try{
   check.data.slug!=="nha-may-dam-phu-my-don-tan-san-pham-ure-thu-5-trieu"||
   pictures.some(x=>!String(check.data.content?.raw||"").includes(x.filename)))
   throw Error("Final published Joomla 198 native source parity readback failed");
+ await verifyNativeContent(check.data);
  report.cmsPost={id:postId,status:"publish",title:headline,
   date:check.data.date,sourceCreatedDay:sourceDay,originalMediaIds:pictures.map(x=>x.wpId)};
  report.success=true;
@@ -297,6 +321,7 @@ try{
   relocatedJPEGDigestsAndNativeBytes:true,wordpressOwned:true,
   unrelatedPostsChanged:0,buildTriggered:false
  }));
+ }
 }finally{
  if(!postPublished&&(createdDraftId||newlyUploadedMedia.length))report.cleanup.push({decision:"PRESERVE_AND_RECONCILE_AFTER_AMBIGUOUS_WRITE",createdDraftId,newlyUploadedMedia});
  await mkdir("artifacts/pse-original-198-native",{recursive:true});
