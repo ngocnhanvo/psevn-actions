@@ -1,0 +1,39 @@
+name: PSE eleven Joomla Posts original external image origins (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-external-photos-readonly.mjs
+      - .github/workflows/pse-original-external-photos-readonly.yml
+      - .pse-original-external-photos-readonly-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-original-external-photos-readonly.mjs
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): test all original external Joomla image URLs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Inspect original publisher URLs with limited body/time and no writes
+        run: node scripts/pse-original-external-photos-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-11-article-external-image-source-evidence
+          path: artifacts/pse-original-external-photos/report.json
+          retention-days: 30
+          if-no-files-found: warn
