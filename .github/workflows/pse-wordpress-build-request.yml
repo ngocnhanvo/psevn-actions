@@ -30,6 +30,7 @@ on:
       - PSE original Joomla 382 recovered article exact native 301 (GUARDED)
       - PSE ten Joomla source exact native WordPress 301 redirects (GUARDED)
       - PSE Joomla original Kali 1426 and NPK 1434 exact native 301 (GUARDED)
+      - PSE owner-approved Joomla gallery 975 native publication and exact 301 (GUARDED)
       - PSE 34 verified original Joomla source URLs native 301 and 1159 slug repair (GUARDED)
     types: [completed]
 permissions:
@@ -51,6 +52,10 @@ jobs:
          github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
          github.event.workflow_run.head_branch == 'main' &&
          (
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE owner-approved Joomla gallery 975 native publication and exact 301 (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): publish gallery 975 using original Joomla created date')
+           ||
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE 34 verified original Joomla source URLs native 301 and 1159 slug repair (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): restore 34 original Joomla source redirects and encoded 1159 permalink')
@@ -222,7 +227,10 @@ jobs:
           if (run.get("head_repository") or {}).get("full_name")!="ngocnhanvo/psevn-actions" or run.get("head_branch")!="main":
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_REPOSITORY")
           name=run.get("name")
-          if (name=="PSE 34 verified original Joomla source URLs native 301 and 1159 slug repair (GUARDED)" and run.get("event")=="push"
+          if (name=="PSE owner-approved Joomla gallery 975 native publication and exact 301 (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): publish gallery 975 using original Joomla created date"):
+              cohort="OWNER_APPROVED_ORIGINAL_JOOMLA_975_CREATED_DATE_110_MEDIA_NATIVE_301"
+          elif (name=="PSE 34 verified original Joomla source URLs native 301 and 1159 slug repair (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): restore 34 original Joomla source redirects and encoded 1159 permalink"):
               cohort="SOURCE_PROVEN_34_ORIGINAL_JOOMLA_NATIVE_301_AND_1159_SLUG"
           elif (name=="PSE Joomla original Kali 1426 and NPK 1434 exact native 301 (GUARDED)" and run.get("event")=="push"
