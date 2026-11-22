@@ -1,0 +1,25 @@
+name: PSE original 34 already-published Joomla missing 301 candidate preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-34-published-original-route-preflight.mjs
+      - .github/workflows/pse-34-published-original-route-preflight.yml
+permissions: {contents: read}
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-34-published-original-route-preflight.mjs
+      - run: node scripts/pse-34-published-original-route-preflight.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-34-published-post-product-gallery-301-preflight
+          path: artifacts/pse-34-published-source-redirect-preflight/report.json
+          retention-days: 30
+          if-no-files-found: warn
