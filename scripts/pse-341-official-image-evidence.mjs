@@ -51,12 +51,42 @@ try{
     }
    }
   }catch(e){item.readError=e.constructor?.name||"Error"}
+  if(item.verifiedImageBytes){
+   try{
+    const dims=await page.evaluate(async url=>{
+      return new Promise(resolve=>{
+        const img=new Image();
+        img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight});
+        img.onerror=()=>resolve(null);
+        img.src=url;
+      });
+    },url.href);
+    if(dims&&dims.width>0&&dims.height>0)item.dimensions=dims;
+   }catch{}
+  }
   report.candidates.push(item);
  }
  report.candidateCount=report.candidates.length;
  report.verifiedPublisherImageCount=report.candidates.filter(x=>x.verifiedImageBytes).length;
  report.historicalBasenameMatchCount=report.candidates.filter(x=>x.historicalSourceBasenameMatches).length;
- report.actualHistoricalPhotoBytesProven=report.candidates.some(x=>x.verifiedImageBytes&&x.historicalSourceBasenameMatches);
+ report.publisherCurrentSameBasenameImagesVerified=report.candidates.filter(x=>x.verifiedImageBytes&&x.historicalSourceBasenameMatches).length;
+ // Same original filename at the primary publisher is strong provenance
+ // but is NOT equivalent to historical URL byte identity.
+ const historicUrl="https://baodientu.chinhphu.vn/Uploaded_VGP/phungthithuhuyen/20130306/Resize%20of%20lua%20xaun.jpg";
+ try{
+  const old=await net.get(historicUrl,{timeout:17000,maxRedirects:3});
+  const u=new URL(old.url());
+  report.historicalUrlStatus=old.status();
+  report.historicalUrlTrustedRedirect=u.protocol==="https:"&&allowed(u.hostname);
+  if(report.historicalUrlStatus===200&&report.historicalUrlTrustedRedirect&&String(old.headers()["content-type"]||"").startsWith("image/")){
+   const bytes=await old.body();
+   if(bytes.length>256&&bytes.length<=8*1024*1024){
+    report.historicalUrlSha256=createHash("sha256").update(bytes).digest("hex");
+    report.actualHistoricalPhotoBytesProven=report.candidates.some(x=>x.verifiedImageBytes&&x.sha256===report.historicalUrlSha256);
+   }
+  }
+ }catch(e){report.historicalUrlError=e.constructor?.name||"Error"}
+
  console.log("PSE_341_OFFICIAL_PUBLISHER_IMAGE_EVIDENCE="+JSON.stringify(report));
 }finally{
  await writeFile(out+"/summary.json",JSON.stringify(report,null,2)+"\n");
