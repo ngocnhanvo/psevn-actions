@@ -11,12 +11,12 @@ jobs:
   source-archive:
     if: github.repository == 'ngocnhanvo/psevn-actions'
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 14
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Strict verified-source archive discovery (NO CMS writes)
+      - name: Archive original Joomla SQL photo URLs with bounded GET-only checks
         run: |
           node --check scripts/pse-original-missing-media-web-archive-readonly.mjs
           node scripts/pse-original-missing-media-web-archive-readonly.mjs
