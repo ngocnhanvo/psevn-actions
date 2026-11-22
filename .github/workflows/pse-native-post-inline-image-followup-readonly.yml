@@ -18,6 +18,12 @@ on:
           - pse-758-published-post-inline-image-head-integrity
         default: pse-native-inline-image-cumulative-coverage
         required: true
+      batch_count:
+        description: Maximum sequential 420-URL batches (2-minute cooldown, stop on any issue)
+        type: choice
+        options: ['1', '2', '3', '4', '5', '6']
+        default: '1'
+        required: true
 permissions:
   contents: read
   actions: read
@@ -28,15 +34,36 @@ jobs:
   audit:
     if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 60
     env:
-      PRIOR_RUN_ID: ${{ inputs.previous_run_id || '44922876914' }}
-      PRIOR_ARTIFACT: ${{ inputs.previous_artifact_name || 'pse-758-published-post-inline-image-head-integrity' }}
+      REQUESTED_PRIOR_RUN_ID: ${{ inputs.previous_run_id }}
+      REQUESTED_PRIOR_ARTIFACT: ${{ inputs.previous_artifact_name }}
+      MAX_BATCHES: ${{ inputs.batch_count || '6' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Resolve latest successful coverage (manual input or newest successful same-workflow run)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            prior="$REQUESTED_PRIOR_RUN_ID"
+            artifact="$REQUESTED_PRIOR_ARTIFACT"
+          else
+            prior=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/pse-native-post-inline-image-followup-readonly.yml/runs?branch=main&status=success&per_page=20" --jq '.workflow_runs | map(select(.conclusion=="success")) | .[0].id // empty')
+            artifact=pse-native-inline-image-cumulative-coverage
+            if [[ -z "$prior" ]]; then
+              echo 'No previous successful followup run; specify an explicit verified baseline with workflow_dispatch.' >&2
+              exit 1
+            fi
+          fi
+          [[ "$prior" =~ ^[0-9]+$ ]]
+          [[ "$artifact" == pse-native-inline-image-cumulative-coverage || "$artifact" == pse-758-published-post-inline-image-head-integrity ]]
+          [[ "$MAX_BATCHES" =~ ^[1-6]$ ]]
+          printf 'PRIOR_RUN_ID=%s\nPRIOR_ARTIFACT=%s\n' "$prior" "$artifact" >> "$GITHUB_ENV"
+          printf 'PSE_COVERAGE_CHAIN prior=%s batches=%s\n' "$prior" "$MAX_BATCHES"
       - name: Confirm exact successful same-repo prior coverage report
         shell: bash
         run: |
@@ -58,12 +85,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check at most 420 still-unverified native URLs
-        run: node --check scripts/pse-native-post-inline-image-followup-readonly.mjs && node scripts/pse-native-post-inline-image-followup-readonly.mjs
+      - name: Continue bounded batches with cooldown and stop-on-error
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-native-post-inline-image-followup-readonly.mjs
+          for ((batch=1; batch<=MAX_BATCHES; batch++)); do
+            echo "PSE_COVERAGE_BATCH=$batch/$MAX_BATCHES"
+            node scripts/pse-native-post-inline-image-followup-readonly.mjs
+            report=artifacts/pse-inline-image-followup/report.json
+            jq -e '.summary.localHeadIssues==0 and .summary.stoppedByRateOrConnectivityGuard==false and .summary.newlyChecked==.summary.newlyVerified and .summary.newlyVerified==([420,.summary.remainingBefore]|min) and .summary.localImageUrlsChecked==(.summary.verifiedBefore+.summary.newlyVerified)' "$report"
+            remaining=$(jq -er '.summary.localNotYetChecked' "$report")
+            cp "$report" prior-image-head/report.json
+            if [[ "$remaining" == 0 ]]; then
+              echo 'PSE_IMAGE_HEAD_COVERAGE_COMPLETE=3242 (reachability only; not original byte parity)'
+              break
+            fi
+            if ((batch<MAX_BATCHES)); then
+              echo "PSE_COVERAGE_COOLDOWN=120s; remaining=$remaining"
+              sleep 120
+              export PRIOR_RUN_ID="$GITHUB_RUN_ID"
+            fi
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pse-native-inline-image-cumulative-coverage
           path: artifacts/pse-inline-image-followup/report.json
+          retention-days: 30
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-native-inline-image-last-good-coverage
+          path: prior-image-head/report.json
           retention-days: 30
           if-no-files-found: warn
