@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/pse-1434-npk-category-source-proof.mjs
       - .github/workflows/pse-1434-npk-category-source-proof.yml
+      - .pse-1434-npk-category-source-proof-request
 permissions:
   contents: read
 jobs:
