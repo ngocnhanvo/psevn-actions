@@ -1,0 +1,38 @@
+name: PSE 1090 verified DPM relocation photo proof and 237 archive gap (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-1090-relocated-photo-proof.py
+      - .github/workflows/pse-1090-relocated-photo-proof.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  photo-proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-dpm-1090-237-relocation-discovery
+          path: inputs/dpm-discovery
+          run-id: 44986504624
+          github-token: ${{ github.token }}
+      - run: python -m pip install --disable-pip-version-check beautifulsoup4==4.13.4 pillow==11.3.0
+      - run: python -m py_compile scripts/pse-1090-relocated-photo-proof.py
+      - run: python scripts/pse-1090-relocated-photo-proof.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1090-relocated-proof
+          path: artifacts/pse-1090-relocated-proof/
+          retention-days: 30
+          if-no-files-found: warn
