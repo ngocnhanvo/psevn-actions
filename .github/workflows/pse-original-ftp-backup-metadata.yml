@@ -1,0 +1,54 @@
+name: PSE original Joomla FTPS backup metadata triage (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-ftp-backup-metadata.py
+      - scripts/test-pse-original-ftp-backup-metadata.py
+      - .github/workflows/pse-original-ftp-backup-metadata.yml
+      - .pse-original-ftp-backup-metadata-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-original-ftp-backup-metadata.py
+      - run: python3 scripts/test-pse-original-ftp-backup-metadata.py
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): inspect verified source Joomla backup candidates'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    concurrency:
+      group: pse-original-joomla-source-readonly
+      cancel-in-progress: false
+    env:
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_SFTP_KNOWN_HOSTS: ${{ secrets.PSE_SOURCE_SFTP_KNOWN_HOSTS }}
+      PSE_SOURCE_FTP_PROTOCOL: ${{ vars.PSE_SOURCE_FTP_PROTOCOL || 'ftps' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install SFTP client only when selected
+        if: env.PSE_SOURCE_FTP_PROTOCOL == 'sftp'
+        run: python3 -m pip install --disable-pip-version-check --no-cache-dir 'paramiko==3.5.1'
+      - name: Verify source site root and backup metadata only
+        run: python3 scripts/pse-original-ftp-backup-metadata.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-joomla-backup-metadata-only
+          path: artifacts/pse-original-ftp-backup-metadata/summary.json
+          retention-days: 14
+          if-no-files-found: warn
