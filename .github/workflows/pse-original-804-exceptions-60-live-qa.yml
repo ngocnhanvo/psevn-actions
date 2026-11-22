@@ -1,0 +1,25 @@
+name: PSE original Joomla 804 URL coverage beyond 765 native 301 (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-original-804-route-coverage-request
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-original-804-exceptions-60-live-qa.mjs
+      - run: node scripts/pse-original-804-exceptions-60-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-804-source-sixty-redirect-parity
+          path: artifacts/pse-804-source-route-coverage/report.json
+          retention-days: 30
+          if-no-files-found: warn
