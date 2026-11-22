@@ -1,0 +1,67 @@
+name: PSE original Joomla source secure FTP inventory (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-ftp-readonly.py
+      - .github/workflows/pse-original-ftp-readonly.yml
+      - .pse-original-ftp-readonly-request
+  workflow_dispatch:
+    inputs:
+      protocol:
+        description: Secure source transport (FTPS explicit TLS or pinned SFTP)
+        required: true
+        type: choice
+        options: [ftps, sftp]
+        default: ftps
+      root:
+        description: Remote Joomla webroot, no parent traversal
+        required: true
+        type: string
+        default: /
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-original-ftp-readonly.py
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' &&
+        github.event.head_commit.message == 'audit(pse): inspect connected original Joomla source FTP'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    concurrency:
+      group: pse-original-joomla-source-readonly
+      cancel-in-progress: false
+    env:
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_SFTP_KNOWN_HOSTS: ${{ secrets.PSE_SOURCE_SFTP_KNOWN_HOSTS }}
+      PSE_SOURCE_FTP_PROTOCOL: ${{ inputs.protocol || vars.PSE_SOURCE_FTP_PROTOCOL || 'ftps' }}
+      PSE_SOURCE_FTP_ROOT: ${{ inputs.root || vars.PSE_SOURCE_FTP_ROOT || '/' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install pinned SFTP client library only when needed
+        if: env.PSE_SOURCE_FTP_PROTOCOL == 'sftp'
+        run: python3 -m pip install --disable-pip-version-check --no-cache-dir 'paramiko==3.5.1'
+      - name: Inspect source webroot metadata securely; no FTP writes or file downloads
+        run: python3 scripts/pse-original-ftp-readonly.py
+      - name: Retain sanitized aggregate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-original-joomla-source-ftp-readonly
+          path: artifacts/pse-original-ftp-readonly/summary.json
+          retention-days: 14
+          if-no-files-found: warn
