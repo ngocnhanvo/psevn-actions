@@ -1,12 +1,16 @@
-source_ids=1425,1426
-source_proof_run=44990978357
-source_proof_artifact=14742056336
-previous_production=44991814710:success
-previous_five_link_qa=44992008617:success
-scope=two historical native PublicPage entries plus exact original PNG media reuse/import only; full source title/body/table/image parity; fresh database backup; no Woo Product/category/redirect writes; existing signed normal build after actual apply success.
-
-retry=prior #44992141050 failed before writes on query href guard; exact contextual alias proof #44992472748 artifact14741883332 confirms all five title/body/images/tables identical. Updated importer cbd826b6 and workflow e0f722fc pin alias proof and validate exact public GET query ids1425/1427/1430; map 1425 only with exact pinned title/body/image evidence, 1427/1430 only with exact existing manifest and redirect proof, otherwise retain original verified public query URL. No query stripping or invented destination. Fresh backup mandatory.
-
-retry_transport=prior #44992740390 apply137117180953 failed BEFORE all writes at native read-only Product slug collision GET ECONNRESET; backup PASS. f0393c5e serializes read-only Page/Post/Product inventory and adds bounded transient GET retries (3 attempts), sanitizes request errors; no POST retry. Exact source query and alias proof guards unchanged. Fresh backup mandatory.
-
-independent_scope=1425 only; exact original body/image verified #44990978357 and anchor query ID/source body/PNG verified #44993201869. Restore native Page and exact original PNG only now; 1426/1427/1430 pending their own link proof. Existing signed build chain after actual successful apply; fresh backup mandatory. No Product/category/redirect writes.
+{
+  "schema": "pse-original-kali-1426-overview-restoration-v1",
+  "scope": "1425 existing published original Page readback, 1426 original source-backed Page apply only if exact verified content and linked original source identities match",
+  "signedCommit": "cms(pse): restore two original Kali historical native pages",
+  "sourceProofRun": 44990978357,
+  "sourceAliasProofRun": 44992472748,
+  "freshUpdraftRequired": true,
+  "noProductOrCategoryWrites": true,
+  "noRedirectWrites": true,
+  "mayImportOnlyExactOriginalPng": true,
+  "currentReport": {
+    "unresolvedOriginalSourceId": 1426,
+    "legacy404VerifiedRun": 45043192023
+  },
+  "productionBuildChainExisting": true
+}
