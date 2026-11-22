@@ -6,3 +6,5 @@ product_cat_id=1763
 2026-11-20 PSE technical table white text contrast regression QA after signed deploy #44767861619, Astro master 532fb8af7cc74e6cc87787f3878027baed693bed: verify computed foreground colors of all table cells and child spans at 1366/390, legacy ten tables unchanged, four cards unchanged, CMS editor still read-only.
 
 2026-11-22 production deploy #44989925533; native repair #44989637734. Verify four exact Joomla context links -> native canonical routes (HTTP 301 then 200), rendered editorial hrefs on 1366/390, preserve ten tables/four cards; Kali 1678 still pending. READ ONLY.
+
+2026-11-22 owner override #1678 existing Product80938 via actual CMS apply #44995359682 PASS and signed deploy #44995644585 PASS. QA code bc014a18. Reverify all five category related links, three direct Kali301, old Page not public, desktop/mobile real Product and category. No CMS writes/build.
