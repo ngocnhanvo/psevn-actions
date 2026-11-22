@@ -65,12 +65,12 @@ try{
  const registry=[];
  for(let i=1;i<=40;i++){const r=await api('chuyen-huong-link?context=edit&status=publish&per_page=100&page='+i+'&orderby=id&order=asc&_fields=id,status,acf');if(r.http!==200||!Array.isArray(r.data)||r.pages<1||r.pages>40)throw Error('Redirect registry incomplete');registry.push(...r.data);if(i===r.pages)break}
  const rootLinks=new Map(),known=new Map(specs.map(s=>[new URL(data.get(s.id).r.source).pathname,'/'+s.slug]));
- known.set('/hoat-dong-kinh-doanh/san-pham/dam-phu-my/8-trang-chu/1678-kali-phu-my-mo-ta-va-hdsd.html','/kali-phu-my-mo-ta-va-hdsd');
+ known.set('/hoat-dong-kinh-doanh/san-pham/dam-phu-my/8-trang-chu/1678-kali-phu-my-mo-ta-va-hdsd.html','/san-pham/kali-phu-my-mieng-mop-1427');
  // The five alternate context paths were independently source-proven in
  // #44992472748. Require the exact pinned report AND the already-deployed
  // canonical source-context 301, not a slug guess.
  const aliases=JSON.parse(await readFile('inputs/link-proof/report.json','utf8'));
- const destinations=new Map([[1668,'/san-pham/dam-phu-my-chuyen-dung-cho-drone-1668'],[1669,'/san-pham/dam-phu-my-chuyen-dung-cho-nong-lam-truong-1669'],[1676,'/san-pham/sa-phu-my-1682'],[1677,'/san-pham/dap-phu-my-1677'],[1678,'/kali-phu-my-mo-ta-va-hdsd']]);
+ const destinations=new Map([[1668,'/san-pham/dam-phu-my-chuyen-dung-cho-drone-1668'],[1669,'/san-pham/dam-phu-my-chuyen-dung-cho-nong-lam-truong-1669'],[1676,'/san-pham/sa-phu-my-1682'],[1677,'/san-pham/dap-phu-my-1677'],[1678,'/san-pham/kali-phu-my-mieng-mop-1427']]);
  if(!aliases.readOnly||aliases.aliasProof.length!==5||new Set(aliases.aliasProof.map(a=>a.id)).size!==5)throw Error('Pinned alias proof incomplete');
  for(const a of aliases.aliasProof){
   if(!destinations.has(a.id)||!a.equal||a.left?.http!==200||a.right?.http!==200||a.left.hash!==a.right.hash||a.left.structure!==a.right.structure||a.left.title!==a.right.title||!a.from.startsWith('/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/'+a.id+'-')||a.from.replace('/nhom-phan-don-va-phan-phuc-hop-phu-my/','/dam-phu-my/')!==a.context)throw Error('Alias proof mismatch '+a.id);
