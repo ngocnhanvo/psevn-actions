@@ -62,6 +62,12 @@ class SourceReadOnlyTests(unittest.TestCase):
         self.assertTrue(mod.allowed_dir("administrator/components/com_akeeba/backup/a"))
         self.assertFalse(mod.allowed_dir("administrator/configuration.php"))
         self.assertFalse(mod.allowed_dir("plugins/extra"))
+    def test_untrusted_ca_requires_explicit_valid_pem(self):
+        # No socket is created when the trust anchor has invalid format.
+        with patch.dict(mod.os.environ,{"PSE_SOURCE_FTP_CA_PEM":"not-a-pem-certificate"}):
+            with self.assertRaisesRegex(ValueError,"source_ca_pem_invalid"):
+                mod.FTPS("example.invalid",21,"test-user","dummy")
+
     def test_unconfigured_credentials_fail_closed(self):
         with patch.dict(mod.os.environ,{"PSE_SOURCE_FTP_HOST":"","PSE_SOURCE_FTP_USERNAME":""}):
             with self.assertRaises(ValueError):mod.env("PSE_SOURCE_FTP_HOST")
