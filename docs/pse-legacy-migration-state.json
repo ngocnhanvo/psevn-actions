@@ -81,10 +81,19 @@
     },
     "114": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/114-phong-tru-benh-vang-lun-va-lun-xoan-la.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-07-11T03:00:01",
+      "wp_id": 83534
     },
     "115": {
       "attempts": 1,
@@ -102,10 +111,19 @@
     },
     "121": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/121-nguyen-nhan-va-bien-phap-khac-phuc-benh-vang-va-rung-la-ca-phe.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-07-11T03:00:01",
+      "wp_id": 83535
     },
     "122": {
       "attempts": 1,
@@ -123,10 +141,19 @@
     },
     "127": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/127-ky-thuat-trong-va-cham-soc-cay-cao-su.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-07-11T02:56:40",
+      "wp_id": 83536
     },
     "152": {
       "attempts": 1,
@@ -154,10 +181,19 @@
     },
     "178": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "agriculture-market",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-07-11",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/kien-thuc-nong-nghiep/huong-dan-su-dung-phan-bon/178-ky-thuat-trong-va-tham-canh-dieu.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-07-11T02:56:40",
+      "wp_id": 83537
     },
     "185": {
       "attempts": 1,
@@ -173,10 +209,19 @@
     },
     "186": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-07-12",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/186-npk-phu-my-se-day-lui-hang-kem-chat-luong.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-07-12T05:49:12",
+      "wp_id": 83538
     },
     "187": {
       "attempts": 1,
@@ -227,10 +272,19 @@
     },
     "196": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-08-08",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/196-pvfcco-se-dong-hanh-cung-mua-he-xanh.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-08-08T07:11:57",
+      "wp_id": 83539
     },
     "198": {
       "attempts": 1,
@@ -282,10 +336,19 @@
     },
     "202": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2011-08-17",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/202-hoi-thao-gioi-thieu-npk-phu-my-tai-binh-phuoc.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2011-08-17T08:40:09",
+      "wp_id": 83540
     },
     "204": {
       "attempts": 1,
@@ -656,10 +719,19 @@
     },
     "237": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2012-01-20",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/237-pvfcco-se-tang-qua-tet-cho-ho-ngheo-tai-lam-dong-va-dak-nong.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2012-01-20T06:29:33",
+      "wp_id": 83541
     },
     "238": {
       "attempts": 1,
@@ -1909,11 +1981,20 @@
     },
     "341": {
       "attempts": 3,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "agriculture-market",
-      "reason": "Source content incomplete or oversized",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
       "short_content_rechecked": true,
+      "source_created_date": "2013-03-13",
       "source_url": "https://www.pse.vn/hoat-dong-kinh-doanh/thong-tin-thi-truong/341-du-nuoc-tuoi-cho-633000-ha-lua-xuan-2013.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2013-03-13T09:42:44",
+      "wp_id": 83542
     },
     "342": {
       "attempts": 1,
@@ -2316,10 +2397,19 @@
     },
     "382": {
       "attempts": 3,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "three_original_sha256_verified",
+      "external_media_policy": "original_pse_media_imported",
       "group_hint": "company",
-      "reason": "Original media HTTP 404",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "All 3 exact original Joomla site photos restored and live 301 verified",
+      "source_created_date": "2013-09-05",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2013-09-05T09:13:25",
+      "wp_id": 83543
     },
     "385": {
       "attempts": 1,
@@ -3583,10 +3673,19 @@
     },
     "1090": {
       "attempts": 1,
+      "date_precision": "second",
+      "date_source": "owner_verified_joomla_sql_created_at",
+      "external_media_health": "third_party_url_reachability_not_guaranteed",
+      "external_media_policy": "retain_exact_original_third_party_src",
       "group_hint": "company",
-      "reason": "Article contains non-local mandatory media",
+      "legacy_301_verified": true,
+      "production_http_200_verified": true,
+      "reason": "Owner explicitly permits third-party hotlinks as originally written; 301 and public post verified. External image availability is an upstream dependency.",
+      "source_created_date": "2015-03-14",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/1090-pvfcco-to-chuc-thanh-cong-chuong-trinh-hoi-mua-phu-my-va-cham-soc-khach-hang-khu-vuc-tay-nguyen.html",
-      "status": "quarantined"
+      "status": "imported",
+      "verified_date": "2015-03-14T02:51:41",
+      "wp_id": 83544
     },
     "1091": {
       "attempts": 1,
