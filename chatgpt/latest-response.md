@@ -1,10 +1,8 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-**#198 WP83516 và exact redirect WP83518 đã ghi thành công.** Signed build request #44985751780 và production deploy [#44985826156](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44985826156) SUCCESS, guarded runtime env PASS. Không build lại.
+**#198 DONE production acceptance.** WP83516, redirect WP83518; [#44986075425](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986075425) SUCCESS: 10/10 native and 10/10 proxy SHA256 match verified relocated DPM files, 390/1440 HTTP200 with all 20 browser image decodes, H1/canonical, no overflow/direct CMS leak, exact legacy HTTP301. Không còn việc #198, không build/nhập lại. Historical original URL byte equality unverified, same-event official relocated image provenance established.
 
-Final targeted acceptance [#44986075425](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986075425) IN_PROGRESS; kiểm 10 native + 10 proxy SHA, 20 browser decodes, canonical/overflow/no CMS leak và exact HTTP301. Tiếp theo đọc log thực, nếu PASS xác nhận #198 full live acceptance (không tuyên bố byte equality với URL lịch sử); nếu fail giải quyết đúng lỗi. [Checkpoint 830e6645](https://github.com/ngocnhanvo/psevn-actions/commit/830e6645ce079e2f51ee3a71f4e05f9f966d5985). Không kích trùng.
-
-Còn 11 bài khác, album #975, 4 alias sản phẩm và ảnh #225. Chưa phê duyệt ngoại lệ biên tập.
+[Checkpoint e5d8a8b0](https://github.com/ngocnhanvo/psevn-actions/commit/e5d8a8b094238be6e7e2314ebf7942290368f434). Còn 11 bài (#114,#121,#127,#178,#186,#196,#202,#237,#341,#382,#1090), album #975, 4 alias sản phẩm, ảnh #225. Tiếp tục chỉ khi có manh mối mới thực sự, không lặp lại scan/commit rỗng. Chưa phê duyệt ngoại lệ biên tập.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
