@@ -1,0 +1,50 @@
+name: PSE original Joomla ZIP SQL candidate inventory (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-ftp-sql-candidates-readonly.py
+      - scripts/test-pse-original-ftp-sql-candidates-readonly.py
+      - .github/workflows/pse-original-ftp-sql-candidates-readonly.yml
+      - .pse-original-ftp-sql-candidates-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-original-ftp-sql-candidates-readonly.py
+      - run: python3 scripts/test-pse-original-ftp-sql-candidates-readonly.py
+  inspect:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'audit(pse): inspect SQL candidates in original Joomla ZIP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    concurrency:
+      group: pse-original-joomla-source-readonly
+      cancel-in-progress: false
+    env:
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_FTP_PROTOCOL: ftps
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Read only large ZIP central directory, classify SQL metadata
+        run: python3 scripts/pse-original-ftp-sql-candidates-readonly.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-original-joomla-sql-candidates-metadata-only
+          path: artifacts/pse-original-ftp-sql-candidates/summary.json
+          retention-days: 14
+          if-no-files-found: warn
