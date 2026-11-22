@@ -1,0 +1,62 @@
+name: PSE #382 exact recovered Austria photo native WordPress draft (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-382-verified-ao-source-export.py
+      - scripts/pse-382-verified-ao-native-draft.mjs
+      - .github/workflows/pse-382-verified-ao-native-draft.yml
+      - .pse-382-verified-ao-native-draft-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: python3 -m py_compile scripts/pse-382-verified-ao-source-export.py
+      - run: node --check scripts/pse-382-verified-ao-native-draft.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): stage verified original Austria photo in draft 382'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: pse-legacy-article-migration-single-writer
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_SOURCE_FTP_HOST: ${{ secrets.PSE_SOURCE_FTP_HOST }}
+      PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
+      PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
+      PSE_SOURCE_FTP_PROTOCOL: ftps
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Create native WP Updraft backup for one scoped draft change
+        run: node --check scripts/pse-template-updraft-backup.mjs && node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_382_AO_BACKUP_READY=yes" >> "$GITHUB_ENV"
+      - name: Export SHA-pinned original Austria JPEG into private runner storage
+        run: python3 scripts/pse-382-verified-ao-source-export.py
+      - name: Import exact original native Media and rewrite ONLY one private WP draft image
+        run: node scripts/pse-382-verified-ao-native-draft.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-382-verified-original-austria-native-draft-evidence
+          path: artifacts/pse-382-verified-original-Austria-photo/report.json
+          retention-days: 30
+          if-no-files-found: warn
