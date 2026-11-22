@@ -1,5 +1,11 @@
 # PSE — Tin tổng hợp: parity, kết quả và dữ liệu nguồn còn thiếu (21/11/2026)
 
+## Cập nhật 22/11/2026 — #198 đã khôi phục, còn 11 bài chưa xuất bản
+
+- Joomla #198 đã xuất bản native WordPress 83516, redirect 83518, 10/10 ảnh chính thức DPM di chuyển thư mục xác minh SHA256, EXIF và sự kiện; source body/date/order và HTTP301, mobile/desktop đều PASS tại [#44986075425](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986075425). Không tuyên bố byte equality với URL lịch sử đã mất. Không nhập/kiểm tra lại #198. Danh mục 10 URL lịch sử của #198 bên dưới được giữ để đối chiếu chứng cứ, không còn là công việc thiếu ảnh.
+- Baseline 758 Posts cộng 1 WP83516 (759, chưa kiểm kê lại toàn bộ); 53 Products, 25 Pages, 15/16 album. Còn 11 bài thường: 114,121,127,178,186,196,202,237,341,382,1090. Danh sách 41 URL bên dưới nay còn 31 URL chưa phục hồi trong 8 bài (không gồm #198); #1090 inventory đầy đủ còn chưa xác thực, #382 ba ảnh, #341 body. Album #975, 4 alias và ảnh ngoài #225 giữ nguyên.
+- DPM archive pagination discovery #1090/#237 chỉ đọc, không đồng nhất bài cùng chủ đề với ảnh gốc, không tạo dữ liệu giả.
+
 ## Cập nhật 22/11/2026 — danh sách bàn giao nguồn còn thiếu (thay thế các số liệu lịch sử bên dưới)
 
 **Trạng thái đồng bộ toàn site: PARTIAL.** Baseline đã xác minh 758 Posts, 53 Woo Products, 25 Pages, 15/16 album. #379 và #204 đã hoàn thành; không nhập lại các bài đã xác minh. Còn đúng **12 bài thường**, album #975, bốn URL mô tả sản phẩm lịch sử, và một ảnh ngoài site thuộc bài đã xuất bản #225.
