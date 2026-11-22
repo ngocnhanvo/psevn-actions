@@ -3,13 +3,14 @@ import {chromium,request} from 'playwright';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const ev=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
-if(process.env.GITHUB_REPOSITORY!=='ngocnhanvo/psevn-actions'||process.env.GITHUB_REF!=='refs/heads/main'||ev.head_commit?.message!=='cms(pse): restore two original Kali historical native pages'||process.env.PSE_KALI_FRESH_BACKUP!=='yes')throw Error('Unauthorized write scope');
+if(process.env.GITHUB_REPOSITORY!=='ngocnhanvo/psevn-actions'||process.env.GITHUB_REF!=='refs/heads/main'||!['cms(pse): restore two original Kali historical native pages','cms(pse): restore verified Kali 1425 historical native page'].includes(ev.head_commit?.message)||process.env.PSE_KALI_FRESH_BACKUP!=='yes')throw Error('Unauthorized write scope');
 const wp='https://admin-pse.webnvn.com',front='https://pse.webnvn.com',src='https://pse.vn',sha=x=>createHash('sha256').update(x).digest('hex'),norm=x=>String(x||'').normalize('NFKC').replace(/\s+/g,' ').trim();
 for(const [k,v] of [['WC_URL',wp],['WC_URL_CLIENT',front]]){const a=String(process.env.ENV_FILE||'').split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith(k+'='));if(a.length!==1||new URL(a[0].slice(k.length+1).replace(/^['"]|['"]$/g,'')).origin!==v)throw Error('Origin mismatch '+k)}
-const specs=[
+const allSpecs=[
  {id:1425,slug:'kali-phu-my-bot-canada-mo-ta-va-hdsd',title:'Kali Phú Mỹ Bột CANADA- Mô tả và HDSD',body:'44fabc77e383deceab4cff0d6e10c831733e86af119671049ba67cf0b150bbf7',images:['3ad2953c0d8f52ccabad86436d40d9dcda808a458e397a94bc577921a99d4b66']},
  {id:1426,slug:'kali-phu-my-mo-ta-cac-bien-the',title:'Kali Phú Mỹ',body:'13b5f4bc0b124df9820b9060b11efed972b243044948b968fe1342a94458e268',images:['3ad2953c0d8f52ccabad86436d40d9dcda808a458e397a94bc577921a99d4b66','f0196b517182e82082defe27c23faf0e9660ad807003ae7efe03dc7e21e6b63f','00337427a0fc36f9b8df812571121e5aaf454fe6efc5504b8b480f51db4fef74']}
 ];
+const specs=ev.head_commit?.message==='cms(pse): restore verified Kali 1425 historical native page'?allSpecs.filter(s=>s.id===1425):allSpecs;
 const manifest=JSON.parse(await readFile('inputs/kali-two/report.json','utf8'));
 const data=new Map(),files=new Map();
 for(const s of specs){
