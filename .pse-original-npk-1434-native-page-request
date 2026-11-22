@@ -1,0 +1,16 @@
+{
+  "schema": "pse-npk-1434-only-original-native-page-and-image-upsert-v1",
+  "ownerDecision": "Keep images from dpm.vn external, import owned PSE images exactly",
+  "sourceId": 1434,
+  "sourceProofRun": 45044968038,
+  "sourceProofPhotos": 19,
+  "originalJoomlaComSearchDateRun": 45045041016,
+  "sourceDate": "2021-06-17",
+  "sourceBodySHA": "128f19004566d9635f5fd790b2695414384da294f85f0775e81806a961b7e1ce",
+  "originalTitle": "NPK Phú Mỹ",
+  "wordpressOwnedTargetPageSlug": "npk-phu-my",
+  "scopeWrites": "only original verified media and native Page, no Woo Product/category/redirect writes",
+  "freshUpdraftRequired": true,
+  "publicReleaseOnlyAfterPageReadback": true,
+  "originalExternalImageUrlUnchanged": true
+}
