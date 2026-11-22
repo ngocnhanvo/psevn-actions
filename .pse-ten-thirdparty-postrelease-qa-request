@@ -1,0 +1,37 @@
+{
+  "schema": "pse-owner-approved-third-party-original-postrelease-qa-v1",
+  "sourceJoomlaIds": [
+    114,
+    121,
+    127,
+    178,
+    186,
+    196,
+    202,
+    237,
+    341,
+    1090
+  ],
+  "wpPostIds": [
+    83534,
+    83535,
+    83536,
+    83537,
+    83538,
+    83539,
+    83540,
+    83541,
+    83542,
+    83544
+  ],
+  "publishRun": 45040550927,
+  "exactNativeRedirectRun": 45041138472,
+  "productionBuildRun": 45041558507,
+  "expectedOld301s": 10,
+  "expectedNew200s": 10,
+  "expectedThirdPartyImageSrcOccurrences": 56,
+  "sourceImageByteReachabilityNotGuaranteed": true,
+  "noWordPressMediaUpload": true,
+  "noWordPressWrites": true,
+  "onlyPublicGetChecks": true
+}
