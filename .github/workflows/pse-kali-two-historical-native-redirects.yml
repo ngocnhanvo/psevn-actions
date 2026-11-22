@@ -22,7 +22,8 @@ jobs:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.ref == 'refs/heads/main' &&
-      github.event.head_commit.message == 'cms(pse): redirect two verified historical Kali pages'
+      (github.event.head_commit.message == 'cms(pse): redirect two verified historical Kali pages' ||
+       github.event.head_commit.message == 'cms(pse): redirect verified historical Kali 1425 page')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
@@ -48,7 +49,7 @@ jobs:
         with:
           name: pse-kali-two-historical-native-pages
           path: inputs/applied
-          run-id: 44992141050
+          run-id: 44993493734
           github-token: ${{ github.token }}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Fresh database backup before exact historical URL redirects
