@@ -1,1 +1,3 @@
 Strict Garden 8 original source QA after public URLs 8/8 HTTP200 #44888395227. Handle only U+2013 texturize for crop; maintain all original media SHA256 and mobile/desktop canonical requirements.
+
+2026-11-22: owner full missing-product recheck, verify eight Garden variants source-original vs current WordPress and live production #44995644585, no writes/build.
