@@ -103,7 +103,7 @@ jobs:
             ||
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE two exact original Kali historical native Pages (GUARDED)' &&
-             github.event.workflow_run.head_commit.message == 'cms(pse): restore two original Kali historical native pages')
+             (github.event.workflow_run.head_commit.message == 'cms(pse): restore two original Kali historical native pages' || github.event.workflow_run.head_commit.message == 'cms(pse): restore verified Kali 1425 historical native page'))
             ||
             (github.event.workflow_run.event == 'push' &&
              github.event.workflow_run.name == 'PSE two historical Kali original exact 301 (GUARDED)' &&
@@ -239,7 +239,7 @@ jobs:
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): restore Joomla 198 from verified relocated DPM originals"):
               cohort="SOURCE_PROVEN_JOOMLA_198_RELOCATED_DPM_JPEGS"
           elif (name=="PSE two exact original Kali historical native Pages (GUARDED)" and run.get("event")=="push"
-                and (run.get("head_commit") or {}).get("message")=="cms(pse): restore two original Kali historical native pages"):
+                and (run.get("head_commit") or {}).get("message") in ("cms(pse): restore two original Kali historical native pages","cms(pse): restore verified Kali 1425 historical native page")):
               cohort="SOURCE_PROVEN_TWO_KALI_HISTORICAL_NATIVE_PAGES"
           elif (name=="PSE two historical Kali original exact 301 (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): redirect two verified historical Kali pages"):
