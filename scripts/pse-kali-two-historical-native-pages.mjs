@@ -88,8 +88,37 @@ try{
  };
  const queryLink=async u=>{
   if(u.pathname!=='/hoat-dong-kinh-doanh/san-pham/kali-phu-my.html'||!['?id=1425','?id=1427','?id=1430'].includes(u.search)||u.hash)throw Error('Unapproved original query '+u.pathname+u.search);
-  const id=Number(u.searchParams.get('id')),actual=await getCore(src+u.pathname+u.search);
+  const id=Number(u.searchParams.get('id'));
+  // The decorative image anchors use an obsolete query route, now HTTP404.
+  // Preserve the numeric Joomla article identity via its actual source path,
+  // not an inferred slug or guessed WooCommerce Product.
+  const originalQuery=src+u.pathname+u.search;
+  const fallback=id===1430
+    ? '/index.php?option=com_content&view=article&id=1430'
+    : (()=>{const historical=state.articles?.[id]?.source_url;
+        if(!historical)throw Error('Unverified original numeric article '+id);
+        const sourcePath=new URL(historical);
+        if(!['pse.vn','www.pse.vn'].includes(sourcePath.hostname)||!sourcePath.pathname.includes('/'+id+'-')||sourcePath.search||sourcePath.hash)
+          throw Error('Original numeric Joomla article path mismatch '+id);
+        return sourcePath.pathname;})();
+  const queryProbe=await net.get(originalQuery,{maxRedirects:0,failOnStatusCode:false});
+  let actual,sourceResolved='original-query';
+  if(queryProbe.status()===404){
+    actual=await getCore(src+fallback);
+    sourceResolved='verified-original-id-fallback';
+  }else if(queryProbe.status()===200){
+    actual=await getCore(originalQuery);
+  }else throw Error('Original Joomla source query unexpected HTTP '+queryProbe.status()+' id '+id);
   let target=src+u.pathname+u.search,kind='preserved-original-query';
+  if(id===1430){
+    const exact=actual.title==='Kali Phú Mỹ Bột MOP - Mô tả và HDSD'&&
+      sha(actual.body)==='cec036796daec93cad3ab8c7a19d7912f2a166bf4038f57ff1cdd5ce3cfb9417'&&
+      actual.images.length===1&&decodeURIComponent(actual.images[0].split('/').at(-1))==='5-KALI-BOT_Phu_My_2019_cai_tien.png';
+    if(!exact)throw Error('Original Joomla 1430 core article identity drift');
+    // Native detail #1430 has no source-proven WordPress equivalent yet.
+    // Keep the verified functional Joomla source, not the obsolete query 404.
+    target=src+fallback;kind='verified-original-id-source';
+  }
   if(id===1425){
    const row=data.get(id).r;
    if(actual.title!==row.title||sha(actual.body)!==row.bodySha||JSON.stringify(actual.images)!==JSON.stringify(row.images.map(i=>new URL(i.url).pathname)))throw Error('Query 1425 does not match pinned original');
@@ -114,7 +143,7 @@ try{
     }
    }
   }
-  console.log('PSE_KALI_QUERY_PROOF='+JSON.stringify({id,title:actual.title,bodySha:sha(actual.body),images:actual.images,target,kind}));
+  console.log('PSE_KALI_QUERY_PROOF='+JSON.stringify({id,title:actual.title,bodySha:sha(actual.body),images:actual.images,target,kind,sourceResolved}));
   return {target,kind};
  };
  for(const s of specs){
