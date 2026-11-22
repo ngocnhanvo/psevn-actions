@@ -28,7 +28,8 @@ try{
   [1668,'/san-pham/dam-phu-my-chuyen-dung-cho-drone-1668'],
   [1669,'/san-pham/dam-phu-my-chuyen-dung-cho-nong-lam-truong-1669'],
   [1676,'/san-pham/sa-phu-my-1682'],
-  [1677,'/san-pham/dap-phu-my-1677']
+  [1677,'/san-pham/dap-phu-my-1677'],
+  [1678,'/kali-phu-my-mo-ta-va-hdsd']
  ];
  const sourceLinks=await s.locator('.item-page [itemprop="articleBody"] a[href]').evaluateAll(es=>es.map(a=>a.href));
  const plans=mappings.map(([id,to])=>{
@@ -50,7 +51,7 @@ try{
   await target.close();
   report.relatedLinks.push({...plan,http:200,legacyHTTP:301,canonical});
  }
- report.checks.push('four_source_proven_related_targets_and_exact_301');
+ report.checks.push('five_source_proven_related_targets_and_exact_301');
 
 
  const wr=await desktop.request.get(wp+'/wp-json/astro/v1/get-product-categories',{timeout:50000});
@@ -106,7 +107,7 @@ try{
    if(liveHrefs.filter(u=>u===origin+plan.to).length!==1||liveHrefs.includes(origin+plan.from))
      throw Error('Rendered related link mismatch '+plan.id+' width '+width);
   }
-  report.checks.push('four_repaired_related_links_live_'+width);
+  report.checks.push('five_repaired_related_links_live_'+width);
 
   if(found.legacyImages)throw Error('Legacy image hotlink present in category content');
   if(found.horizontalOverflow>5)throw Error('Page horizontal overflow at width '+width+': '+found.horizontalOverflow);
