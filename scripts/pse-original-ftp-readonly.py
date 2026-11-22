@@ -2,7 +2,8 @@
 """Bounded READ-ONLY original Joomla source FTP/SFTP inventory, no private data exfiltration."""
 import ftplib,hashlib,json,os,re,ssl,stat,sys,tempfile
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit,unquote
+import unicodedata
 from collections import Counter,deque
 
 OUT=Path("artifacts/pse-original-ftp-readonly")
@@ -80,10 +81,40 @@ def allowed_dir(path):
     if parts[0]!="administrator":return parts[0] in ("images","media","backup","backups")
     return len(parts)>1 and parts[1]=="components" and (len(parts)==2 or parts[2]=="com_akeeba" and (len(parts)==3 or parts[3]=="backup"))
 
+def source_basename_oracle():
+    """Exact public-source URL basenames from handover, not a byte-proof oracle."""
+    path=Path("docs/reports/pse-tin-tong-hop-source-gaps-2026-11-21.md")
+    if not path.is_file():
+        raise FileNotFoundError("original_source_gaps_report_missing")
+    known={ident:set() for ident in PENDING_POST_IDS}
+    current=None
+    for line in path.read_text(encoding="utf8").splitlines():
+        match=re.match(r"^#### #(\d+)\s",line)
+        if match:
+            ident=int(match.group(1))
+            current=ident if ident in known else None
+            continue
+        if line.startswith("#"):
+            current=None
+        if current is None or not line.lstrip().startswith("- "):
+            continue
+        for url in re.findall(r"\x60(https?://[^\x60]+)\x60",line):
+            name=unquote(urlsplit(url).path.rsplit("/",1)[-1])
+            if name and "/" not in name:
+                known[current].add(unicodedata.normalize("NFC",name).casefold())
+    # Two historical groups were documented without a complete numbered URL list.
+    known[382].update(unicodedata.normalize("NFC",x).casefold() for x in
+        ("Áo_2.JPG","Ba_Lan.JPG","Mỏ_muối_Wieliczka_dưới_mặt_đất_135m_-_Ba_lan.JPG"))
+    known[1090].update(x.casefold() for x in
+        ("5.JPG","2(1).JPG","3.JPG","4.JPG","6.JPG","8.jpg"))
+    return known
+
 def discover(client,root):
     pending=deque([("",0)])
     seen=set()
     files=[]
+    original_names=source_basename_oracle()
+    possible=Counter()
     entries=0
     root_names=set()
     errors=Counter()
@@ -112,6 +143,12 @@ def discover(client,root):
                 low=name.lower()
                 typ="backup" if low.endswith(BACKUP_EXT) else ("media" if low.endswith(MEDIA_EXT) else "other")
                 files.append({"sha256_path":hashlib.sha256(child.encode("utf8")).hexdigest(),"size":size if size>=0 else None,"kind":typ,"area":rel.split("/")[0] if rel else "root"})
+                # A filename match suggests a later privately authorized byte check.
+                basename=unicodedata.normalize("NFC",name).casefold()
+                if typ=="media":
+                    for source_id,wanted in original_names.items():
+                        if basename in wanted:
+                            possible[(source_id,basename)]+=1
     return {
         "joomla_configuration_php_present":"configuration.php" in root_names,
         "joomla_root_markers":sorted(root_names & ROOT_MARKERS),
@@ -125,6 +162,15 @@ def discover(client,root):
         "hashed_backup_paths":[x["sha256_path"] for x in files if x["kind"]=="backup"][:100],
         "directory_errors_by_type":dict(errors),
         "pending_original_post_ids":PENDING_POST_IDS,
+        "source_filename_candidate_matches":{
+            str(source_id):{
+                "original_reference_basenames":len(names),
+                "basenames_seen_on_source_ftp":sum((source_id,x) in possible for x in names),
+                "duplicate_name_locations":sum(possible[(source_id,x)]>1 for x in names),
+                "source_identity_verified":False,
+                "actual_image_bytes_verified":False
+            } for source_id,names in original_names.items()
+        },
         "downloaded_files":0,"modified_files":0,"deleted_files":0
     }
 
@@ -143,7 +189,7 @@ def main():
         result.update(schema="pse-original-ftp-readonly-v1",protocol=scheme,certificate_or_hostkey_verified=True,no_credentials_or_server_path_in_artifact=True)
         OUT.mkdir(parents=True,exist_ok=True)
         (OUT/"summary.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
-        minimal={x:result[x] for x in ("source_webroot_probable","joomla_configuration_php_present","joomla_root_markers","truncated","directories_inspected","entries_encountered","categories","backup_candidate_sizes","directory_errors_by_type","downloaded_files","modified_files","deleted_files")}
+        minimal={x:result[x] for x in ("source_webroot_probable","joomla_configuration_php_present","joomla_root_markers","truncated","directories_inspected","entries_encountered","categories","backup_candidate_sizes","source_filename_candidate_matches","directory_errors_by_type","downloaded_files","modified_files","deleted_files")}
         print("PSE_ORIGINAL_FTP_READONLY="+json.dumps(minimal,ensure_ascii=False))
         if not result["source_webroot_probable"]:raise ValueError("original_joomla_root_not_verified")
     finally:
