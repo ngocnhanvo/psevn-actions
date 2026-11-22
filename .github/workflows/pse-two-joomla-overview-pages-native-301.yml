@@ -1,0 +1,51 @@
+name: PSE Joomla original Kali 1426 and NPK 1434 exact native 301 (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-two-joomla-overview-pages-native-301.mjs
+      - .github/workflows/pse-two-joomla-overview-pages-native-301.yml
+      - .pse-two-joomla-overview-pages-native-301-request
+permissions: {contents: read}
+jobs:
+  syntax:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-two-joomla-overview-pages-native-301.mjs
+  apply:
+    needs: syntax
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish two exact original Kali and NPK redirects'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    concurrency:
+      group: pse-legacy-redirect-native-wordpress
+      cancel-in-progress: false
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Native Updraft database backup before two exact Joomla redirect writes
+        run: node scripts/pse-template-updraft-backup.mjs
+      - run: echo "PSE_TWO_SOURCE_REDIRECT_BACKUP_READY=yes" >> "$GITHUB_ENV"
+      - run: node scripts/pse-two-joomla-overview-pages-native-301.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-two-original-kali-npk-wordpress-301s
+          path: artifacts/pse-two-original-1426-1434-redirects/report.json
+          retention-days: 30
+          if-no-files-found: warn
