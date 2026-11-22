@@ -1,0 +1,36 @@
+name: PSE Kali 1427 1430 original article identity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1427-1430-source-recovery.mjs
+      - .github/workflows/pse-kali-1427-1430-source-recovery.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-kali-legacy-native-page-source-proof
+          path: inputs/source
+          run-id: 44990978357
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-kali-1427-1430-source-recovery.mjs && node scripts/pse-kali-1427-1430-source-recovery.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-1427-1430-source
+          path: artifacts/pse-kali-1427-1430-source/
+          retention-days: 30
+          if-no-files-found: warn
