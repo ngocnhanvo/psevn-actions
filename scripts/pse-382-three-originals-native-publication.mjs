@@ -90,7 +90,7 @@ try{
  const photoOrigins=photos.map(src=>{const u=new URL(src,wp);return {origin:u.origin,uploadsPath:u.pathname.startsWith("/wp-content/uploads/"),name:u.pathname.split("/").at(-1)}});
  const sourceLegacyDouble=html.includes('src="images/web/'),sourceLegacySingle=html.includes("src='images/web/");
  console.log("PSE_382_RELEASE_MEDIA_SOURCE_PREFLIGHT="+JSON.stringify({images:photoOrigins,sourceLegacyDouble,sourceLegacySingle,expectedOrigin:wp}));
- if(photos.some(s=>!s.startsWith(wp+"/wp-content/uploads/"))||sourceLegacyDouble||sourceLegacySingle)
+ if(photoOrigins.some(p=>p.origin!==wp||!p.uploadsPath)||sourceLegacyDouble||sourceLegacySingle)
   throw Error("One or more original photos still external/unmigrated");
  for(let i=0;i<3;i++){
   const res=await net.get(photos[i],{timeout:45000,failOnStatusCode:false});
