@@ -28,6 +28,7 @@ on:
       - PSE Joomla 379 exact RSS date native WordPress publication (GUARDED)
       - PSE original Joomla 379 exact native WordPress 301 redirect (GUARDED)
       - PSE original Joomla 382 recovered article exact native 301 (GUARDED)
+      - PSE ten Joomla source exact native WordPress 301 redirects (GUARDED)
     types: [completed]
 permissions:
   contents: read
@@ -48,6 +49,10 @@ jobs:
          github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
          github.event.workflow_run.head_branch == 'main' &&
          (
+           (github.event.workflow_run.event == 'push' &&
+            github.event.workflow_run.name == 'PSE ten Joomla source exact native WordPress 301 redirects (GUARDED)' &&
+            github.event.workflow_run.head_commit.message == 'cms(pse): route ten original Joomla articles to published WordPress Posts')
+           ||
            (github.event.workflow_run.event == 'push' &&
             github.event.workflow_run.name == 'PSE original Joomla 382 recovered article exact native 301 (GUARDED)' &&
             github.event.workflow_run.head_commit.message == 'cms(pse): activate exact Joomla 382 legacy 301 after native publication')
@@ -207,7 +212,10 @@ jobs:
           if (run.get("head_repository") or {}).get("full_name")!="ngocnhanvo/psevn-actions" or run.get("head_branch")!="main":
               raise SystemExit("PSE_WP_BUILD_CHAIN=REJECT_REPOSITORY")
           name=run.get("name")
-          if (name=="PSE original Joomla 382 recovered article exact native 301 (GUARDED)" and run.get("event")=="push"
+          if (name=="PSE ten Joomla source exact native WordPress 301 redirects (GUARDED)" and run.get("event")=="push"
+                and (run.get("head_commit") or {}).get("message")=="cms(pse): route ten original Joomla articles to published WordPress Posts"):
+              cohort="OWNER_APPROVED_EXACT_TEN_THIRD_PARTY_SOURCE_POSTS_301"
+          elif (name=="PSE original Joomla 382 recovered article exact native 301 (GUARDED)" and run.get("event")=="push"
                 and (run.get("head_commit") or {}).get("message")=="cms(pse): activate exact Joomla 382 legacy 301 after native publication"):
               cohort="SOURCE_PROVEN_ORIGINAL_382_ALL_THREE_MEDIA_301"
           elif (name=="PSE original Joomla 379 exact native WordPress 301 redirect (GUARDED)" and run.get("event")=="push"
