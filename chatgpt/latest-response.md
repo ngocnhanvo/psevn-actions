@@ -1,10 +1,10 @@
 # Phản hồi mới nhất — PSE (22/11/2026 VN)
 
-**Tiến triển #198:** [#44983863130](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44983863130) SUCCESS: 10/10 JPEG đúng tên lịch sử trên host DPM, HTTP200, SHA256, 1 ảnh liên kết trực tiếp bài DPM, 9 tên file cùng thư mục. Artifact 14739271441. Không tuyên bố byte parity gốc; chưa nhập WP. RSS gốc #44910276016 xác minh ngày đăng 15/08/2011 02:32:18 +07:00.
+[#44984132009](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984132009) SUCCESS: #198 chính xác tiêu đề, 6092 ký tự nội dung Joomla, 10/10 JPEG decode và thứ tự tên ảnh gốc, tất cả 10 EXIF 14/08/2011. Đã xem contact sheet: cùng sự kiện thực tế. Ngày đăng RSS 15/08/2011 02:32:18 +07. Bằng chứng mạnh ảnh gốc chuyển thư mục DPM, chưa chứng minh byte equality với URL cũ.
 
-Đã kích hoạt [preflight #44984132009](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984132009) tái sử dụng artifact, kiểm SHA/giải mã/EXIF/contact sheet, đối chiếu bài Joomla và DPM. Bước tiếp theo đọc kết quả thật và xử lý nguồn nếu đủ chứng cứ; không chạy trùng. [Checkpoint 22b188e4](https://github.com/ngocnhanvo/psevn-actions/commit/22b188e4dce098a367a6dd68d4927cf7d8a4cdfd).
+Đã chuẩn bị guarded native importer: kiểm tra chính xác source hash, 10 SHA, nguồn/ngày/ID/category/slug, fresh backup, 1 Post và tối đa 10 Media, readback. [#44984460079](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44984460079) đang preflight chỉ đọc, chưa ghi CMS. Sau khi PASS, kích marker đúng `cms(pse): restore Joomla 198 from verified relocated DPM originals` file `.pse-198-relocated-native-import-request`, backup và apply; chỉ build qua WordPress hiện có nếu thành công, QA và redirect exact. Không chạy trùng. [Checkpoint 6d672b37](https://github.com/ngocnhanvo/psevn-actions/commit/6d672b37478a61d6b9cc60d5f39771cb463280d7).
 
-Vẫn 12 bài chưa xuất bản, album #975, 4 alias, ảnh #225; chưa có phê duyệt ngoại lệ biên tập. Audit 3242/3242 HEAD hoàn tất. Không thay đổi CMS/source/build.
+Vẫn 12 bài chưa xuất bản, album #975, 4 alias, ảnh #225; chưa phê duyệt ngoại lệ biên tập. Native inline image HEAD 3242/3242 đã DONE.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
