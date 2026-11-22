@@ -1,13 +1,12 @@
 {
-  "schema": "pse-original-804-independent-native-content-inventory-v2",
-  "productionRun": 45047656628,
-  "verifiedNativePages": [
-    83528,
-    83572,
-    83593
-  ],
-  "priorInventoryRun": 45042854764,
+  "schema": "pse-804-source-identity-cms-post-gallery975-v1",
+  "source": "https://www.pse.vn/",
+  "target": "https://admin-pse.webnvn.com/",
+  "originalSourceIdentities": 804,
+  "nativePhotoGallery975": 83638,
+  "originalJoomlaDate": "2011-03-06T04:53:14",
+  "releasedAstroRun": 45051898907,
   "readOnly": true,
-  "noBuild": true,
-  "noCMSWrites": true
+  "noCMSWrites": true,
+  "noBuild": true
 }
