@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/pse-975-wayback-published-day-readonly.mjs
       - .github/workflows/pse-975-wayback-published-day-readonly.yml
+      - .pse-975-original-source-date-archive-request
 permissions:
   contents: read
 jobs:
