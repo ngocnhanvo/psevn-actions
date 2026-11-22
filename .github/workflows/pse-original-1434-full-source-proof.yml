@@ -1,0 +1,40 @@
+name: PSE 1434 exact full Joomla public article and 19 original images (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-original-1434-full-source-proof.mjs
+      - .github/workflows/pse-original-1434-full-source-proof.yml
+permissions: {contents: read, actions: read}
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-1434-npk-overview-source-proof
+          path: inputs/previous
+          run-id: 45043497821
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-1434-first-source-png-original
+          path: inputs/first
+          run-id: 45044627157
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-original-1434-full-source-proof.mjs && node scripts/pse-original-1434-full-source-proof.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1434-original-source-and-media
+          path: artifacts/pse-original-1434-full-source/
+          retention-days: 30
+          if-no-files-found: warn
