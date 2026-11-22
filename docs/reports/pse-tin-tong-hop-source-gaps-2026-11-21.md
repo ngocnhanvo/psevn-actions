@@ -112,7 +112,7 @@ Bằng chứng: [Actions #44899904722](https://github.com/ngocnhanvo/psevn-actio
 
 Quy trình tiếp nhận: so khớp source ID/URL, body/ngày và file bytes thật, ghi SHA-256, backup WP, upsert đúng bản ghi native, read-back, signed build nếu cần, QA live. Không lặp lại những probe đã thất bại khi không có bằng chứng mới.
 
-**Quét URL nội bộ:** 840/3242 đã PASS HEAD; [#44980204547](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44980204547) đang chạy phần còn lại. Không coi HEAD thành kiểm chứng byte ảnh Joomla. Không chạy thêm workflow trùng.
+**Quét URL nội bộ: DONE 3242/3242 (100%).** [#44980204547](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44980204547) SUCCESS lúc 10:52:39 VN 22/11, 2402 URL bổ sung và 0 lỗi HEAD. Artifact 14738571335. Một URL ngoài site #225 không nằm trong phạm vi này. Không coi HEAD thành kiểm chứng byte ảnh Joomla; không chạy lại khi dữ liệu không thay đổi.
 
 ---
 
