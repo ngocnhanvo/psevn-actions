@@ -1,0 +1,20 @@
+{
+  "schema": "pse-exact-source-article-release-request-v1",
+  "joomlaSourceId": 382,
+  "nativePostId": 83543,
+  "threeVerifiedMediaIds": [
+    83547,
+    83545,
+    83549
+  ],
+  "byteProofRuns": [
+    45035599397,
+    45036115429
+  ],
+  "stagedImageRuns": [
+    45035807304,
+    45036362535
+  ],
+  "legacyRedirect": "/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
+  "onlyPostId": 83543
+}
