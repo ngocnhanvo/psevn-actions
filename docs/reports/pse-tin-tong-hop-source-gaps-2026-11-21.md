@@ -1,5 +1,12 @@
 # PSE — Tin tổng hợp: parity, kết quả và dữ liệu nguồn còn thiếu (21/11/2026)
 
+## Cập nhật 22/11/2026 — #1090: đã phục hồi đúng một ảnh archive, còn sáu ảnh nghi vấn
+
+- [#44986504624](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986504624) xác nhận toàn bộ 24 ảnh thứ tự Joomla #1090, title/body chính xác (5.341 ký tự, SHA256 ec7491b318f521d4b5c49ffc2dd13eca6d2df797691fa89e047915716a150e5a). [DPM cùng bài](https://dpm.vn/tin-tuc/pvfcco-to-chuc-thanh-cong-chuong-trinh-hoi-mua-phu-my-va-cham-soc-khach-hang-khu-vuc-tay-nguyen-1172), 24 tệp JPEG cùng tên đã tải thành công, nhưng bảy tên chung có ngữ cảnh ảnh bất thường. Không đánh đồng filename match với ảnh đúng.
+- [#44987758615](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44987758615): phục hồi chính xác `http://www.dpm.vn/media/images/7.JPG`, Wayback capture 20150419091957, 308723 bytes, 867×768, archive SHA1 Base32 XQIE5GRV6YMDJEWLPLRQHDPDXATBLTFH, SHA256 dc947052e9cc7e7ddc869b897d77955736ca2105d3fc380d3165b24ef94466b0. Artifact 14740179112 giữ file. Đã thực sự mở ảnh: cổng Hội mùa Phú Mỹ, EXIF 2015-03-07 13:54:16, đúng sự kiện. Ảnh DPM relocated 7.JPG khác hình/digest; không sử dụng file sai.
+- Còn 6 ảnh nghi vấn cần bản gốc: `5.JPG`, `2(1).JPG`, `3.JPG`, `4.JPG`, `6.JPG`, `8.jpg` (cùng prefix `http://www.dpm.vn/media/images/`). CDX exact 2015–2019 HTTP200 không có index rows tại #44987354006 và #44987758615. 17 ảnh relocated còn lại có bằng chứng cùng bài/sự kiện, 1 archive đúng; 6 chưa xác minh. Chưa nhập #1090, không tự bỏ/thay ảnh. #237 11 ảnh vẫn thiếu nguyên bản.
+- Tổng số bài chưa xuất bản vẫn 11; các blocker album #975, bốn old Product aliases, ảnh #225 không đổi.
+
 ## Cập nhật 22/11/2026 — #198 đã khôi phục, còn 11 bài chưa xuất bản
 
 - Joomla #198 đã xuất bản native WordPress 83516, redirect 83518, 10/10 ảnh chính thức DPM di chuyển thư mục xác minh SHA256, EXIF và sự kiện; source body/date/order và HTTP301, mobile/desktop đều PASS tại [#44986075425](https://github.com/ngocnhanvo/psevn-actions/actions/runs/44986075425). Không tuyên bố byte equality với URL lịch sử đã mất. Không nhập/kiểm tra lại #198. Danh mục 10 URL lịch sử của #198 bên dưới được giữ để đối chiếu chứng cứ, không còn là công việc thiếu ảnh.
