@@ -48,10 +48,32 @@ try{
   const img=new URL(result.images[0].src);
   if(img.origin!==front||!img.pathname.includes('pse-kali-1678-58c823c48ee0'))throw Error('Live image source identity mismatch');
   const bytes=await c.request.get(img.href,{maxRedirects:0,failOnStatusCode:false});
-  if(bytes.status()!==200||sha(await bytes.body())!==imageSha)throw Error('Live original image byte mismatch');
+  const rendered=await bytes.body(),renderedSha=sha(rendered);
+  if(bytes.status()!==200)throw Error('Live image HTTP '+bytes.status());
+  // Astro SSG Sharp generates quality-80 WebP responsive renditions. Source
+  // byte integrity is independently mandatory via native Media and files proxy.
+  const proxy=await c.request.get(front+'/api/files'+new URL(applied.media.url).pathname,{maxRedirects:0,failOnStatusCode:false});
+  const original=await proxy.body();
+  if(proxy.status()!==200||sha(original)!==imageSha)throw Error('Live original media proxy byte mismatch');
+  let imageProof={mode:'exact-png',renderedSha,originalSha:imageSha,src:img.pathname};
+  if(renderedSha!==imageSha){
+   if(!/^\/images\/pse-kali-1678-58c823c48ee0-(40|150|300|480|640|768|1024|1536|2560)w\.webp$/.test(img.pathname)&&!/^\/api\/images\/(40|150|300|480|640|768|1024|1536|2560)\/png\/wp-content\/uploads\/2026\/11\/pse-kali-1678-58c823c48ee0\.webp$/.test(img.pathname))throw Error('Unexpected rendition path '+img.pathname);
+   if(rendered.subarray(0,4).toString()!=='RIFF'||rendered.subarray(8,12).toString()!=='WEBP')throw Error('Live rendition not WebP');
+   const metrics=await p.evaluate(async({a,b})=>{
+    const decode=async(src)=>{let i=new Image();i.src=src;await i.decode();return i};
+    const x=await decode('data:image/png;base64,'+a),y=await decode('data:image/webp;base64,'+b);
+    const pixels=i=>{const c=document.createElement('canvas');c.width=64;c.height=64;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,64,64);g.drawImage(i,0,0,64,64);return g.getImageData(0,0,64,64).data};
+    const u=pixels(x),v=pixels(y);let sum=0,sq=0,n=0;
+    for(let j=0;j<u.length;j++){if(j%4===3)continue;const z=Math.abs(u[j]-v[j]);sum+=z;sq+=z*z;n++}
+    return {originalWidth:x.naturalWidth,originalHeight:x.naturalHeight,width:y.naturalWidth,height:y.naturalHeight,mae:sum/n,rmse:Math.sqrt(sq/n),aspectError:Math.abs(x.naturalWidth/x.naturalHeight-y.naturalWidth/y.naturalHeight)};
+   },{a:original.toString('base64'),b:rendered.toString('base64')});
+   imageProof={...imageProof,mode:'verified-responsive-webp',...metrics};report.imageProof=imageProof;await save();
+   if(metrics.aspectError>0.025||metrics.mae>8||metrics.rmse>18||metrics.width>metrics.originalWidth||metrics.width<40)throw Error('Optimized rendition differs visually '+JSON.stringify(metrics));
+  }
+  console.log('PSE_KALI_IMAGE_PROOF='+JSON.stringify(imageProof));
   for(const target of [...four.map(x=>x[1]),cat])if(!result.links.includes(front+target))throw Error('Live historical crosslink missing '+target);
   await p.screenshot({path:out+'/kali-'+width+'.png',fullPage:true,timeout:45000});
-  report.live.push({width,http:200,canonical,tables:2,decoded:true,imageSha,overflow:result.overflow});await save();await c.close();
+  report.live.push({width,http:200,canonical,tables:2,decoded:true,imageSha,imageProof,overflow:result.overflow});await save();await c.close();
  }
  const ctx=await b.newContext(),admin=await ctx.newPage();
  await admin.goto(wp+'/wp-admin/',{waitUntil:'domcontentloaded',timeout:60000});
