@@ -53,7 +53,8 @@ try{
    safeOrigin,sha256_match:false,bytes:null};
   if(safeOrigin&&item.mime_type==="image/jpeg"){
    try{
-    const get=await net.get(raw,{maxRedirects:2,timeout:35000});
+    const get=await net.get(raw,{maxRedirects:2,timeout:15000});
+    record.anonymousHTTP=get.status();
     if(get.status()===200){
       const buf=await get.body();
       if(buf.length<2*1024*1024){
@@ -61,6 +62,27 @@ try{
       }
     }
    }catch(e){record.downloadError=e.constructor?.name||"Error"}
+   if(url.origin===wp){
+    try{
+      const check=await p.evaluate(async src=>{
+        const u=new URL(src,location.href);
+        if(u.origin!==location.origin||!u.pathname.startsWith("/wp-content/uploads/"))throw Error("blocked-url");
+        const r=await fetch(u.href,{credentials:"same-origin"});
+        const contentType=r.headers.get("content-type")||"";
+        if(!r.ok)return{http:r.status,contentType};
+        const buf=await r.arrayBuffer();
+        if(buf.byteLength>2000000)return{http:r.status,contentType,oversized:true};
+        const h=await crypto.subtle.digest("SHA-256",buf);
+        return{http:r.status,contentType,bytes:buf.byteLength,
+          hash:[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("")};
+      },raw);
+      record.browserFetch={http:check.http,mime:check.contentType,bytes:check.bytes,
+        sha256_match:check.hash===originalSha};
+      if(check.hash===originalSha){
+       record.sha256_match=true;record.bytes=check.bytes;
+      }
+    }catch(e){record.browserFetchError=e.constructor?.name||"Error"}
+   }
   }
   report.media.push(record);
  }
