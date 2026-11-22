@@ -1,1 +1,9 @@
-Read-only full Joomla 804 identity source-to-native WordPress inventory after source-verified original #379 post #82119 publication and exact 301 rule #83503. Audit only, no CMS writes or Astro build.
+{
+  "schema": "pse-all-804-original-identity-public-rest-audit-request-v1",
+  "goal": "Reconcile 804 original Joomla source IDs to current WordPress published native Posts, Products, Pages and Galleries; stop reimporting already published content",
+  "originalCheckpoint": "docs/pse-legacy-migration-state.json",
+  "lastPublicDeployRun": 45041558507,
+  "preserveThirdPartySourceURLs": true,
+  "strictReadOnly": true,
+  "noWordPressWrites": true
+}
