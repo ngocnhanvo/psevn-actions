@@ -5,3 +5,5 @@ native_apply_run=44990349434
 production_deploy_run=44990670112
 production_deploy_result=success
 write_scope=category 1763 exact fifth href and exact source context 301 only; mandatory live original Page parity, fresh DB backup; preserve all ten tables and four previous links; no Product writes.
+
+retry_reason=prior #44990901832 stopped at optimized frontend image byte check before any CMS writes; source original and native original bytes matched, static Sharp WebP quality 80 verified in Astro source. Revised guard requires exact original through same-origin files proxy plus verified responsive rendition path, WebP signature, pixel similarity + dimensions, all original text/table tests unchanged; a70347d4. Fresh backup mandatory.
