@@ -25,8 +25,10 @@ const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1366,height:860}});
 const page=await ctx.newPage();
 try{
- await page.goto("https://admin-pse.webnvn.com/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
- if(await page.locator("#user_login").count()){
+ const first=await page.goto("https://admin-pse.webnvn.com/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
+ const initialLoginInput=await page.locator("#user_login").count();
+ console.log("PSE_ELEVEN_AUTH_PRELOGIN="+JSON.stringify({http:first?.status()||null,path:new URL(page.url()).pathname,hasLoginForm:!!initialLoginInput}));
+ if(initialLoginInput){
   await page.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME||"");
   await page.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD||"");
   const login=(await page.locator("#loginform").innerText()).slice(0,750);
@@ -39,8 +41,10 @@ try{
   }
   await page.locator("#wp-submit").click();
  }
- await page.goto("https://admin-pse.webnvn.com/wp-admin/post.php?post=248&action=edit",{waitUntil:"domcontentloaded",timeout:65000});
- if(page.url().includes("wp-login")||!await page.locator("#adminmenu").count())
+ const edit=await page.goto("https://admin-pse.webnvn.com/wp-admin/post.php?post=248&action=edit",{waitUntil:"domcontentloaded",timeout:65000});
+ const adminMenu=await page.locator("#adminmenu").count(),loginField=await page.locator("#user_login").count();
+ console.log("PSE_ELEVEN_AUTH_EDIT="+JSON.stringify({http:edit?.status()||null,path:new URL(page.url()).pathname,adminMenuPresent:!!adminMenu,loginFieldPresent:!!loginField}));
+ if(page.url().includes("wp-login")||!adminMenu)
   throw Error("WP admin session unavailable");
  const nonce=await page.evaluate(async()=>{
   if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
