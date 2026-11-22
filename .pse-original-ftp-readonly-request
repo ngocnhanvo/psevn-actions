@@ -1,1 +1,3 @@
 Owner requested source-backed PSE Joomla article/media/301 parity continuation. Run one bounded READ-ONLY original pse.vn FTPS/SFTP source inventory using only PSE_SOURCE_FTP_* isolated credentials. No downloads/content reads/writes; if credentials/root absent or Joomla root not verified, FAIL CLOSED. Follow strict source-authenticated evidence before any CMS writes.
+
+Retry after error reporter hardening commit 0e6ade63: source-only one-time diagnostic with allowlisted non-secret failure code, no hidden credentials printed, no FTP writes/deletes/reads. Prior #45023401261 stopped ValueError and produced no source evidence.
