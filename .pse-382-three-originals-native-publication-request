@@ -17,7 +17,7 @@
   ],
   "legacyRedirect": "/tin-tuc-su-kien/tin-cong-ty/tin-tong-hop/382-pvfcco-se-to-chuc-thanh-cong-chuyen-du-lich-chau-au-cho-khach-hang-tieu-bieu-cua-cong-ty.html",
   "onlyPostId": 83543,
-  "diagnosticsRevision": 2,
-  "previousRun": 45036903949,
-  "reason": "Strict origin and uploads path guard now checks parsed media URLs; prior attempt verified all three correct WordPress paths and made no publication or redirect writes"
+  "diagnosticsRevision": 3,
+  "previousRun": 45037789669,
+  "reason": "Fix Playwright request client to use absolute WP media JPEG URLs; earlier checks aborted prewrite"
 }
