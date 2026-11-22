@@ -1,0 +1,8 @@
+{
+  "schema": "pse-original-npk-1434-source-to-WP-category-provenance-readonly-v1",
+  "sourceJoomlaId": 1434,
+  "ownerThirdPartyImageRule": "Keep true third-party images; PSE-owned source image needs source equivalence",
+  "unresolvedLegacy404Run": 45043192023,
+  "noWordPressWrites": true,
+  "expectCompare": "original full article text/image list versus original source family and editable WordPress product category"
+}
