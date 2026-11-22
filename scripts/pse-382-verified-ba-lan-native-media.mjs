@@ -93,7 +93,7 @@ try{
  // Reuse ONLY that immutable Media; never upload a duplicate.
  if(exact.length!==1||exact[0].id!==83545)throw Error("Existing proven Media83545 not uniquely found");
  const media=exact[0];
- const u=new URL(media.source_url);
+ const u=new URL(media.source_url,wp);
  if(u.origin!==wp||u.protocol!=="https:"||!u.pathname.startsWith("/wp-content/uploads/")||
     decodeURIComponent(u.pathname.split("/").at(-1)||"").toLowerCase()!=="ba_lan.jpg"||
     media.mime_type!=="image/jpeg")throw Error("Media83545 actual canonical origin/path/mime mismatch");
