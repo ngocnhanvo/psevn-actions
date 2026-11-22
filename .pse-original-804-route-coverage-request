@@ -1,11 +1,15 @@
 {
-  "schema": "pse-original-804-route-coverage-read-only-qa-v1",
-  "productionRun": 45047656628,
-  "previousFull301Run": 45043136174,
-  "previousPublicInventoryRun": 45042854764,
-  "expectedSource": 804,
-  "previouslyVerifiedExactSourcePaths": 744,
-  "extraOriginalSourcePaths": 60,
-  "ownerExternalImagesRemainExternal": true,
-  "noCMSWrites": true
+  "schema": "pse-original-804-60-uncovered-production-parity-release-v2",
+  "sourceIdentityCount": 804,
+  "previousNativeVerifiedSources": 744,
+  "additionalSourcePaths": 60,
+  "productionReleaseRun": 45049550363,
+  "native34RedirectRun": 45049074759,
+  "previousExtraSourceRun": 45048066030,
+  "excludedUnpublishedGallery": 975,
+  "expectedSource301HTTP200": 803,
+  "sourceAlbum975RequiresEditorialChronologyDecision": true,
+  "readOnly": true,
+  "noCMSWrites": true,
+  "noBuild": true
 }
