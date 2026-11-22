@@ -134,7 +134,7 @@ try{
   if(!record){
    const r=await api("/wp-json/wp/v2/chuyen-huong-link","POST",{
     title:"PSE Joomla original article "+row.sourceId+" exact 301",status:"draft",
-    acf:{from_link:row.from,to_link:row.to,type:301,match_type:"Exact",enable:true}
+    acf:{from_link:row.from,to_link:row.to,type:"301",match_type:"Exact",enable:true}
    });
    if(r.http!==201||!Number.isSafeInteger(r.body?.id))throw Error("Original Joomla native 301 creation failed "+row.sourceId);
    record=r.body;report.writes.push({kind:"native-redirect-draft",sourceId:row.sourceId,id:record.id});await save();
