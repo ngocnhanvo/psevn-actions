@@ -49,6 +49,7 @@ jobs:
       PSE_SOURCE_FTP_USERNAME: ${{ secrets.PSE_SOURCE_FTP_USERNAME }}
       PSE_SOURCE_FTP_PASSWORD: ${{ secrets.PSE_SOURCE_FTP_PASSWORD }}
       PSE_SOURCE_SFTP_KNOWN_HOSTS: ${{ secrets.PSE_SOURCE_SFTP_KNOWN_HOSTS }}
+      PSE_SOURCE_FTP_CA_PEM: ${{ secrets.PSE_SOURCE_FTP_CA_PEM }}
       PSE_SOURCE_FTP_PROTOCOL: ${{ inputs.protocol || vars.PSE_SOURCE_FTP_PROTOCOL || 'ftps' }}
       PSE_SOURCE_FTP_ROOT: ${{ inputs.root || vars.PSE_SOURCE_FTP_ROOT || '/' }}
     steps:
