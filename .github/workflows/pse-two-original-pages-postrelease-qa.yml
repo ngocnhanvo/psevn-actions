@@ -1,0 +1,25 @@
+name: PSE two original Joomla Kali NPK Pages content and 301 postrelease QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-two-original-pages-postrelease-qa-request
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-two-original-pages-postrelease-qa.mjs
+      - run: node scripts/pse-two-original-pages-postrelease-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-two-original-kali-npk-source-content-301-live
+          path: artifacts/pse-two-original-pages-postrelease/report.json
+          retention-days: 30
+          if-no-files-found: warn
