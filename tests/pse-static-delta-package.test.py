@@ -35,7 +35,7 @@ class StaticDeltaContract(unittest.TestCase):
                 (client / "data/retained.json").write_bytes(b'{"v":1}')
                 (client / "data/changed.json").write_bytes(b'{"v":2}')
                 (client / "images/metadata.json").write_bytes(b'{"keep":true}')
-                remote = {"static_scope": "exclude-images-v1", "static": {
+                remote = {"static_scope": "exclude-images-v2-media", "static": {
                     "about/index.html": meta(b"unchanged-html"),
                     "_astro/a.js": meta(b"unchanged-js"),
                     "_astro/b.css": meta(b"OLD-CSS"),  # same size, different content
@@ -64,6 +64,37 @@ class StaticDeltaContract(unittest.TestCase):
                 os.chdir(previous)
 
 
+    def test_public_font_media_reuse_and_hash_drift(self):
+        previous = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmp:
+            os.chdir(tmp)
+            try:
+                root = Path("deploy/client")
+                (root / "fonts").mkdir(parents=True)
+                (root / "home-first").mkdir()
+                (root / "images").mkdir()
+                (root / "index.html").write_bytes(b"entry")
+                (root / "fonts/site.woff2").write_bytes(b"stable-font")
+                (root / "home-first/banner.webp").write_bytes(b"new-banner")
+                (root / "images/metadata.json").write_bytes(b"keep image delta")
+                Path(".pse-remote-image-manifest.json").write_text(json.dumps({
+                    "static_scope": "exclude-images-v2-media",
+                    "static": {
+                        "fonts/site.woff2": meta(b"stable-font"),
+                        "home-first/banner.webp": meta(b"old-banner"),
+                    },
+                }))
+                MOD["main"]()
+                marker = json.loads(Path("deploy/pse-static-delta.json").read_text())
+                self.assertEqual(marker["reuse"], ["fonts/site.woff2"])
+                self.assertIn("home-first/banner.webp", marker["files"])
+                self.assertNotIn("images/metadata.json", marker["files"])
+                self.assertFalse((root / "fonts/site.woff2").exists())
+                self.assertEqual((root / "home-first/banner.webp").read_bytes(), b"new-banner")
+                self.assertEqual((root / "images/metadata.json").read_bytes(), b"keep image delta")
+            finally:
+                os.chdir(previous)
+
     def test_oversized_marker_keeps_static_files_in_full_zip(self):
         previous = os.getcwd()
         with tempfile.TemporaryDirectory() as tmp:
@@ -83,7 +114,7 @@ class StaticDeltaContract(unittest.TestCase):
                                      sort_keys=True, separators=(",", ":"))
                 self.assertGreater(len(payload.encode("utf-8")), 1048576)
                 Path(".pse-remote-image-manifest.json").write_text(
-                    json.dumps({"static_scope": "exclude-images-v1", "static": local}), encoding="utf-8")
+                    json.dumps({"static_scope": "exclude-images-v2-media", "static": local}), encoding="utf-8")
                 with patch.dict(MOD["main"].__globals__, {"collect_local": lambda _: local}):
                     MOD["main"]()
                 self.assertEqual((client / "_astro/keep.js").read_bytes(), b"full-zip-fallback")
@@ -120,6 +151,12 @@ class StaticDeltaContract(unittest.TestCase):
         self.assertTrue(MOD["eligible"]("_astro/entry.a9Z-1.js"))
         self.assertTrue(MOD["eligible"]("about/index.html"))
         self.assertTrue(MOD["eligible"]("data/payload.json"))
+        self.assertTrue(MOD["eligible"]("fonts/site.woff2"))
+        self.assertTrue(MOD["eligible"]("home-first/banner.webp"))
+        self.assertTrue(MOD["eligible"]("logo-first/logo.svg"))
+        self.assertFalse(MOD["eligible"]("client/evil.php"))
+        self.assertFalse(MOD["eligible"]("robots.txt"))
+        self.assertFalse(MOD["eligible"]("sitemap.xml"))
 
 
 if __name__ == "__main__":
