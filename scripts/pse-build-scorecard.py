@@ -255,6 +255,7 @@ def parse_metrics(log: str) -> dict | None:
         "media_status": image_status,
         "stages": stage_results,
         "zip_bytes": zip_data.get("bytes"),
+        "zip_deflate_level": (9 if "PSE_RELEASE_ZIP_DEFLATE_LEVEL=9" in log else None),
         "reused_files": zip_data.get("reused_files"),
         "historical_phases": parse_historical_phases(log),
         "ftps_release": parse_ftps_release_phases(log, zip_data.get("bytes")),
@@ -309,8 +310,8 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "  it includes runner queue, checkout, preflight, cache restore/save and post-job.",
         "  It is **not** a measured single bottleneck or fully recoverable time.",
         "",
-        "| Run | Total | Outside stages | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | FTP data transfer | Slowest measured stage |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Run | Total | Outside stages | ZIP bytes | ZIP level | Astro | FTPS | Effective FTPS MiB/s | FTP data transfer | Slowest measured stage |",
+        "| --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in eligible:
         m = row["metrics"]
@@ -320,13 +321,14 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         effective_mibps = archive_bytes / (1024 * 1024) / (ftp_ms / 1000) if ftp_ms > 0 else 0
         outside = unmeasured_seconds(row)
         outside_label = f"{outside:.1f}s" if outside is not None else "unreconciled"
+        zip_level = str(m["zip_deflate_level"]) if m.get("zip_deflate_level") else "legacy / unknown"
         transfer = m.get("ftps_release")
         transfer_label = (
             f"{transfer['elapsed_ms']['transfer'] / 1000:.1f}s"
             if transfer and transfer['elapsed_ms']['transfer'] else "—"
         )
         lines.append(
-            f"| #{row['id']} | {row['seconds']:.1f}s | {outside_label} | {m['zip_bytes'] or '—'}"
+            f"| #{row['id']} | {row['seconds']:.1f}s | {outside_label} | {m['zip_bytes'] or '—'} | {zip_level}"
             f" | {m['stages']['astro']['elapsed_ms'] / 1000:.3f}s"
             f" | {ftp_ms / 1000:.3f}s | {effective_mibps:.2f} | {transfer_label}"
             f" | {slowest} ({m['stages'][slowest]['elapsed_ms'] / 1000:.1f}s) |"
@@ -378,6 +380,28 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
             " before attributing the delay to one stage."
         )
     if eligible:
+        if eligible[0]["metrics"].get("zip_deflate_level") == 9:
+            historical = next((
+                row for row in eligible[1:]
+                if row["metrics"].get("zip_deflate_level") is None
+                and type(row["metrics"].get("zip_bytes")) is int
+            ), None)
+            if historical:
+                newer = eligible[0]["metrics"]
+                older = historical["metrics"]
+                size_diff = newer["zip_bytes"] - older["zip_bytes"]
+                package_diff = (
+                    newer["stages"]["package"]["elapsed_ms"]
+                    - older["stages"]["package"]["elapsed_ms"]
+                ) / 1000
+                lines.append("")
+                lines.append(
+                    f"- **Deflate -9 trial vs latest legacy ZIP (same Astro SHA):**"
+                    f" bytes delta {size_diff:+d}, package delta {package_diff:+.2f}s."
+                    " The legacy compression level was not logged; its workflow"
+                    " used the default ZIP setting. Differences in generated output"
+                    " or FTPS network timing prevent causal speed claims."
+                )
         latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
         release = eligible[0]["metrics"].get("ftps_release")
         if release:
