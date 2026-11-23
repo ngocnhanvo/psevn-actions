@@ -17,9 +17,10 @@ PRODUCTION_WORKFLOW = ROOT / ".github" / "workflows" / "pse-production-deploy.ym
 
 
 class PseReleaseZipTest(unittest.TestCase):
-    def test_high_deflate_preserves_entry_bytes_and_signed_metadata(self):
+    def test_measured_default_deflate_preserves_signed_release_integrity(self):
         workflow = PRODUCTION_WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("zip -q -9 -r ../upload/pse-astro.zip .", workflow)
+        self.assertIn("zip -q -6 -r ../upload/pse-astro.zip .", workflow)
+        self.assertIn("PSE_RELEASE_ZIP_DEFLATE_LEVEL=6", workflow)
         self.assertIn("python3 ../actions-hub/scripts/pse-image-delta-package.py", workflow)
         self.assertIn("python3 ../actions-hub/scripts/pse-static-delta-package.py", workflow)
         self.assertIn("python3 actions-hub/scripts/pse-remote-unzip.py unpack", workflow)
