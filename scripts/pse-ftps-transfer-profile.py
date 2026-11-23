@@ -75,7 +75,7 @@ def main():
         raise ValueError("One-shot FTPS benchmark authorization missing")
     names = [".pse-ftps-profile-" + run_id + "-python.tmp",
              ".pse-ftps-profile-" + run_id + "-lftp.tmp"]
-    names.extend(".pse-ftps-profile-" + run_id + "-socket-" + str(i) + ".tmp"
+    names.extend(".pse-ftps-profile-" + run_id + "-block-" + str(i) + ".tmp"
                  for i in range(4))
     ftp = TunableTLS(context=ssl.create_default_context(), timeout=35)
     try:
@@ -153,29 +153,29 @@ def main():
                     ftp.delete(names[0])
                 except ftplib.error_perm:
                     pass
-            # Interleaved A/B/B/A trials against the SAME 2 MiB payload
-            # and control TLS connection. This measures only encrypted STOR.
-            # Kernel SO_SNDBUF caps are recorded, not silently assumed.
-            # Each temporary payload is removed and independently checked.
-            trial_hints = (4 * 1024 * 1024, 0, 0, 4 * 1024 * 1024)
-            for i, hint in enumerate(trial_hints):
+            # Interleaved A/B/B/A tests of TLS STOR write block size with
+            # the exact same 2 MiB payload, certificate verification, and
+            # kernel-managed socket send buffer in every trial.
+            # Avoid setting SO_SNDBUF: prior live test showed large 4 MiB
+            # hints were slower. The production client remains unchanged.
+            block_sizes = (64 * 1024, 256 * 1024, 256 * 1024, 64 * 1024)
+            ftp.send_buffer_hint = 0
+            for i, block_size in enumerate(block_sizes):
                 temp_name = names[i + 2]
-                ftp.send_buffer_hint = hint
                 try:
                     start = time.monotonic()
                     with payload.open("rb") as stream:
-                        ftp.storbinary("STOR " + temp_name, stream, blocksize=256 * 1024)
+                        ftp.storbinary("STOR " + temp_name, stream, blocksize=block_size)
                     seconds = time.monotonic() - start
                     if ftp.size(temp_name) != amount:
-                        raise RuntimeError("FTPS tuned socket trial size mismatch")
-                    print("BENCH_PYTHON_SOCKET trial=%d hint=%s"
-                          " actual_send_buffer=%s bytes=%d seconds=%.2f mibps=%.2f" %
-                          (i + 1, "4M" if hint else "default",
-                           ftp.negotiated_send_buffer, amount, seconds,
-                           amount / 1048576 / seconds), flush=True)
+                        raise RuntimeError("FTPS block size trial size mismatch")
+                    print("BENCH_PYTHON_BLOCK_SIZE trial=%d blocksize=%d"
+                          " send_buffer=%s bytes=%d seconds=%.2f mibps=%.2f" %
+                          (i + 1, block_size, ftp.negotiated_send_buffer,
+                           amount, seconds, amount / 1048576 / seconds),
+                          flush=True)
                 finally:
                     ftp.delete(temp_name)
-            ftp.send_buffer_hint = 0
 
             cmds = """
 set cmd:fail-exit yes
