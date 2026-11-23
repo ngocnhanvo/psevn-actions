@@ -83,6 +83,7 @@ jobs:
           from collections import defaultdict
           from zipfile import ZipFile, ZIP_DEFLATED
           import tempfile
+          import time
           root=Path("source/.cache")
           if not root.is_dir():
               raise SystemExit("Existing production cache not restored")
@@ -96,11 +97,28 @@ jobs:
               if bucket=="images": images.append(p)
           for bucket, (count,size) in sorted(groups.items()):
               print("CACHE_GROUP",bucket,"count",count,"raw_bytes",size)
-          with tempfile.TemporaryFile() as stream:
-              with ZipFile(stream,"w",compression=ZIP_DEFLATED,compresslevel=6) as archive:
-                  for i,p in enumerate(images):
-                      archive.write(p,arcname=f"image_{i}{p.suffix}")
-              stream.seek(0,2)
-              print("CACHE_IMAGES_ESTIMATED_ZIP_BYTES",stream.tell())
+          # Compare real production-cached bytes.  These already-compressed
+          # images are the costly cold/new-media ZIP payload, so -9 must have
+          # a measurable size benefit to justify additional CPU.
+          # Same ordered files and paths in both runs; never touch hosting.
+          if not images:
+              raise RuntimeError("No real PSE image cache entries available")
+          images.sort(key=lambda p:str(p.relative_to(root)))
+          results={}
+          for level in (6,9):
+              with tempfile.TemporaryFile() as stream:
+                  start=time.perf_counter()
+                  with ZipFile(stream,"w",compression=ZIP_DEFLATED,compresslevel=level) as archive:
+                      for i,p in enumerate(images):
+                          archive.write(p,arcname=f"image_{i}{p.suffix}")
+                  seconds=time.perf_counter()-start
+                  stream.seek(0,2)
+                  results[level]=(stream.tell(),seconds)
+                  print("PSE_REAL_IMAGE_ZIP level=%d images=%d zip_bytes=%d elapsed_s=%.3f" %
+                        (level,len(images),results[level][0],seconds))
+          size6,time6=results[6]
+          size9,time9=results[9]
+          print("PSE_REAL_IMAGE_ZIP_DELTA bytes=%+d fraction=%.5f cpu_seconds=%+.3f" %
+                (size9-size6,(size9-size6)/size6,time9-time6))
           print("PSE_ASSET_CACHE_INVENTORY=PASS; NO_ASTRO_BUILD; NO_FTP; NO_DEPLOY")
           PY
