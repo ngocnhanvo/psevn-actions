@@ -8,7 +8,7 @@ php=(root/"source-php/pse-unzip.php").read_text()
 ready=(root/"source-php/pse-unzip-v2.ready").read_text().strip()
 seo=(root/"source-astro/scripts/sync-seo-files.mjs").read_text()
 client=(root/"scripts/pse-remote-unzip.py").read_text()
-ftp=(root/"scripts/pse-resumable-ftp.sh").read_text()
+ftp=(root/"scripts/pse-ftps-upload.py").read_text()
 revision=(root/"scripts/pse-published-sitemap-revision.py").read_text()
 
 expected_workflow=[
@@ -18,7 +18,7 @@ expected_workflow=[
     "ref: master", "source/.cache", "cache: pnpm",
     "pnpm install --frozen-lockfile", "pnpm run build-git",
     "pse-remote-unzip.py verify", "pse-published-sitemap-revision.py",
-    "pse-resumable-ftp.sh", "pse-remote-unzip.py unpack",
+    "pse-ftps-upload.py", "pse-remote-unzip.py unpack",
     "PSE_CLIENT_ORIGIN", "PSE_CLIENT_HOST",
     "PSE_DEPLOY_REQUEST_DOMAIN", "ASTRO_FTP_TARGET",
     "FTP_ASTRO_DIR",
@@ -52,9 +52,16 @@ for token in ("PSE_ASTRO_UNZIP_PROTOCOL=2","/pse-unzip.php","pse-staging-build.j
               "SOURCE_REPO_PAT","sha256","SIGNED_UNZIP_SUCCESS"):
     assert token in client, "Signed activation port missing "+token
 assert 'os.environ["SOURCE_REPO_PAT"]' in client, "Inherited PAT-based signature is required"
-assert "set ssl:verify-certificate yes" in ftp, "TLS chain verification must remain enabled"
-assert "set ssl:verify-certificate no" not in ftp, "Insecure FTP client"
-assert "PSE_CLIENT_HOST" in ftp and "pse-astro.zip" in ftp
+# The production workflow uses Python FTP_TLS, not the retained lftp utility.
+# Check transport identity, certificate-chain verification, encrypted data
+# channel, resume and final remote-size verification without weakening guards.
+for token in ("ftplib.FTP_TLS(context=context", "ssl.create_default_context()",
+              "context.minimum_version = ssl.TLSVersion.TLSv1_2", "ftp.prot_p()",
+              "ftp.storbinary(", "rest=existing if existing else None",
+              "remote_size(ftp, final_name)", "PSE_CLIENT_HOST", "pse-astro.zip"):
+    assert token in ftp, "Missing authenticated Python FTPS safeguard: " + token
+for forbidden in ("ssl.CERT_NONE", "check_hostname = False", "PROT C"):
+    assert forbidden not in ftp, "Insecure Python FTPS setting: " + forbidden
 assert "PSE_PUBLISHED_SITEMAP_REVISION" in revision, "Save-token optimization changed"
 assert "FTP_TLS(context=ssl.create_default_context()" in revision, "Sitemap revision must use verified TLS"
 assert "TEMPLATE_PUBLISHED_SITEMAP_REVISION" in revision, "Validated PSE FTP token must be forwarded to inherited Astro SEO key"
