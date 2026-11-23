@@ -1,0 +1,27 @@
+name: PSE Kali 1426 related links preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1426-links-preflight.mjs
+      - .github/workflows/pse-kali-1426-links-preflight.yml
+permissions:
+  contents: read
+jobs:
+  proof:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Confirm WordPress source and target URLs
+        run: |
+          node --check scripts/pse-kali-1426-links-preflight.mjs
+          node scripts/pse-kali-1426-links-preflight.mjs
