@@ -1,43 +1,46 @@
 # Phản hồi ChatGPT mới nhất — PSE
 
-- Thời điểm: 2026-11-23 14:35+07:00 (Asia/Ho_Chi_Minh)
+- Thời điểm: 2026-11-23 14:58+07:00 (Asia/Ho_Chi_Minh)
 - Dự án: pse.vn
-- Repo đích: ngocnhanvo/psevn-actions
+- Repository: ngocnhanvo/psevn-actions
 - Branch: main
-- Mục tiêu: phân tích nguyên nhân lỗi layout trang https://pse.webnvn.com/npk-phu-my
-- Nguồn: WordPress native Page ID 83593 (ACF key pse-historical-npk-1434), Astro PublicPage.astro
-- Playwright: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45132374528 — PASS (read only)
-- Trạng thái phân tích: DONE, không có thay đổi CMS/Astro hoặc build
+- URL: https://pse.webnvn.com/npk-phu-my
+- WordPress Page: 83593, key pse-historical-npk-1434
+- Trạng thái: DONE — hoàn tất
+- CSS preview: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45133335872 — PASS
+- CSS WordPress save + backup: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45133483555 — PASS
+- Source image 404→200 proof: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45133604027 — PASS
+- Original image WordPress save + backup: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134051719 — PASS
+- WordPress Build Website trigger: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134370541 — PASS
+- Astro build + FTPS production deploy: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134447757 — PASS
+- Playwright production read-only QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134702577 — PASS
 
-## Phản hồi gửi người dùng
+## Phản hồi hoàn chỉnh
 
-Mình đã kiểm tra trực tiếp trang [NPK Phú Mỹ](https://pse.webnvn.com/npk-phu-my) bằng Playwright và đối chiếu với dữ liệu WordPress.
+Mình đã hoàn thành bản CSS sửa layout cho **NPK Phú Mỹ** và kiểm thử thành công ở 4 kích thước màn hình, trước khi lưu vào WordPress.
 
-**Đã xác định được nguyên nhân chính: bảng sản phẩm đang tự động phóng ảnh quá lớn, làm mất cân đối giữa cột hình và cột mô tả.**
+| Kích thước | Kết quả kiểm thử |
+|---|---|
+| 1440 px | Bảng sản phẩm giảm từ 23.424 px còn 8.381 px |
+| 1240 px | Ảnh gọn hơn, cột mô tả rộng hơn |
+| 768 px | Hai cột cân đối, không tràn ngang |
+| 390 px | Ảnh ở trên, mô tả bên dưới |
 
-Trang này là WordPress Page **ID `83593`**, dùng `PublicPage` trong Astro. Nội dung được nhập từ Joomla gồm 3 bảng HTML, trong đó bảng đầu có **20 hàng sản phẩm và 20 hình ảnh**.
+Cả **20 sản phẩm** được giữ nguyên. Hai bảng số liệu phía dưới không bị thay đổi bố cục.
 
-Tại màn hình 1440 px, trình duyệt đang phân bổ:
+Mình cũng đã sửa ảnh **NPK Phú Mỹ 16-8-16+TE** bằng cách thay đường dẫn thumbnail trả 404 bằng đường dẫn ảnh gốc còn hoạt động trên `dpm.vn`. Không tải ảnh về WordPress hoặc đổi sang sản phẩm khác.
 
-| Thành phần | Kích thước |
-|---|---:|
-| Chiều rộng bảng sản phẩm | 1.200 px |
-| Cột ảnh | 859 px |
-| Cột mô tả | 341 px |
-| Một ảnh sản phẩm điển hình | 857 × 1.178 px |
-| Chiều cao riêng bảng 20 sản phẩm | 23.424 px |
+Cả hai thay đổi đã được lưu và kiểm tra lại trên **WordPress Page `83593`**; HTML (ngoại trừ một URL ảnh) và các trường ACF khác được giữ nguyên. Lệnh build production đã được WordPress chấp nhận.
 
-Nguyên nhân là CSS chung trong `src/astro/pages/PublicPage.astro` ép bảng rộng `100%`, còn ảnh chỉ có `max-width: 100%` và `height: auto`, **không có giới hạn chiều cao**. Các thẻ ảnh trong dữ liệu WordPress cũng không khai báo kích thước.
+**Production đã được deploy và kiểm tra thành công.** Playwright đọc trực tiếp HTML/CSS đã xuất bản, không chèn CSS giả lập, kiểm tra 1440/1240/768/390 px, xác nhận cả 20 ảnh tải được, không còn ảnh lỗi và không tràn ngang. Hai bảng số liệu bên dưới giữ nguyên 4 hàng, không áp CSS bố cục dành cho danh sách sản phẩm.
 
-Ngoài ra, trường **CSS bổ sung (`acf.cssmore`) hiện đang trống**, nên trang NPK chưa được áp dụng bản sửa CSS riêng như trang Kali Phú Mỹ trước đó.
+- [Trang NPK Phú Mỹ](https://pse.webnvn.com/npk-phu-my)
+- [Sao lưu và lưu CSS WordPress](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45133483555)
+- [Sửa URL ảnh gốc WordPress](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134051719)
+- [Astro build/deploy production](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134447757)
+- [Playwright production PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45134702577)
 
-**Trên mobile 390 px**, bảng 20 sản phẩm vẫn giữ 2 cột, ảnh khoảng 149 px còn chữ chỉ khoảng 201 px. Vì vậy chữ bị chèn hẹp dù trang không cuộn ngang. Playwright cũng thấy **một ảnh nguồn ngoài dpm.vn không tải được** (kích thước tự nhiên 0 × 0), đây là lỗi ảnh riêng cần đối chiếu.
-
-**Hướng sửa đúng:** dùng trường CSS bổ sung của WordPress Page `83593` để giới hạn ảnh bảng sản phẩm khoảng 240–280 px, đặt tỉ lệ cột ảnh/mô tả hợp lý và xếp dọc trên mobile. Chỉ chọn **bảng đầu tiên chứa 20 sản phẩm** để không làm hỏng hai bảng số liệu khác, không hard-code dữ liệu trong Astro.
-
-[Kiểm tra Playwright trên production](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45132374528).
-
-Mình mới **xác định nguyên nhân, chưa ghi sửa WordPress hoặc build/deploy**, đúng yêu cầu kiểm tra lần này.
+Bạn có thể Ctrl + F5 để kiểm tra lại trang.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
