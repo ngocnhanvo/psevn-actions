@@ -1,1 +1,3 @@
 2026-11-23: PSE NPK Joomla 19 ?id= aliases identified from source Page 83593 and 20 native Products. Read-only production #45211684930 confirms 19 HTTP 404 query paths and existing original article 301 to /npk-phu-my. Preview exact paths and target200 before scoped CMS write; preserve existing article alias; use fresh backup.
+
+2026-11-23 Preflight PASS Actions #45213569061: 19 exact Joomla ?id paths, 19 verified native Product HTTP200/H1, 0 conflicting WordPress redirect records, existing original article 301 unchanged. Owner requested publish 19 redirects using fresh Updraft DB backup, native chuyen-huong-link CMS write, readback, standard Astro build and live HTTP 301 validation.
