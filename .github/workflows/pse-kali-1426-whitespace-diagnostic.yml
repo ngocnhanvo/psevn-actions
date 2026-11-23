@@ -11,15 +11,21 @@ jobs:
   diagnostic:
     if: github.repository == 'ngocnhanvo/psevn-actions'
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
-      options: --ipc=host
+    env:
+      PSE_CHROME_CHANNEL: chrome
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
+      - run: google-chrome --version
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Measure Kali hero to table gap and row paddings
         run: |
           node --check scripts/pse-kali-1426-whitespace-diagnostic.mjs
           node scripts/pse-kali-1426-whitespace-diagnostic.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-canada-layout-qa
+          path: artifacts/pse-kali-1426-whitespace-diagnostic/
+          retention-days: 14
