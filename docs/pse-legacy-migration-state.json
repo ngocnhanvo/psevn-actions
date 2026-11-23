@@ -2480,7 +2480,7 @@
     },
     "975": {
       "attempts": 1,
-      "attribution_attempts": 2,
+      "attribution_attempts": 3,
       "attribution_error": "WordPress post identity or taxonomy mismatch",
       "date_precision": "second",
       "date_source": "owner_approved_original_joomla_sql_created",
@@ -2494,7 +2494,7 @@
       "owner_approved_joomla_created_date": true,
       "production_http_200_verified": true,
       "reason": "Owner approved literal Joomla created timestamp; 110 authentic already-uploaded gallery photos reused, native WordPress Post83638 published, exact old301 WP83640, production/4-gallery/live-804 QA PASS",
-      "seo_attempts": 2,
+      "seo_attempts": 3,
       "seo_error": "Post slug differs from original migration",
       "source_created_date": "2011-03-06",
       "source_url": "https://www.pse.vn/tin-tuc-su-kien/thu-vien/anh/975-dai-hoi-cong-doan-nhiem-ky-ii-10-2013.html",
@@ -26332,7 +26332,7 @@
   },
   "phase": "import",
   "queue": [],
-  "runs": 260,
+  "runs": 261,
   "schema": "pse-legacy-article-migration-v1",
   "seen": [
     "https://www.pse.vn/",
