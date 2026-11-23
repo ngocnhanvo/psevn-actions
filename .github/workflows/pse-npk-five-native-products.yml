@@ -1,0 +1,71 @@
+name: PSE four missing NPK native Products and image links (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-npk-five-native-products.mjs
+      - .github/workflows/pse-npk-five-native-products.yml
+      - .pse-npk-five-native-products-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-npk-five-native-products
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_NPK_FIVE_PREVIEW_ONLY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Inventory four missing sources and native Media records (READ ONLY)
+        run: node --check scripts/pse-npk-five-native-products.mjs && node scripts/pse-npk-five-native-products.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-five-source-preflight
+          path: artifacts/pse-npk-five-native-products/
+          retention-days: 14
+          if-no-files-found: ignore
+  apply:
+    needs: preview
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish four missing NPK products'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh verified WordPress DB-only backup
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Create four Products, link five images, verify CMS
+        env:
+          PSE_NPK_FIVE_FRESH_BACKUP: 'yes'
+        run: node --check scripts/pse-npk-five-native-products.mjs && node scripts/pse-npk-five-native-products.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-five-published-and-rollback
+          path: artifacts/pse-npk-five-native-products/
+          retention-days: 30
+          if-no-files-found: warn
