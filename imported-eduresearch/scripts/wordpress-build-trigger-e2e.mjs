@@ -10,7 +10,11 @@ if (!ADMIN_URL || !USERNAME || !PASSWORD) {
 
 const origin = new URL(ADMIN_URL).origin;
 const BUILD_URL = `${origin}/wp-admin/admin.php?page=vcs-build-trigger`;
-const browser = await chromium.launch({ headless: true });
+const chromeChannel = process.env.PSE_CHROME_CHANNEL || '';
+if (chromeChannel && chromeChannel !== 'chrome') throw new Error('Unsupported Playwright browser channel');
+const browser = await chromium.launch(chromeChannel === 'chrome'
+  ? { headless: true, channel: 'chrome' }
+  : { headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
 const page = await context.newPage();
 
