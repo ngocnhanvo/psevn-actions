@@ -187,3 +187,40 @@ Lượt [#45088009728](https://github.com/ngocnhanvo/psevn-actions/actions/runs/
 - Kế hoạch 12 warm samples: sau commit Astro mới `7af6eab4`, cohort hợp lệ **1/12** như scorecard #45092745511; hai samples SHA cũ phải tách riêng. Việc chạy lặp production giả để tăng mẫu là **không được phép**. Tự động giám sát hiện hữu sẽ tích lũy mẫu từ các release thật cùng SHA; cold/changed-media sẽ phân nhóm riêng.
 
 **Hoàn tất thực thi trong phiên:** bounded queue + unit/CI + một production signed deploy + independent full QA của thay đổi đều **DONE**. **Chỉ nghiệm thu thống kê 12 warm cùng SHA & cold/media nguồn thực** còn **PARTIAL — chưa hoàn tất**; không được coi việc hết phiên là p50/p90 PASS.
+
+
+## Checkpoint 23/11/2026 — phân rã overhead và fixture cold-media không deploy
+
+### Repo và giới hạn thực thi
+
+- `knowledge/main` `1b5aab9e`, `psevn-actions/main` trước bước này `57ac0a6d`, Astro `psevn-astro/master` **`7af6eab4f4cf06367d207f155251c12c9f24befa`**, PHP `psevn-php/master` `5a3bfaa9d4f0a63a09311ac27aecc0fdda226b65`. Source Astro/PHP và production release **không thay đổi trong lượt này**; không thêm fake CMS revision hoặc production run.
+- Vẫn dùng WordPress owner Build Website → existing signed `wp_trigger_build` → Astro master → Python TLS FTPS → PHP verify + signed activation + smoke. Quy tắc cũ về source, caching, rollback, `.env`, sitemap và image-delta không đổi. Phần mới chỉ là telemetry không làm gate và fixture CI không tải WordPress.
+
+### Tìm nút thắt qua telemetry của bốn production run thật
+
+Đối chiếu chính xác 8 `PSE_STAGE` đo bằng monotonic với GitHub `updated_at - created_at`. **Ngoài stage** bao gồm queue/checkout/preflight/setup pnpm+Node/cache restore-save/post-job và khoảng trễ Actions; **không được gọi tất cả là thời gian lãng phí có thể cắt**.
+
+| Production run | Tổng | Tám stage đã đo | Ngoài tám stage | Astro | FTPS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [#45088287779](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088287779) | 90s | 58,797s | 31,203s | 21,616s | 10,490s |
+| [#45089261813](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45089261813) | 114s | 74,573s | 39,427s | 18,655s | 25,914s |
+| [#45090240402](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45090240402) | 122s | 91,299s | 30,701s | 23,116s | 38,138s |
+| [#45092574062](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45092574062) | 106s | 67,099s | **38,901s** | 19,009s | 21,365s |
+
+- **Đã triển khai scorecard read-only**: script `scripts/pse-build-scorecard.py` nay báo cột `Outside stages` và cảnh báo khi gap >30s hoặc không đối soát được. Không cộng bừa số âm, không tính số đo thiếu vào 12 samples. [Unit+read-only scorecard #45093794383](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45093794383) **SUCCESS**.
+- **Telemetry bổ sung cho *production runs tương lai***: `scripts/pse-build-metrics.py` thêm hai stage tùy chọn `preflight` (từ kiểm tra source/đích đến signed PHP verify+sitemap revision+manifest) và `cache_setup` (pnpm/Node/cache restore trước install). Đã ghép start/stop *vào các step hiện hữu* tại `.github/workflows/pse-production-deploy.yml`, đều `|| true` để telemetry lỗi không biến thành gate mới. Không xáo trộn thứ tự preflight/activate/checksum, không bỏ kiểm tra bảo mật. Scorecard giữ 8 stage là tiêu chí bắt buộc, ghi thêm breakdown `preflight`/`cache_setup`/remainder khi có log mới; thiếu log báo **pending**, không bịa số liệu lịch sử. [Image delta/PHP contract #45094080894](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45094080894), [architecture #45094059172](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45094059172), [final scorecard+offline tests #45094154384](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45094154384) **đều SUCCESS**.
+- Chưa có production run nào dùng telemetry bổ sung này, vì không tạo lượt deploy vô ích chỉ để lấy thời gian. Khi có nguồn CMS/Astro thật thay đổi, giữ đúng `PSE_DEPLOY_COMMIT` và nghiệm thu stage có thực trong run đó.
+
+### Fixture hàng đợi media với độ trễ thay đổi
+
+- **[Isolated CI #45093931457](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45093931457) SUCCESS**: checkout nguyên worker `runBoundedTasks.ts` từ Astro `master 7af6eab4`, nhập trực tiếp vào Node24 qua TypeScript strip. Chạy 24 tác vụ giả lập trong đó 3 tác vụ tải chậm; so sánh Promise.all từng lô cũ và worker mới; chốt đủ 24 kết quả, thứ tự và ceiling.
+- Kết quả mô phỏng theo mức đồng thời `2`: batch **615ms**, queue **419ms**; `4`: **566ms → 228ms**; `6`: **550ms → 205ms**; `8`: **542ms → 196ms**. Không dùng performance timing threshold làm gate (tránh GitHub runner jitter); test kiểm tra dữ liệu, ceiling và không leak task. **Đây KHÔNG phải phép đo tải ảnh cold thật của WordPress**, không có HTTP/Sharp và không suy ra hệ số lợi ích trong production.
+- CI source hiện có `#45092140698` đã PASS 14/14 Vitest với ảnh lỗi, task inflight, ordering và concurrency; hậu deploy thực `#45092574062` SUCCESS và Joomla QA `#45092745546` attempt2, album `#45092745524`, homepage `#45092745514` đều PASS. Không lặp lại QA này khi source/CMS/redirect không đổi.
+
+### Ranh giới kết luận
+
+**Đã hoàn tất**: code worker, signed production deploy, QA, đo ZIP/FTPS, benchmark Python vs lftp, scorecard phân loại same-source warm/no-new-media, fixture cold-task *giả lập*, và telemetry bổ sung đã kiểm thử offline.
+
+**Còn thiếu dữ liệu môi trường thật**: chỉ **1/12** warm/no-new-media hợp lệ trên cùng Astro SHA `7af6eab4` (source được giữ nguyên để tiếp tục tích lũy), chưa có số đo cold cache/changed-media **từ một lần phát hành nội dung thực tế**, và chưa đo breakdown preflight/cache_setup trên lần production kế tiếp. Không gọi mục tiêu `p50≤90s, p90<120s` là PASS khi chưa đủ 12 lượt. Tự động giám sát read-only hiện hữu tiếp tục tích lũy từ các lần build thật; không dispatch thêm production để giả mẫu.
+
+**Trạng thái tổng thể: PARTIAL — chưa hoàn tất (chờ 11 lượt warm hợp lệ và lần media/cold thực); các hạng mục độc lập có thể làm an toàn trong phiên đã thực thi + CI PASS.**
