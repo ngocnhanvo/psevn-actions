@@ -167,5 +167,33 @@ try{
    if(width===1240||width===390)await p.screenshot({path:"artifacts/npk-1434-layout/npk-"+width+".png",fullPage:true});
  }
  console.log("PSE_NPK_ERRORS="+JSON.stringify(issues.slice(0,15)));
+
+ const oldJoomlaIds=["1436","1435","1482","1438","1440","1442","self","1446","1449","1451","1455","1459","1460","1461","1462","1463","1464","1465","1483","1484"];
+ const productHrefs=await p.evaluate(html=>{
+   const doc=document.createElement("div");doc.innerHTML=html;
+   return [...doc.querySelector("table").rows].map(row=>row.querySelector("a:has(img)")?.getAttribute("href")||"");
+ },source);
+ if(productHrefs.length!==20||productHrefs.some(u=>!u.startsWith(front+"/san-pham/")))throw Error("Current 20-product mapping not available");
+ const legacyBase="/hoat-dong-kinh-doanh/san-pham/npk-phu-my.html";
+ const special="/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/1434-npk-phu-my.html";
+ const routeResults=[];
+ for(let offset=0;offset<20;offset+=4){
+   const group=await Promise.all(oldJoomlaIds.slice(offset,offset+4).map(async (id,n)=>{
+     const index=offset+n;
+     const oldPath=id==="self"?special:legacyBase+"?id="+id;
+     const expected=new URL(productHrefs[index]).pathname;
+     try{
+       const response=await p.request.get(front+oldPath,{timeout:30000,maxRedirects:0,failOnStatusCode:false});
+       const location=response.headers().location||"";
+       return {index,sourceId:id,oldPath,expected,http:response.status(),location,
+         exact301:response.status()===301&&location===expected};
+     }catch(error){return {index,sourceId:id,oldPath,expected,error:String(error).slice(0,120),exact301:false};}
+   }));
+   routeResults.push(...group);
+ }
+ const summary={tested:routeResults.length,exact301:routeResults.filter(r=>r.exact301).length,
+   no301:routeResults.filter(r=>!r.exact301).length,results:routeResults};
+ await writeFile("artifacts/npk-1434-layout/legacy-product-301-audit.json",JSON.stringify(summary,null,2)+"\n");
+ console.log("PSE_NPK_LEGACY_20_REDIRECT_AUDIT="+JSON.stringify(summary));
  console.log("PSE_NPK_LAYOUT_DIAGNOSTIC=PASS read_only=true");
 }finally{await browser.close();}
