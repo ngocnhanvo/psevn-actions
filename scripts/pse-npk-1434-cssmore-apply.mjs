@@ -140,6 +140,19 @@ try{
     if(!live)await pub.addStyleTag({content:css});
     else if(!await pub.locator("main style").evaluateAll(nodes=>nodes.some(n=>n.textContent.includes("/* WordPress Page 83593"))))
       throw Error("CSS not published on live Astro page");
+    if(live){
+      const related=await pub.locator("main .article-content a[href]").evaluateAll(links=>
+        links.filter(a=>a.textContent.trim()).map(a=>({
+          label:a.textContent.replace(/\s+/g," ").trim(),url:a.href
+        })));
+      const group=related.filter(x=>x.label.includes("Nhóm phân đơn và phân phức hợp Phú Mỹ"));
+      const kali=related.filter(x=>x.label.includes("Kali Phú Mỹ"));
+      if(group.length!==1||group[0].url!==groupNew||
+         kali.length!==1||kali[0].url!==kaliNew||
+         related.some(x=>/Nội dung đang cập nhật/i.test(x.label)||/^https?:\/\/(?:www\.)?pse\.vn\//i.test(x.url)))
+        throw Error("Published NPK text related links point outside new PSE site");
+      console.log("PSE_NPK_RELATED_LINKS_LIVE=PASS two_links_local=true placeholder_removed=true");
+    }
     await table.locator("img").evaluateAll(imgs=>imgs.forEach(img=>{img.loading="eager";}));
     await pub.waitForFunction(()=>[...document.querySelectorAll("main .article-content > div > table:first-of-type img")].every(img=>img.complete),
       null,{timeout:45000});
