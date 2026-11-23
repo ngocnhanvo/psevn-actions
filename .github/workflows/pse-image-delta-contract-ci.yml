@@ -11,6 +11,10 @@ on:
       - tests/pse-image-delta-package.test.py
       - .github/workflows/pse-image-delta-contract-ci.yml
       - .github/workflows/pse-production-deploy.yml
+      - scripts/pse-build-metrics.py
+      - tests/test_pse_build_metrics.py
+      - scripts/pse-ftps-upload.py
+      - tests/test_pse_ftps_upload.py
       - .github/workflows/pse-php-live-release.yml
   pull_request:
     branches: [main]
@@ -47,6 +51,9 @@ jobs:
           python3 tests/pse-image-delta-package.test.py
           python3 tests/pse-static-delta-package.test.py
           python3 tests/pse-remote-unzip-manifest.test.py
+          python3 -m py_compile scripts/pse-build-metrics.py scripts/pse-ftps-upload.py
+          python3 -m unittest discover -s tests -p 'test_pse_build_metrics.py' -v
+          python3 -m unittest discover -s tests -p 'test_pse_ftps_upload.py' -v
           ruby -e 'require "yaml"; YAML.parse_file(ARGV.fetch(0))' .github/workflows/pse-production-deploy.yml
       - name: Verify PHP pure-unit image integrity, symlinks and fallback
         shell: bash
@@ -54,6 +61,7 @@ jobs:
           set -euo pipefail
           php -l php-source/pse-image-delta.php
           php -l php-source/pse-unzip.php
+          php -l php-source/wp-content/plugins/github-trigger/redirects/endpoint.php
           php php-source/tests/pse-image-delta.php
           php php-source/tests/pse-static-delta.php
       - name: Assert no independent production build or signing bypass
