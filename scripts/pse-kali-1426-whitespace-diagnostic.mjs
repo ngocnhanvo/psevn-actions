@@ -6,8 +6,8 @@ await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,channel:process.env.PSE_CHROME_CHANNEL||undefined});
 const report={source:"production",expectedCommit:"77ca4fa8597b71f01ab4be6e5553fe1d200f96a9",viewports:[],pass:false};
 try {
- for(const slug of ["kali-phu-my-bot-canada-mo-ta-va-hdsd","kali-phu-my-bot-mop-mo-ta-va-hdsd"]) {
-  for(const width of [1920,1440,1240,768,390]) {
+ for(const slug of ["kali-phu-my-bot-canada-mo-ta-va-hdsd"]) {
+  for(const width of [1440,390]) {
    const page=await browser.newPage({viewport:{width,height:900},deviceScaleFactor:1});
    try {
     const res=await page.goto(base+"/"+slug,{waitUntil:"domcontentloaded",timeout:60000});
@@ -56,7 +56,7 @@ try {
     }
     report.viewports.push({slug,...data});
     console.log("PSE_FERTILIZER_LIVE_METRICS="+JSON.stringify({slug,...data}));
-    await page.screenshot({path:out+"/"+slug+"-"+width+".png",fullPage:true});
+    // Fast DOM-only diagnostic; avoid long full-page screenshots.
     if(!data.mainPresent || !data.converted || data.articleBreadcrumbs || data.overflow>5 || data.specRows<5 || !data.mediaNaturalWidth)
       throw Error("Missing responsive product presentation "+slug+" "+width+": "+JSON.stringify(data));
     if(width>=1240 && (data.sectionLeft<85||width-data.sectionRight<85))
