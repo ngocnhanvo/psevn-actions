@@ -56,6 +56,21 @@ try{
  console.log("PSE_NPK_WP_LINKS="+JSON.stringify(wpLinks));
  const sourceProductTargets=wpLinks.filter(x=>x.href && /pse\\.vn/i.test(x.href));
  console.log("PSE_NPK_LEGACY_PRODUCT_LINKS="+JSON.stringify({total:sourceProductTargets.length,links:sourceProductTargets}));
+ const variants=wpLinks.filter(x=>x.image && /pse\\.vn/.test(x.href));
+ const probe=await Promise.all(variants.map(async x=>{
+   const u=new URL(x.href);const id=u.searchParams.get("id");
+   try{
+     const response=await p.request.get(x.href,{timeout:30000,failOnStatusCode:false});
+     const html=await response.text();
+     const title=html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1]?.replace(/\\s+/g," ").trim().slice(0,130)||"";
+     return {id,http:response.status(),url:x.href,title,bytes:html.length,finalUrl:response.url()};
+   }catch(e){return {id,error:String(e).slice(0,140)}}
+ }));
+ console.log("PSE_NPK_VARIANT_PROBES="+JSON.stringify(probe));
+ const productsRes=await p.request.get(wp+"/wp-json/wp/v2/product?per_page=100&_fields=id,slug,title,status",{timeout:45000});
+ const products=productsRes.ok()?await productsRes.json():[];
+ console.log("PSE_NPK_WP_PRODUCT_REGISTRY="+JSON.stringify({status:productsRes.status(),products:products.filter(v=>/npk|phú mỹ|phu my|dpm/i.test((v.title?.rendered||"")+" "+v.slug)).map(v=>({id:v.id,slug:v.slug,title:v.title?.rendered}))}));
+
   const res=await p.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
   console.log("PSE_NPK_HTTP="+JSON.stringify({http:res?.status(),url:p.url(),title:await p.title()}));
  const geometry=await p.evaluate(()=>{
