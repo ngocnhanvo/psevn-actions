@@ -1,0 +1,1 @@
+PSE NPK Page 83593 source-backed missing four product rows (05412, 00066, 00063, 00062) and existing Woo Product ID 80958 code 05395; verify original media and native Woo mapping before any write. Preview-only first, then guarded backup and exact CMS writer after PASS.
