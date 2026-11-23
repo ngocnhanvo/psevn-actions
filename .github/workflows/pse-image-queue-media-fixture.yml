@@ -1,0 +1,41 @@
+name: PSE Pages cold-media task queue isolated fixture (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-image-queue-media-fixture.mjs
+      - .github/workflows/pse-image-queue-media-fixture.yml
+permissions:
+  contents: read
+jobs:
+  fixture:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout PSE measurement only (not the production deploy script)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact Astro production worker for offline fixture only
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Set up Node 24 for native TypeScript type stripping
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify bounded media queue performance and byte-safe task mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source symbolic-ref --short HEAD)" = master
+          test -s source/src/lib/wordpress/pages/runBoundedTasks.ts
+          echo "PSE_IMAGE_QUEUE_SOURCE_SHA=$(git -C source rev-parse HEAD)"
+          node --check scripts/pse-image-queue-media-fixture.mjs
+          node --experimental-strip-types scripts/pse-image-queue-media-fixture.mjs
+          echo "PSE_IMAGE_QUEUE_SCOPE=OFFLINE_SYNTHETIC_ONLY; NO_WP_FETCH; NO_BUILD; NO_FTP; NO_DEPLOY"
