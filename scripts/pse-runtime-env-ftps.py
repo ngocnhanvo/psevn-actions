@@ -70,11 +70,17 @@ def http_denies_env(frontend: str) -> bool:
         return exc.code in (403, 404)
 
 
-def ensure_http_guard(ftp: ftplib.FTP_TLS, frontend: str) -> None:
+def ensure_http_guard(ftp: ftplib.FTP_TLS, frontend: str) -> bool:
+    """Verify the exact public_html .env guard and return pre-existing state.
+
+    The caller is already inside the PWD-checked public_html directory.
+    Keep the checked state to avoid a redundant FTP SIZE round trip on
+    unchanged runtime credentials. The digest still checks actual bytes.
+    """
     if file_present(ftp, NAME):
         if not http_denies_env(frontend):
             raise ValueError("HTTP access to webroot .env is not blocked")
-        return
+        return True
     # A harmless .env probe proves the exact path is denied BEFORE uploading
     # any credentials. Never replace a live .env with a probe.
     marker = b"PSE_HTTP_DENY_PROBE=1\\n"
@@ -85,6 +91,7 @@ def ensure_http_guard(ftp: ftplib.FTP_TLS, frontend: str) -> None:
             raise ValueError("HTTP guard did not deny webroot .env")
     finally:
         ftp.delete(NAME)
+    return False
 
 
 def main() -> int:
@@ -129,11 +136,15 @@ def main() -> int:
         if ftp.pwd().rstrip("/") != domain_root + "/public_html":
             raise ValueError("Frontend root mismatch")
         # Already inside the verified Astro public_html root above.
-        ensure_http_guard(ftp, frontend)
+        existing_env = ensure_http_guard(ftp, frontend)
         web_env = domain_root + "/public_html/" + NAME
 
         expected = hashlib.sha256(payload).hexdigest()
-        if file_present(ftp, web_env) and ftp_digest(ftp, web_env) == expected:
+        # The HTTP guard already checked the exact .env path. Reuse the
+        # presence result, but always digest the real remote bytes before
+        # accepting an unchanged secret. Changed env still gets fresh
+        # pre-write collision checks and the original rollback procedure.
+        if existing_env and ftp_digest(ftp, web_env) == expected:
             ftp.sendcmd("SITE CHMOD 600 " + web_env)
             print("PSE_RUNTIME_ENV_FTPS=PASS state=unchanged webroot=guarded")
             return 0
