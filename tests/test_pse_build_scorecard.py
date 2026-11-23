@@ -138,6 +138,32 @@ class ScorecardTest(unittest.TestCase):
         )
         self.assertIn("instrumentation pending next real production run", legacy)
 
+    def test_separate_cold_media_and_very_slow_runs_without_mixing_shas(self):
+        warm = scorecard.parse_metrics(log(sha=SHA, warm=True))
+        cold = scorecard.parse_metrics(log(sha=SHA, warm=False))
+        changed = scorecard.parse_metrics(log(sha=SHA).replace(
+            "total=901 reuse=901", "total=902 reuse=901",
+        ))
+        older = scorecard.parse_metrics(log(sha=NEW_SHA))
+        rows = [
+            {"id": 4, "seconds": 89, "metrics": warm},
+            {"id": 3, "seconds": 223, "metrics": cold},
+            {"id": 2, "seconds": 199, "metrics": changed},
+            {"id": 1, "seconds": 251, "metrics": older},
+        ]
+        report = scorecard.summarize(rows, 0, 4)
+        self.assertIn("1/12", report)
+        self.assertIn("Cold / changed-media cohorts", report)
+        self.assertIn("| #3 | 223.0s | cold / unverified | unchanged |", report)
+        self.assertIn("| #2 | 199.0s | warm | changed |", report)
+        self.assertIn("Slow signed production runs above 180s", report)
+        self.assertIn(chr(96) + "bbbbbbbbb" + chr(96), report)
+        self.assertIn("| #1 |", report)
+        self.assertIn("SHA cohorts remain separate", report)
+        # The cross-SHA slow-run audit must never affect warm sample counts.
+        self.assertNotIn("p50=", report)
+        self.assertNotIn("12/12", report)
+
     def test_historical_log_phase_boundaries_are_strict_and_read_only(self):
         timestamped = "\n".join([
             "2026-11-23T00:00:00.0000000Z ##[group]Run actions/checkout@v4",
