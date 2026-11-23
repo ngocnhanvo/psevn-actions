@@ -102,3 +102,5 @@
 
 2026-11-23 Kali 1430 native Page #83674, Page83572 two links and Joomla query 301 #83677-83679 CMS readback PASS #45223471453. Trigger existing normal WP Build Website for Astro production, pending source updates, signed deployment then live QA. No force.
 2026-11-24 PSE historical fertilizer detail Pages 1425 and 1430 responsive layout: Astro master a4e622b5fe6842a078a8baf936608c493b34194b, production-master source QA #45228708290 PASS. Trigger exactly one existing authenticated WordPress Build Website via signed PSE PHP to Astro production, code-only subpage exception if pending=0, do not mutate CMS records, verify exact deployed SHA and mobile/desktop historical Page layout.
+
+2026-11-24 PSE owner-requested production release of historical fertilizer Page product-like layout: Astro master 9a92c64479b93f433b33b434c0f6b954f46870fe, source-only PublicPage.astro update. Trigger existing authenticated WordPress Build Website with signed production pipeline, normal pending-change guard, do not alter CMS content. Verify exact deployed SHA, Kali Canada /kali-phu-my-bot-canada-mo-ta-va-hdsd desktop/mobile and NPK product reference; no second deploy pipeline.
