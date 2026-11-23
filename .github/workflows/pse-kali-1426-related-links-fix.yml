@@ -1,0 +1,73 @@
+name: PSE Kali Page 83572 related links repair (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1426-related-links-fix.mjs
+      - .github/workflows/pse-kali-1426-related-links-fix.yml
+      - .pse-kali-1426-related-links-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-kali-page-83572-related-links-writer
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_KALI_LINKS_PREVIEW_ONLY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Exact Page preflight, destination check and preview (NO WRITES)
+        run: |
+          node --check scripts/pse-kali-1426-related-links-fix.mjs
+          node scripts/pse-kali-1426-related-links-fix.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-related-links-preview
+          path: artifacts/pse-kali-related-links/
+          retention-days: 14
+          if-no-files-found: ignore
+  apply:
+    needs: preview
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): fix Kali related links'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Backup WordPress database before scoped Page save
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Update only two stale related entries and verify readback
+        env:
+          PSE_KALI_FRESH_DB_BACKUP: 'true'
+        run: node scripts/pse-kali-1426-related-links-fix.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-related-links-rollback
+          path: artifacts/pse-kali-related-links/
+          retention-days: 30
+          if-no-files-found: warn
