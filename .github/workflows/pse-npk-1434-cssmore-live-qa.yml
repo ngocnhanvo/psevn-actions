@@ -1,0 +1,37 @@
+name: PSE NPK Page live layout and image QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-npk-1434-cssmore-live-qa-request
+permissions:
+  contents: read
+jobs:
+  verify-live:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_NPK_PREVIEW_ONLY: 'true'
+      PSE_NPK_VERIFY_PUBLISHED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify published WordPress CSS and all 20 images on production
+        run: |
+          node --check scripts/pse-npk-1434-cssmore-apply.mjs
+          node scripts/pse-npk-1434-cssmore-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-page-live-qa-screenshots
+          path: artifacts/pse-npk-1434-cssmore/
+          retention-days: 14
+          if-no-files-found: ignore
