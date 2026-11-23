@@ -1,0 +1,74 @@
+name: PSE Kali historical Page scoped CSS (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1426-cssmore.css
+      - scripts/pse-kali-1426-cssmore-apply.mjs
+      - .github/workflows/pse-kali-1426-cssmore.yml
+      - .pse-kali-1426-cssmore-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-kali-cssmore-page-83572
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_KALI_CSSMORE_PREVIEW_ONLY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate CSS with full image loading on desktop/tablet/mobile (no writes)
+        run: |
+          node --check scripts/pse-kali-1426-cssmore-apply.mjs
+          node scripts/pse-kali-1426-cssmore-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-cssmore-preview
+          path: artifacts/pse-kali-1426-cssmore/
+          retention-days: 14
+          if-no-files-found: ignore
+  apply:
+    needs: preview
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): style Kali variants via cssmore'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Backup WordPress database before CSS field update
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Update only Page 83572 ACF cssmore and verify readback
+        env:
+          PSE_KALI_FRESH_DB_BACKUP: 'true'
+        run: node scripts/pse-kali-1426-cssmore-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-cssmore-source-backup
+          path: artifacts/pse-kali-1426-cssmore/
+          retention-days: 30
+          if-no-files-found: warn
