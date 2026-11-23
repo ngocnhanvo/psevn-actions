@@ -72,3 +72,36 @@ jobs:
           grep -Fq 'pse-remote-unzip.py unpack' .github/workflows/pse-production-deploy.yml
           grep -Fq 'set ssl:verify-certificate yes' scripts/pse-resumable-ftp.sh
           echo 'PSE_DELTA_UNIT_CONTRACT=PASS; NO_ASTRO_BUILD; NO_FTP; NO_DEPLOY'
+
+  astro-redirect-registry:
+    name: Validate Astro redirect incremental cache (NO DEPLOY)
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Checkout Astro master for read-only redirect tests
+        uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - name: Set up Node 24 with pnpm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: source/pnpm-lock.yaml
+      - name: Run Astro redirect registry regression suite
+        shell: bash
+        working-directory: source
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile --prefer-offline
+          pnpm exec vitest run src/lib/wordpress/redirects/registry.test.ts src/lib/wordpress/redirects/registry.bounded-concurrency.test.ts src/lib/wordpress/redirects/registry.incremental-log.test.ts
+          echo "PSE_ASTRO_REDIRECT_REGISTRY=PASS; NO_ASTRO_BUILD; NO_DEPLOY"
