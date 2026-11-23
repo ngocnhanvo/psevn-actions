@@ -45,7 +45,7 @@ jobs:
     if: >-
       github.repository == 'ngocnhanvo/psevn-actions' &&
       github.ref == 'refs/heads/main' &&
-      github.event.head_commit.message == 'cms(pse): style NPK page via cssmore'
+      github.event.head_commit.message == 'cms(pse): repair NPK product image links'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container:
