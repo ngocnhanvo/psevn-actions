@@ -1,0 +1,25 @@
+name: PSE Kali whitespace forensic layout (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1426-whitespace-diagnostic.mjs
+      - .github/workflows/pse-kali-1426-whitespace-diagnostic.yml
+permissions:
+  contents: read
+jobs:
+  diagnostic:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Measure Kali hero to table gap and row paddings
+        run: |
+          node --check scripts/pse-kali-1426-whitespace-diagnostic.mjs
+          node scripts/pse-kali-1426-whitespace-diagnostic.mjs
