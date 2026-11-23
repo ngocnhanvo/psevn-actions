@@ -1,0 +1,37 @@
+name: PSE Kali image selection live browser QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-kali-1426-image-sizes-live-qa-request
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_KALI_IMAGE_PREVIEW_ONLY: 'true'
+      PSE_KALI_IMAGE_VERIFY_PUBLISHED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Assert 3 published Kali images select 300/480/640w by actual DPR
+        run: |
+          node --check scripts/pse-kali-1426-image-sizes.mjs
+          node scripts/pse-kali-1426-image-sizes.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-image-sizes-live-qa
+          path: artifacts/pse-kali-1426-image-sizes/
+          retention-days: 14
+          if-no-files-found: ignore
