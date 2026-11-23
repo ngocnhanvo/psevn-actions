@@ -15,6 +15,7 @@ on:
       - tests/test_pse_build_metrics.py
       - scripts/pse-ftps-upload.py
       - tests/test_pse_ftps_upload.py
+      - tests/test_pse_release_zip_compression.py
       - .github/workflows/pse-php-live-release.yml
   pull_request:
     branches: [main]
@@ -54,6 +55,7 @@ jobs:
           python3 -m py_compile scripts/pse-build-metrics.py scripts/pse-ftps-upload.py
           python3 -m unittest discover -s tests -p 'test_pse_build_metrics.py' -v
           python3 -m unittest discover -s tests -p 'test_pse_ftps_upload.py' -v
+          python3 -m unittest discover -s tests -p 'test_pse_release_zip_compression.py' -v
           ruby -e 'require "yaml"; YAML.parse_file(ARGV.fetch(0))' .github/workflows/pse-production-deploy.yml
       - name: Verify PHP pure-unit image integrity, symlinks and fallback
         shell: bash
