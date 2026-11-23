@@ -1,0 +1,38 @@
+name: PSE Kali 1427 1430 production 301 and Page QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1427-1430-live-qa.mjs
+      - .github/workflows/pse-kali-1427-1430-live-qa.yml
+      - .pse-kali-1427-1430-live-qa-request
+permissions:
+  contents: read
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: node --check scripts/pse-kali-1427-1430-live-qa.mjs
+  audit:
+    needs: syntax
+    if: >-
+      github.event.head_commit.message == 'qa(pse): verify Kali 1427 1430 live redirects'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node scripts/pse-kali-1427-1430-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-1427-1430-live-qa
+          path: artifacts/pse-kali-1427-1430-live-qa/
+          retention-days: 14
