@@ -43,6 +43,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Instrument from source validation through signed sitemap/inventory
+          # reads; keep all checks in the original fail-closed order.
+          python3 actions-hub/scripts/pse-build-metrics.py start preflight || true
           test -n "$ENV_FILE" && test -n "$SOURCE_REPO_PAT"
           test -n "$FTP_SERVER" && test -n "$FTP_USERNAME" && test -n "$FTP_PASSWORD"
           test "$(git -C source symbolic-ref --short HEAD)" = master
@@ -130,6 +133,10 @@ jobs:
             echo "::error::PSE signed read-only preflight failed"
             exit 1
           fi
+          python3 actions-hub/scripts/pse-build-metrics.py stop preflight 0 || true
+          # This timer crosses the existing pnpm/node/cache Actions without
+          # inserting any network requests, unsafe bypasses or new build steps.
+          python3 actions-hub/scripts/pse-build-metrics.py start cache_setup || true
       # GitHub-hosted runners are ephemeral: reuse downloaded packages
       # keyed by the Astro production lockfile. Never cache node_modules or .env.
       - name: Set up pnpm 9 (without installing project dependencies)
@@ -158,6 +165,7 @@ jobs:
         timeout-minutes: 6
         run: |
           set -euo pipefail
+          python3 ../actions-hub/scripts/pse-build-metrics.py stop cache_setup 0 || true
           python3 ../actions-hub/scripts/pse-build-metrics.py start install
           trap 'status=$?; python3 ../actions-hub/scripts/pse-build-metrics.py stop install "$status" || true' EXIT
           pnpm install --frozen-lockfile --prefer-offline
