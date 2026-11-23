@@ -72,9 +72,10 @@ async function findCaptchaInput() {
 
 async function loginAndOpenBuildPage() {
   const started = Date.now();
-  // WordPress redirects unauthenticated requests back to this exact protected
-  // Build Website page after login. Avoid loading another unrelated Post editor.
-  await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  // Retain the proven WordPress dashboard login and arithmetic CAPTCHA flow.
+  // After authentication, verify directly on the protected Build Website page;
+  // only use the legacy Post admin page if that verification fails.
+  await page.goto(`${origin}/wp-admin/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   const userInput = page.locator('#user_login');
   if (await visible(userInput)) {
     await userInput.fill(USERNAME);
@@ -86,18 +87,26 @@ async function loginAndOpenBuildPage() {
       await captchaInput.fill(String(answer));
     }
     await page.locator('#wp-submit').click();
-    // Some login extensions override redirect_to. A single authenticated
-    // navigation to Build Website is safe; no unrelated wp-admin/post.php.
-    if (!page.url().includes('page=vcs-build-trigger')) {
-      await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  }
+
+  // Always visit the exact secured page after login: URL/redirect_to alone
+  // does not establish a valid WP session, as verified by read-only QA.
+  await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (!(await visible(page.locator('#adminmenu')))) {
+    console.log('PSE_WP_AUTH_FALLBACK=PROTECTED_POST_GET');
+    await page.goto(`${origin}/wp-admin/post.php?post=248&action=edit`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
+    });
+    if (!(await visible(page.locator('#adminmenu')))) {
+      throw new Error('WordPress admin session is not authenticated');
     }
+    await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   }
   if (!(await visible(page.locator('#adminmenu')))) {
-    const loginError = await page.locator('#login_error').textContent().catch(() => '');
-    throw new Error(`WordPress protected Build Website admin verification failed. ${loginError || ''}`.trim());
+    throw new Error('WordPress Build Website menu/permissions are not available');
   }
-  // Nonce is a privileged, server-issued value on the actual Build Website
-  // page. It is never emitted to logs and is still required for both AJAX calls.
+  // A server-issued nonce tied to this protected page remains mandatory.
   await page.waitForFunction(() => Boolean(globalThis.vcsBuild?.ajax_url && globalThis.vcsBuild?.nonce), null, {
     timeout: 30000,
   });
