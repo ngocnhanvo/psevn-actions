@@ -41,7 +41,7 @@ try {
        const nodes=[["section",section],["article",wrapper],["layout",layout],["media",layout?.querySelector(".pse-fertilizer-product-media")],["specs",detail],["last-spec-child",detail?.lastElementChild],["last-table",detail?.querySelector("table:last-of-type")],["related",related]];
        const b=e=>{if(!e)return null;const x=rect(e),c=getComputedStyle(e);return {y:Math.round(x.y),bottom:Math.round(x.bottom),height:Math.round(x.height),marginTop:c.marginTop,marginBottom:c.marginBottom,paddingTop:c.paddingTop,paddingBottom:c.paddingBottom,minHeight:c.minHeight,display:c.display}};
        return {nodes:Object.fromEntries(nodes.map(([k,v])=>[k,b(v)])),
-        articleChildren:[...(wrapper?.children||[])].slice(-12).map(el=>({tag:el.tagName,cls:String(el.className).slice(0,90),text:el.textContent?.trim().slice(0,60),box:b(el)})),
+        articleChildren:[...(wrapper?.children||[])].slice(-12).map(el=>({tag:el.tagName,cls:String(el.className).slice(0,90),style:el.getAttribute("style"),text:el.textContent?.trim().slice(0,60),box:b(el),children:[...el.children].slice(-8).map(ch=>({tag:ch.tagName,cls:String(ch.className).slice(0,80),style:ch.getAttribute("style"),text:ch.textContent?.trim().slice(0,70),box:b(ch)}))})),
         lastSpecChildren:[...(detail?.children||[])].slice(-8).map(el=>({cls:el.className,text:el.textContent?.trim().slice(0,60),box:b(el)}))
        };
       })(),
