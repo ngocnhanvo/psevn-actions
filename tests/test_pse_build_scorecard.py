@@ -100,6 +100,22 @@ class ScorecardTest(unittest.TestCase):
         self.assertIn("PARTIAL", partial)
         self.assertNotIn("p50=", partial)
 
+    def test_unmeasured_workflow_overhead_is_visible_and_not_assumed_avoidable(self):
+        sample = scorecard.parse_metrics(log())
+        # Eight 1.5-second stages occupy 12s. The remaining 38s include
+        # checkout, queue, signed preflight, cache setup and post-job work.
+        row = {"id": 1, "seconds": 50.0, "metrics": sample}
+        self.assertEqual(scorecard.unmeasured_seconds(row), 38)
+        report = scorecard.summarize([row], failures=0, candidates=1)
+        self.assertIn("Outside stages", report)
+        self.assertIn("| #1 | 50.0s | 38.0s |", report)
+        self.assertIn("inspect checkout", report)
+        self.assertIn("not", report.lower())
+        # Fail closed when the stage durations do not reconcile with GitHub.
+        inconsistent = {"id": 2, "seconds": 8.0, "metrics": sample}
+        self.assertIsNone(scorecard.unmeasured_seconds(inconsistent))
+        self.assertIn("unreconciled", scorecard.summarize([inconsistent], 0, 1))
+
     def test_slow_ftps_warns_without_failing_production(self):
         sample = scorecard.parse_metrics(log())
         sample["stages"]["ftps"]["elapsed_ms"] = 38138
