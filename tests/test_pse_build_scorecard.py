@@ -22,6 +22,7 @@ def log(sha=SHA, warm=True, failed=False):
     lines = [
         f"- Astro production SHA: {sha}",
         'PSE_ZIP_METRICS {"bytes":2032324,"files":1633,"reused_files":1035}',
+        'PSE_IMAGE_DELTA=ENABLED total=901 reuse=901 bytes_saved=56170883',
     ]
     for stage in scorecard.REQUIRED:
         lines.append(f"PSE_STAGE name={stage} elapsed_ms=1500 exit={1 if failed and stage == 'smoke' else 0}")
@@ -40,8 +41,39 @@ class ScorecardTest(unittest.TestCase):
         self.assertEqual(data["zip_bytes"], 2032324)
         self.assertEqual(data["stages"]["astro"]["elapsed_ms"], 1500)
         self.assertTrue(data["warm"])
+        self.assertEqual(data["media_status"], "unchanged")
         self.assertIsNone(scorecard.parse_metrics(log(failed=True)))
         self.assertIsNone(scorecard.parse_metrics(log().replace("name=activate", "name=missing")))
+
+    def test_media_update_is_not_a_normal_warm_acceptance_sample(self):
+        updated = scorecard.parse_metrics(log().replace(
+            "total=901 reuse=901", "total=902 reuse=901",
+        ))
+        unknown = scorecard.parse_metrics(log().replace(
+            "PSE_IMAGE_DELTA=ENABLED", "PSE_IMAGE_DELTA=DISABLED",
+        ))
+        self.assertEqual(updated["media_status"], "changed")
+        self.assertEqual(unknown["media_status"], "unknown")
+        normal = scorecard.parse_metrics(log())
+        rows = [
+            {"id": 1, "seconds": 81, "metrics": normal},
+            {"id": 2, "seconds": 240, "metrics": updated},
+            {"id": 3, "seconds": 180, "metrics": unknown},
+        ]
+        report = scorecard.summarize(rows, failures=0, candidates=3)
+        self.assertIn("1/12", report)
+        self.assertIn("new media: 1; unknown image-delta status: 1", report)
+        self.assertNotIn("p50=", report)
+
+    def test_illogical_image_delta_fails_closed(self):
+        sample = scorecard.parse_metrics(log().replace(
+            "total=901 reuse=901", "total=900 reuse=901",
+        ))
+        self.assertEqual(sample["media_status"], "unknown")
+        report = scorecard.summarize(
+            [{"id": 1, "seconds": 80, "metrics": sample}], 0, 1,
+        )
+        self.assertIn("0/12", report)
 
     def test_cache_cold_and_masked_elapsed_are_handled(self):
         data = scorecard.parse_metrics(log(warm=False).replace("elapsed_ms", "ela***d_ms"))
