@@ -33,7 +33,8 @@ try {
         label:row.querySelector(".pse-fertilizer-spec-label")?.textContent?.trim().replace(/\\s+/g," ").slice(0,60),
         value:row.querySelector(".pse-fertilizer-spec-value")?.textContent?.trim().replace(/\\s+/g," ").slice(0,75)
       })),
-      legacyRowspan:section?.querySelectorAll("td[rowspan]").length||0
+      legacyRowspan:section?.querySelectorAll("td[rowspan]").length||0,
+      tableSchema:[...(section?.querySelectorAll(".pse-historical-kali-1425 table, .pse-historical-kali-1430 table")||[])].map(table=>({rows:table.rows.length,firstRowCells:table.rows[0]?.cells.length,cells:[...table.rows].map(row=>({cells:[...row.cells].map(cell=>({colspan:cell.getAttribute("colspan"),rowspan:cell.getAttribute("rowspan"),text:cell.textContent?.trim().replace(/\\s+/g," ").slice(0,55),images:cell.querySelectorAll("img").length})),html:row.outerHTML.slice(0,150)}))}))
      };
     });
     const image=page.locator("[data-pse-fertilizer-product-detail] img").first();
