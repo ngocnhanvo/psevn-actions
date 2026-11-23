@@ -79,6 +79,24 @@ try{
    }));
  },source);
  console.log("PSE_NPK_VARIANT_ROWS="+JSON.stringify(rows));
+ const missing=await p.evaluate(html=>{
+   const root=document.createElement("div");root.innerHTML=html;
+   return [2,11,12,13,15].map(i=>{
+    const tr=root.querySelector("table").rows[i],img=tr.cells[0].querySelector("img");
+    return {index:i,name:(tr.cells[1].querySelector("b,strong")?.textContent||tr.cells[1].textContent.slice(0,60)).trim(),
+      bodyHtml:tr.cells[1].innerHTML.slice(0,9000),bodyText:tr.cells[1].textContent.replace(/\\s+/g," ").trim().slice(0,2300),
+      img:img?.outerHTML,src:img?.getAttribute("src"),sourceAnchor:tr.cells[0].querySelector("a")?.getAttribute("href")};
+   });
+ },source);
+ console.log("PSE_NPK_FIVE_SOURCE_RECORDS="+JSON.stringify(missing));
+ const duplicate=await Promise.all([80958,80976].map(async id=>{
+  const r=await p.request.get(wp+"/wp-json/wp/v2/product/"+id+"?_fields=id,slug,title,content,excerpt,featured_media,product_cat,acf,meta,status",{timeout:40000});
+  return {id,http:r.status(),data:r.status()===200?await r.json():null};
+ }));
+ console.log("PSE_NPK_DUPLICATE_PRODUCTS="+JSON.stringify(duplicate).slice(0,15000));
+ const cats=await p.request.get(wp+"/wp-json/wp/v2/product_cat?per_page=100&hide_empty=false&_fields=id,slug,name,parent",{timeout:40000});
+ console.log("PSE_NPK_CATEGORIES="+JSON.stringify({http:cats.status(),data:cats.status()===200?await cats.json():null}).slice(0,12000));
+
 
 
   const res=await p.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
