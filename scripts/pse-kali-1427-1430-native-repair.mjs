@@ -63,6 +63,7 @@ try{
   }
   const core=root.cloneNode(true);core.querySelectorAll('.extranews_box,.extranews_separator').forEach(x=>x.remove());return {html:root.innerHTML,text:String(core.textContent||'').normalize('NFKC').replace(/\s+/g,' ').trim(),images,tables:[...root.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(c=>String(c.textContent||'').normalize('NFKC').replace(/\s+/g,' ').trim())))};
  },{html:source.html,links:source.links});
+ console.log('PSE_KALI_1430_CONTENT_PROOF='+JSON.stringify({images:clean.images,bodySha:sha(clean.text),expectedBodySha:r.bodySha,tables:clean.tables.length,sourceTables:source.tables.length,tablesEqual:JSON.stringify(clean.tables)===JSON.stringify(source.tables)}));
  if(clean.images!==1||sha(clean.text)!==r.bodySha||JSON.stringify(clean.tables)!==JSON.stringify(source.tables))throw Error('1430 source HTML parity mismatch');
  await writeFile(dir+'/rollback.json',JSON.stringify({parentId:83572,parentModified:parent.d.modified,originalRaw:raw,originalSha:sha(raw)},null,2)+'\n');
  const check=await api('pages/83572?context=edit&_fields=modified,content');
