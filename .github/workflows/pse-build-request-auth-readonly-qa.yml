@@ -57,3 +57,58 @@ jobs:
           node --check imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
           node imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
           echo 'PSE_WP_AUTH_ONLY=PASS; NO_DISPATCH; NO_WP_WRITE; NO_ASTRO_BUILD; NO_FTP'
+
+  system-chrome:
+    name: Verify WordPress auth using preinstalled GitHub Chrome (NO BUILD)
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_WP_STATUS_ONLY: 'true'
+      PSE_FORCE_BUILD_ONCE: 'false'
+      PSE_CHROME_CHANNEL: chrome
+    steps:
+      - name: Checkout PSE auth helper
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify the runner includes real Chrome without installing browser packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v google-chrome
+          google-chrome --version
+      - name: Validate protected origin and export WC_URL without logging it
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          values=[r.strip().split('=',1)[1].strip().strip('"').strip("'")
+                  for r in os.environ['ENV_FILE'].splitlines()
+                  if r.strip().startswith('WC_URL=')]
+          if len(values)!=1:raise RuntimeError('Expected one WP origin')
+          u=urlsplit(values[0])
+          if not (u.scheme=='https' and u.hostname and not u.username and not u.password
+                  and u.port in (None,443) and u.path in ('','/') and not u.query and not u.fragment):
+              raise RuntimeError('Invalid protected WP origin')
+          with open(os.environ['GITHUB_ENV'],'a') as out:
+              out.write('WC_URL='+u.geturl().rstrip('/')+'\n')
+          print('PSE_SYSTEM_CHROME_SOURCE=VALIDATED')
+          PY
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify admin login, nonce and build lock without dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+          node --check imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
+          node imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
+          echo 'PSE_SYSTEM_CHROME_AUTH=PASS; NO_WP_WRITE; NO_BUILD; NO_FTP'
