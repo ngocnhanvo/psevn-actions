@@ -18,7 +18,7 @@ jobs:
         github.event_name == 'workflow_dispatch'
         || (
           github.event_name == 'push'
-          && github.event.head_commit.message == 'perf(pse): one-shot bounded FTPS socket tuning comparison'
+          && github.event.head_commit.message == 'perf(pse): one-shot bounded FTPS blocksize comparison'
         )
       )
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install -qq -y --no-install-recommends lftp
           fi
-      - name: Profile 2 MiB same-host TLS socket buffers on removable synthetic files
+      - name: Profile 2 MiB same-host TLS block sizes on removable synthetic files
         shell: bash
         run: python3 scripts/pse-ftps-transfer-profile.py
       - name: Confirm one-shot probe result without touching release
