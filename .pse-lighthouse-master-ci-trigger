@@ -21,3 +21,4 @@
 2026-11-20 Verify contrast fix for legacy WordPress white text on pale product technical tables, Astro master 532fb8af7cc74e6cc87787f3878027baed693bed; full Vitest and no Astro build/deploy.
 
 2026-11-21 PSE investor PDF-only news listing card repair: source master db3a97688b21e3823ce137e2a901d6366d64cc67, one guarded fallback helper for actual PDF href, 34 of 35 placeholders have real original WP PDF links proven #44923393587, text-only/real photo cases tested; full production master Vitest + source boundary only, NO BUILD/FTP in QA.
+2026-11-24 Verify historical fertilizer article layout Astro master a4e622b5fe6842a078a8baf936608c493b34194b with complete production-master Vitest regression; QA ONLY, no build/deploy.
