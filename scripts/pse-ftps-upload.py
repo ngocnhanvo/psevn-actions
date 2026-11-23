@@ -99,6 +99,11 @@ def transfer(values: dict[str, str], archive: Path, remote_temp: str, size: int)
                     fp.seek(existing)
                     # FTP REST+STOR is required for resumable uploads. An
                     # unsupported REST raises an error rather than overwriting.
+                    # PSE two 2-MiB same-host live probes on 23/11/2026:
+                    # 4-MiB SO_SNDBUF hints degraded throughput; 64-KiB
+                    # STOR blocks had inconsistent, sometimes slower results.
+                    # Keep kernel-managed TCP buffers and the tested 256-KiB
+                    # block size until independent repeatable evidence exists.
                     phase_start = time.monotonic()
                     ftp.storbinary(f"STOR {remote_temp}", fp, blocksize=262144,
                                    rest=existing if existing else None)
