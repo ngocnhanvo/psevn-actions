@@ -24,6 +24,7 @@ if(process.env.GITHUB_REPOSITORY!=='ngocnhanvo/psevn-actions'||
 if(apply&&process.env.PSE_KALI_FRESH_DB_BACKUP!=='true')
   throw Error('Fresh verified WordPress DB backup required');
 const css=(await readFile('scripts/pse-kali-1426-cssmore.css','utf8')).trim();
+const previousCss=(await readFile('scripts/pse-kali-1426-cssmore.before-spacing.css','utf8')).trim();
 if(!css.startsWith('/* Page 83572')||!css.includes('.pse-historical-kali-1426')||
    css.length<700||css.length>5000||/<script|@import|url\s*\(/i.test(css))
   throw Error('Unapproved CSS candidate');
@@ -75,7 +76,8 @@ try{
     (raw.match(/<img(?:\s|>)/gi)||[]).length!==3)
       throw Error('WordPress Page shape/identity changed');
   const priorCss=String(d.acf?.cssmore||'');
-  if(priorCss&&priorCss.trim()!==css)throw Error('Existing cssmore changed; refuse overwrite');
+  if(priorCss&&priorCss.trim()!==css&&priorCss.trim()!==previousCss)
+    throw Error('Existing cssmore differs from approved baseline; refuse overwrite');
   if(liveVerification&&priorCss.trim()!==css)throw Error('Published CSS verification requires saved WordPress CSS');
   const rawHash=sha(raw);
   const backup={id:d.id,slug:d.slug,action:d.acf.action,key:d.acf.key,
@@ -106,7 +108,10 @@ try{
         const wrapper=document.querySelector('.pse-historical-kali-1426');
         const table=wrapper.querySelector('table');
         const r=el=>{const b=el.getBoundingClientRect();return {width:Math.round(b.width),height:Math.round(b.height),x:Math.round(b.x),right:Math.round(b.right)}};
+        const header=document.querySelector('.pse-public-page header');
+        const headingBottom=header?.getBoundingClientRect().bottom||0;
         return {width:innerWidth,documentWidth:document.documentElement.scrollWidth,
+          gapAfterHeader:Math.round(table.getBoundingClientRect().top-headingBottom),
           table:r(table),rows:[...table.rows].map(r),
           cells:[...table.rows].map(row=>[...row.cells].map(r)),
           images:[...wrapper.querySelectorAll('img')].map(r),
@@ -115,7 +120,8 @@ try{
           imageCount:wrapper.querySelectorAll('img').length};
       });
       console.log('PSE_KALI_CSSMORE_PREVIEW='+JSON.stringify(result));
-      if(result.imageCount!==3||result.documentWidth>width+3||
+      if(result.gapAfterHeader>25||result.gapAfterHeader<0||
+         result.imageCount!==3||result.documentWidth>width+3||
          result.images.some(i=>i.height>(width<=640?242:282)||i.width<=0)||
          result.table.height>(width<=640?2400:1500)||
          result.cells.some(cells=>cells.some(c=>c.right>width+4))||
