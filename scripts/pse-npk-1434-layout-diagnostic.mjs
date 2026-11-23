@@ -70,6 +70,16 @@ try{
  const productsRes=await p.request.get(wp+"/wp-json/wp/v2/product?per_page=100&_fields=id,slug,title,status",{timeout:45000});
  const products=productsRes.ok()?await productsRes.json():[];
  console.log("PSE_NPK_WP_PRODUCT_REGISTRY="+JSON.stringify({status:productsRes.status(),products:products.filter(v=>/npk|phú mỹ|phu my|dpm/i.test((v.title?.rendered||"")+" "+v.slug)).map(v=>({id:v.id,slug:v.slug,title:v.title?.rendered}))}));
+ const rows=await p.evaluate(html=>{
+   const root=document.createElement("div");root.innerHTML=html;
+   return [...(root.querySelector("table")?.rows||[])].map((tr,i)=>({
+     row:i,href:tr.querySelector("a[href]")?.getAttribute("href")||"",
+     name:(tr.cells?.[1]?.innerText||tr.cells?.[1]?.textContent||"").replace(/\\s+/g," ").trim().slice(0,200),
+     firstText:(tr.cells?.[1]?.querySelector("strong,b,h2,h3")?.textContent||"").replace(/\\s+/g," ").trim()
+   }));
+ },source);
+ console.log("PSE_NPK_VARIANT_ROWS="+JSON.stringify(rows));
+
 
   const res=await p.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
   console.log("PSE_NPK_HTTP="+JSON.stringify({http:res?.status(),url:p.url(),title:await p.title()}));
