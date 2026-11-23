@@ -4,7 +4,7 @@ import {readFile,writeFile,mkdir} from "node:fs/promises";
 import {createHash} from "node:crypto";
 
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
-const allowedMessage="cms(pse): style NPK page via cssmore";
+const allowedMessage="cms(pse): repair NPK product image links";
 const apply=event.head_commit?.message===allowedMessage && process.env.PSE_NPK_PREVIEW_ONLY!=="true";
 const live=process.env.PSE_NPK_VERIFY_PUBLISHED==="true";
 if(process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||
@@ -110,6 +110,81 @@ try{
     updated=raw.replace(groupOld,groupNew).replace(kaliOld,kaliNew)
       .replace(placeholderPattern,"");
   }
+  // Migrate only exact image-link destinations to independently verified Woo Products.
+  // Five Joomla variants have no unique native Product: preserve the image and
+  // description, but unwrap the obsolete (mostly HTTP 404) image anchor.
+  const productSlugs=[
+    "npk-phu-my-17-15-9-10s-te-1703","npk-phu-my-17-15-9-13s-te-1702",null,
+    "npk-phu-my-15-15-15-te-1717","npk-phu-my-16-8-16-te-1686",
+    "npk-phu-my-16-8-17-te-1687","npk-phu-my-16-7-17-te-1685",
+    "npk-phu-my-17-7-17-te-1689","npk-phu-my-20-7-7-te-1713",
+    "npk-phu-my-20-20-15-te-1699","npk-phu-my-17-17-8-13s-te-1700",
+    null,null,null,"npk-phu-my-16-16-8-13s-te-1705",null,
+    "npk-phu-my-16-16-16-te-1716","npk-phu-my-16-8-8-te-1712",
+    "npk-phu-my-15-5-20-te-1690","npk-phu-my-20-5-5-te-1711"
+  ];
+  const legacyIds=["1436","1435","1482","1438","1440","1442","self",
+    "1446","1449","1451","1455","1459","1460","1461","1462","1463",
+    "1464","1465","1483","1484"];
+  const normalizeTitle=x=>String(x||"").replace(/&nbsp;|&#160;/gi," ")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/gi,"d")
+    .toLowerCase().replace(/[^a-z0-9]/g,"");
+  const productRows=await admin.evaluate(html=>{
+    const root=document.createElement("div");root.innerHTML=html;
+    return [...(root.querySelector("table")?.rows||[])].map(row=>({
+      href:row.querySelector("a:has(img)")?.getAttribute("href")||"",
+      title:row.cells[1]?.textContent||""
+    }));
+  },updated);
+  if(productRows.length!==20)throw Error("Unexpected NPK variant row count");
+  const oldLinks=productRows.filter(row=>new URL(row.href||front,front).hostname==="pse.vn");
+  if(oldLinks.length===20){
+    const registry=await admin.request.get(wp+"/wp-json/wp/v2/product?status=publish&per_page=100&_fields=id,slug,title",{timeout:45000});
+    if(registry.status()!==200)throw Error("Woo Product registry unavailable");
+    const products=await registry.json();
+    if(!Array.isArray(products)||products.length<50)throw Error("Unexpected native Product registry");
+    const linkMap=new Map();
+    for(let i=0;i<productRows.length;i++){
+      const row=productRows[i],url=new URL(row.href),id=legacyIds[i],slug=productSlugs[i];
+      if(url.origin!=="https://pse.vn"||
+         (id==="self"
+          ? !url.pathname.endsWith("/1434-npk-phu-my.html")||url.hash!=="#link_tab"
+          : url.searchParams.get("id")!==id))
+        throw Error("Unexpected legacy NPK link in row "+i);
+      const matched=slug?products.filter(p=>p.slug===slug):[];
+      if(slug&&(matched.length!==1||
+         !normalizeTitle(row.title).startsWith(normalizeTitle(matched[0].title?.rendered))))
+        throw Error("NPK/Product title mismatch row "+i+" "+slug);
+      linkMap.set(row.href,slug?front+"/san-pham/"+slug:null);
+    }
+    if(linkMap.size!==20||[...linkMap.values()].filter(Boolean).length!==15)
+      throw Error("NPK link mapping not unique");
+    const urls=[...linkMap.values()].filter(Boolean);
+    const checks=await Promise.all(urls.map(url=>admin.request.get(url,{timeout:45000,maxRedirects:0})));
+    if(checks.some(response=>response.status()!==200))
+      throw Error("One or more exact native Product target not HTTP 200");
+    const seen=new Set();
+    const pattern=/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi;
+    updated=updated.replace(pattern,(whole,quote,href,inside)=>{
+      if(!linkMap.has(href))return whole;
+      if(seen.has(href)||!(inside.match(/<img(?:\s|>)/i))||
+         (inside.match(/<img(?:\s|>)/gi)||[]).length!==1||
+         inside.replace(/<[^>]*>/g,"").replace(/&nbsp;/gi,"").trim())
+        throw Error("Unexpected NPK image anchor "+href);
+      seen.add(href);
+      const target=linkMap.get(href);
+      return target?whole.replace(href,target):inside;
+    });
+    if(seen.size!==20)throw Error("Not all NPK image anchors rewritten");
+    console.log("PSE_NPK_IMAGE_LINKS_PREVIEW="+JSON.stringify({
+      total:20,nativeProducts:15,unlinkedMissingOrAmbiguous:5,
+      verifiedTargets:checks.length,changed:updated!==raw}));
+  }else if(oldLinks.length===0){
+    const local=productRows.filter(row=>row.href.startsWith(front+"/san-pham/")).length;
+    const unlinked=productRows.filter(row=>!row.href).length;
+    if(local!==15||unlinked!==5)throw Error("Unexpected previously migrated NPK image links");
+    console.log("PSE_NPK_IMAGE_LINKS_ALREADY_MIGRATED=PASS nativeProducts=15 unlinked=5");
+  }else throw Error("Partial link migration; manual reconciliation required");
   if(count(updated,groupNew)!==1||count(updated,kaliNew)!==1||
      [groupOld,kaliOld,placeholderOld].some(link=>updated.includes(link))||
      (updated.match(/<img(?:\s|>)/gi)||[]).length!==20||
