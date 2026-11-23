@@ -156,3 +156,10 @@ Lượt [#45088009728](https://github.com/ngocnhanvo/psevn-actions/actions/runs/
 - Lượt test FTPS là phép đo riêng **không được tính là production sample**. Bộ 12-run scorecard và automation hằng ngày đã có vẫn theo dõi phát hành thật; không tạo build/CMS delta giả, không đổi SHA Astro chỉ để đo. Bước tiếp theo: đợi đủ mẫu warm thực tế cùng SHA, nghiệm thu p50 ≤90s/p90 <120s, tách cold/media-change; chỉ thử phương án network/hosting mới khi có chốt bảo mật + rollback.
 
 **Phạm vi code/FTP probe & QA: DONE; nghiệm thu toàn bộ mục tiêu p50/p90 12 mẫu: PARTIAL — chưa hoàn tất.**
+
+
+### Xác thực phân nhóm warm/media trong scorecard
+
+- [`pse-build-scorecard.py`](../../scripts/pse-build-scorecard.py) nay bắt buộc đồng thời: production run success, đủ 8 phase success, restore cả pnpm store + Astro `.cache`, **cùng Astro SHA** và log `PSE_IMAGE_DELTA=ENABLED total=N reuse=N` (không phát sinh ảnh mới). Nếu `reuse < total`, tách sang nhóm `media changed`; thiếu/mâu thuẫn marker thì `unknown`, không được tính ngầm vào 12 warm/no-new-media samples. **Lượt thay ảnh mới và cache lạnh không được gộp với lượt warm thường**.
+- [Unit CI #45091554305](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45091554305) **PASS** với các ca có media mới, marker thiếu/sai, source SHA khác, cache lạnh, thiếu bước, stage fail và mẫu hợp lệ. Lượt [#45091537507](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45091537507) **FAILED trước đó** vì thay logic parser khi test fixture chưa được đồng bộ, đã cập nhật fixture và chạy lại CI PASS; chưa có sản xuất/deploy liên quan.
+- Đối chiếu lại cả hai production run hiện tại: **2/12 warm/no-new-media cùng SHA `23b468a9`**, `media_changed=0`, `media_unknown=0` [report #45091554305](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45091554305). Đây vẫn **không** phải nghiệm thu p50/p90 đầy đủ.
