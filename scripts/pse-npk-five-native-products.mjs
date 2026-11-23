@@ -121,7 +121,9 @@ try{
   if(!media||media.mime_type!=="image/png"||!media.source_url?.endsWith("/"+p.image))
    throw Error("Original image not registered in WP Media Library "+p.image);
   p.mediaId=Number(media.id);
-  const response=await admin.request.get(media.source_url,{timeout:40000});
+  const mediaUrl=new URL(media.source_url,wp);
+  if(mediaUrl.origin!==wp)throw Error("Media URL leaves PSE WordPress origin "+p.image);
+  const response=await admin.request.get(mediaUrl.href,{timeout:40000});
   if(response.status()!==200||hash(await response.body())!==p.imageDigest)
    throw Error("Media source hash mismatch "+p.image);
   const duplicates=registry.value.filter(x=>normalize(x.title?.raw||x.title?.rendered||"")===normalize(p.title));
