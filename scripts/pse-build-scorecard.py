@@ -151,6 +151,22 @@ def parse_metrics(log: str) -> dict | None:
     }
 
 
+def unmeasured_seconds(row: dict) -> float | None:
+    """Gap between full GitHub workflow and monotonic measured stages.
+
+    Includes queue, checkouts, preflight, pnpm/cache setup and post-job work.
+    This is NOT automatically wasted time or a guarantee it can be removed.
+    """
+    metrics = row.get("metrics")
+    if not metrics or not all(name in metrics["stages"] for name in REQUIRED):
+        return None
+    measured = sum(metrics["stages"][name]["elapsed_ms"] for name in REQUIRED) / 1000
+    gap = row["seconds"] - measured
+    # GitHub run timestamps are whole-second resolution. A negative result
+    # means telemetry cannot be reconciled; never display it as zero overhead.
+    return round(gap, 3) if gap >= 0 else None
+
+
 def summarize(rows: list[dict], failures: int, candidates: int) -> str:
     # newest successful, complete-metrics production run defines the source
     latest = next((row for row in rows if row.get("metrics")), None)
@@ -179,9 +195,12 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "- Cache warm requires a confirmed restored pnpm store and Astro `.cache`.",
         "- The image delta must confirm all existing images were reused; new-media/cold cohorts are separate.",
         "- Source revisions are never mixed in a statistical cohort.",
+        "- Outside-stages time = GitHub workflow total minus eight monotonic stages;",
+        "  it includes runner queue, checkout, preflight, cache restore/save and post-job.",
+        "  It is **not** a measured single bottleneck or fully recoverable time.",
         "",
-        "| Run | Total | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | Slowest measured stage |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Run | Total | Outside stages | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | Slowest measured stage |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in eligible:
         m = row["metrics"]
@@ -189,19 +208,29 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         ftp_ms = m["stages"]["ftps"]["elapsed_ms"]
         archive_bytes = m["zip_bytes"] if type(m["zip_bytes"]) is int else 0
         effective_mibps = archive_bytes / (1024 * 1024) / (ftp_ms / 1000) if ftp_ms > 0 else 0
+        outside = unmeasured_seconds(row)
+        outside_label = f"{outside:.1f}s" if outside is not None else "unreconciled"
         lines.append(
-            f"| #{row['id']} | {row['seconds']:.1f}s | {m['zip_bytes'] or '—'}"
+            f"| #{row['id']} | {row['seconds']:.1f}s | {outside_label} | {m['zip_bytes'] or '—'}"
             f" | {m['stages']['astro']['elapsed_ms'] / 1000:.3f}s"
             f" | {ftp_ms / 1000:.3f}s | {effective_mibps:.2f}"
             f" | {slowest} ({m['stages'][slowest]['elapsed_ms'] / 1000:.1f}s) |"
         )
     if eligible:
         latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
+        latest_outside = unmeasured_seconds(eligible[0])
         if latest_ftp > 30_000:
             lines.append("")
             lines.append(
                 "**Transfer diagnostic:** latest verified FTPS stage exceeded 30s;"
                 " examine TLS/transfer/rename phases before tuning transport."
+            )
+        if latest_outside is None or latest_outside > 30:
+            lines.append("")
+            lines.append(
+                "**Workflow diagnostic:** more than 30s outside the eight"
+                " measured stages (or inconsistent timings); inspect checkout,"
+                " signed preflight, cache restore and post-job steps individually."
             )
     lines.append("")
     if len(totals) < 12:
