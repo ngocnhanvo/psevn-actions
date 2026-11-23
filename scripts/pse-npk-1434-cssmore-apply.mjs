@@ -178,13 +178,16 @@ try{
           maxCellRight:Math.max(...cells.map(c=>c.right)),
           otherTables:[{rows:second.rows.length,display:getComputedStyle(second).display,...rect(second)},
                        {rows:third.rows.length,display:getComputedStyle(third).display,...rect(third)}],
-          h1:document.querySelector("main h1")?.textContent.trim(),titleGap};
+          h1:document.querySelector("main h1")?.textContent.trim(),titleGap,
+          headerBottomPadding:parseFloat(getComputedStyle(document.querySelector("main.pse-public-page > header > div")).paddingBottom),
+          bodyTopPadding:parseFloat(getComputedStyle(document.querySelector("main.pse-public-page > section.pse-public-body")).paddingTop)};
       });
       const broken=state.images.filter(x=>x.naturalW===0);
       console.log("PSE_NPK_CSSMORE_LAYOUT="+JSON.stringify({
         width,state:{...state,images:undefined},
         broken:broken.map(x=>x.src),maxImageHeight:Math.max(...state.images.map(x=>x.height))}));
-      if(state.h1!=="NPK Phú Mỹ"||state.titleGap===null||state.titleGap<45||state.titleGap>110||state.docWidth>width+3||
+      if(state.h1!=="NPK Phú Mỹ"||state.titleGap===null||state.titleGap<15||state.titleGap>110||
+         Math.abs(state.headerBottomPadding-(width<768?36:48))>1||Math.abs(state.bodyTopPadding-16)>1||state.docWidth>width+3||
          state.imageCount!==20||state.maxCellRight>width+4||
          state.images.some(x=>x.width<=0||x.height>(width<=640?242:282))||
          state.first.height>(width<=640?16000:11000)||
