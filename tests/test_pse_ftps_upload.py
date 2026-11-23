@@ -19,12 +19,14 @@ class FakeFTP:
         self.files = state if state is not None else {}
         self.refuse_rest = refuse_rest
         self.commands = []
+        self.block_sizes = []
     def size(self, name):
         if name not in self.files:
             raise uploader.ftplib.error_perm("550 Missing file")
         return len(self.files[name])
     def storbinary(self, command, fileobj, blocksize=8192, rest=None):
         self.commands.append(("STOR", command, rest))
+        self.block_sizes.append(blocksize)
         if self.refuse_rest and rest is not None:
             raise uploader.ftplib.error_perm("502 REST unsupported")
         key = command.removeprefix("STOR ")
@@ -61,6 +63,7 @@ class PythonFTPSTest(unittest.TestCase):
         with patch.object(uploader, "connect", return_value=f):
             uploader.transfer(self.config, self.zip, self.stage, self.zip.stat().st_size)
         self.assertEqual(f.files["pse-astro.zip"], self.zip.read_bytes())
+        self.assertEqual(f.block_sizes, [262144])  # measured signed release default
         self.assertNotIn(self.stage, f.files)
 
     def test_resume_sha_specific_partial_file(self):
