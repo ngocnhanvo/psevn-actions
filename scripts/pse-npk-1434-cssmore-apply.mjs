@@ -170,7 +170,7 @@ try{
       console.log("PSE_NPK_CSSMORE_LAYOUT="+JSON.stringify({
         width,state:{...state,images:undefined},
         broken:broken.map(x=>x.src),maxImageHeight:Math.max(...state.images.map(x=>x.height))}));
-      if(state.h1!=="NPK Phú Mỹ"||state.titleGap===null||state.titleGap<12||state.titleGap>65||state.docWidth>width+3||
+      if(state.h1!=="NPK Phú Mỹ"||state.titleGap===null||state.titleGap<12||state.titleGap>45||state.docWidth>width+3||
          state.imageCount!==20||state.maxCellRight>width+4||
          state.images.some(x=>x.width<=0||x.height>(width<=640?242:282))||
          state.first.height>(width<=640?16000:11000)||
