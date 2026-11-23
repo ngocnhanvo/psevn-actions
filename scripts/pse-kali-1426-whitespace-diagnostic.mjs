@@ -33,7 +33,7 @@ try{
     wrapper:b(wrap),wrapperChildren:wrap?[...wrap.children].slice(0,12).map(b):[],
     table:b(table),tableRows:table?[...table.rows].map(b):[],
     cells:table?[...table.rows].map(row=>[...row.cells].map(b)):[],
-    images:wrap?[...wrap.querySelectorAll("img")].map(b):[],above}};
+    images:wrap?[...wrap.querySelectorAll("img")].map(b):[],above};
   });
   console.log("PSE_KALI_WHITESPACE_METRICS="+JSON.stringify(data).slice(0,36000));
  }
