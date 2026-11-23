@@ -9,6 +9,7 @@ if (!ADMIN_URL || !USERNAME || !PASSWORD) {
 }
 
 const origin = new URL(ADMIN_URL).origin;
+const BUILD_URL = `${origin}/wp-admin/admin.php?page=vcs-build-trigger`;
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
 const page = await context.newPage();
@@ -69,49 +70,43 @@ async function findCaptchaInput() {
   return null;
 }
 
-async function login() {
-  await page.goto(`${origin}/wp-admin/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+async function loginAndOpenBuildPage() {
+  const started = Date.now();
+  // WordPress redirects unauthenticated requests back to this exact protected
+  // Build Website page after login. Avoid loading another unrelated Post editor.
+  await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   const userInput = page.locator('#user_login');
-
-  if (!(await visible(userInput))) {
-    if (page.url().includes('/wp-admin/')) return;
-    throw new Error(`Unexpected WordPress login page: ${page.url()}`);
+  if (await visible(userInput)) {
+    await userInput.fill(USERNAME);
+    await page.locator('#user_pass').fill(PASSWORD);
+    const answer = solveArithmetic(await page.locator('#loginform').innerText());
+    if (answer !== null) {
+      const captchaInput = await findCaptchaInput();
+      if (!captchaInput) throw new Error('Arithmetic CAPTCHA detected but input was not found.');
+      await captchaInput.fill(String(answer));
+    }
+    await page.locator('#wp-submit').click();
+    // Some login extensions override redirect_to. A single authenticated
+    // navigation to Build Website is safe; no unrelated wp-admin/post.php.
+    if (!page.url().includes('page=vcs-build-trigger')) {
+      await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    }
   }
-
-  await userInput.fill(USERNAME);
-  await page.locator('#user_pass').fill(PASSWORD);
-
-  const answer = solveArithmetic(await page.locator('#loginform').innerText());
-  if (answer !== null) {
-    const captchaInput = await findCaptchaInput();
-    if (!captchaInput) throw new Error('Arithmetic CAPTCHA detected but input was not found.');
-    await captchaInput.fill(String(answer));
-  }
-
-  // waitForLoadState can resolve immediately on the pre-click login document.
-  // Verify the protected admin page, not the transient wp-login.php URL.
-  // This is the same verified navigation used by PSE's CMS migration jobs.
-  await page.locator('#wp-submit').click();
-  await page.goto(`${origin}/wp-admin/post.php?post=248&action=edit`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 60000,
-  });
   if (!(await visible(page.locator('#adminmenu')))) {
     const loginError = await page.locator('#login_error').textContent().catch(() => '');
-    throw new Error(`WordPress login failed after protected admin verification. ${loginError || ''}`.trim());
+    throw new Error(`WordPress protected Build Website admin verification failed. ${loginError || ''}`.trim());
   }
-}
-
-try {
-  await login();
-  await page.goto(`${origin}/wp-admin/admin.php?page=vcs-build-trigger`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 60000,
-  });
-
+  // Nonce is a privileged, server-issued value on the actual Build Website
+  // page. It is never emitted to logs and is still required for both AJAX calls.
   await page.waitForFunction(() => Boolean(globalThis.vcsBuild?.ajax_url && globalThis.vcsBuild?.nonce), null, {
     timeout: 30000,
   });
+  console.log('PSE_WP_TRIGGER_TIMING phase=login_admin elapsed_ms=' + (Date.now() - started));
+}
+
+try {
+  await loginAndOpenBuildPage();
+  const statusStarted = Date.now();
 
   // Reconcile completed GitHub run through WordPress' existing AJAX status API
   // before making a new dispatch; only the server may release its matching lock.
@@ -135,11 +130,15 @@ try {
       pending: Number(json?.data?.pending_count ?? 0),
     };
   });
+  console.log('PSE_WP_TRIGGER_TIMING phase=status_check elapsed_ms=' + (Date.now() - statusStarted));
   console.log('PSE_WP_BUILD_STATUS_CHECK=' + state.state);
   if (state.active || ['loading', 'queued', 'in_progress'].includes(state.state)) {
     throw new Error('WordPress still reports an active build; do not dispatch another one');
   }
   console.log('PSE_WP_PENDING_CHANGE_COUNT=' + state.pending);
+  if (process.env.PSE_WP_STATUS_ONLY === 'true') {
+    console.log('PSE_WP_BUILD_AUTH_READONLY=PASS; no build requested');
+  } else {
   // Explicit one-shot owner approval flows only through this WordPress/PHP
   // authenticated endpoint. The plugin still enforces nonce, privilege and lock.
   const approvedException = process.env.PSE_FORCE_BUILD_ONCE === 'true';
@@ -150,6 +149,7 @@ try {
 
   const isExceptional = state.pending <= 0 && approvedException;
   console.log('PSE_WP_BUILD_REQUEST_MODE=' + (isExceptional ? 'owner-approved-exception' : 'normal'));
+  const dispatchStarted = Date.now();
   const result = await page.evaluate(async (forceBuild) => {
     const body = new URLSearchParams({
       action: 'vcs_trigger_build',
@@ -180,7 +180,9 @@ try {
     throw new Error(`Build Website trigger failed (HTTP ${result.status}): ${message}`);
   }
 
+  console.log('PSE_WP_TRIGGER_TIMING phase=dispatch elapsed_ms=' + (Date.now() - dispatchStarted));
   console.log(`WordPress Build Website accepted the GitHub dispatch: ${result.payload?.data?.message || 'success'}`);
+  }
   }
 } finally {
   await browser.close();
