@@ -1,0 +1,73 @@
+name: PSE Kali Page responsive image candidates (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1426-image-sizes.mjs
+      - .github/workflows/pse-kali-1426-image-sizes.yml
+      - .pse-kali-1426-image-sizes-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-page-83572-image-sizes
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_KALI_IMAGE_PREVIEW_ONLY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read WP source and verify responsive image candidates before any write
+        run: |
+          node --check scripts/pse-kali-1426-image-sizes.mjs
+          node scripts/pse-kali-1426-image-sizes.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-image-sizes-preview
+          path: artifacts/pse-kali-1426-image-sizes/
+          retention-days: 14
+          if-no-files-found: ignore
+  apply:
+    needs: preview
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): optimize Kali image sizes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Database backup before scoped Page 83572 content edit
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Save image sizes attributes ONLY and verify exact readback
+        env:
+          PSE_KALI_IMAGE_FRESH_DB_BACKUP: 'true'
+        run: node scripts/pse-kali-1426-image-sizes.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-image-sizes-rollback
+          path: artifacts/pse-kali-1426-image-sizes/
+          retention-days: 30
+          if-no-files-found: warn
