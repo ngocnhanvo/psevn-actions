@@ -165,7 +165,11 @@ def parse_metrics(log: str) -> dict | None:
     match = SOURCE_SHA.search(log)
     if not match or any(name not in stage_results for name in REQUIRED):
         return None
-    if any(result["exit_code"] != 0 for result in stage_results.values()):
+    # Only the eight production stages are acceptance gates.
+    # Preflight/cache_setup timers are intentionally best-effort (the
+    # production workflow records them with "|| true"); a telemetry failure
+    # must not invalidate an otherwise verified successful signed deploy.
+    if any(stage_results[name]["exit_code"] != 0 for name in REQUIRED):
         return None
     zip_match = ZIP_META.search(log)
     try:
