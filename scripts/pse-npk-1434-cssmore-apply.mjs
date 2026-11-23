@@ -93,21 +93,21 @@ try{
   try{
     const response=await pub.goto(front+"/npk-phu-my",{waitUntil:"domcontentloaded",timeout:60000});
     if(response?.status()!==200)throw Error("Public NPK route not 200");
-    const table=pub.locator("main .article-content > table").first();
-    if(await pub.locator("main .article-content > table").count()!==3||
+    const table=pub.locator("main .article-content > div > table").first();
+    if(await pub.locator("main .article-content > div > table").count()!==3||
        await table.locator("tr").count()!==20||await table.locator("img").count()!==20)
       throw Error("Unexpected frontend table structure");
     if(!live)await pub.addStyleTag({content:css});
     else if(!await pub.locator("main style").evaluateAll(nodes=>nodes.some(n=>n.textContent.includes("/* WordPress Page 83593"))))
       throw Error("CSS not published on live Astro page");
     await table.locator("img").evaluateAll(imgs=>imgs.forEach(img=>{img.loading="eager";}));
-    await pub.waitForFunction(()=>[...document.querySelectorAll("main .article-content > table:first-of-type img")].every(img=>img.complete),
+    await pub.waitForFunction(()=>[...document.querySelectorAll("main .article-content > div > table:first-of-type img")].every(img=>img.complete),
       null,{timeout:45000});
     for(const width of [1440,1240,768,390]){
       await pub.setViewportSize({width,height:900});
       await pub.waitForTimeout(180);
       const state=await pub.evaluate(()=>{
-        const tables=[...document.querySelectorAll("main .article-content > table")],first=tables[0];
+        const tables=[...document.querySelectorAll("main .article-content > div > table")],first=tables[0];
         const rect=el=>{const r=el.getBoundingClientRect();return {
           x:Math.round(r.x),right:Math.round(r.right),width:Math.round(r.width),height:Math.round(r.height)};};
         const images=[...first.querySelectorAll("img")].map(img=>({
