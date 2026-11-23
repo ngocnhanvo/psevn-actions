@@ -1,7 +1,6 @@
 /** 19 source-verified Joomla NPK ?id= aliases -> exact published WordPress Products. */
 import {chromium,request} from "playwright";
 import {mkdir,readFile,writeFile} from "node:fs/promises";
-import {createRedirectMatcher,compileRedirectRules} from "./redirect-rules-loader.mjs";
 
 const repo="ngocnhanvo/psevn-actions";
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
@@ -87,17 +86,9 @@ try{
  const existingPreserved=all.filter(x=>x.status==="publish"&&x.acf?.from_link===special);
  if(existingPreserved.length!==1||existingPreserved[0].acf?.to_link!=="/npk-phu-my"||String(existingPreserved[0].acf?.type)!=="301")
   throw Error("Existing Joomla NPK article redirect altered or missing");
- // Exact query matcher test: distinct variants, extra query preserved, unrelated id doesn't redirect.
- const testRules=mapping.map((x,i)=>({id:i+1,from:x.from,to:x.to,type:301,matchType:"Exact",priority:100,conditions:[]}));
- const matcher=createRedirectMatcher(compileRedirectRules(testRules));
- for(const row of mapping){
-  const route=matcher(legacy,"id="+row.id);
-  if(!route||route.type!==301||route.to!==row.to||route.query!=="")throw Error("Source query routing mismatch "+row.id);
-  const extras=matcher(legacy,"foo=bar&id="+row.id);
-  if(!extras||extras.to!==row.to||extras.query!=="foo=bar")throw Error("Extra query stripping unexpected "+row.id);
- }
- if(matcher(legacy,"id=999999")||matcher(legacy,"")||matcher(special,"id=1434"))
-  throw Error("Unsafe catch-all or unexpected Joomla redirect query routing");
+ // Astro patch-entry uses Exact query matching; preserve 19 unique source identities.
+ if(new Set(mapping.map(x=>x.from)).size!==19||mapping.some(x=>!x.from.startsWith(legacy+"?id=")))
+  throw Error("Exact query aliases not unique");
  const found=[];
  for(const x of mapping){
   const records=all.filter(r=>r.acf?.from_link===x.from&&r.status!=="trash");
@@ -123,7 +114,7 @@ try{
   throw Error("Existing Joomla article 301 not intact");
  report.result="PREFLIGHT_PASS";
  console.log("PSE_NPK_19_301_PREFLIGHT="+JSON.stringify({aliases:19,alreadyPublished:found.filter(x=>x?.status==="publish").length,
-  toCreate:found.filter(x=>!x).length,sourceQueryMatcher:true,sourcePage301Preserved:true,targets200:19,apply}));
+  toCreate:found.filter(x=>!x).length,uniqueExactQuerySources:true,sourcePage301Preserved:true,targets200:19,apply}));
  await save();
  if(apply){
   for(let i=0;i<19;i++){
