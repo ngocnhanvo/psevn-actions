@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 const commitEvent=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
 const allowedMessage='cms(pse): style Kali variants via cssmore';
 const apply=commitEvent.head_commit?.message===allowedMessage && process.env.PSE_KALI_CSSMORE_PREVIEW_ONLY!=='true';
+const liveVerification=process.env.PSE_KALI_VERIFY_PUBLISHED==='true';
 const originValue=(key)=>{
   const matches=String(process.env.ENV_FILE||'').split(/\r?\n/)
     .map(s=>s.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith(key+'='));
@@ -75,6 +76,7 @@ try{
       throw Error('WordPress Page shape/identity changed');
   const priorCss=String(d.acf?.cssmore||'');
   if(priorCss&&priorCss.trim()!==css)throw Error('Existing cssmore changed; refuse overwrite');
+  if(liveVerification&&priorCss.trim()!==css)throw Error('Published CSS verification requires saved WordPress CSS');
   const rawHash=sha(raw);
   const backup={id:d.id,slug:d.slug,action:d.acf.action,key:d.acf.key,
     modified:d.modified,originalCssmore:priorCss,originalContentSha256:rawHash,
@@ -91,7 +93,9 @@ try{
       {waitUntil:'domcontentloaded',timeout:60000});
     if(!await publicPage.locator('.pse-public-page .pse-historical-kali-1426 table tr').count())
       throw Error('Public Kali Page wrapper missing');
-    await publicPage.addStyleTag({content:css});
+    if(!liveVerification)await publicPage.addStyleTag({content:css});
+    else if(!await publicPage.locator('main style').evaluateAll(nodes=>nodes.some(n=>n.textContent.includes('.pse-historical-kali-1426'))))
+      throw Error('WordPress cssmore not published in Astro HTML yet');
     for(const width of [1240,768,390]){
       await publicPage.setViewportSize({width,height:900});
       await publicPage.locator('.pse-historical-kali-1426 img').evaluateAll(nodes=>
@@ -149,5 +153,5 @@ try{
        throw Error('WordPress CSS save/readback mismatch');
     console.log('PSE_KALI_CSSMORE_SAVED=PASS id=83572 content_unchanged=true no_extra_records=true');
   }
-  console.log('PSE_KALI_CSSMORE_PREVIEW_PASS write='+apply+' three_images=true three_rows=true');
+  console.log('PSE_KALI_CSSMORE_PREVIEW_PASS write='+apply+' published='+liveVerification+' three_images=true three_rows=true');
 }finally{await browser.close();}
