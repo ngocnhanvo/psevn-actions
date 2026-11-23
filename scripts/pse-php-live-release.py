@@ -18,9 +18,10 @@ from urllib.parse import urlsplit
 
 SOURCE = Path("source-php")
 # Existing production releaser: optionally restrict a real request to the two
-# signed Delta ZIP PHP contracts; all other authorized releases stay unchanged.
+# signed Delta ZIP PHP contracts or the redirect log endpoint; all other
+# authorized releases stay unchanged.
 RELEASE_SCOPE = os.environ.get("PSE_PHP_RELEASE_SCOPE", "full")
-if RELEASE_SCOPE not in ("full", "delta"):
+if RELEASE_SCOPE not in ("full", "delta", "redirect"):
     raise ValueError("Unsupported PSE PHP release scope")
 ALL_FILES = (
     "esc-tool/image.php",
@@ -52,7 +53,9 @@ ALL_FILES = (
     "wp-content/themes/vibe-code-theme/inc/tools/menu.php",
 )
 DELTA_FILES = ("pse-image-delta.php", "pse-unzip.php")
-FILES = DELTA_FILES if RELEASE_SCOPE == "delta" else ALL_FILES
+REDIRECT_FILES = ("wp-content/plugins/github-trigger/redirects/endpoint.php",)
+FILES = (DELTA_FILES if RELEASE_SCOPE == "delta" else
+         REDIRECT_FILES if RELEASE_SCOPE == "redirect" else ALL_FILES)
 raw = os.environ.get("FTP_SERVER", "").strip()
 if "://" not in raw:
     raw = "ftp://" + raw
