@@ -117,7 +117,7 @@ class ScorecardTest(unittest.TestCase):
         self.assertIn("unreconciled", scorecard.summarize([inconsistent], 0, 1))
 
     def test_new_preflight_and_cache_setup_diagnostics_do_not_change_acceptance(self):
-        source_log = log() + "\\n" + "\\n".join([
+        source_log = log() + "\n" + "\n".join([
             "PSE_STAGE name=preflight elapsed_ms=3200 exit=0",
             "PSE_STAGE name=cache_setup elapsed_ms=7400 exit=0",
         ])
