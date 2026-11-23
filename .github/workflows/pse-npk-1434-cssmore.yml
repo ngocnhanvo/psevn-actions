@@ -1,0 +1,74 @@
+name: PSE NPK Page scoped CSS update (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-npk-1434-cssmore.css
+      - scripts/pse-npk-1434-cssmore-apply.mjs
+      - .github/workflows/pse-npk-1434-cssmore.yml
+      - .pse-npk-1434-cssmore-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-npk-page-83593-cssmore
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_NPK_PREVIEW_ONLY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Preflight and verify CSS at desktop/tablet/mobile without CMS writes
+        run: |
+          node --check scripts/pse-npk-1434-cssmore-apply.mjs
+          node scripts/pse-npk-1434-cssmore-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-cssmore-preview
+          path: artifacts/pse-npk-1434-cssmore/
+          retention-days: 14
+          if-no-files-found: ignore
+  apply:
+    needs: preview
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): style NPK page via cssmore'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Back up WordPress DB before scoped Page CSS change
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Apply CSS ONLY to WP Page 83593 and verify readback
+        env:
+          PSE_NPK_FRESH_DB_BACKUP: 'true'
+        run: node scripts/pse-npk-1434-cssmore-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-cssmore-rollback
+          path: artifacts/pse-npk-1434-cssmore/
+          retention-days: 30
+          if-no-files-found: warn
