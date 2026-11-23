@@ -110,7 +110,7 @@ try{
     }
     else if(!await publicPage.locator('main style').evaluateAll(nodes=>nodes.some(n=>n.textContent.includes('.pse-historical-kali-1426'))))
       throw Error('WordPress cssmore not published in Astro HTML yet');
-    for(const width of [1240,768,390]){
+    for(const width of [1440,1240,768,390]){
       await publicPage.setViewportSize({width,height:900});
       await publicPage.locator('.pse-historical-kali-1426 img').evaluateAll(nodes=>
         nodes.forEach(img=>{img.loading='eager';}));
