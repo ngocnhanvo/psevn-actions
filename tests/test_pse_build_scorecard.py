@@ -218,6 +218,25 @@ class ScorecardTest(unittest.TestCase):
         self.assertIn("boundary estimates", report)
         self.assertIn("1/12", report)
 
+    def test_level6_rollback_telemetry_does_not_break_warm_acceptance(self):
+        level6 = scorecard.parse_metrics(log() + "\nPSE_RELEASE_ZIP_DEFLATE_LEVEL=6")
+        level9 = scorecard.parse_metrics(log() + "\nPSE_RELEASE_ZIP_DEFLATE_LEVEL=9")
+        self.assertEqual(level6["zip_deflate_level"], 6)
+        self.assertEqual(level9["zip_deflate_level"], 9)
+        self.assertTrue(level6["warm"])
+        self.assertEqual(level6["media_status"], "unchanged")
+        self.assertIn("1/12", scorecard.summarize([
+            {"id": 15, "seconds": 105, "metrics": level6},
+        ], 0, 1))
+        # A normal ZIP-level change is not a change in Astro source SHA.
+        report = scorecard.summarize([
+            {"id": 16, "seconds": 106, "metrics": level6},
+            {"id": 15, "seconds": 107, "metrics": level9},
+        ], 0, 2)
+        self.assertIn("2/12", report)
+        self.assertIn("| 6 |", report)
+        self.assertIn("| 9 |", report)
+
     def test_level9_zip_trial_compares_same_sha_only_without_claiming_speedup(self):
         legacy = scorecard.parse_metrics(log())
         trial = scorecard.parse_metrics(log() + "\nPSE_RELEASE_ZIP_DEFLATE_LEVEL=9")
