@@ -3,3 +3,5 @@ Approved one-shot PSE Kali 1430 native Page recovery and query 301 repair. Sourc
 Retry after stored HTML ampersand normalization; previous apply stopped before CMS write.
 
 Retry with source HTML exact text and table identity diagnostics; no CMS writes on prior attempts.
+
+Verified 1430 full-body hash equals original full-body hash; previous attempts wrote no CMS data.
