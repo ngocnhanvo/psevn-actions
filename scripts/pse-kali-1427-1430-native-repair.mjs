@@ -31,8 +31,14 @@ try{
  const replacements=[
  ['https://pse.vn/hoat-dong-kinh-doanh/san-pham/kali-phu-my.html?id=1427',front+'/san-pham/kali-phu-my-mieng-mop-1427'],
  ['https://pse.vn/index.php?option=com_content&view=article&id=1430',front+'/'+slug]];
- for(const [a,z] of replacements)if(raw.split(a).length!==2||raw.includes(z))throw Error('Parent link changed');
- const changed=replacements.reduce((v,[a,z])=>v.replace(a,z),raw);
+ // WordPress may serialize ampersands in stored HTML hrefs as &amp;.
+ const normalized=replacements.map(([from,to])=>{
+  const escaped=from.replaceAll('&','&amp;');
+  const candidates=[from,escaped].filter((v,i,a)=>a.indexOf(v)===i&&raw.includes(v));
+  if(candidates.length!==1||raw.split(candidates[0]).length!==2||raw.includes(to))throw Error('Parent link changed '+new URL(from).searchParams.get('id'));
+  return [candidates[0],to];
+ });
+ const changed=normalized.reduce((v,[a,z])=>v.replace(a,z),raw);
  if((raw.match(/<img(?:\s|>)/gi)||[]).length!==3||(changed.match(/<img(?:\s|>)/gi)||[]).length!==3)throw Error('Unexpected parent images');
  const target1427=await api('product/80938?_fields=id,slug,status');
  if(target1427.http!==200||target1427.d.slug!=='kali-phu-my-mieng-mop-1427'||target1427.d.status!=='publish')throw Error('1427 Product identity changed');
