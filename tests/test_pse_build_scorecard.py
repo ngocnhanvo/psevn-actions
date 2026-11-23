@@ -218,6 +218,47 @@ class ScorecardTest(unittest.TestCase):
         self.assertIn("boundary estimates", report)
         self.assertIn("1/12", report)
 
+    def test_signed_release_ftps_phase_profiling_does_not_mix_helper_uploads(self):
+        # Tiny PHP inventory staging uploads can appear earlier in job logs.
+        helper = "\n".join([
+            "FTPS_PHASE attempt=1 phase=transfer ela***d_ms=90000 bytes=7500",
+            "FTPS_UPLOAD=PASS bytes=7500 sha_prefix=0123456789ab",
+        ])
+        signed = "\n".join([
+            "FTPS_TRANSFER_START bytes=2032324 sha_prefix=123456789abc",
+            "FTPS_PHASE attempt=1 phase=connect_tls ela***d_ms=2200",
+            "FTPS_PHASE attempt=1 phase=remote_probe ela***d_ms=200",
+            "FTPS_PHASE attempt=1 phase=transfer ela***d_ms=18000 bytes=2032324",
+            "FTPS_PHASE attempt=1 phase=verify_temp_size ela***d_ms=200",
+            "FTPS_PHASE attempt=1 phase=rename_verify ela***d_ms=600",
+            "FTPS_UPLOAD=PASS bytes=2032324 sha_prefix=123456789abc",
+            "PSE_STAGE name=ftps ela***d_ms=21500 exit=0",
+        ])
+        metrics = scorecard.parse_metrics(log() + "\n" + helper + "\n" + signed)
+        measured = metrics["ftps_release"]
+        self.assertIsNotNone(measured)
+        self.assertEqual(measured["elapsed_ms"]["transfer"], 18000)
+        self.assertEqual(measured["elapsed_ms"]["connect_tls"], 2200)
+        self.assertEqual(measured["attempt"], 1)
+        self.assertGreater(measured["transfer_mibps"], 0.10)
+        report = scorecard.summarize(
+            [{"id": 10, "seconds": 85, "metrics": metrics}], 0, 1)
+        self.assertIn("ZIP data 18.0s", report)
+        self.assertIn("data STOR exceeded 15s", report)
+        self.assertIn("FTP data transfer", report)
+        self.assertIn("1/12", report)
+
+        self.assertIsNone(scorecard.parse_ftps_release_phases(helper, 2032324))
+        self.assertIsNone(scorecard.parse_ftps_release_phases(
+            signed.replace("bytes=2032324 sha_prefix=123456789abc",
+                           "bytes=2032323 sha_prefix=123456789abc", 1), 2032324))
+        self.assertIsNone(scorecard.parse_ftps_release_phases(
+            signed.replace("PSE_STAGE name=ftps", "PSE_STAGE name=activate"), 2032324))
+        self.assertIsNone(scorecard.parse_ftps_release_phases(
+            signed.replace("FTPS_UPLOAD=PASS", "FTPS_UPLOAD=FAILED"), 2032324))
+        self.assertIsNone(scorecard.parse_ftps_release_phases(
+            signed.replace("phase=transfer", "phase=unknown"), 2032324))
+
     def test_slow_ftps_warns_without_failing_production(self):
         sample = scorecard.parse_metrics(log())
         sample["stages"]["ftps"]["elapsed_ms"] = 38138
