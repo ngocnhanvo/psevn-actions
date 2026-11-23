@@ -116,6 +116,28 @@ class ScorecardTest(unittest.TestCase):
         self.assertIsNone(scorecard.unmeasured_seconds(inconsistent))
         self.assertIn("unreconciled", scorecard.summarize([inconsistent], 0, 1))
 
+    def test_new_preflight_and_cache_setup_diagnostics_do_not_change_acceptance(self):
+        source_log = log() + "\\n" + "\\n".join([
+            "PSE_STAGE name=preflight elapsed_ms=3200 exit=0",
+            "PSE_STAGE name=cache_setup elapsed_ms=7400 exit=0",
+        ])
+        metrics = scorecard.parse_metrics(source_log)
+        self.assertTrue(metrics["warm"])
+        self.assertEqual(metrics["stages"]["preflight"]["elapsed_ms"], 3200)
+        self.assertEqual(metrics["stages"]["cache_setup"]["elapsed_ms"], 7400)
+        report = scorecard.summarize(
+            [{"id": 44, "seconds": 50.0, "metrics": metrics}], 0, 1,
+        )
+        self.assertIn("preflight **3.2s**", report)
+        self.assertIn("cache setup **7.4s**", report)
+        self.assertIn("remaining queue/checkout/post-job **27.4s**", report)
+        self.assertIn("1/12", report)
+        self.assertNotIn("p50=", report)
+        legacy = scorecard.summarize(
+            [{"id": 43, "seconds": 50, "metrics": scorecard.parse_metrics(log())}], 0, 1,
+        )
+        self.assertIn("instrumentation pending next real production run", legacy)
+
     def test_slow_ftps_warns_without_failing_production(self):
         sample = scorecard.parse_metrics(log())
         sample["stages"]["ftps"]["elapsed_ms"] = 38138
