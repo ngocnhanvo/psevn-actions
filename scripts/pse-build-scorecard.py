@@ -255,7 +255,13 @@ def parse_metrics(log: str) -> dict | None:
         "media_status": image_status,
         "stages": stage_results,
         "zip_bytes": zip_data.get("bytes"),
-        "zip_deflate_level": (9 if "PSE_RELEASE_ZIP_DEFLATE_LEVEL=9" in log else None),
+        # Historical warm runs used the default ZIP level without a marker;
+        # preserve that as unknown rather than assuming a compression level.
+        "zip_deflate_level": (
+            int(m.group(1)) if (m := re.search(
+                r"PSE_RELEASE_ZIP_DEFLATE_LEVEL=(6|9)\b", log
+            )) else None
+        ),
         "reused_files": zip_data.get("reused_files"),
         "historical_phases": parse_historical_phases(log),
         "ftps_release": parse_ftps_release_phases(log, zip_data.get("bytes")),
