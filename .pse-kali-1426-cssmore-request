@@ -1,0 +1,1 @@
+Apply the read-only validated scoped CSS to WordPress Page 83572 ACF cssmore only. Keep three original image URLs, table HTML, title, ACF action/key unchanged. Preview run 45129005479 PASS; require fresh DB backup + before/after exact readback. No unrelated WordPress changes.
