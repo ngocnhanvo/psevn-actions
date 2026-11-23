@@ -245,8 +245,10 @@ def main() -> int:
     if path:
         with open(path, "a", encoding="utf-8") as output:
             output.write(report + "\n")
-    print("PSE_BUILD_SCORECARD=PASS_READONLY samples=" +
-          str(sum(bool(x.get("metrics") and x["metrics"]["warm"]) for x in rows)))
+    latest = next((row["metrics"]["source_sha"] for row in rows if row.get("metrics")), None)
+    current_warm = sum(bool(row.get("metrics") and row["metrics"]["warm"]
+                            and row["metrics"]["source_sha"] == latest) for row in rows)
+    print("PSE_BUILD_SCORECARD=PASS_READONLY same_source_warm_samples=" + str(current_warm))
     return 0
 
 
