@@ -116,6 +116,25 @@ class ScorecardTest(unittest.TestCase):
         self.assertIsNone(scorecard.unmeasured_seconds(inconsistent))
         self.assertIn("unreconciled", scorecard.summarize([inconsistent], 0, 1))
 
+    def test_optional_telemetry_failure_does_not_disqualify_signed_deploy(self):
+        source = log()
+        # Best-effort timer failure only, signed production stages still passed.
+        source += "\nPSE_STAGE name=preflight elapsed_ms=0 exit=2"
+        source += "\nPSE_STAGE name=cache_setup elapsed_ms=0 exit=3"
+        parsed = scorecard.parse_metrics(source)
+        self.assertIsNotNone(parsed)
+        self.assertTrue(parsed["warm"])
+        self.assertEqual(parsed["media_status"], "unchanged")
+        self.assertEqual(parsed["stages"]["preflight"]["exit_code"], 2)
+        self.assertIn("1/12", scorecard.summarize([
+            {"id": 10, "seconds": 108, "metrics": parsed},
+        ], 0, 1))
+        # Still reject a failure in any of the mandatory eight deployment
+        # stages; optional metrics never downgrade this fail-closed contract.
+        failed = source.replace("name=activate elapsed_ms=1500 exit=0",
+                                "name=activate elapsed_ms=1500 exit=1")
+        self.assertIsNone(scorecard.parse_metrics(failed))
+
     def test_new_preflight_and_cache_setup_diagnostics_do_not_change_acceptance(self):
         source_log = log() + "\n" + "\n".join([
             "PSE_STAGE name=preflight elapsed_ms=3200 exit=0",
