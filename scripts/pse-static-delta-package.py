@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Omit only unchanged Astro public HTML/CSS/JS/JSON, verified later by signed PHP.
+"""Omit unchanged public Astro HTML/CSS/JS/JSON/media/fonts, verified by signed PHP.
 
 Never reuse server/ SSR, metadata, or mandatory client/index.html. If this
 server does not advertise static hashes, keep the complete static ZIP.
@@ -12,7 +12,7 @@ import re
 
 SEGMENT = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9_.-]*$")
 DIGEST = re.compile(r"^[0-9a-f]{64}$")
-EXTENSION = re.compile(r"\.(?:html|css|js|json)$")
+EXTENSION = re.compile(r"\.(?:html|css|js|json|svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|eot|pdf)$")
 MAX_FILES = 5000
 MAX_TOTAL = 104857600
 MAX_SINGLE = 26214400
@@ -73,7 +73,7 @@ def main():
         return
     # Legacy PHP includes images/*.json in the static inventory. Until the
     # new PHP scope is deployed, never emit a mismatched static delta marker.
-    if inventory.get("static_scope") != "exclude-images-v1":
+    if inventory.get("static_scope") != "exclude-images-v2-media":
         print("PSE_STATIC_DELTA=FULL_ZIP php-static-scope-not-verified")
         return
     if not isinstance(remote, dict):
