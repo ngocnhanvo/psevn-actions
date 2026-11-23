@@ -297,3 +297,36 @@ Số đo dưới đây từ chính `FTPS_PHASE` của **ZIP release upload thự
 **Giữ/rollback compression:** ở các signed production release tiếp theo (cùng Astro SHA, không media mới, hai cache hit), so ZIP bytes, package monotonic, FTPS STOR và tổng workflow với lịch sử ~2,032,851B package 0.572s/FTP STOR 17.812s ở last run. Chỉ kết luận lợi ích nếu ZIP thực giảm và package extra cost không lớn hơn số giây truyền tiết kiệm sau khi tính network variability. Nếu ZIP không giảm hoặc packaging tăng gây hồi quy, revert `zip -q -9 -r` → `zip -q -r` và marker ghi 9; không thay đổi giao thức/signed flow.
 
 **Kết luận:** FTPS phase diagnostic/CI/ZIP9 trial code **PASS**; production speed benefit của ZIP9 **NOT TESTED**, do không có signed production mới sau patch. Acceptance p50≤90s, p90<120s trên 12 warm same-SHA và cold/new-media thật vẫn **PARTIAL (1/12)**; giữ nguyên lịch giám sát PSE đã có. Không lặp run đã PASS, không tạo thêm production no-op, không ghi CMS.
+
+
+## Checkpoint 2026-11-23 12:xx ICT — Live FTPS socket/window and blocksize validation
+
+**Repo/branch:** `ngocnhanvo/psevn-actions/main`. Astro `ngocnhanvo/psevn-astro/master 7af6eab4f4cf06367d207f155251c12c9f24befa` (unchanged), PHP `master 5a3bfaa9d4f0a63a09311ac27aecc0fdda226b65` (unchanged). **No additional Astro build, PHP deploy, CMS write or public release** performed in this speed-optimization session.
+
+### Real production releases since previous checkpoint
+
+Two **genuine signed production** releases on the identical Astro SHA and with verified warm cache/no new images:
+
+| Run | Total workflow | preflight | Node/pnpm/cache setup | Astro | ZIP9 bytes / packaging | FTPS total | ZIP STOR |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| [#45103708307](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45103708307) | **107s** | 7.958s | 11.658s | 17.441s | 2,024,391B / 0.582s | 26.574s | 22.654s |
+| [#45115451755](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45115451755) | **107s** | 8.134s | 9.986s | 19.756s | 2,024,391B / 0.774s | 29.218s | 26.157s |
+
+Both signed deploys **SUCCESS**, followed by independent homepage/search, recovered Joomla posts and album QA **PASS**. The signed read-only [scorecard #45115633995](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45115633995) confirms **3/12** eligible same-source warm/no-new-media runs (prior one #45092574062 at 106s plus these two at 107s). Do not claim p50 <=90s from three samples.
+
+**ZIP9 controlled outcome:** compared with the preceding same-SHA legacy ZIP **2,032,851 bytes**, ZIP9 is **2,024,391 bytes**, only **8,460 bytes / ~0.42% smaller**. Packaging stage changed from 0.572s to 0.582s/0.774s; transfer still fluctuates. **No confirmed workflow speed gain from ZIP9**, despite functioning signed PHP activation and QA. Do not turn this into an automatic speedup claim, and do not run fake production builds.
+
+### Removable real-host FTPS data-socket experiments
+
+All tests use the existing PSE frontend target, same random **2 MiB** temporary payload, TLS certificate verification, FTP PROT P, and strictly unique run-ID filenames. These are **bounded temporary FTPS writes with verified cleanup**, NOT release artifacts or CMS changes. Original production uploader is **unchanged**.
+
+1. **[Socket-send-buffer A/B #45116685561](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45116685561): SUCCESS**, 3/3 offline tests; 6/6 unique remote probes removed. Kernel-managed default buffer (actual 87,040 bytes) in the interleaved sequence: **7.10s, 6.80s**; forced 4 MiB hint (actual 8,388,608B): **17.96s, 15.79s**. One initial Python baseline 21.39s, lftp 12.79s; network varies. No repeatable reason to enable a larger `SO_SNDBUF`; in this run it was materially slower.
+2. **[TLS STOR blocksize A/B #45117062078](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45117062078): SUCCESS**, 3/3 offline tests; 6/6 remote probes removed. 64-KiB chunks **40.43s, 15.43s**; production-sized 256-KiB chunks **25.46s, 26.55s**. One initial Python 26.14s, lftp 29.08s. Smaller blocks do **not** show a consistent improvement and can regress badly. No change in production blocksize.
+3. **Regression protection:** [Actions commit `857eeb92`](https://github.com/ngocnhanvo/psevn-actions/commit/857eeb9236d5983fd76e554fba854e23e1bdecb0) documents choosing OS-managed socket buffer and 256-KiB STOR blocks in `scripts/pse-ftps-upload.py`; [test commit `ee6898b3`](https://github.com/ngocnhanvo/psevn-actions/commit/ee6898b319f928a0d7c505970eebd6a41757e3ae) checks the blocksize remains 262144. **[Signed CI #45117535900](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45117535900) SUCCESS** both PHP/image-delta security contracts and independent Astro redirect tests; **no Astro build/FTP deploy** from the CI.
+
+### Decision / next verified actions
+
+- **DONE:** FTP bottleneck attribution from real signed runs, ZIP9 evaluated on two real releases, reversible FTPS send-buffer and blocksize A/B probes PASS with verified 6/6 cleanup each, protective regression CI PASS. No signed production security guard/rollback/env/source changes.
+- **Do NOT apply** 4 MiB data-socket buffer or 64-KiB `storbinary` chunks; cannot assert speed gains. The approximately **22–26s** real STOR stage remains the major variable; ZIP packaging itself is below 1 second and ZIP9 saves only ~0.42% payload.
+- **Next material performance path (requires infrastructure authorization):** compare an approved GitHub runner closer to the production FTP endpoint (e.g. authorized regional/self-hosted runner), using the exact existing signed production pipeline/secrets/rollback and an isolated 2 MiB removable benchmark before changing `runs-on`. Do not provision infrastructure, move credentials, change TLS/auth or production runner without approved scope, available network and cost evidence.
+- **Partial acceptance:** same-Astro-source warm runs = **3/12**, 9 genuine eligible runs still required; target p50 <=90s, p90 <120s not demonstrated. Cold cache/new-media true release remains unmeasured. Continue existing read-only automation as real production releases occur; no dummy builds to create samples.
