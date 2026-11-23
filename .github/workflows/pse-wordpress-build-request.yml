@@ -157,15 +157,15 @@ jobs:
          ))
       )
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.0-noble
-      options: --ipc=host
+    # GitHub runner has Chrome installed and auth-only PSE Playwright QA passed.
+    # Avoid pulling/initializing a separate browser container for each request.
     timeout-minutes: 14
     env:
       ENV_FILE: ${{ secrets.ENV_FILE }}
       SOURCE_REPO_PAT: ${{ secrets.SOURCE_REPO_PAT }}
       WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
       WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_CHROME_CHANNEL: chrome
       # Only the explicit owner-authorized marker commit can request an exception.
       PSE_FORCE_BUILD_ONCE: "${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for subpages' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for image API fallback' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for Lighthouse SEO and accessibility' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for related product quote CTA' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for Visual Builder wave 1' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for news thumbnail admin URL fix' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for organization chart CLS' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for desktop homepage SI' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for redirect registry pagination' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for news SSR latency' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for guarded webroot env' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for sitewide agent release' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for PDF icon 24px' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for PDF cards' || github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for product category UI' }}"
       # Origin is resolved from ENV_FILE at runtime; never pin the WP hostname.
@@ -205,9 +205,14 @@ jobs:
           export ASTRO_FTP_TARGET
           python3 scripts/pse-remote-unzip.py verify
           echo "PSE_SIGNED_WP_UNZIP_PREFLIGHT=PASS"
-      - name: Install wrapper only (Chromium already in image)
+      - name: Install Playwright driver for preinstalled GitHub Chrome
         shell: bash
-        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+        run: |
+          set -euo pipefail
+          command -v google-chrome
+          google-chrome --version
+          npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+          node --check imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
       - name: Authorize build-performance force-once for this exact owner request
         if: "${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for build performance optimization' }}"
         shell: bash
