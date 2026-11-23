@@ -1,3 +1,5 @@
 Approved one-shot PSE Kali 1430 native Page recovery and query 301 repair. Source 44993780995; preflight 45220040010. Back up before any CMS write.
 
 Retry after stored HTML ampersand normalization; previous apply stopped before CMS write.
+
+Retry with source HTML exact text and table identity diagnostics; no CMS writes on prior attempts.
