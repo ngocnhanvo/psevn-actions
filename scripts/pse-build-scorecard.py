@@ -24,6 +24,7 @@ REPO = "ngocnhanvo/psevn-actions"
 WORKFLOW = "PSE Astro build and deploy via WordPress GitHub Trigger"
 SINCE = datetime.fromisoformat("2026-11-23T00:21:23+00:00")
 REQUIRED = ("install", "astro", "verify", "package", "ftps", "runtime_env", "activate", "smoke")
+DIAGNOSTICS = ("preflight", "cache_setup")
 STAGES = re.compile(r"PSE_STAGE name=(\w+) \S+_ms=(\d+) exit=(\d+)")
 SOURCE_SHA = re.compile(r"Astro production SHA:\s*([0-9a-f]{40})")
 ZIP_META = re.compile(r"PSE_ZIP_METRICS (\{[^\r\n]+\})")
@@ -113,7 +114,7 @@ def job_log(job_id: int, token: str) -> str:
 def parse_metrics(log: str) -> dict | None:
     stage_results = {}
     for name, ms, exit_code in STAGES.findall(log):
-        if name in REQUIRED:
+        if name in REQUIRED or name in DIAGNOSTICS:
             stage_results[name] = {"elapsed_ms": int(ms), "exit_code": int(exit_code)}
     match = SOURCE_SHA.search(log)
     if not match or any(name not in stage_results for name in REQUIRED):
@@ -219,6 +220,29 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
     if eligible:
         latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
         latest_outside = unmeasured_seconds(eligible[0])
+        latest_metrics = eligible[0]["metrics"]
+        setup = [latest_metrics["stages"].get(name) for name in DIAGNOSTICS]
+        if (latest_outside is not None and all(
+            isinstance(item, dict) and item.get("exit_code") == 0 for item in setup
+        )):
+            preflight, caches = [item["elapsed_ms"] / 1000 for item in setup]
+            remaining = latest_outside - preflight - caches
+            if remaining >= 0:
+                lines.append("")
+                lines.append(
+                    f"- **Outside-stage breakdown (latest only):** signed preflight"
+                    f" **{preflight:.1f}s**, Node/pnpm/cache setup **{caches:.1f}s**,"
+                    f" remaining queue/checkout/post-job **{remaining:.1f}s**."
+                )
+            else:
+                lines.append("")
+                lines.append("- **Outside-stage breakdown:** timings could not be reconciled.")
+        else:
+            lines.append("")
+            lines.append(
+                "- **Outside-stage breakdown:** signed preflight/cache setup"
+                " instrumentation pending next real production run."
+            )
         if latest_ftp > 30_000:
             lines.append("")
             lines.append(
