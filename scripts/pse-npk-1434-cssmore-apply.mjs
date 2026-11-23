@@ -234,7 +234,7 @@ try{
       console.log("PSE_NPK_RELATED_LINKS_LIVE=PASS two_links_local=true placeholder_removed=true");
       const imageLinks=await table.locator("tr").evaluateAll(rows=>rows.map(row=>
         row.querySelector("a:has(img)")?.href||""));
-      if(imageLinks.length!==20||imageLinks.filter(url=>url.startsWith(front+"/san-pham/")).length!==15||
+      if(imageLinks.length!==20||imageLinks.filter(url=>url.startsWith("https://pse.webnvn.com/san-pham/")).length!==15||
          imageLinks.filter(url=>!url).length!==5||
          imageLinks.some(url=>/^https?:\/\/(?:www\.)?pse\.vn\//i.test(url)))
         throw Error("Published NPK image destinations not migrated exactly");
