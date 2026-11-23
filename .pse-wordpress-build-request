@@ -78,3 +78,5 @@
 2026-11-22: Kali Joomla #1678 exact original historical native WordPress Page #83524 published, Media #83523 exact SHA256 58c823c48ee04c595116945f7bf11bb7b6aae3dbe5d22446195659f726294cee, two source tables, guarded apply #44990349434 SUCCESS and fresh DB backup PASS. Request ONE normal signed WordPress Build Website, no force, existing production pipeline only. Verify public canonical Page, original tables and image before category fifth link repair.
 
 2026-11-23 PSE build-speed optimization: request exactly one signed production run for Astro master 69093b80818bcd8d905ef7f83ba3292f21cacb56; PHP redirect stamp release a26a35a4 deployed/verified; benchmark pnpm/Astro/ZIP/FTPS stages and smoke. No CMS writes or duplicate pipeline.
+
+2026-11-23 PSE build-speed optimization phase 2: after guarded PHP signed static media delta v2 source 5a3bfaa9d4f0a63a09311ac27aecc0fdda226b65 FTPS installed and checksum PASS, request exactly one normal signed WordPress-to-Astro production build for source 69093b80818bcd8d905ef7f83ba3292f21cacb56; measure ZIP media/fonts reuse, total elapsed and staging integrity. No new data writes, no second pipeline.
