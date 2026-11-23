@@ -261,3 +261,39 @@ Hai nhóm pnpm/setup/cache (~9–14s) và preflight (~7–9s) có chi phí khôn
 - **Lỗi đã xử lý (scorecard only)**: `scripts/pse-build-scorecard.py::parse_metrics` trước đó lấy `any(exit_code != 0)` trên **cả 8 stage bắt buộc và hai stage telemetry tùy chọn**. Nhưng `preflight`/`cache_setup` là best-effort trong production workflow (`|| true`), nên một lỗi ghi đồng hồ phụ có thể khiến production đã signed build/deploy thành công bị loại sai khỏi 12-run cohort. Sửa để chỉ 8 stage bắt buộc là acceptance gate, riêng 2 stage phụ vẫn giữ đầy đủ exit code để chẩn đoán; không nới gate signed verify, PHP activate, smoke, source SHA, warm cache hay image-delta. [Source fix `f7e5aa52`](https://github.com/ngocnhanvo/psevn-actions/commit/f7e5aa528734d8e9e926d487297ca27a0fdd33f7).
 - **Chứng cứ**: unit test mới dùng 2 telemetry exit lỗi + 8 required PASS, giữ `1/12`; thay activate thành exit=1 vẫn `None` (fail-closed). [Regression commit `edf2bda1`](https://github.com/ngocnhanvo/psevn-actions/commit/edf2bda1d678a75a56242bad3b51b096797a5a87); [read-only CI #45095364026](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45095364026) **SUCCESS, 13/13 tests** và scorecard từ GitHub log thật vẫn **1/12** warm/no-new-media same-SHA. Không có source Astro/PHP diff, WP write, Astro build mới hay FTPS deployment.
 - **Tiếp theo**: giữ nguyên Astro SHA để tích lũy 11 mẫu production warm/no-new-media hợp lệ từ các đợt phát hành thực; lấy cold cache/changed-media cohort thật khi có thay đổi nội dung/ảnh; xem breakdown preflight/cache_setup được đo monotonic từ signed production run thực kế tiếp. Không tạo 11 lượt build no-op để đạt chỉ tiêu p50≤90s/p90<120s, không hạ QA gate. **Trạng thái mục tiêu đầy đủ: PARTIAL — chưa hoàn tất do thiếu dữ liệu production tự nhiên**.
+
+
+## Checkpoint 2026-11-23 — release ZIP deflate-9 thử nghiệm, FTP ZIP-transfer phase diagnostics
+
+**Tình trạng PSE thực tại lúc rà soát:**
+- Knowledge `ngocnhanvo/knowledge/main 1b5aab9e2f8b2fccb42947a74a48df6d9761570f`.
+- Astro `ngocnhanvo/psevn-astro/master 7af6eab4f4cf06367d207f155251c12c9f24befa`; PHP `ngocnhanvo/psevn-php/master 5a3bfaa9d4f0a63a09311ac27aecc0fdda226b65`. Không sửa Astro/PHP.
+- Production signed gần nhất [#45092574062](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45092574062): **SUCCESS, 106s**, ở Astro SHA hiện tại. Không có production signed mới khi sửa workflow; thống kê **1/12** warm no-new-media cùng SHA.
+
+### Phân rã chính xác FTP-TLS từ signed production log
+
+Số đo dưới đây từ chính `FTPS_PHASE` của **ZIP release upload thực** (không phải PHP tiny helper uploads), ZIP ~2.03MB, Python SSL active; stage monotonic là total FTP, không phải tốc độ riêng STOR:
+
+| Run | ZIP STOR | TLS connect | probe+size verify+rename | FTPS stage |
+| --- | ---: | ---: | ---: | ---: |
+| [#45088287779](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088287779) | **7.459s** | 1.949s | ~0.849s | 10.490s |
+| [#45089261813](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45089261813) | **21.970s** | 2.684s | ~0.999s | 25.914s |
+| [#45090240402](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45090240402) | **34.105s** | 2.582s | ~1.146s | 38.138s |
+| [#45092574062](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45092574062) | **17.812s** | 2.281s | ~1.011s | 21.365s |
+
+**Bottleneck là STOR/network/hosting, không phải khởi tạo TLS hay ZIP packaging** (trước đó ~0.6–0.8s). Độ lệch STOR 7.5–34.1s lớn hơn cải tiến vài phần trăm của ZIP. One-shot bounded [#45091264058](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45091264058) đã đo Python TLS 2MiB = 12.17s, lftp 4MiB socket buffer = 22.77s, cả hai xóa payload tạm; không đổi về lftp, không mở transport khác thiếu chứng cứ.
+
+**Đã đưa chẩn đoán ZIP-phase vào scorecard**:
+- [`ca66c484`](https://github.com/ngocnhanvo/psevn-actions/commit/ca66c48447fe36d32e502e156dcd35780704bce4): `parse_ftps_release_phases` chỉ đọc log từ `FTPS_TRANSFER_START bytes=... sha_prefix` đến signed `FTPS_UPLOAD=PASS` và stage `ftps`; xác minh ZIP bytes/sha_prefix, nhận marker bị GitHub mask `ela***d_ms`, từ chối marker thiếu/lẫn các tiny helper transfers, phân rã TLS/data/size/rename; in data rate riêng.
+- [`a12c2e99`](https://github.com/ngocnhanvo/psevn-actions/commit/a12c2e990713e3359baa98fd2d12f4e6d482ab56): regression fixture có tiny helper 7.5KB, signed release 2.03MB, masked markers và missing/mismatch. [Scorecard CI #45096488350](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45096488350) **SUCCESS 14/14**; read-only live: ZIP STOR **17.8s**, dữ liệu **0.11 MiB/s** tại last signed run.
+
+### Thử nghiệm nhỏ ở packaging, chờ build thật đánh giá
+
+- [`d6d7d360`](https://github.com/ngocnhanvo/psevn-actions/commit/d6d7d360c63d282084aa02c2f813412d8f915f9e): đổi duy nhất lệnh ZIP từ `zip -q -r` thành `zip -q -9 -r` trong **cùng production pipeline hiện hữu**. Không thay format/tên entry/manifest/identity/env/source, không bỏ checksum, FTPS hay signed PHP rollback. Mục tiêu là giảm byte phải truyền qua STOR đang dao động mạnh, nhưng không có cam kết lợi ích.
+- [`f34d04d9`](https://github.com/ngocnhanvo/psevn-actions/commit/f34d04d96565ac50659f757a0e9c8f9afa58b085): thêm `tests/test_pse_release_zip_compression.py` offline xác minh entry bytes, metadata/signed hook và không chứa .env ở ZIP; [`739d7a84`](https://github.com/ngocnhanvo/psevn-actions/commit/739d7a8471234ed5e4db284cab87e05c75fad0ca) thêm vào independent image-delta CI. **[#45096663792](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45096663792) SUCCESS cả offline và Astro redirect jobs**, **[#45096627483](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45096627483) SUCCESS signed PHP contract**, **[#45096787649](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45096787649) SUCCESS architecture**.
+- **Cần tránh nói quá:** synthetic small ZIP fixture cho `-6` và `-9` cùng **2,950 bytes**, nên CI chỉ chứng minh format/byte integrity, chưa chứng minh nén nhỏ hơn hoặc nhanh hơn ở production. Mức nén 9 có thể tăng thời gian CPU.
+- [`933e5e54`](https://github.com/ngocnhanvo/psevn-actions/commit/933e5e5440fad2b504f405e234909f8e5b9c4088) xuất telemetry `PSE_RELEASE_ZIP_DEFLATE_LEVEL=9` (sau ZIP), [`5faef00c`](https://github.com/ngocnhanvo/psevn-actions/commit/5faef00c5f6d568e0348655f5cac9bffc48ba07e) so ZIP bytes+package time giữa warm same Astro SHA (chỉ tương quan, không coi là causal), [`edcad18d`](https://github.com/ngocnhanvo/psevn-actions/commit/edcad18d673eba37272bdf6f6471913d43e6ac48) thêm regression. **[#45096830875](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45096830875) SUCCESS 15/15 scorecard tests**, vẫn **1/12** warm. Workflow chỉ được nghiệm thu trên lượt **signed release vì nội dung thực** kế tiếp, không gọi force/no-op build để lấy benchmark.
+
+**Giữ/rollback compression:** ở các signed production release tiếp theo (cùng Astro SHA, không media mới, hai cache hit), so ZIP bytes, package monotonic, FTPS STOR và tổng workflow với lịch sử ~2,032,851B package 0.572s/FTP STOR 17.812s ở last run. Chỉ kết luận lợi ích nếu ZIP thực giảm và package extra cost không lớn hơn số giây truyền tiết kiệm sau khi tính network variability. Nếu ZIP không giảm hoặc packaging tăng gây hồi quy, revert `zip -q -9 -r` → `zip -q -r` và marker ghi 9; không thay đổi giao thức/signed flow.
+
+**Kết luận:** FTPS phase diagnostic/CI/ZIP9 trial code **PASS**; production speed benefit của ZIP9 **NOT TESTED**, do không có signed production mới sau patch. Acceptance p50≤90s, p90<120s trên 12 warm same-SHA và cold/new-media thật vẫn **PARTIAL (1/12)**; giữ nguyên lịch giám sát PSE đã có. Không lặp run đã PASS, không tạo thêm production no-op, không ghi CMS.
