@@ -1,39 +1,27 @@
 # Phản hồi ChatGPT mới nhất — PSE
 
-- Thời điểm: 2026-11-23T13:55:22+07:00 (Asia/Ho_Chi_Minh)
+- Ngày: 2026-11-23 (Asia/Ho_Chi_Minh)
 - Project: pse.vn
 - Repository: ngocnhanvo/psevn-actions
 - Branch: main
-- Trạng thái: DONE
-- Astro source: ngocnhanvo/psevn-astro/master `d9a1c7b8ec657b1bc1b6f267dc193695eb98412e`
-- Source QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45126911017 — PASS (9/9)
-- Production: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127087014 — PASS
-- Browser QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127341192 — PASS
+- Trạng thái: DONE — hoàn tất phân tích nguyên nhân
+- Đích kiểm tra: https://pse.webnvn.com/kali-phu-my-mo-ta-cac-bien-the
+- Page ID: 83572
+- Live browser QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45128039993 (PASS read-only)
 
 ## Phản hồi cuối cùng
 
-Mình đã tìm được nguyên nhân chính xác trong `src/astro/components/Layout/Header.astro`.
+Mình đã xác minh nguyên nhân trên chính trang production bằng Playwright, đối chiếu với nội dung WordPress Page **83572**.
 
-Tên công ty đang bị điều khiển bởi class `min-[1242px]:flex`, nghĩa là:
+**Nguyên nhân chính là bảng HTML 3 hàng nhập từ Joomla chưa có ràng buộc kích thước ảnh, kết hợp CSS bảng dùng chung của Astro.** Trong WordPress, mỗi hàng là một ảnh sản phẩm cạnh mô tả, nhưng các thẻ `<img>` đều thiếu `width`/`height`. Trường ACF `cssmore` đang trống.
 
-- Màn hình **1245 px:** hiện tên công ty.
-- Màn hình **1240 px:** ẩn toàn bộ tên công ty.
+Trong `src/astro/pages/PublicPage.astro`, CSS chung ép bảng nội dung `width:100%!important` (giới hạn 1200 px), còn ảnh trong bảng `max-width:100%;height:auto`. Trình duyệt dùng auto table layout, dành **832 px** cho cột ảnh và **344 px** cho cột chữ ở viewport 1240 px.
 
-Đây là lỗi breakpoint CSS, **không phải thiếu dữ liệu WordPress**. Mình sẽ sửa để tên công ty tiếp tục hiển thị khi còn đủ không gian, đồng thời bảo vệ bố cục trên màn hình nhỏ hơn.
+Sau khi tải đủ ba ảnh, kích thước trên trang đo được là khoảng **830 × 1142 px**, **830 × 1065 px**, **830 × 1065 px**. Toàn bộ bảng cao **3373 px**. Trước khi hai ảnh lazy tải xong, bảng cao khoảng 1745 px, nên còn xảy ra thay đổi bố cục mạnh khi ảnh tải. Đây là lỗi **tỷ lệ ảnh và cấu trúc bảng**, không phải lỗi 404, ảnh hỏng hay tràn ngang: Playwright thấy `document.scrollWidth` bằng viewport ở 1440, 1240, 1024, 768 và 390 px.
 
-**Mình đã sửa và triển khai thành công lên [pse.webnvn.com](https://pse.webnvn.com/).** Tên công ty cạnh logo giờ được hiển thị từ 900 px trở lên trên Header PSE thay vì biến mất khi màn hình nhỏ hơn 1242 px.
+**Hướng xử lý phù hợp:** sửa tại WordPress Page 83572, không hard-code dữ liệu vào Astro. Chuyển 3 hàng bảng cũ thành 3 mục sản phẩm responsive (ảnh giới hạn khoảng 240–300 px, mô tả chiếm phần còn lại; mobile xếp dọc) và cung cấp kích thước hoặc aspect ratio để giảm layout shift. Có thể tận dụng ACF `cssmore` để style đúng wrapper `.pse-historical-kali-1426`; không sửa quy tắc bảng toàn site để chữa riêng trang. Đồng thời, nội dung còn vài liên kết về `pse.vn` nên cần đối chiếu redirect riêng.
 
-Kiểm thử Playwright trên website production đã **PASS**:
-
-- **1245 px và 1240 px:** tên công ty đều hiển thị đầy đủ, không tràn ngang.
-- **1024 px và 900 px:** tên công ty vẫn hiển thị.
-- **899 px:** chuyển sang bố cục mobile như thiết kế.
-
-Đã chạy 9/9 kiểm thử source thành công và xác nhận Astro build, FTPS deploy, kiểm tra trang chủ đều thành công.
-
-Mã nguồn: [commit d9a1c7b](https://github.com/ngocnhanvo/psevn-astro/commit/d9a1c7b8ec657b1bc1b6f267dc193695eb98412e) · [Production deploy PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127087014) · [Playwright live QA PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127341192).
-
-Bạn có thể **Ctrl + F5** trang chủ và thử lại ở 1240 px.
+Mình mới **kiểm tra nguyên nhân, chưa ghi sửa nội dung WordPress hoặc deploy lại Astro**, đúng phạm vi yêu cầu hiện tại. Bằng chứng: [Playwright read-only](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45128039993).
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
