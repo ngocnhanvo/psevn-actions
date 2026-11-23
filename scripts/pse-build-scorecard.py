@@ -301,7 +301,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
             metrics = row["metrics"]
             slow = max(REQUIRED, key=lambda n: metrics["stages"][n]["elapsed_ms"])
             lines.append(
-                f"| #{row['id']} | \`{metrics['source_sha'][:9]}\`"
+                f"| #{row['id']} | `{metrics['source_sha'][:9]}`"
                 f" | {row['seconds']:.1f}s | {'warm' if metrics['warm'] else 'cold/unverified'}"
                 f" | {metrics['media_status']} | {slow}"
                 f" ({metrics['stages'][slow]['elapsed_ms'] / 1000:.1f}s) |"
