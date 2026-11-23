@@ -38,6 +38,7 @@ jobs:
           php source-php/tests/pse-image-delta.php
           php source-php/tests/pse-static-delta.php
           php -l source-php/wp-content/plugins/github-trigger/vcs-build-trigger.php
+          php -l source-php/wp-content/plugins/github-trigger/redirects/endpoint.php
           node --check source-php/wp-content/plugins/github-trigger/vcs-build-trigger.js
           php -l source-php/wp-content/plugins/esc-visual-builder/includes/site-config.php
           php -l source-php/wp-content/plugins/esc-visual-builder/includes/text-editor.php
@@ -95,6 +96,15 @@ jobs:
               fi
               export PSE_PHP_RELEASE_SCOPE=delta
               echo "PSE_PHP_RELEASE_SCOPE=delta source_verified=true files=2"
+            elif [[ "$request" =~ ^PSE_REDIRECT_RELEASE_SHA=([0-9a-f]{40})$ ]]; then
+              expected_sha="${BASH_REMATCH[1]}"
+              actual_sha="$(git -C source-php rev-parse HEAD)"
+              if [[ "$expected_sha" != "$actual_sha" ]]; then
+                echo "::error::Redirect PHP release source SHA mismatch"
+                exit 1
+              fi
+              export PSE_PHP_RELEASE_SCOPE=redirect
+              echo "PSE_PHP_RELEASE_SCOPE=redirect source_verified=true files=1"
             fi
           fi
           python3 scripts/pse-php-live-release.py
