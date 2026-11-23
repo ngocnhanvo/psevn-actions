@@ -12,7 +12,15 @@ concurrency:
   cancel-in-progress: false
 jobs:
   diagnostic:
-    if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'workflow_dispatch'
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions'
+      && (
+        github.event_name == 'workflow_dispatch'
+        || (
+          github.event_name == 'push'
+          && github.event.head_commit.message == 'perf(pse): approved one-shot bounded FTPS comparison'
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -20,6 +28,9 @@ jobs:
       FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
       FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       ENV_FILE: ${{ secrets.ENV_FILE }}
+      # This write probe is isolated from signed ZIP and only runs on manual or
+      # exact one-shot owner-approved marker. Temporary files are verified gone.
+      PSE_BENCHMARK_ENABLED: '1'
     steps:
       - name: Read PSE-only diagnostic source
         uses: actions/checkout@v4
@@ -37,10 +48,10 @@ jobs:
       - name: Profile existing ZIP READ ONLY and compare removable synthetic test uploads
         shell: bash
         run: python3 scripts/pse-ftps-transfer-profile.py
-      - name: Document that official production build did not run
+      - name: Confirm one-shot probe result without touching release
         shell: bash
         run: |
-          echo 'PSE_FTPS_PROFILE=PASS; NO_ASTRO_BUILD; NO_PRODUCTION_DEPLOY; ALL_BENCHMARK_FILES_REMOVED'
+          echo 'PSE_FTPS_PROFILE=PASS; NO_ASTRO_BUILD; NO_PRODUCTION_DEPLOY; PROBE_CLEANUP_VERIFIED'
   cached-assets:
     name: Inspect restored WordPress image cache (NO BUILD)
     if: github.repository == 'ngocnhanvo/psevn-actions' && github.event_name == 'push'
