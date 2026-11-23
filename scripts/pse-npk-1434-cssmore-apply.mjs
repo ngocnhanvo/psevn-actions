@@ -232,6 +232,13 @@ try{
          related.some(x=>/Nội dung đang cập nhật/i.test(x.label)||/^https?:\/\/(?:www\.)?pse\.vn\//i.test(x.url)))
         throw Error("Published NPK text related links point outside new PSE site");
       console.log("PSE_NPK_RELATED_LINKS_LIVE=PASS two_links_local=true placeholder_removed=true");
+      const imageLinks=await table.locator("tr").evaluateAll(rows=>rows.map(row=>
+        row.querySelector("a:has(img)")?.href||""));
+      if(imageLinks.length!==20||imageLinks.filter(url=>url.startsWith(front+"/san-pham/")).length!==15||
+         imageLinks.filter(url=>!url).length!==5||
+         imageLinks.some(url=>/^https?:\/\/(?:www\.)?pse\.vn\//i.test(url)))
+        throw Error("Published NPK image destinations not migrated exactly");
+      console.log("PSE_NPK_IMAGE_LINKS_LIVE=PASS nativeProducts=15 unlinkedMissing=5 oldSiteLinks=0");
     }
     await table.locator("img").evaluateAll(imgs=>imgs.forEach(img=>{img.loading="eager";}));
     await pub.waitForFunction(()=>[...document.querySelectorAll("main .article-content > div > table:first-of-type img")].every(img=>img.complete),
