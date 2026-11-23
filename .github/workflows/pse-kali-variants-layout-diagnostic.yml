@@ -1,0 +1,30 @@
+name: PSE Kali variants layout diagnostic (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-kali-variants-layout-diagnostic.yml
+      - scripts/pse-kali-variants-layout-diagnostic.mjs
+permissions:
+  contents: read
+jobs:
+  inspect-layout:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Install Playwright driver (Chromium preinstalled)
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Inspect live PSE Kali variants across desktop and mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-kali-variants-layout-diagnostic.mjs
+          node scripts/pse-kali-variants-layout-diagnostic.mjs
