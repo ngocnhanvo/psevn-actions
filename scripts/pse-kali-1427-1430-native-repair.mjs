@@ -55,7 +55,7 @@ try{
    if(e.tagName==='IMG'){images++;e.setAttribute('src','__ORIGINAL_KALI_PNG__');e.setAttribute('loading','lazy')}
    if(e.tagName==='A'&&href){const l=links.find(x=>x.href===href);if(!l)throw Error('Unverified hyperlink');const u=new URL(l.url),m=u.pathname.match(/\/8-trang-chu\/(\d+)-/),path=u.hostname==='pse.vn'&&m?mapped.get(Number(m[1])):null;e.setAttribute('href',path?'https://pse.webnvn.com'+path:u.href)}
   }
-  return {html:root.innerHTML,text:String(root.textContent||'').normalize('NFKC').replace(/\s+/g,' ').trim(),images,tables:[...root.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(c=>String(c.textContent||'').normalize('NFKC').replace(/\s+/g,' ').trim())))};
+  const core=root.cloneNode(true);core.querySelectorAll('.extranews_box,.extranews_separator').forEach(x=>x.remove());return {html:root.innerHTML,text:String(core.textContent||'').normalize('NFKC').replace(/\s+/g,' ').trim(),images,tables:[...root.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(c=>String(c.textContent||'').normalize('NFKC').replace(/\s+/g,' ').trim())))};
  },{html:source.html,links:source.links});
  if(clean.images!==1||sha(clean.text)!==r.bodySha||JSON.stringify(clean.tables)!==JSON.stringify(source.tables))throw Error('1430 source HTML parity mismatch');
  await writeFile(dir+'/rollback.json',JSON.stringify({parentId:83572,parentModified:parent.d.modified,originalRaw:raw,originalSha:sha(raw)},null,2)+'\n');
