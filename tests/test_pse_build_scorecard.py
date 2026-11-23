@@ -58,6 +58,8 @@ class ScorecardTest(unittest.TestCase):
         report = scorecard.summarize(rows, failures=1, candidates=13)
         self.assertIn("12/12", report)
         self.assertIn("p50=75.5s, p90=80.0s", report)
+        self.assertIn("Effective FTPS MiB/s", report)
+        self.assertIn("Slowest measured stage", report)
         self.assertIn("PASS", report)
         # New revision must not be mixed with older runs.
         new = {"id": 99, "seconds": 100, "metrics": scorecard.parse_metrics(log(NEW_SHA))}
@@ -65,6 +67,16 @@ class ScorecardTest(unittest.TestCase):
         self.assertIn("1/12", partial)
         self.assertIn("PARTIAL", partial)
         self.assertNotIn("p50=", partial)
+
+    def test_slow_ftps_warns_without_failing_production(self):
+        sample = scorecard.parse_metrics(log())
+        sample["stages"]["ftps"]["elapsed_ms"] = 38138
+        rows = [{"id": 90240402, "seconds": 122, "metrics": sample}]
+        report = scorecard.summarize(rows, failures=0, candidates=1)
+        self.assertIn("0.00", report) if not sample["zip_bytes"] else self.assertIn("0.05", report)
+        self.assertIn("ftps (38.1s)", report)
+        self.assertIn("exceeded 30s", report)
+        self.assertIn("1/12", report)
 
     def test_failed_runs_and_missing_caches_never_count(self):
         rows = [
