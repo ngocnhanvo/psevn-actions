@@ -54,6 +54,8 @@ try{
    }));
  },source);
  console.log("PSE_NPK_WP_LINKS="+JSON.stringify(wpLinks));
+ const sourceProductTargets=wpLinks.filter(x=>x.href && /pse\\.vn/i.test(x.href));
+ console.log("PSE_NPK_LEGACY_PRODUCT_LINKS="+JSON.stringify({total:sourceProductTargets.length,links:sourceProductTargets}));
   const res=await p.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
   console.log("PSE_NPK_HTTP="+JSON.stringify({http:res?.status(),url:p.url(),title:await p.title()}));
  const geometry=await p.evaluate(()=>{
