@@ -4,7 +4,7 @@ import {mkdir,writeFile} from "node:fs/promises";
 const base="https://pse.webnvn.com",out="artifacts/pse-kali-1426-whitespace-diagnostic";
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,channel:process.env.PSE_CHROME_CHANNEL||undefined});
-const report={source:"production",expectedCommit:"77ca4fa8597b71f01ab4be6e5553fe1d200f96a9",viewports:[],pass:false};
+const report={source:"production",expectedCommit:"c673d984989afc068be938c114cd92ae5fc73d13",viewports:[],pass:false};
 try {
  for(const slug of ["kali-phu-my-bot-canada-mo-ta-va-hdsd"]) {
   for(const width of [1440,390]) {
@@ -57,9 +57,20 @@ try {
       await image.evaluate(async el=>{el.loading="eager";await el.decode()});
       data.mediaNaturalWidth=await image.evaluate(el=>el.naturalWidth);
     }
+    const directChildren=data.whitespaceForensics.historicalChildren;
+    const converted=directChildren.find(el=>String(el.cls).includes("pse-fertilizer-product-layout"));
+    const related=directChildren.find(el=>String(el.cls).includes("pse-fertilizer-related"));
+    const relatedGap=related&&converted?Math.round(related.box.y-converted.box.bottom):null;
+    const blankSpacingChildren=directChildren.filter(el=>
+      ["P","DIV"].includes(el.tag) && !String(el.txt||"").replace(/[\\s\\u00a0]+/g,"").length && el!==converted).length;
+    data.relatedGap=relatedGap;
+    data.blankSpacingChildren=blankSpacingChildren;
     report.viewports.push({slug,...data});
+    if(relatedGap===null || relatedGap<0 || relatedGap>70 || blankSpacingChildren!==0)
+      throw Error("Historical blank-space fix failed "+slug+" "+width+" gap="+relatedGap+" empty="+blankSpacingChildren);
+    await page.screenshot({path:out+"/"+slug+"-"+width+".png",fullPage:true});
     console.log("PSE_FERTILIZER_LIVE_METRICS="+JSON.stringify({slug,...data}));
-    // Fast DOM-only diagnostic; avoid long full-page screenshots.
+    // Screenshot captured after exact geometry assertions.
     if(!data.mainPresent || !data.converted || data.articleBreadcrumbs || data.overflow>5 || data.specRows<5 || !data.mediaNaturalWidth)
       throw Error("Missing responsive product presentation "+slug+" "+width+": "+JSON.stringify(data));
     if(width>=1240 && (data.sectionLeft<85||width-data.sectionRight<85))
