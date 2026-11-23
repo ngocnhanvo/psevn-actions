@@ -54,15 +54,15 @@ try{
    }));
  },source);
  console.log("PSE_NPK_WP_LINKS="+JSON.stringify(wpLinks));
- const sourceProductTargets=wpLinks.filter(x=>x.href && /pse\\.vn/i.test(x.href));
+ const sourceProductTargets=wpLinks.filter(x=>x.href && /pse\.vn/i.test(x.href));
  console.log("PSE_NPK_LEGACY_PRODUCT_LINKS="+JSON.stringify({total:sourceProductTargets.length,links:sourceProductTargets}));
- const variants=wpLinks.filter(x=>x.image && /pse\\.vn/.test(x.href));
+ const variants=wpLinks.filter(x=>x.image && /pse\.vn/.test(x.href));
  const probe=await Promise.all(variants.map(async x=>{
    const u=new URL(x.href);const id=u.searchParams.get("id");
    try{
      const response=await p.request.get(x.href,{timeout:30000,failOnStatusCode:false});
      const html=await response.text();
-     const title=html.match(new RegExp("<title[^>]*>([\\\\s\\\\S]*?)</title>","i"))?.[1]?.replace(/\s+/g," ").trim().slice(0,130)||"";
+     const title=(html.split(/<title[^>]*>/i)[1]||"").split(/<\\/title>/i)[0].replace(/\s+/g," ").trim().slice(0,130);
      return {id,http:response.status(),url:x.href,title,bytes:html.length,finalUrl:response.url()};
    }catch(e){return {id,error:String(e).slice(0,140)}}
  }));
