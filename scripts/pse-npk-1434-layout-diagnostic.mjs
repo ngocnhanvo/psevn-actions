@@ -46,8 +46,38 @@ try{
  console.log("PSE_NPK_WP_SOURCE="+JSON.stringify({id:item.id,slug:item.slug,title:item.title?.rendered,
    cssmoreChars:String(item.acf?.cssmore||"").length,cssmoreExcerpt:String(item.acf?.cssmore||"").slice(0,1100),
    ...shape}).slice(0,23000));
- const res=await p.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
- console.log("PSE_NPK_HTTP="+JSON.stringify({http:res?.status(),url:p.url(),title:await p.title()}));
+ const wpLinks=await p.evaluate(html=>{
+   const root=document.createElement("div");root.innerHTML=html;
+   return [...root.querySelectorAll("a[href]")].map((a,i)=>({
+     i,text:a.textContent.replace(/\\s+/g," ").trim().slice(0,90),
+     href:a.getAttribute("href"),image:!!a.querySelector("img")
+   }));
+ },source);
+ console.log("PSE_NPK_WP_LINKS="+JSON.stringify(wpLinks));
+  const res=await p.goto(target,{waitUntil:"domcontentloaded",timeout:60000});
+  console.log("PSE_NPK_HTTP="+JSON.stringify({http:res?.status(),url:p.url(),title:await p.title()}));
+ const geometry=await p.evaluate(()=>{
+   const rect=el=>{if(!el)return null;const r=el.getBoundingClientRect();return {
+     top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height)};};
+   const title=document.querySelector("main header h1");
+   const header=document.querySelector("main > header");
+   const body=document.querySelector("main .pse-public-body");
+   const article=document.querySelector("main .article-content");
+   const catalog=article?.querySelector("table");
+   const links=[...document.querySelectorAll("main a[href]")].map((a,i)=>({
+      i,text:a.textContent.replace(/\\s+/g," ").trim().slice(0,85),
+      href:a.getAttribute("href"),image:!!a.querySelector("img")
+   }));
+   const related=[...document.querySelectorAll("main h2")].find(h=>
+      h.textContent.includes("Các bài viết khác"));
+   return {title:rect(title),header:rect(header),body:rect(body),
+     article:rect(article),catalog:rect(catalog),related:rect(related),
+     rawLinks:links.filter(x=>/pse\\.vn/i.test(x.href)),
+     relatedLinks:related?[...related.closest("section")?.querySelectorAll("a[href]")||[]].map(a=>({
+       title:a.textContent.trim(),href:a.getAttribute("href")})):[],
+     totalLinks:links.length};
+ });
+ console.log("PSE_NPK_TITLE_AND_LINKS="+JSON.stringify(geometry));
  // Keep image load behavior reproducible: force lazy media, inspect after they settle.
  await p.locator("main img").evaluateAll(imgs=>imgs.forEach(im=>im.loading="eager"));
  await p.waitForTimeout(1500);
