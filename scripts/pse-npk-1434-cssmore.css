@@ -64,13 +64,18 @@
     max-height: 240px !important;
   }
 }
-/* NPK Page #83593 only: reduce the excessive H1-to-catalog gap.
+/* NPK Page #83593 only: match the Kali page title spacing.
    This cssmore content belongs to the NPK WordPress Page, not the Astro template. */
 .pse-public-page > header > div {
-  padding-bottom: 14px !important;
+  padding-bottom: 36px !important;
+}
+@media (min-width: 768px) {
+  .pse-public-page > header > div {
+    padding-bottom: 48px !important;
+  }
 }
 .pse-public-page > section.pse-public-body {
-  padding-top: 14px !important;
+  padding-top: 16px !important;
 }
 /* Tailwind space-y-8 adds an unintended 32px gap between the injected
    WordPress cssmore <style> and the real Page body <div>. */
