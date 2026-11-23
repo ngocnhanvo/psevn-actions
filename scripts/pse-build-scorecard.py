@@ -157,6 +157,63 @@ def parse_historical_phases(log: str) -> dict[str, float] | None:
     return {key: round(value, 3) for key, value in timings.items()}
 
 
+def parse_ftps_release_phases(log: str, archive_bytes: int | None) -> dict | None:
+    """Scope FTPS timings strictly to the actual signed release ZIP upload.
+
+    Earlier PHP-signed inventory and runtime helper code emits similar FTPS
+    markers for tiny probes. Without FTPS_TRANSFER_START and a matching
+    FTPS_UPLOAD=PASS, those MUST NOT be treated as release transport metrics.
+    Both clear and GitHub-secret-masked elapsed_ms markers are supported.
+    """
+    markers = list(re.finditer(
+        r"FTPS_TRANSFER_START bytes=(\d+) sha_prefix=([0-9a-f]{12})", log
+    ))
+    if not markers or type(archive_bytes) is not int or archive_bytes <= 0:
+        return None
+    start = markers[-1]
+    expected_bytes = int(start.group(1))
+    checksum_prefix = start.group(2)
+    if expected_bytes != archive_bytes:
+        return None
+    remainder = log[start.end():]
+    ending = STAGES.search(remainder)
+    if not ending or ending.group(1) != "ftps":
+        return None
+    segment = remainder[:ending.start()]
+    success = re.search(
+        r"FTPS_UPLOAD=PASS bytes=(\d+) sha_prefix=([0-9a-f]{12})", segment
+    )
+    if not success or int(success.group(1)) != expected_bytes or success.group(2) != checksum_prefix:
+        return None
+    phases = {}
+    for match in re.finditer(
+        r"FTPS_PHASE attempt=(\d+) phase=(connect_tls|remote_probe|transfer|verify_temp_size|rename_verify)"
+        r" \S+_ms=(\d+)(?: bytes=(\d+))?", segment[:success.end()]
+    ):
+        attempt, name, ms, count = match.groups()
+        if name == "transfer" and count is not None and int(count) > expected_bytes:
+            return None
+        phases[(int(attempt), name)] = int(ms)
+    # Successful transfer attempt is identified from the last phase marker
+    # nearest PASS; never mix phases from multiple retry attempts.
+    attempts = [attempt for attempt, name in phases if name == "rename_verify"]
+    if not attempts:
+        return None
+    winning_attempt = max(attempts)
+    names = ("connect_tls", "remote_probe", "transfer", "verify_temp_size", "rename_verify")
+    if any((winning_attempt, name) not in phases for name in names):
+        return None
+    durations = {name: phases[(winning_attempt, name)] for name in names}
+    if any(ms < 0 or ms > 360_000 for ms in durations.values()):
+        return None
+    # A zero transfer often indicates same-SHA staging was already complete.
+    # It has no meaningful throughput measurement; report phase timings only.
+    transfer_ms = durations["transfer"]
+    mibps = round((expected_bytes / 1048576) / (transfer_ms / 1000), 3) if transfer_ms else None
+    return {"attempt": winning_attempt, "bytes": expected_bytes,
+            "elapsed_ms": durations, "transfer_mibps": mibps}
+
+
 def parse_metrics(log: str) -> dict | None:
     stage_results = {}
     for name, ms, exit_code in STAGES.findall(log):
@@ -200,6 +257,7 @@ def parse_metrics(log: str) -> dict | None:
         "zip_bytes": zip_data.get("bytes"),
         "reused_files": zip_data.get("reused_files"),
         "historical_phases": parse_historical_phases(log),
+        "ftps_release": parse_ftps_release_phases(log, zip_data.get("bytes")),
     }
 
 
@@ -251,8 +309,8 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "  it includes runner queue, checkout, preflight, cache restore/save and post-job.",
         "  It is **not** a measured single bottleneck or fully recoverable time.",
         "",
-        "| Run | Total | Outside stages | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | Slowest measured stage |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Run | Total | Outside stages | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | FTP data transfer | Slowest measured stage |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in eligible:
         m = row["metrics"]
@@ -262,10 +320,15 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         effective_mibps = archive_bytes / (1024 * 1024) / (ftp_ms / 1000) if ftp_ms > 0 else 0
         outside = unmeasured_seconds(row)
         outside_label = f"{outside:.1f}s" if outside is not None else "unreconciled"
+        transfer = m.get("ftps_release")
+        transfer_label = (
+            f"{transfer['elapsed_ms']['transfer'] / 1000:.1f}s"
+            if transfer and transfer['elapsed_ms']['transfer'] else "—"
+        )
         lines.append(
             f"| #{row['id']} | {row['seconds']:.1f}s | {outside_label} | {m['zip_bytes'] or '—'}"
             f" | {m['stages']['astro']['elapsed_ms'] / 1000:.3f}s"
-            f" | {ftp_ms / 1000:.3f}s | {effective_mibps:.2f}"
+            f" | {ftp_ms / 1000:.3f}s | {effective_mibps:.2f} | {transfer_label}"
             f" | {slowest} ({m['stages'][slowest]['elapsed_ms'] / 1000:.1f}s) |"
         )
     # Distinguish cold/media-change cohorts and every slow signed production
@@ -316,6 +379,28 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         )
     if eligible:
         latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
+        release = eligible[0]["metrics"].get("ftps_release")
+        if release:
+            ms = release["elapsed_ms"]
+            lines.append("")
+            lines.append(
+                f"- **Signed release FTPS phases (latest):** TLS connect {ms['connect_tls']/1000:.1f}s;"
+                f" ZIP data {ms['transfer']/1000:.1f}s;"
+                f" remote size/rename checks {(ms['remote_probe'] + ms['verify_temp_size'] + ms['rename_verify'])/1000:.1f}s;"
+                f" successful attempt #{release['attempt']}."
+            )
+            if release["transfer_mibps"] is not None:
+                lines.append(
+                    f"- **Measured ZIP data rate: {release['transfer_mibps']:.2f} MiB/s.**"
+                    " This is only the FTPS data transfer, not Astro, packaging"
+                    " or total workflow throughput."
+                )
+            if ms["transfer"] > 15000:
+                lines.append(
+                    "- **FTPS bottleneck diagnostic:** ZIP data STOR exceeded 15s;"
+                    " optimize network path/payload only with controlled evidence."
+                    " Replacing an already verified uploader alone is not proven faster."
+                )
         latest_outside = unmeasured_seconds(eligible[0])
         latest_metrics = eligible[0]["metrics"]
         setup = [latest_metrics["stages"].get(name) for name in DIAGNOSTICS]
