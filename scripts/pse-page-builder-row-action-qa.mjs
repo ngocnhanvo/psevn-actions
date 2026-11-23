@@ -57,6 +57,9 @@ try{
     throw Error("Wrong Builder action URL");
   console.log("PSE_PAGE_ROW_LINK=PASS; old_rewrite=ABSENT; correct_page=83572");
 
+  // WordPress row-actions are visually hidden until their table row is hovered.
+  await row.hover();
+  await builder.waitFor({state:"visible",timeout:10000});
   const previousUrl=page.url();
   const target=await builder.getAttribute("target");
   const pendingPopup=page.waitForEvent("popup",{timeout:7000}).catch(()=>null);
