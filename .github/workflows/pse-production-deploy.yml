@@ -322,7 +322,10 @@ jobs:
           python3 ../actions-hub/scripts/pse-image-delta-package.py
           python3 ../actions-hub/scripts/pse-static-delta-package.py
           cd deploy
-          zip -q -r ../upload/pse-astro.zip .
+          # Extra deflate compression reduces encrypted upload payload while
+          # preserving the identical ZIP entries, SHA-protected activation,
+          # signed reuse manifests, and rollback. Measured in the real pipeline.
+          zip -q -9 -r ../upload/pse-astro.zip .
           cd ..
           python3 - <<'PY'
           import json
