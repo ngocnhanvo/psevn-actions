@@ -62,7 +62,7 @@ try{
    try{
      const response=await p.request.get(x.href,{timeout:30000,failOnStatusCode:false});
      const html=await response.text();
-     const title=(html.split(/<title[^>]*>/i)[1]||"").split(/<\\/title>/i)[0].replace(/\s+/g," ").trim().slice(0,130);
+     const title=(html.split("<title>")[1]||html.split("<title ")[1]||"").split("</title>")[0].replace(/\s+/g," ").trim().slice(0,130);
      return {id,http:response.status(),url:x.href,title,bytes:html.length,finalUrl:response.url()};
    }catch(e){return {id,error:String(e).slice(0,140)}}
  }));
