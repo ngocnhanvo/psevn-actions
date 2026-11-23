@@ -123,26 +123,49 @@ try {
 
   // Reconcile completed GitHub run through WordPress' existing AJAX status API
   // before making a new dispatch; only the server may release its matching lock.
-  const state = await page.evaluate(async () => {
-    const form = new URLSearchParams({
-      action: 'vcs_check_build_status',
-      nonce: globalThis.vcsBuild.nonce,
-    });
-    const response = await fetch(globalThis.vcsBuild.ajax_url, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-      body: form.toString(),
-    });
-    if (!response.ok) throw new Error('WordPress build status API request failed');
-    const json = await response.json();
-    if (json?.success !== true) throw new Error('WordPress build status API refused status check');
-    return {
-      state: String(json?.data?.status || 'unknown'),
-      active: json?.data?.build_active === true,
-      pending: Number(json?.data?.pending_count ?? 0),
-    };
-  });
+  // The status endpoint is strictly read-only and safe to retry on transient
+  // network/5xx/429 errors. Never retry vcs_trigger_build (non-idempotent).
+  // Failed status reads must still abort BEFORE dispatch rather than guessing.
+  let state;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      state = await page.evaluate(async () => {
+        const form = new URLSearchParams({
+          action: 'vcs_check_build_status',
+          nonce: globalThis.vcsBuild.nonce,
+        });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
+        try {
+          const response = await fetch(globalThis.vcsBuild.ajax_url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: form.toString(),
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error('WordPress build status API HTTP ' + response.status);
+          const json = await response.json();
+          if (json?.success !== true) throw new Error('WordPress build status API refused status check');
+          return {
+            state: String(json?.data?.status || 'unknown'),
+            active: json?.data?.build_active === true,
+            pending: Number(json?.data?.pending_count ?? 0),
+          };
+        } finally {
+          clearTimeout(timeout);
+        }
+      });
+      break;
+    } catch (error) {
+      const message = String(error?.message || error);
+      const transient = /Failed to fetch|NetworkError|AbortError|HTTP (?:429|5\\d{2})/i.test(message);
+      if (!transient || attempt === 3) throw error;
+      console.warn('PSE_WP_STATUS_RETRY attempt=' + attempt + ' reason=transient_read_error');
+      await page.waitForTimeout(750 * attempt);
+    }
+  }
+  if (!state) throw new Error('WordPress status read returned no verified result');
   console.log('PSE_WP_TRIGGER_TIMING phase=status_check elapsed_ms=' + (Date.now() - statusStarted));
   console.log('PSE_WP_BUILD_STATUS_CHECK=' + state.state);
   if (state.active || ['loading', 'queued', 'in_progress'].includes(state.state)) {
