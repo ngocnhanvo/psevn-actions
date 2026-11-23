@@ -142,6 +142,7 @@ try{
       if(broken.length>1||(broken.length===1&&
          (state.images.indexOf(broken[0])!==4||!structure.imageUrls[4]?.includes("dpm.vn"))))
         throw Error("Unexpected broken image outside known imported source #4");
+      if(live&&broken.length!==0)throw Error("Published NPK original photo still broken at "+width);
       if(width===1240||width===390)
         await pub.screenshot({path:dir+"/"+(live?"live":"preview")+"-"+width+".png",fullPage:true});
     }
