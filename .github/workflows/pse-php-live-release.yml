@@ -59,6 +59,9 @@ jobs:
           php -l source-php/wp-content/mu-plugins/pse-published-post-search.php
           php -l source-php/wp-content/mu-plugins/pse-public-contact-form-id.php
           php -l source-php/wp-content/mu-plugins/esc-native-page-cssmore-editor.php
+          php -l source-php/wp-content/mu-plugins/esc-visual-builder-page-shortcut.php
+          php -l source-php/wp-content/mu-plugins/tests/esc-visual-builder-page-shortcut.php
+          php source-php/wp-content/mu-plugins/tests/esc-visual-builder-page-shortcut.php
           php -l source-php/tests/pse-native-page-cssmore-editor.php
           php source-php/tests/pse-native-page-cssmore-editor.php
           php -l source-php/wp-content/mu-plugins/pse-contact-editor-preview.php
@@ -105,6 +108,15 @@ jobs:
               fi
               export PSE_PHP_RELEASE_SCOPE=redirect
               echo "PSE_PHP_RELEASE_SCOPE=redirect source_verified=true files=1"
+            elif [[ "$request" =~ ^PSE_PAGE_SHORTCUT_RELEASE_SHA=([0-9a-f]{40})$ ]]; then
+              expected_sha="${BASH_REMATCH[1]}"
+              actual_sha="$(git -C source-php rev-parse HEAD)"
+              if [[ "$expected_sha" != "$actual_sha" ]]; then
+                echo "::error::Page shortcut PHP release source SHA mismatch"
+                exit 1
+              fi
+              export PSE_PHP_RELEASE_SCOPE=page-shortcut
+              echo "PSE_PHP_RELEASE_SCOPE=page-shortcut source_verified=true files=1"
             fi
           fi
           python3 scripts/pse-php-live-release.py
