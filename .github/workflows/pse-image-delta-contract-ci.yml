@@ -104,4 +104,17 @@ jobs:
           set -euo pipefail
           pnpm install --frozen-lockfile --prefer-offline
           pnpm exec vitest run src/lib/wordpress/redirects/registry.test.ts src/lib/wordpress/redirects/registry.bounded-concurrency.test.ts src/lib/wordpress/redirects/registry.incremental-log.test.ts
+          # The redirect registry runs while Info/Pages load; rejected reads
+          # are settled immediately and surfaced before TablePress enrichment.
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('src/lib/wordpress/cache.ts').read_text()
+          first = src.index("const redirectsPrefetch = loadRedirects().then(")
+          assert first < src.index("const info = await getInfo(", first)
+          assert "error => ({ ok: false as const, error })" in src
+          assert "if (!redirectOutcome.ok) throw redirectOutcome.error;" in src
+          assert src.count("const loadRedirects = async") == 1
+          assert src.count("loadRedirects()") == 1
+          print("PSE_REDIRECT_PREFETCH_ORDER_AND_FAILURE=PASS")
+          PY
           echo "PSE_ASTRO_REDIRECT_REGISTRY=PASS; NO_ASTRO_BUILD; NO_DEPLOY"
