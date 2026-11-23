@@ -103,7 +103,7 @@ jobs:
         run: |
           set -euo pipefail
           pnpm install --frozen-lockfile --prefer-offline
-          pnpm exec vitest run src/lib/wordpress/redirects/registry.test.ts src/lib/wordpress/redirects/registry.bounded-concurrency.test.ts src/lib/wordpress/redirects/registry.incremental-log.test.ts
+          pnpm exec vitest run src/lib/wordpress/redirects/registry.test.ts src/lib/wordpress/redirects/registry.bounded-concurrency.test.ts src/lib/wordpress/redirects/registry.incremental-log.test.ts src/lib/wordpress/pages/runBoundedTasks.test.ts
           # The redirect registry runs while Info/Pages load; rejected reads
           # are settled immediately and surfaced before TablePress enrichment.
           python3 - <<'PY'
@@ -115,6 +115,16 @@ jobs:
           assert "if (!redirectOutcome.ok) throw redirectOutcome.error;" in src
           assert src.count("const loadRedirects = async") == 1
           assert src.count("loadRedirects()") == 1
+          # Pages image queue must remain strictly bounded and fail on missing media.
+          pages = Path('src/lib/wordpress/pages/getData.ts').read_text()
+          worker = Path('src/lib/wordpress/pages/runBoundedTasks.ts').read_text()
+          assert 'const CONCURRENCY_LIMIT = 8;' in pages
+          assert 'await runBoundedTasks(' in pages
+          assert 'throw error;' in pages
+          assert 'while (!failed)' in worker
+          assert 'Math.min(maxConcurrent, tasks.length)' in worker
+          assert 'if (failed)' in worker
+          print("PSE_PAGES_IMAGE_WORKER_LIMIT_AND_FAILURE=PASS")
           print("PSE_REDIRECT_PREFETCH_ORDER_AND_FAILURE=PASS")
           PY
           echo "PSE_ASTRO_REDIRECT_REGISTRY=PASS; NO_ASTRO_BUILD; NO_DEPLOY"
