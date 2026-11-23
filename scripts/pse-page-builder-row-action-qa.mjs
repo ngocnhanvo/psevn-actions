@@ -57,16 +57,22 @@ try{
     throw Error("Wrong Builder action URL");
   console.log("PSE_PAGE_ROW_LINK=PASS; old_rewrite=ABSENT; correct_page=83572");
 
-  const [popup]=await Promise.all([
-    page.waitForEvent("popup",{timeout:20000}),
-    builder.click()
-  ]);
-  await popup.waitForLoadState("domcontentloaded",{timeout:60000});
-  const picker=popup.locator("#esc-vb-page");
+  const previousUrl=page.url();
+  const target=await builder.getAttribute("target");
+  const pendingPopup=page.waitForEvent("popup",{timeout:7000}).catch(()=>null);
+  await builder.click();
+  const popup=await pendingPopup;
+  const workspace=popup||page;
+  console.log("PSE_PAGE_ROW_CLICK_DEBUG target="+target+
+    " popup="+Boolean(popup)+" same_page="+(page.url()===previousUrl));
+  if(!popup&&page.url()===previousUrl)
+    throw Error("Builder row link click did not open a Page or navigate");
+  await workspace.waitForLoadState("domcontentloaded",{timeout:60000});
+  const picker=workspace.locator("#esc-vb-page");
   await picker.waitFor({state:"visible",timeout:60000});
   if(await picker.inputValue()!=="83572")throw Error("Builder selected wrong Page");
   console.log("PSE_PAGE_ROW_BUILDER_OPEN=PASS; selected_page=83572; read_only=true");
-  await popup.close();
+  if(popup)await popup.close();
 }finally{
   await browser.close();
 }
