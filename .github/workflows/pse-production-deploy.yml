@@ -326,6 +326,7 @@ jobs:
           # preserving the identical ZIP entries, SHA-protected activation,
           # signed reuse manifests, and rollback. Measured in the real pipeline.
           zip -q -9 -r ../upload/pse-astro.zip .
+          echo "PSE_RELEASE_ZIP_DEFLATE_LEVEL=9"
           cd ..
           python3 - <<'PY'
           import json
