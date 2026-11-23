@@ -1,38 +1,42 @@
 # Phản hồi ChatGPT mới nhất — PSE
 
-- Thời điểm: 2026-11-23T13:41:19+07:00 (Asia/Ho_Chi_Minh)
+- Thời điểm: 2026-11-23T13:55:22+07:00 (Asia/Ho_Chi_Minh)
 - Project: pse.vn
 - Repository: ngocnhanvo/psevn-actions
 - Branch: main
-- Trạng thái công việc: DONE
-- PHP source: ngocnhanvo/psevn-php/master `f353b2e316b7e605761eaa768e9b3e3741330b87`
-- FTP release: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45124932734 — PASS
-- Browser QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45125684948 — PASS
+- Trạng thái: DONE
+- Astro source: ngocnhanvo/psevn-astro/master `d9a1c7b8ec657b1bc1b6f267dc193695eb98412e`
+- Source QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45126911017 — PASS (9/9)
+- Production: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127087014 — PASS
+- Browser QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127341192 — PASS
 
 ## Phản hồi cuối cùng
 
-Mình đã triển khai thay đổi trên WordPress PSE.
+Mình đã tìm được nguyên nhân chính xác trong `src/astro/components/Layout/Header.astro`.
 
-- **Nút cũ:** `Rewrite & Republish`
-- **Nút mới:** `Edit với ESC builder`
-- **Chức năng:** Mở đúng trang đang chọn trong ESC Visual Builder, ở tab mới.
-- **Phạm vi:** Danh sách Trang (Pages), không ảnh hưởng đến Bài viết (Posts).
-- **Bảo mật:** Giữ nguyên kiểm tra quyền chỉnh sửa và cơ chế xác thực của Builder.
+Tên công ty đang bị điều khiển bởi class `min-[1242px]:flex`, nghĩa là:
 
-Ví dụ với trang *Kali Phú Mỹ* (ID `83572`), nút sẽ dẫn đến:
+- Màn hình **1245 px:** hiện tên công ty.
+- Màn hình **1240 px:** ẩn toàn bộ tên công ty.
 
-[ESC Builder — Kali Phú Mỹ](https://admin-pse.webnvn.com/wp-admin/edit.php?post_type=page&page=esc-visual-builder&esc_vb_page=83572)
+Đây là lỗi breakpoint CSS, **không phải thiếu dữ liệu WordPress**. Mình sẽ sửa để tên công ty tiếp tục hiển thị khi còn đủ không gian, đồng thời bảo vệ bố cục trên màn hình nhỏ hơn.
 
-**Kết quả triển khai:** FTPS đã xác nhận upload đúng một file PHP, kiểm tra SHA-256 thành công. Không cần build lại Astro.
+**Mình đã sửa và triển khai thành công lên [pse.webnvn.com](https://pse.webnvn.com/).** Tên công ty cạnh logo giờ được hiển thị từ 900 px trở lên trên Header PSE thay vì biến mất khi màn hình nhỏ hơn 1242 px.
 
-**Kiểm chứng giao diện thật:** Playwright đã đăng nhập WordPress, xác nhận nút mới ở Page `83572`, nút `Rewrite & Republish` đã biến mất, bấm nút mở đúng tab mới và Visual Builder chọn chính xác Page `83572`. [QA PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45125684948).
+Kiểm thử Playwright trên website production đã **PASS**:
 
-Mã nguồn: [PHP commit `f353b2e`](https://github.com/ngocnhanvo/psevn-php/commit/f353b2e316b7e605761eaa768e9b3e3741330b87) · [FTPS release PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45124932734).
+- **1245 px và 1240 px:** tên công ty đều hiển thị đầy đủ, không tràn ngang.
+- **1024 px và 900 px:** tên công ty vẫn hiển thị.
+- **899 px:** chuyển sang bố cục mobile như thiết kế.
 
-Bạn chỉ cần tải lại trang danh sách Trang để thấy nút mới.
+Đã chạy 9/9 kiểm thử source thành công và xác nhận Astro build, FTPS deploy, kiểm tra trang chủ đều thành công.
 
-Nhật ký phản hồi: SAVED
+Mã nguồn: [commit d9a1c7b](https://github.com/ngocnhanvo/psevn-astro/commit/d9a1c7b8ec657b1bc1b6f267dc193695eb98412e) · [Production deploy PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127087014) · [Playwright live QA PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45127341192).
+
+Bạn có thể **Ctrl + F5** trang chủ và thử lại ở 1240 px.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
 Trạng thái: DONE — hoàn tất
+
+Nhật ký phản hồi: SAVED
