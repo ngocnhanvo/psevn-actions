@@ -1,0 +1,51 @@
+name: PSE signed build speed 12-run scorecard (READ ONLY)
+on:
+  workflow_run:
+    workflows:
+      - PSE Astro build and deploy via WordPress GitHub Trigger
+    types: [completed]
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-build-scorecard.py
+      - tests/test_pse_build_scorecard.py
+      - .github/workflows/pse-build-speed-scorecard.yml
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: pse-build-scorecard-readonly
+  cancel-in-progress: true
+jobs:
+  performance:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions'
+      && (
+        github.event_name == 'push'
+        || (
+          github.event_name == 'workflow_run'
+          && github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions'
+          && github.event.workflow_run.event == 'repository_dispatch'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout report-only source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify offline scorecard behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/pse-build-scorecard.py
+          python3 -m unittest discover -s tests -p 'test_pse_build_scorecard.py' -v
+      - name: Report same-source warm production runs without building or deploying
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 scripts/pse-build-scorecard.py
+          echo "PSE_SCORECARD_SCOPE=READ_ONLY; NO_WP_WRITE; NO_ASTRO_BUILD; NO_FTP"
