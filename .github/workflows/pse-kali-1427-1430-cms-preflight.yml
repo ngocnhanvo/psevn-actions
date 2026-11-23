@@ -1,0 +1,35 @@
+name: PSE Kali 1427 1430 CMS state preflight (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-kali-1427-1430-cms-preflight.mjs
+      - .github/workflows/pse-kali-1427-1430-cms-preflight.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-kali-1427-1430-source
+          path: inputs/proof
+          run-id: 44993780995
+          github-token: ${{ github.token }}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-kali-1427-1430-cms-preflight.mjs && node scripts/pse-kali-1427-1430-cms-preflight.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-kali-1427-1430-cms-preflight
+          path: artifacts/pse-kali-1427-1430-cms-preflight/
+          retention-days: 14
