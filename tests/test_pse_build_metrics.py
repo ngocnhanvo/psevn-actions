@@ -37,6 +37,23 @@ class MetricsContract(unittest.TestCase):
         self.assertIn("1.520 s | FAIL", report)
         self.assertIn("NOT RUN", report)
 
+    def test_optional_preflight_and_cache_setup_cross_existing_steps(self):
+        # The same RUNNER_TEMP state survives independent Actions steps;
+        # telemetry does not replace signed preflight or pnpm/cache checks.
+        with patch.object(metrics.time, "monotonic_ns", side_effect=[
+            1_000_000_000, 4_600_000_000,
+            4_700_000_000, 12_700_000_000,
+        ]):
+            metrics.stamp("start", "preflight")
+            metrics.stamp("stop", "preflight", 0)
+            metrics.stamp("start", "cache_setup")
+            metrics.stamp("stop", "cache_setup", 0)
+        state = metrics.read_state()["stages"]
+        self.assertEqual(state["preflight"]["elapsed_ms"], 3600)
+        self.assertEqual(state["cache_setup"]["elapsed_ms"], 8000)
+        self.assertIn("signed PHP/sitemap/manifest preflight", metrics.summary())
+        self.assertIn("pnpm/Node setup", metrics.summary())
+
     def test_zip_composition_and_reused_source_bytes(self):
         archive = Path(self.temp.name) / "release.zip"
         delta = {
