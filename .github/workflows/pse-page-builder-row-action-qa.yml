@@ -1,0 +1,33 @@
+name: PSE Page ESC Builder row action live QA (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-page-builder-row-action-qa.yml
+      - scripts/pse-page-builder-row-action-qa.mjs
+permissions:
+  contents: read
+jobs:
+  page-builder-readonly:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 10
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright driver without reinstalling Chromium
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify Page action and open correct ESC Builder Page
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-page-builder-row-action-qa.mjs
+          node scripts/pse-page-builder-row-action-qa.mjs
