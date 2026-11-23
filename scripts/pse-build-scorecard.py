@@ -111,6 +111,52 @@ def job_log(job_id: int, token: str) -> str:
         return payload.decode("utf-8", errors="replace")
 
 
+def parse_historical_phases(log: str) -> dict[str, float] | None:
+    """Best-effort durations from real GitHub timestamped job log markers.
+
+    This works before dedicated preflight/cache_setup monotonic stages existed.
+    Log boundaries are estimates, not the same as timing the underlying command.
+    Missing or reordered markers result in no estimate (never invent zeros).
+    """
+    events = []
+    for line in log.splitlines():
+        prefix, marker, message = line.partition("Z ")
+        if not marker or not prefix.startswith("20") or len(prefix) > 39:
+            continue
+        try:
+            instant = parsed_time(prefix + "Z")
+        except ValueError:
+            continue
+        events.append((instant, message))
+    events.sort(key=lambda entry: entry[0])
+
+    def first_after(fragment: str, after: datetime | None = None) -> datetime | None:
+        return next((when for when, text in events
+                     if (after is None or when > after) and fragment in text), None)
+
+    checkout = first_after("##[group]Run actions/checkout@v4")
+    second = first_after("##[group]Run actions/checkout@v4", checkout) if checkout else None
+    preflight = first_after("##[group]Run set -euo pipefail", second) if second else None
+    pnpm = first_after("##[group]Run pnpm/action-setup@v4", preflight) if preflight else None
+    cache = first_after("##[group]Run actions/cache@v4", pnpm) if pnpm else None
+    install = first_after("##[group]Run set -euo pipefail", cache) if cache else None
+    smoke_done = first_after("PSE_STAGE name=smoke", install) if install else None
+    cache_saved = first_after("Cache saved with key:", smoke_done) if smoke_done else None
+    if any(value is None for value in (checkout, second, preflight, pnpm,
+                                       cache, install, smoke_done, cache_saved)):
+        return None
+
+    timings = {
+        "checkout": (preflight - checkout).total_seconds(),
+        "preflight": (pnpm - preflight).total_seconds(),
+        "cache_setup": (install - pnpm).total_seconds(),
+        "post_smoke_cache_save": (cache_saved - smoke_done).total_seconds(),
+    }
+    if any(value < 0 or value > 1200 for value in timings.values()):
+        return None
+    return {key: round(value, 3) for key, value in timings.items()}
+
+
 def parse_metrics(log: str) -> dict | None:
     stage_results = {}
     for name, ms, exit_code in STAGES.findall(log):
@@ -149,6 +195,7 @@ def parse_metrics(log: str) -> dict | None:
         "stages": stage_results,
         "zip_bytes": zip_data.get("bytes"),
         "reused_files": zip_data.get("reused_files"),
+        "historical_phases": parse_historical_phases(log),
     }
 
 
@@ -238,11 +285,23 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
                 lines.append("")
                 lines.append("- **Outside-stage breakdown:** timings could not be reconciled.")
         else:
-            lines.append("")
-            lines.append(
-                "- **Outside-stage breakdown:** signed preflight/cache setup"
-                " instrumentation pending next real production run."
-            )
+            historical = latest_metrics.get("historical_phases")
+            if historical:
+                lines.append("")
+                lines.append(
+                    "- **Historical log timestamps (latest):** two checkouts"
+                    f" **{historical['checkout']:.1f}s**, signed preflight"
+                    f" **{historical['preflight']:.1f}s**, Node/pnpm/cache restore"
+                    f" **{historical['cache_setup']:.1f}s**, smoke-to-cache-save"
+                    f" **{historical['post_smoke_cache_save']:.1f}s**."
+                    " These are GitHub log boundary estimates, not monotonic stage timings."
+                )
+            else:
+                lines.append("")
+                lines.append(
+                    "- **Outside-stage breakdown:** signed preflight/cache setup"
+                    " instrumentation pending next real production run."
+                )
         if latest_ftp > 30_000:
             lines.append("")
             lines.append(
