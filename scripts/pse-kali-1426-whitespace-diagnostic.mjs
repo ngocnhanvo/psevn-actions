@@ -4,7 +4,7 @@ import {mkdir,writeFile} from "node:fs/promises";
 const base="https://pse.webnvn.com";
 const out="artifacts/pse-kali-1426-whitespace-diagnostic";
 await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,channel:process.env.PSE_CHROME_CHANNEL||undefined});
 const report={source:"production",url:base+"/kali-phu-my-bot-canada-mo-ta-va-hdsd",viewports:[],pass:false};
 try{
  for(const width of [1920,1440,1240,768,390]){
