@@ -57,5 +57,39 @@ try{
   report.pages.push({width,http:200,canonical,images:1,tables:2,overflow:metrics.overflow});await save();
   await p.screenshot({path:out+'/kali-1430-'+width+'.png',fullPage:true});await ctx.close();
  }
+ // Additional read-only layout contract for the two original WordPress descriptive Pages.
+ for (const [slug,sourceId] of [['kali-phu-my-bot-canada-mo-ta-va-hdsd',1425],['kali-phu-my-bot-mop-mo-ta-va-hdsd',1430]]) {
+  for (const width of [1440,768,390]) {
+   const ctx=await browser.newContext({viewport:{width,height:900},deviceScaleFactor:1});
+   const page=await ctx.newPage();
+   try {
+    const response=await page.goto(host+'/'+slug,{waitUntil:'domcontentloaded',timeout:60000});
+    if(response?.status()!==200)throw Error('Historical article HTTP '+sourceId+' '+width);
+    const wrapper=page.locator('.pse-historical-kali-'+sourceId);
+    if(await wrapper.count()!==1||await wrapper.locator('table').count()!==2||await wrapper.locator('img').count()!==1)throw Error('Original article content changed '+sourceId);
+    await wrapper.locator('img').evaluate(img=>{img.loading='eager';});
+    await wrapper.locator('img').evaluate(async img=>img.decode());
+    const result=await page.evaluate(()=>{
+     const main=document.querySelector('main'),root=main?.querySelector('.pse-historical-kali-1425,.pse-historical-kali-1430');
+     const tables=[...root.querySelectorAll('table')],img=root.querySelector('img');
+     const rect=e=>e.getBoundingClientRect();
+     return {overflow:document.documentElement.scrollWidth-innerWidth,
+      styled:main?.classList.contains('pse-fertilizer-article'),
+      tableWidths:tables.map(e=>Math.round(rect(e).width)),
+      tableRights:tables.map(e=>Math.round(rect(e).right)),
+      imgHeight:Math.round(rect(img).height),
+      imgNatural:img.naturalWidth,
+      h1:main.querySelector('h1')?.textContent?.trim()};
+    });
+    if(!result.styled||result.overflow>5||!result.imgNatural||
+       result.imgHeight>(width<=700?271:341)||
+       result.tableRights.some(v=>v>width+4)||
+       result.tableWidths.some(v=>v<=0))
+       throw Error('Fertilizer article visual geometry mismatch '+sourceId+' '+width+' '+JSON.stringify(result));
+    report.pages.push({sourceId,width,...result});
+    await page.screenshot({path:out+'/kali-article-'+sourceId+'-'+width+'.png',fullPage:true});
+   } finally {await ctx.close()}
+  }
+ }
  report.pass=true;console.log('PSE_KALI_1430_REDIRECT_LIVE_PASS='+JSON.stringify(report));
 }finally{await save();await net.dispose();await browser.close()}
