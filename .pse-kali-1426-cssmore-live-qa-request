@@ -1,1 +1,2 @@
-Read-only live verification of published WP Page 83572 cssmore after Astro production deployment https://github.com/ngocnhanvo/psevn-actions/actions/runs/45129631953. Confirm exactly 3 images/rows, no CSS injection, responsive 1240/768/390px and no overflow.
+Read-only browser verification of Page 83572 after production Astro deploy https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136795942.
+Verify actual saved cssmore (no injected CSS) at widths 1440,1240,768,390; header-to-table gap <=25px; row cell padding <=12px; max images 240px desktop / 210px mobile; 3 original products and valid imagery; no horizontal overflow. Exact Page source/body unchanged. Source dry-run https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136193063 PASS.
