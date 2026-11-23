@@ -327,7 +327,8 @@ jobs:
           # On unchanged-media production level 9 saved just 0.42% of a
           # ~2 MiB ZIP; neither measured release ran faster as a result.
           # Preserve the exact signed ZIP format, entries, checksums, PHP
-          # activation and rollback while avoiding cold-media CPU waste.
+          # activation and rollback without requiring a stronger compression
+          # setting that has not shown end-to-end performance benefit.
           zip -q -6 -r ../upload/pse-astro.zip .
           echo "PSE_RELEASE_ZIP_DEFLATE_LEVEL=6"
           cd ..
