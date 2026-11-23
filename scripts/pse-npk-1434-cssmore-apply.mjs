@@ -182,8 +182,8 @@ try{
   }else if(oldLinks.length===0){
     const local=productRows.filter(row=>row.href.startsWith(front+"/san-pham/")).length;
     const unlinked=productRows.filter(row=>!row.href).length;
-    if(local!==15||unlinked!==5)throw Error("Unexpected previously migrated NPK image links");
-    console.log("PSE_NPK_IMAGE_LINKS_ALREADY_MIGRATED=PASS nativeProducts=15 unlinked=5");
+    if(!((local===15&&unlinked===5)||(local===20&&unlinked===0)))throw Error("Unexpected previously migrated NPK image links");
+    console.log("PSE_NPK_IMAGE_LINKS_ALREADY_MIGRATED=PASS nativeProducts="+local+" unlinked="+unlinked);
   }else throw Error("Partial link migration; manual reconciliation required");
   if(count(updated,groupNew)!==1||count(updated,kaliNew)!==1||
      [groupOld,kaliOld,placeholderOld].some(link=>updated.includes(link))||
@@ -234,11 +234,11 @@ try{
       console.log("PSE_NPK_RELATED_LINKS_LIVE=PASS two_links_local=true placeholder_removed=true");
       const imageLinks=await table.locator("tr").evaluateAll(rows=>rows.map(row=>
         row.querySelector("a:has(img)")?.href||""));
-      if(imageLinks.length!==20||imageLinks.filter(url=>url.startsWith("https://pse.webnvn.com/san-pham/")).length!==15||
-         imageLinks.filter(url=>!url).length!==5||
+      if(imageLinks.length!==20||imageLinks.filter(url=>url.startsWith("https://pse.webnvn.com/san-pham/")).length!==20||
+         imageLinks.filter(url=>!url).length!==0||
          imageLinks.some(url=>/^https?:\/\/(?:www\.)?pse\.vn\//i.test(url)))
         throw Error("Published NPK image destinations not migrated exactly");
-      console.log("PSE_NPK_IMAGE_LINKS_LIVE=PASS nativeProducts=15 unlinkedMissing=5 oldSiteLinks=0");
+      console.log("PSE_NPK_IMAGE_LINKS_LIVE=PASS nativeProducts=20 unlinkedMissing=0 oldSiteLinks=0");
     }
     await table.locator("img").evaluateAll(imgs=>imgs.forEach(img=>{img.loading="eager";}));
     await pub.waitForFunction(()=>[...document.querySelectorAll("main .article-content > div > table:first-of-type img")].every(img=>img.complete),
