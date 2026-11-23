@@ -239,6 +239,30 @@ try{
          imageLinks.some(url=>/^https?:\/\/(?:www\.)?pse\.vn\//i.test(url)))
         throw Error("Published NPK image destinations not migrated exactly");
       console.log("PSE_NPK_IMAGE_LINKS_LIVE=PASS nativeProducts=20 unlinkedMissing=0 oldSiteLinks=0");
+      const newProducts=new Map([
+        ["npk-16-7-16-05412","05412"],
+        ["npk-phu-my-16-16-8-5s-te-00066","00066"],
+        ["npk-phu-my-16-16-8-9s-te-00063","00063"],
+        ["npk-phu-my-16-16-8-10s-te-00062","00062"]
+      ]);
+      let newVerified=0;
+      for(let offset=0;offset<imageLinks.length;offset+=4){
+        const result=await Promise.all(imageLinks.slice(offset,offset+4).map(async url=>{
+          const res=await pub.request.get(url,{timeout:45000,maxRedirects:0,failOnStatusCode:false});
+          const slug=new URL(url).pathname.split("/").at(-1);
+          const code=newProducts.get(slug);
+          const html=res.status()===200?await res.text():"";
+          return {url,status:res.status(),code,codePresent:!code||html.includes(code),hasH1:/<h1(?:\s|>)/i.test(html)};
+        }));
+        for(const item of result){
+          if(item.status!==200||!item.codePresent||!item.hasH1)
+            throw Error("Published NPK native Product detail mismatch "+JSON.stringify(item));
+          if(item.code)newVerified++;
+        }
+      }
+      if(newVerified!==4)throw Error("Four newly created NPK Products not verified");
+      console.log("PSE_NPK_PRODUCT_DETAILS_LIVE=PASS 20_HTTP_200=true newFourCodeMatch=true");
+
     }
     await table.locator("img").evaluateAll(imgs=>imgs.forEach(img=>{img.loading="eager";}));
     await pub.waitForFunction(()=>[...document.querySelectorAll("main .article-content > div > table:first-of-type img")].every(img=>img.complete),
