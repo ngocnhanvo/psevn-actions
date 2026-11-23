@@ -74,6 +74,34 @@ class PseSignedStaticJsonManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Unsupported signed static inventory scope"):
             check_manifest({"_astro/main.js": META}, "unknown-scope")
 
+    def test_signed_media_v2_allows_only_safe_public_media(self):
+        files = {
+            "_astro/main.js": META,
+            "fonts/site.woff2": META,
+            "home-first/banner.webp": META,
+            "logo-first/logo.svg": META,
+            "tool/favicon.ico": META,
+        }
+        inventory = check_manifest(files, "exclude-images-v2-media")
+        self.assertEqual(inventory["static"], files)
+        self.assertEqual(inventory["static_scope"], "exclude-images-v2-media")
+
+        for unsafe in (
+            "images/metadata.json",
+            "../secret.webp",
+            "malware.php",
+            "robots.txt",
+            "sitemap.xml",
+            "foo//icon.svg",
+        ):
+            with self.subTest(unsafe=unsafe):
+                with self.assertRaisesRegex(RuntimeError, "unexpectedly includes images|Invalid signed static asset"):
+                    check_manifest({unsafe: META}, "exclude-images-v2-media")
+
+        # Legacy v1 intentionally refuses v2 files, never silently widens scope.
+        with self.assertRaisesRegex(RuntimeError, "Invalid signed static asset"):
+            check_manifest({"fonts/site.woff2": META}, "exclude-images-v1")
+
     def test_old_php_has_no_scope_and_remains_backward_compatible(self):
         inventory = check_manifest({"_astro/main.js": META})
         self.assertNotIn("static_scope", inventory)
