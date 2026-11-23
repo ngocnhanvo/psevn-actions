@@ -1,0 +1,59 @@
+name: PSE WordPress Build Website auth-only QA (NO DEPLOY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
+      - .github/workflows/pse-build-request-auth-readonly-qa.yml
+permissions:
+  contents: read
+jobs:
+  authenticated-status:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    timeout-minutes: 8
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_WP_STATUS_ONLY: 'true'
+      PSE_FORCE_BUILD_ONCE: 'false'
+    steps:
+      - name: Checkout PSE helper
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate WordPress HTTPS source without logging credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          values=[]
+          for raw in os.environ['ENV_FILE'].splitlines():
+              row=raw.strip()
+              if row.startswith('WC_URL='):
+                  values.append(row.split('=',1)[1].strip().strip('"').strip("'"))
+          if len(values)!=1:raise RuntimeError('Expected exactly one WC_URL')
+          u=urlsplit(values[0])
+          if not (u.scheme=='https' and u.hostname and not u.username and not u.password
+              and u.port in (None,443) and u.path in ('','/') and not u.query and not u.fragment):
+              raise RuntimeError('Invalid WordPress HTTPS origin')
+          with open(os.environ['GITHUB_ENV'],'a') as out:
+              out.write('WC_URL='+u.geturl().rstrip('/')+'\n')
+          print('PSE_WP_AUTH_SOURCE=VALIDATED')
+          PY
+      - name: Install matching Playwright driver (Chromium preinstalled)
+        shell: bash
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify authentication, admin privileges and status nonce only
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
+          node imported-eduresearch/scripts/wordpress-build-trigger-e2e.mjs
+          echo 'PSE_WP_AUTH_ONLY=PASS; NO_DISPATCH; NO_WP_WRITE; NO_ASTRO_BUILD; NO_FTP'
