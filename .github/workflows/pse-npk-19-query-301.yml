@@ -1,0 +1,71 @@
+name: PSE NPK 19 legacy Joomla query 301 aliases (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-npk-19-query-301.mjs
+      - .github/workflows/pse-npk-19-query-301.yml
+      - .pse-npk-19-query-301-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-npk-19-joomla-query-301
+  cancel-in-progress: false
+jobs:
+  preview:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+      PSE_NPK_301_PREVIEW_ONLY: 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify all 19 exact mappings, target 200, legacy NPK 301 unchanged
+        run: node --check scripts/pse-npk-19-query-301.mjs && node scripts/pse-npk-19-query-301.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-19-redirects-preview
+          path: artifacts/pse-npk-19-301/report.json
+          retention-days: 14
+          if-no-files-found: warn
+  apply:
+    needs: preview
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish 19 NPK Joomla 301 redirects'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh verified WordPress rollback database backup
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Publish only 19 query-distinct Product redirects via native WordPress
+        env:
+          PSE_NPK_301_BACKUP_OK: 'yes'
+        run: node --check scripts/pse-npk-19-query-301.mjs && node scripts/pse-npk-19-query-301.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-npk-19-redirects-published
+          path: artifacts/pse-npk-19-301/
+          retention-days: 30
+          if-no-files-found: warn
