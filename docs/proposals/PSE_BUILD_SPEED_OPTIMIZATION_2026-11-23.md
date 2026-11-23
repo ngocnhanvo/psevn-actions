@@ -224,3 +224,32 @@ Lượt [#45088009728](https://github.com/ngocnhanvo/psevn-actions/actions/runs/
 **Còn thiếu dữ liệu môi trường thật**: chỉ **1/12** warm/no-new-media hợp lệ trên cùng Astro SHA `7af6eab4` (source được giữ nguyên để tiếp tục tích lũy), chưa có số đo cold cache/changed-media **từ một lần phát hành nội dung thực tế**, và chưa đo breakdown preflight/cache_setup trên lần production kế tiếp. Không gọi mục tiêu `p50≤90s, p90<120s` là PASS khi chưa đủ 12 lượt. Tự động giám sát read-only hiện hữu tiếp tục tích lũy từ các lần build thật; không dispatch thêm production để giả mẫu.
 
 **Trạng thái tổng thể: PARTIAL — chưa hoàn tất (chờ 11 lượt warm hợp lệ và lần media/cold thực); các hạng mục độc lập có thể làm an toàn trong phiên đã thực thi + CI PASS.**
+
+
+## Checkpoint tiếp tục — 23/11/2026: truy nguyên GitHub step timestamps, cohort lạnh/media và outliers
+
+**Không phát sinh source Astro/PHP mới, không ghi CMS, không thêm một production run thử nghiệm.** HEAD nguồn được giữ \`psevn-astro/master = 7af6eab4f4cf06367d207f155251c12c9f24befa\`, PHP \`5a3bfaa9d4f0a63a09311ac27aecc0fdda226b65\`. Signed production gần nhất **#45092574062 = SUCCESS 106s**, homepage/7 Post/4 album QA sau deploy đều PASS từ checkpoint trước.
+
+### Đối soát trực tiếp bốn job log production (thời gian quan sát, không giả định là có thể cắt)
+
+Không thể lấy step \`started_at/completed_at\` từ danh sách job do connector tóm tắt bỏ trường này. Thay bằng **timestamp thực của dòng log** ở ranh giới chạy actions/checkout, preflight shell, pnpm setup, runner cache và cache save; stage Astro/FTPS vẫn tính bằng monotonic marker hiện có. Đo riêng, không trộn nhóm SHA khi nghiệm thu p50/p90.
+
+| Run | Tổng | Checkout cả hai source | Signed preflight | pnpm+Node+cache setup | Từ smoke đến cache save |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [#45088287779](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088287779) | 90s | 2,1s | 7,1s | ~9,1s | 2,4s |
+| [#45089261813](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45089261813) | 114s | 4,2s | 7,3s | ~13,6s | 2,9s |
+| [#45090240402](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45090240402) | 122s | 4,4s | 8,7s | ~9,9s | 1,0s |
+| [#45092574062](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45092574062) | 106s | **4,1s** | **7,2s** | **12,3s** | **2,8s** |
+
+Hai nhóm pnpm/setup/cache (~9–14s) và preflight (~7–9s) có chi phí không nhỏ, nhưng giữ nguyên signed safeguards và native cache; **chưa có bằng chứng đủ để bỏ cache hay thay kiến trúc/runner**. Tổng workflow ngoài 8 stage hiện hành ở 4 run là 31,2/39,4/30,7/38,9s; các thành phần vừa ghi không phủ kín tất cả queue/post-job. Đây là timing theo marker GitHub, không phải đo monotonic trong lòng bước và không đồng nghĩa thời gian có thể tiết kiệm.
+
+### Triển khai bổ sung chỉ qua Actions read-only
+
+- **Hồi cứu log, không cần chờ deploy mới:** \`scripts/pse-build-scorecard.py\` bổ sung \`parse_historical_phases\`: trích các mốc timestamp GitHub và phân rã checkout/preflight/cache setup/smoke→cache-save từ **log thật**. Fail-closed khi mất marker/timestamp sai thứ tự; sắp theo thời gian khi log ZIP chứa nhiều đoạn; không thay các stage bắt buộc. [Commit parser](https://github.com/ngocnhanvo/psevn-actions/commit/e441a25ae6480910c44cb6f14d6173390a36133e), [test parser](https://github.com/ngocnhanvo/psevn-actions/commit/dec7ba6751e0ae8df44a4f2ca76ce2bc0c513c49). **Live read-only [#45094765597](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45094765597) SUCCESS**: source \`7af6eab4\`, **1/12**, chính xác checkout 4,1s, preflight 7,2s, setup/cache 12,3s, smoke/cache 2,8s ở production latest. Không dispatch build.
+- **Nhóm cold/media khác biệt và run >180s**: scorecard nay in riêng mỗi run cùng SHA có cache lạnh/không xác minh, image-delta changed/unknown, stage chậm nhất; thêm bảng các signed production >180s (kể cả SHA khác) để truy nguyên sự cố. **Những bảng này chỉ để chẩn đoán, hoàn toàn không được trộn với cohort 12 sample warm/no-new-media**. [Source diagnostic commit](https://github.com/ngocnhanvo/psevn-actions/commit/2b465b840677091c734c90de9a15aaa94f81acfd), [test commit](https://github.com/ngocnhanvo/psevn-actions/commit/52c369aba8f49356b2adf5aaccf58ac698a0e831). **[CI + read-only benchmark #45094884750](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45094884750) SUCCESS 12/12 Python tests**, latest valid cohort **1/12**, không build/upload/CMS write. Các run hiện tại thuộc cohort warm/no-new-media, vì thế bảng cold/changed sẽ chỉ xuất hiện khi có dữ liệu thuộc nhóm đó trong các release thật.
+- Telemetry monotonic \`preflight\`/\`cache_setup\` từ checkpoint trước đã có trong workflow production để đối soát timestamp hồi cứu với lần phát hành thực kế tiếp. Không kích hoạt một production run chỉ vì số đo.
+
+### Trạng thái thực tế / next action
+
+- **DONE:** Áp dụng bounded 8-worker Pages queue, signed deploy và QA thật, delta media, đo ZIP/FTPS, đo ngược log checkout/preflight/cache, tách cold/changed/slow diagnostics, test CI.
+- **PARTIAL:** Kết luận thống kê **p50≤90s, p90<120s cần 12 warm/no-new-media production runs cùng Astro SHA** (hiện 1/12); chưa có cold/new-media run thật để đo effect WordPress/Sharp, và chưa có monotonic preflight/cache markers từ production chạy sau patch Actions. Hệ thống giám sát đã có sẽ cập nhật khi **phát sinh những lượt build thật**, không tạo 11 bản deploy chỉ để làm đẹp báo cáo. Điều tra runner gần hosting/chuyển transport chỉ khi có số đo/chi phí/quyền và owner duyệt thay đổi hạ tầng.
