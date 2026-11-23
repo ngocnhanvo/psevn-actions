@@ -49,7 +49,7 @@ try{
  const wpLinks=await p.evaluate(html=>{
    const root=document.createElement("div");root.innerHTML=html;
    return [...root.querySelectorAll("a[href]")].map((a,i)=>({
-     i,text:a.textContent.replace(/\\s+/g," ").trim().slice(0,90),
+     i,text:a.textContent.replace(/\s+/g," ").trim().slice(0,90),
      href:a.getAttribute("href"),image:!!a.querySelector("img")
    }));
  },source);
@@ -65,15 +65,15 @@ try{
    const article=document.querySelector("main .article-content");
    const catalog=article?.querySelector("table");
    const links=[...document.querySelectorAll("main a[href]")].map((a,i)=>({
-      i,text:a.textContent.replace(/\\s+/g," ").trim().slice(0,85),
+      i,text:a.textContent.replace(/\s+/g," ").trim().slice(0,85),
       href:a.getAttribute("href"),image:!!a.querySelector("img")
    }));
    const related=[...document.querySelectorAll("main h2")].find(h=>
       h.textContent.includes("Các bài viết khác"));
    return {title:rect(title),header:rect(header),body:rect(body),
      article:rect(article),catalog:rect(catalog),related:rect(related),
-     rawLinks:links.filter(x=>/pse\\.vn/i.test(x.href)),
-     relatedLinks:related?[...related.closest("section")?.querySelectorAll("a[href]")||[]].map(a=>({
+     rawLinks:links.filter(x=>/pse\.vn/i.test(x.href)),
+     relatedLinks:related?[...(related.closest("section")?.querySelectorAll("a[href]")||[])].map(a=>({
        title:a.textContent.trim(),href:a.getAttribute("href")})):[],
      totalLinks:links.length};
  });
