@@ -68,12 +68,42 @@ try{
  await writeFile(dir+'/rollback.json',JSON.stringify({parentId:83572,parentModified:parent.d.modified,originalRaw:raw,originalSha:sha(raw)},null,2)+'\n');
  const check=await api('pages/83572?context=edit&_fields=modified,content');
  if(check.http!==200||check.d.modified!==parent.d.modified||sha(check.d.content?.raw)!==sha(raw))throw Error('Concurrent parent edit');
- const upload=await ctx.request.post(wp+'/wp-json/wp/v2/media',{data:binary,timeout:90000,headers:{'X-WP-Nonce':nonce,'Content-Type':'image/png','Content-Disposition':'attachment; filename="'+img.file+'"',Accept:'application/json'}});
- const u=await upload.json().catch(()=>null);
- if(upload.status()!==201||!Number.isSafeInteger(u?.id))throw Error('Original media upload failed');
- report.writes.push({type:'media',id:u.id});await save();
- const verifyMedia=await net.get(u.source_url,{maxRedirects:0,failOnStatusCode:false});
- if(verifyMedia.status()!==200||sha(await verifyMedia.body())!==img.sha256)throw Error('Original media byte readback failed');
+ const mediaPath=async m=>{
+  const candidates=[m?.source_url,m?.guid?.rendered,typeof m?.media_details?.file==='string'?'/wp-content/uploads/'+m.media_details.file:null].filter(Boolean);
+  for(const raw of candidates){
+   const u=new URL(raw,wp+'/');
+   if(u.origin!==wp||!u.pathname.startsWith('/wp-content/uploads/')||u.search||u.hash)continue;
+   const resp=await net.get(u.href,{maxRedirects:0,failOnStatusCode:false});
+   if(resp.status()===200&&sha(await resp.body())===img.sha256)return u.href;
+  }
+  return null;
+ };
+ const found=await api('media?context=edit&per_page=100&search=5-KALI-BOT');
+ if(found.http!==200||!Array.isArray(found.d))throw Error('Cannot inspect original media records');
+ let media=null;
+ for(const item of found.d){
+  const detail=await api('media/'+item.id+'?context=edit');
+  if(detail.http!==200)throw Error('Original media lookup failed');
+  const filename=String(detail.d?.media_details?.file||'').split('/').at(-1);
+  if(filename===img.file||filename.includes('5-KALI-BOT_Phu_My_2019_cai_tien')){
+   const url=await mediaPath(detail.d);
+   if(!url)throw Error('Existing original filename has mismatched image content');
+   if(media&&media.id!==item.id)throw Error('More than one exact original media record');
+   media={id:item.id,url};
+  }
+ }
+ if(!media){
+  const upload=await ctx.request.post(wp+'/wp-json/wp/v2/media',{data:binary,timeout:90000,headers:{'X-WP-Nonce':nonce,'Content-Type':'image/png','Content-Disposition':'attachment; filename="'+img.file+'"',Accept:'application/json'}});
+  const created=await upload.json().catch(()=>null);
+  if(upload.status()!==201||!Number.isSafeInteger(created?.id))throw Error('Original media upload failed');
+  report.writes.push({type:'media',id:created.id});await save();
+  const m=await api('media/'+created.id+'?context=edit');
+  if(m.http!==200)throw Error('Uploaded original media lookup failed');
+  const url=await mediaPath(m.d);
+  if(!url)throw Error('Uploaded original media byte mismatch');
+  media={id:created.id,url};
+ }
+ const u={id:media.id,source_url:media.url};
  const content='<div class="'+key+'">'+clean.html.replace('__ORIGINAL_KALI_PNG__',u.source_url)+'</div>';
  const made=await api('pages','POST',{title:r.title,slug,status:'draft',content,acf:{action:'PublicPage',key,product_lang:'vi',label:r.title},featured_media:u.id});
  if(made.http!==201||!Number.isSafeInteger(made.d?.id))throw Error('1430 draft create failed');
