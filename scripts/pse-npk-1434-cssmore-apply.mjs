@@ -138,7 +138,11 @@ try{
     if(await pub.locator("main .article-content > div > table").count()!==3||
        await table.locator("tr").count()!==20||await table.locator("img").count()!==20)
       throw Error("Unexpected frontend table structure");
-    if(!live)await pub.addStyleTag({content:css});
+    if(!live)await pub.evaluate(css=>{
+      const style=document.createElement("style");
+      style.textContent=css;
+      document.body.appendChild(style);
+    },css);
     else if(!await pub.locator("main style").evaluateAll(nodes=>nodes.some(n=>n.textContent.includes("/* WordPress Page 83593"))))
       throw Error("CSS not published on live Astro page");
     if(live){
