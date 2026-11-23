@@ -1,0 +1,32 @@
+name: PSE responsive company caption source QA (NO BUILD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-header-caption-source-qa.yml
+permissions:
+  contents: read
+jobs:
+  header-source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-astro
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Test reusable Header and PSE responsive name
+        run: pnpm exec vitest run src/astro/components/Layout/Header.research-layout.test.ts src/astro/components/Layout/Header.template-neutral.test.ts
