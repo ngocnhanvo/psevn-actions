@@ -1,3 +1,5 @@
 Read-only live QA PSE NPK WordPress Page 83593 /npk-phu-my after source WP update + Astro build/FTPS deploy.
 Verified CMS backup/save/readback run 45188429852; WordPress pending change normal build run 45189033409; production deploy run 45189137966 SUCCESS.
 Require live layout title-to-table gap 12..45px at widths 1440/1240/768/390, all 20 images loaded, 20 rows + 4/4 data tables, zero viewport overflow. Require exact two published related-text links to /san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my and /kali-phu-my-mo-ta-cac-bien-the; old placeholder removed; 20 linked-product images preserved without ambiguous URL retargeting. No CMS writes.
+
+2026-11-23 NPK/Kali heading spacing revision: WordPress scoped cssmore saved/verified #45193795227; production build-deploy SUCCESS #45194563237. Verify live CSS 48px desktop/36px mobile header bottom and 16px body top, 20 images, no overflow. Read-only QA.
