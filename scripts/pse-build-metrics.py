@@ -15,8 +15,10 @@ import time
 from zipfile import ZipFile
 
 
-STAGES = ("install", "astro", "verify", "package", "ftps", "runtime_env", "activate", "smoke")
+STAGES = ("preflight", "cache_setup", "install", "astro", "verify", "package", "ftps", "runtime_env", "activate", "smoke")
 LABELS = {
+    "preflight": "Source/route safety and signed PHP/sitemap/manifest preflight",
+    "cache_setup": "pnpm/Node setup and restored runner caches",
     "install": "pnpm install",
     "astro": "Astro build-git (WP, images, Vite)",
     "verify": "Compiled output verification",
