@@ -159,10 +159,10 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
     lines = [
         "## PSE build speed scorecard (read-only)",
         "",
-        f"- Astro source SHA: \`{sha}\`.",
+        f"- Astro source SHA: `{sha}`.",
         f"- Production runs examined: {candidates}; failed/cancelled: {failures}.",
         f"- Same-source verified warm samples: **{len(eligible)}/12**.",
-        "- Cache warm requires a confirmed restored pnpm store and Astro \`.cache\`.",
+        "- Cache warm requires a confirmed restored pnpm store and Astro `.cache`.",
         "- Source revisions are never mixed in a statistical cohort.",
         "",
         "| Run | Total | ZIP bytes | Astro | FTPS |",
