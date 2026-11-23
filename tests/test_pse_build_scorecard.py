@@ -138,6 +138,41 @@ class ScorecardTest(unittest.TestCase):
         )
         self.assertIn("instrumentation pending next real production run", legacy)
 
+    def test_historical_log_phase_boundaries_are_strict_and_read_only(self):
+        timestamped = "\n".join([
+            "2026-11-23T00:00:00.0000000Z ##[group]Run actions/checkout@v4",
+            "2026-11-23T00:00:02.0000000Z ##[group]Run actions/checkout@v4",
+            "2026-11-23T00:00:04.0000000Z ##[group]Run set -euo pipefail",
+            "2026-11-23T00:00:11.0000000Z ##[group]Run pnpm/action-setup@v4",
+            "2026-11-23T00:00:12.0000000Z ##[group]Run actions/cache@v4",
+            "2026-11-23T00:00:20.0000000Z ##[group]Run set -euo pipefail",
+            "2026-11-23T00:00:30.0000000Z PSE_STAGE name=smoke elapsed_ms=1500 exit=0",
+            "2026-11-23T00:00:33.0000000Z Cache saved with key: pse-prod-dot-cache-v2-Linux",
+        ])
+        expected = {
+            "checkout": 4.0,
+            "preflight": 7.0,
+            "cache_setup": 9.0,
+            "post_smoke_cache_save": 3.0,
+        }
+        self.assertEqual(scorecard.parse_historical_phases(timestamped), expected)
+        # The earliest log records can be in separate ZIP members.
+        shuffled = "\n".join(reversed(timestamped.splitlines()))
+        self.assertEqual(scorecard.parse_historical_phases(shuffled), expected)
+        self.assertIsNone(scorecard.parse_historical_phases(
+            timestamped.replace("Cache saved with key:", "Cache skip:")))
+        self.assertIsNone(scorecard.parse_historical_phases(
+            timestamped.replace("actions/cache@v4", "unrecognized-cache-action")))
+        sample = scorecard.parse_metrics(log() + "\n" + timestamped)
+        self.assertEqual(sample["historical_phases"], expected)
+        report = scorecard.summarize(
+            [{"id": 42, "seconds": 90, "metrics": sample}], 0, 1)
+        self.assertIn("Historical log timestamps", report)
+        self.assertIn("preflight **7.0s**", report)
+        self.assertIn("Node/pnpm/cache restore **9.0s**", report)
+        self.assertIn("boundary estimates", report)
+        self.assertIn("1/12", report)
+
     def test_slow_ftps_warns_without_failing_production(self):
         sample = scorecard.parse_metrics(log())
         sample["stages"]["ftps"]["elapsed_ms"] = 38138
