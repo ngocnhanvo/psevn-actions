@@ -91,3 +91,35 @@ Vị trí chính là [workflow yêu cầu build](../../.github/workflows/pse-wor
 - [ ] Chỉ nhận thay đổi khi đúng dữ liệu và đạt lợi ích sau đo. Nếu sai redirect/ảnh, env, marker/SHA hoặc smoke, quay về commit gần nhất đã đạt và dùng quy trình rollback hiện hữu cho lần phát hành lỗi. Nếu cơ chế delta không tương thích, dùng đường ZIP đầy đủ hiện có. Ghi từng commit, run/attempt, thời gian trước/sau và nhóm mẫu vào kế hoạch khi thực hiện.
 
 Nguồn quy tắc và cấu hình đã đối chiếu ngày 23/11/2026. [Knowledge](https://github.com/ngocnhanvo/knowledge/tree/1b5aab9e2f8b2fccb42947a74a48df6d9761570f) · [Actions](https://github.com/ngocnhanvo/psevn-actions/tree/2e3fdace4522b0f5c501585d6c6213beff86b030) · [Astro](https://github.com/ngocnhanvo/psevn-astro/tree/db3a97688b21e3823ce137e2a901d6366d64cc67) · [PHP](https://github.com/ngocnhanvo/psevn-php/tree/05b21fb0487e7ce1ed0d8af44085b1f3205bc180)
+
+
+## Checkpoint triển khai và benchmark 23/11/2026
+
+### Phần đã triển khai production
+
+- **Redirect incremental:** `psevn-astro/master` SHA `69093b80818bcd8d905ef7f83ba3292f21cacb56` đọc `redirect.modified` từ PHP log vào `sourceModified`; log cũ, sai/thiếu stamp hoặc snapshot không khớp sẽ full-refresh. PHP endpoint nguồn `a26a35a40618ecc86a3f0e9117955c307295ae09` được phát hành qua FTPS SHA256 (chỉ một file) tại [PHP #45087126728](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45087126728). [Vitest/CI #45087163199](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45087163199) **PASS**.
+- **Stage profiling:** tách `pnpm install` / Astro build / compiled verify / ZIP package / Python FTPS / protected `.env` / signed activate / smoke. Đo monotonic, exit status, ZIP segments, byte reuse, SHA, run/attempt trong summary, FTPS TLS/transfer/rename riêng. Unit test offline và timeout từng bước. [Architecture #45086990973](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45086990973) **PASS** với Python `FTP_TLS` thực tế (thay check lftp cũ).
+- **Static/media ZIP delta v2:** chỉ tái sử dụng file `client/` không đổi và được PHP ký inventory, SHA256/size match, path allowlist, chống symlink/traversal, giới hạn byte; mở rộng font, SVG, PNG, JPEG, GIF, WebP, AVIF, ICO, PDF. `client/images/` giữ image delta; `client/index.html` và toàn bộ `server/` luôn trong ZIP mới; `.env` không nằm trong ZIP. PHP nguồn SHA `5a3bfaa9d4f0a63a09311ac27aecc0fdda226b65` phát hành có rollback, hai file PHP, [release #45087794475](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45087794475) PHP + QA **PASS**. Client chấp nhận `exclude-images-v1` và `exclude-images-v2-media` bằng allowlist riêng; schema lạ fail-closed. [CI #45088111917](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088111917), [architecture #45088097601](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088097601) **PASS**.
+- **Không đổi kiến trúc release:** WordPress Build Website → `wp_trigger_build` → Astro `master` → Actions `main` → Python FTPS TLS → signed PHP staging/rollback → smoke. Chứng chỉ, chữ ký, checksum, `.env` HTTP deny và WordPress CMS source đều còn nguyên.
+
+### Bằng chứng thời gian và byte từ production
+
+| Đợt | Run/attempt | Tổng workflow | ZIP | FTPS | Astro build | Redirect |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Trước nâng cấp gần nhất | [#45051898907](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45051898907) | 154s | Chưa đo | Chưa đo | Chưa đo | Chưa đo |
+| Sau redirect/stage telemetry | [#45087354321](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45087354321), attempt 1 | 109s | 4.954.099 B | 23,855s | 25,742s | 6,826s (848 rules, 0 changed, logs) |
+| Sau static/media v2 | [#45088287779](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088287779), attempt 1 | **90s** | **2.032.324 B** | **10,490s** | **21,616s** | **4,651s (848 rules, 0 changed, logs)** |
+
+Kết quả: tổng workflow so với lượt trước nâng cấp gần nhất **-64s (~41,6%)**; ZIP so với giai đoạn telemetry đầu **-2.921.775 B (~59%)**, FTPS **-13,365s (~56%)**. Media v2 reuse: static **134/134 file, 7.326.942 B**, ảnh **901/901, 56.170.883 B**; tổng **1.035 file, 63.497.825 B** không chuyển lại qua ZIP.
+
+Lượt [#45088009728](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45088009728) **FAILED trước build/FTP** do preflight không chấp nhận static scope v2 mới. Không có deploy trên lượt đó. Đã sửa validator versioned, bổ sung test negative, CI PASS và production tiếp theo **#45088287779 SUCCESS**. Tuyệt đối không tính lượt fail này là thành công.
+
+**Phân biệt trạng thái:** `BUILD_SUCCESS=PASS`, `DEPLOY_READY=PASS` và `QA_PASS=PASS` đối với *ba smoke probes bắt buộc* (homepage, `/api/user/info` SSR, robots) của #45088287779. QA sâu cho URL Joomla, tin SSR, thay đổi ACF/redirect và sitemap cần đối chiếu riêng, không được suy ra từ smoke.
+
+### Chưa hoàn tất / cách nghiệm thu
+
+- Baseline 12 lượt: **p50 152,5s, p90 178s**. Mục tiêu warm **p50 ≤90s, p90 <120s**: đã quan sát **một lượt đạt đúng 90s**, **chưa có đủ 12 mẫu warm mới** để kết luận p50/p90. Tiếp tục thu mẫu theo nhu cầu build thật; phân nhóm warm/cold/media changes/runner/retry, không tự tạo nhiều lần production vô ích.
+- Đo cache hit/miss, ảnh fetch/Sharp/concurrency 2/4/6, Page/Product/TablePress, CMS Playwright login/nonce/lock/dispatch và chi phí runner preflight; benchmark nén ZIP trên cùng output trước khi đổi compression.
+- QA redirect create/modify/disable/trash, ACF, snapshot REST/live 301 Joomla, SSR news, sitemap revision; trường hợp sai dữ liệu hoặc nghi ngờ an toàn phải fail-closed và rollback theo quy trình signed production hiện hữu.
+
+**Checkpoint:** triển khai bảo toàn release + production smoke **DONE**; đo đủ 12-run p50/p90 và QA chức năng mở rộng **PARTIAL — chưa hoàn tất**.
