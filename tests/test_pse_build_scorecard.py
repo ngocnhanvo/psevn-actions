@@ -218,6 +218,31 @@ class ScorecardTest(unittest.TestCase):
         self.assertIn("boundary estimates", report)
         self.assertIn("1/12", report)
 
+    def test_level9_zip_trial_compares_same_sha_only_without_claiming_speedup(self):
+        legacy = scorecard.parse_metrics(log())
+        trial = scorecard.parse_metrics(log() + "\nPSE_RELEASE_ZIP_DEFLATE_LEVEL=9")
+        self.assertIsNone(legacy["zip_deflate_level"])
+        self.assertEqual(trial["zip_deflate_level"], 9)
+        trial["zip_bytes"] = legacy["zip_bytes"] - 50000
+        trial["stages"]["package"]["elapsed_ms"] += 400
+        report = scorecard.summarize([
+            {"id": 2, "seconds": 100, "metrics": trial},
+            {"id": 1, "seconds": 106, "metrics": legacy},
+        ], 0, 2)
+        self.assertIn("ZIP level", report)
+        self.assertIn("Deflate -9 trial vs latest legacy ZIP", report)
+        self.assertIn("bytes delta -50000", report)
+        self.assertIn("package delta +0.40s", report)
+        self.assertIn("prevent causal speed claims", report)
+        self.assertIn("2/12", report)
+        old_sha = scorecard.parse_metrics(log(sha=NEW_SHA))
+        report_new_sha = scorecard.summarize([
+            {"id": 3, "seconds": 100, "metrics": trial},
+            {"id": 2, "seconds": 106, "metrics": old_sha},
+        ], 0, 2)
+        self.assertNotIn("Deflate -9 trial vs latest legacy ZIP", report_new_sha)
+        self.assertIn("1/12", report_new_sha)
+
     def test_signed_release_ftps_phase_profiling_does_not_mix_helper_uploads(self):
         # Tiny PHP inventory staging uploads can appear earlier in job logs.
         helper = "\n".join([
