@@ -5,3 +5,5 @@ Retry after stored HTML ampersand normalization; previous apply stopped before C
 Retry with source HTML exact text and table identity diagnostics; no CMS writes on prior attempts.
 
 Verified 1430 full-body hash equals original full-body hash; previous attempts wrote no CMS data.
+
+Reuse original 1430 media uploaded by previous interrupted run, verify SHA before Page creation.
