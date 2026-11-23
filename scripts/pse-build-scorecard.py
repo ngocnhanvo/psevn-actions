@@ -165,16 +165,29 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "- Cache warm requires a confirmed restored pnpm store and Astro `.cache`.",
         "- Source revisions are never mixed in a statistical cohort.",
         "",
-        "| Run | Total | ZIP bytes | Astro | FTPS |",
-        "| --- | ---: | ---: | ---: | ---: |",
+        "| Run | Total | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | Slowest measured stage |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in eligible:
         m = row["metrics"]
+        slowest = max(REQUIRED, key=lambda name: m["stages"][name]["elapsed_ms"])
+        ftp_ms = m["stages"]["ftps"]["elapsed_ms"]
+        archive_bytes = m["zip_bytes"] if type(m["zip_bytes"]) is int else 0
+        effective_mibps = archive_bytes / (1024 * 1024) / (ftp_ms / 1000) if ftp_ms > 0 else 0
         lines.append(
             f"| #{row['id']} | {row['seconds']:.1f}s | {m['zip_bytes'] or '—'}"
             f" | {m['stages']['astro']['elapsed_ms'] / 1000:.3f}s"
-            f" | {m['stages']['ftps']['elapsed_ms'] / 1000:.3f}s |"
+            f" | {ftp_ms / 1000:.3f}s | {effective_mibps:.2f}"
+            f" | {slowest} ({m['stages'][slowest]['elapsed_ms'] / 1000:.1f}s) |"
         )
+    if eligible:
+        latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
+        if latest_ftp > 30_000:
+            lines.append("")
+            lines.append(
+                "**Transfer diagnostic:** latest verified FTPS stage exceeded 30s;"
+                " examine TLS/transfer/rename phases before tuning transport."
+            )
     lines.append("")
     if len(totals) < 12:
         lines.append("**Status: PARTIAL — fewer than 12 independently verified warm runs.**")
