@@ -52,6 +52,7 @@ try{
   if(canonical!==host+'/kali-phu-my-bot-mop-mo-ta-va-hdsd'||await root.count()!==1||await root.locator('table').count()!==2||await root.locator('img').count()!==1)throw Error('1430 canonical/content structure mismatch '+width);
   const image=root.locator('img').first();await image.scrollIntoViewIfNeeded();await image.evaluate(async img=>img.decode());
   const metrics=await root.evaluate(x=>({text:x.textContent||'',overflow:document.documentElement.scrollWidth-innerWidth,src:x.querySelector('img')?.currentSrc}));
+  console.log('PSE_KALI_1430_METRICS='+JSON.stringify({width,textFirst:metrics.text.slice(0,300),hasText:metrics.text.includes('Kali Phú Mỹ Bột MOP'),overflow:metrics.overflow,src:metrics.src}));
   if(!metrics.text.includes('Kali Phú Mỹ Bột MOP')||metrics.overflow>5||!metrics.src?.startsWith(host+'/'))throw Error('1430 content/image/overflow mismatch '+width);
   report.pages.push({width,http:200,canonical,images:1,tables:2,overflow:metrics.overflow});await save();
   await p.screenshot({path:out+'/kali-1430-'+width+'.png',fullPage:true});await ctx.close();
