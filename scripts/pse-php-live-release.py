@@ -21,7 +21,7 @@ SOURCE = Path("source-php")
 # signed Delta ZIP PHP contracts or the redirect log endpoint; all other
 # authorized releases stay unchanged.
 RELEASE_SCOPE = os.environ.get("PSE_PHP_RELEASE_SCOPE", "full")
-if RELEASE_SCOPE not in ("full", "delta", "redirect"):
+if RELEASE_SCOPE not in ("full", "delta", "redirect", "page-shortcut"):
     raise ValueError("Unsupported PSE PHP release scope")
 ALL_FILES = (
     "esc-tool/image.php",
@@ -54,8 +54,10 @@ ALL_FILES = (
 )
 DELTA_FILES = ("pse-image-delta.php", "pse-unzip.php")
 REDIRECT_FILES = ("wp-content/plugins/github-trigger/redirects/endpoint.php",)
+PAGE_SHORTCUT_FILES = ("wp-content/mu-plugins/esc-visual-builder-page-shortcut.php",)
 FILES = (DELTA_FILES if RELEASE_SCOPE == "delta" else
-         REDIRECT_FILES if RELEASE_SCOPE == "redirect" else ALL_FILES)
+         REDIRECT_FILES if RELEASE_SCOPE == "redirect" else
+         PAGE_SHORTCUT_FILES if RELEASE_SCOPE == "page-shortcut" else ALL_FILES)
 raw = os.environ.get("FTP_SERVER", "").strip()
 if "://" not in raw:
     raw = "ftp://" + raw
