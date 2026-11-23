@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""PSE bounded transfer profile: secure FTPS with removable synthetic data; NO DEPLOY.
+"""PSE one-shot bounded FTPS throughput comparison; NO BUILD, NO DEPLOY.
 
-Never prints credentials, host or filenames from the archive.
+Tests two encrypted clients with the same synthetic 2 MiB payload.
+No production ZIP mutation, no credentials/host printed; verify cleanup.
 """
 import ftplib
 import io
@@ -49,6 +50,10 @@ def main():
     run_id = os.environ["GITHUB_RUN_ID"]
     if not run_id.isdecimal():
         raise ValueError("Missing numeric run id")
+    # A workflow or actor must explicitly authorize this temporary write probe.
+    # Other runs only permit the read-only cache inventory.
+    if os.environ.get("PSE_BENCHMARK_ENABLED") != "1":
+        raise ValueError("One-shot FTPS benchmark authorization missing")
     names = [".pse-ftps-profile-" + run_id + "-python.tmp",
              ".pse-ftps-profile-" + run_id + "-lftp.tmp"]
     ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=35)
@@ -107,9 +112,11 @@ def main():
 
         with tempfile.TemporaryDirectory() as folder:
             payload = Path(folder) / "synthetic.bin"
-            amount = 6 * 1024 * 1024
+            # Compare actual signed production ZIP scale (~2 MiB), not a
+            # 6 MiB transfer that can monopolize the hosting FTPS connection.
+            amount = 2 * 1024 * 1024
             with payload.open("wb") as stream:
-                for _ in range(6):
+                for _ in range(2):
                     stream.write(os.urandom(1024 * 1024))
             try:
                 t0 = time.monotonic()
@@ -156,15 +163,32 @@ bye
                 except ftplib.error_perm:
                     pass
     finally:
+        # A process interrupted by a resumable transport failure must not
+        # silently claim cleanup. Restrict removal to the unique run-ID probes.
+        not_removed = []
         for name in names:
             try:
                 ftp.delete(name)
+            except ftplib.error_perm as exc:
+                if not str(exc).startswith("550"):
+                    not_removed.append(name)
             except ftplib.all_errors:
-                pass
+                not_removed.append(name)
+            try:
+                ftp.size(name)
+                not_removed.append(name)
+            except ftplib.error_perm as exc:
+                if not str(exc).startswith("550"):
+                    not_removed.append(name)
+            except ftplib.all_errors:
+                not_removed.append(name)
         try:
             ftp.quit()
         except ftplib.all_errors:
             ftp.close()
+        if not_removed:
+            raise RuntimeError("FTPS probe cleanup could not be verified")
+        print("PSE_FTPS_PROBES_REMOVED=PASS count=2", flush=True)
 
 if __name__ == "__main__":
     main()
