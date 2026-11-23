@@ -8,6 +8,7 @@ import ftplib
 import io
 import os
 import re
+import socket
 import ssl
 import subprocess
 import tempfile
@@ -16,6 +17,24 @@ from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlsplit
 from zipfile import ZipFile
+
+class TunableTLS(ftplib.FTP_TLS):
+    """Probe-only data socket hint; control TLS and PROT P are unchanged."""
+
+    send_buffer_hint = 0
+    negotiated_send_buffer = None
+
+    def ntransfercmd(self, cmd, rest=None):
+        conn, estimated_size = super().ntransfercmd(cmd, rest)
+        try:
+            if self.send_buffer_hint:
+                conn.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.send_buffer_hint)
+            self.negotiated_send_buffer = conn.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+            return conn, estimated_size
+        except Exception:
+            conn.close()
+            raise
+
 
 def get_origin(env_file, name):
     found = []
@@ -56,7 +75,9 @@ def main():
         raise ValueError("One-shot FTPS benchmark authorization missing")
     names = [".pse-ftps-profile-" + run_id + "-python.tmp",
              ".pse-ftps-profile-" + run_id + "-lftp.tmp"]
-    ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=35)
+    names.extend(".pse-ftps-profile-" + run_id + "-socket-" + str(i) + ".tmp"
+                 for i in range(4))
+    ftp = TunableTLS(context=ssl.create_default_context(), timeout=35)
     try:
         begin = time.monotonic()
         ftp.connect(server, parsed.port or 21)
@@ -132,6 +153,30 @@ def main():
                     ftp.delete(names[0])
                 except ftplib.error_perm:
                     pass
+            # Interleaved A/B/B/A trials against the SAME 2 MiB payload
+            # and control TLS connection. This measures only encrypted STOR.
+            # Kernel SO_SNDBUF caps are recorded, not silently assumed.
+            # Each temporary payload is removed and independently checked.
+            trial_hints = (4 * 1024 * 1024, 0, 0, 4 * 1024 * 1024)
+            for i, hint in enumerate(trial_hints):
+                temp_name = names[i + 2]
+                ftp.send_buffer_hint = hint
+                try:
+                    start = time.monotonic()
+                    with payload.open("rb") as stream:
+                        ftp.storbinary("STOR " + temp_name, stream, blocksize=256 * 1024)
+                    seconds = time.monotonic() - start
+                    if ftp.size(temp_name) != amount:
+                        raise RuntimeError("FTPS tuned socket trial size mismatch")
+                    print("BENCH_PYTHON_SOCKET trial=%d hint=%s"
+                          " actual_send_buffer=%s bytes=%d seconds=%.2f mibps=%.2f" %
+                          (i + 1, "4M" if hint else "default",
+                           ftp.negotiated_send_buffer, amount, seconds,
+                           amount / 1048576 / seconds), flush=True)
+                finally:
+                    ftp.delete(temp_name)
+            ftp.send_buffer_hint = 0
+
             cmds = """
 set cmd:fail-exit yes
 set net:timeout 35
@@ -188,7 +233,7 @@ bye
             ftp.close()
         if not_removed:
             raise RuntimeError("FTPS probe cleanup could not be verified")
-        print("PSE_FTPS_PROBES_REMOVED=PASS count=2", flush=True)
+        print("PSE_FTPS_PROBES_REMOVED=PASS count=%d" % len(names), flush=True)
 
 if __name__ == "__main__":
     main()
