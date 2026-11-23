@@ -159,7 +159,7 @@ try {
       break;
     } catch (error) {
       const message = String(error?.message || error);
-      const transient = /Failed to fetch|NetworkError|AbortError|HTTP (?:429|5\\d{2})/i.test(message);
+      const transient = /Failed to fetch|NetworkError|AbortError|HTTP (?:429|5\d{2})/i.test(message);
       if (!transient || attempt === 3) throw error;
       console.warn('PSE_WP_STATUS_RETRY attempt=' + attempt + ' reason=transient_read_error');
       await page.waitForTimeout(750 * attempt);
