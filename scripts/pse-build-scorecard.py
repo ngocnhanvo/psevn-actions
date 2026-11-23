@@ -27,6 +27,7 @@ REQUIRED = ("install", "astro", "verify", "package", "ftps", "runtime_env", "act
 STAGES = re.compile(r"PSE_STAGE name=(\w+) \S+_ms=(\d+) exit=(\d+)")
 SOURCE_SHA = re.compile(r"Astro production SHA:\s*([0-9a-f]{40})")
 ZIP_META = re.compile(r"PSE_ZIP_METRICS (\{[^\r\n]+\})")
+IMAGE_DELTA = re.compile(r"PSE_IMAGE_DELTA=ENABLED total=(\d+) reuse=(\d+)")
 MAX_ARCHIVE = 12_000_000
 MAX_DECOMPRESSED = 30_000_000
 
@@ -134,9 +135,16 @@ def parse_metrics(log: str) -> dict | None:
         "Cache restored from key:" in line and "node-cache-" in line
         for line in log.splitlines()
     )
+    image_status = "unknown"
+    image_delta = IMAGE_DELTA.search(log)
+    if image_delta:
+        images_total, images_reused = map(int, image_delta.groups())
+        if images_reused <= images_total:
+            image_status = "unchanged" if images_reused == images_total else "changed"
     return {
         "source_sha": match.group(1),
         "warm": astro_cache_warm and pnpm_cache_warm,
+        "media_status": image_status,
         "stages": stage_results,
         "zip_bytes": zip_data.get("bytes"),
         "reused_files": zip_data.get("reused_files"),
@@ -152,8 +160,13 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
             "No complete production telemetry yet; state=INSUFFICIENT_EVIDENCE.\n"
         )
     sha = latest["metrics"]["source_sha"]
-    eligible = [row for row in rows if row.get("metrics")
-                and row["metrics"]["warm"] and row["metrics"]["source_sha"] == sha]
+    same_sha = [row for row in rows if row.get("metrics")
+                and row["metrics"]["source_sha"] == sha]
+    warm_same_sha = [row for row in same_sha if row["metrics"]["warm"]]
+    media_changed = sum(row["metrics"]["media_status"] == "changed" for row in warm_same_sha)
+    media_unknown = sum(row["metrics"]["media_status"] == "unknown" for row in warm_same_sha)
+    eligible = [row for row in warm_same_sha
+                if row["metrics"]["media_status"] == "unchanged"]
     eligible = eligible[:12]
     totals = [row["seconds"] for row in eligible]
     lines = [
@@ -161,8 +174,10 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "",
         f"- Astro source SHA: `{sha}`.",
         f"- Production runs examined: {candidates}; failed/cancelled: {failures}.",
-        f"- Same-source verified warm samples: **{len(eligible)}/12**.",
+        f"- Same-source verified warm/no-new-media samples: **{len(eligible)}/12**.",
+        f"- Excluded warm runs with new media: {media_changed}; unknown image-delta status: {media_unknown}.",
         "- Cache warm requires a confirmed restored pnpm store and Astro `.cache`.",
+        "- The image delta must confirm all existing images were reused; new-media/cold cohorts are separate.",
         "- Source revisions are never mixed in a statistical cohort.",
         "",
         "| Run | Total | ZIP bytes | Astro | FTPS | Effective FTPS MiB/s | Slowest measured stage |",
@@ -260,7 +275,8 @@ def main() -> int:
             output.write(report + "\n")
     latest = next((row["metrics"]["source_sha"] for row in rows if row.get("metrics")), None)
     current_warm = sum(bool(row.get("metrics") and row["metrics"]["warm"]
-                            and row["metrics"]["source_sha"] == latest) for row in rows)
+                            and row["metrics"]["source_sha"] == latest
+                            and row["metrics"]["media_status"] == "unchanged") for row in rows)
     print("PSE_BUILD_SCORECARD=PASS_READONLY same_source_warm_samples=" + str(current_warm))
     return 0
 
