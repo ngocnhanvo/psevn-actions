@@ -49,5 +49,21 @@ try{
     }));
     console.log('PSE_LINK_DESTINATION='+JSON.stringify({joomla:s.joomla,original:s.old,frontend,http:response?.status(),cms,data,requestedURL:page.url()}));
   }
+  const original49='https://pse.vn/hoat-dong-kinh-doanh/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my/8-trang-chu/49-noi-dung-dang-cap-nhat.html';
+  try{
+    const response=await page.goto(original49,{waitUntil:'domcontentloaded',timeout:30000});
+    const o=await page.evaluate(()=>({title:document.title,h1:document.querySelector('h1')?.textContent?.trim()||null,
+      text:(document.querySelector('article')?.innerText||document.querySelector('main')?.innerText||document.body.innerText||'')
+        .replace(/\\s+/g,' ').slice(0,1300),canonical:document.querySelector('link[rel="canonical"]')?.href||null}));
+    console.log('PSE_LINK_LEGACY_49='+JSON.stringify({http:response?.status(),url:page.url(),...o}));
+  }catch(e){console.log('PSE_LINK_LEGACY_49_ERROR='+String(e).slice(0,190));}
+  for(const type of ['pages','posts','product']){
+    for(const term of ['Nội dung đang cập nhật','NPK Phú Mỹ']){
+      const url=wp+'/wp-json/wp/v2/'+type+'?per_page=20&search='+encodeURIComponent(term)+'&_fields=id,slug,title,link,status,acf';
+      try{const r=await page.request.get(url,{timeout:25000});
+        console.log('PSE_LINK_SEARCH='+JSON.stringify({term,type,http:r.status(),items:r.ok()?(await r.json()).map(x=>({id:x.id,slug:x.slug,title:x.title?.rendered,key:x.acf?.key})):[]}));
+      }catch(e){console.log('PSE_LINK_SEARCH_ERROR='+String(e).slice(0,130));}
+    }
+  }
   console.log('PSE_LINK_PREFLIGHT=PASS readOnly=true');
 }finally{await browser.close();}
