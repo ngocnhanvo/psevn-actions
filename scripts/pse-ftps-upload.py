@@ -84,8 +84,12 @@ def transfer(values: dict[str, str], archive: Path, remote_temp: str, size: int)
     for attempt in range(1, 4):
         ftp: ftplib.FTP_TLS | None = None
         try:
+            phase_start = time.monotonic()
             ftp = connect(values)
+            print(f"FTPS_PHASE attempt={attempt} phase=connect_tls elapsed_ms={round((time.monotonic() - phase_start) * 1000)}", flush=True)
+            phase_start = time.monotonic()
             existing = remote_size(ftp, remote_temp)
+            print(f"FTPS_PHASE attempt={attempt} phase=remote_probe elapsed_ms={round((time.monotonic() - phase_start) * 1000)}", flush=True)
             if existing > size:
                 ftp.delete(remote_temp)
                 existing = 0
@@ -95,14 +99,19 @@ def transfer(values: dict[str, str], archive: Path, remote_temp: str, size: int)
                     fp.seek(existing)
                     # FTP REST+STOR is required for resumable uploads. An
                     # unsupported REST raises an error rather than overwriting.
+                    phase_start = time.monotonic()
                     ftp.storbinary(f"STOR {remote_temp}", fp, blocksize=262144,
                                    rest=existing if existing else None)
+                    print(f"FTPS_PHASE attempt={attempt} phase=transfer elapsed_ms={round((time.monotonic() - phase_start) * 1000)} bytes={size-existing}", flush=True)
             else:
                 print("FTPS_UPLOAD remote SHA-specific staging already complete", flush=True)
+            phase_start = time.monotonic()
             actual = remote_size(ftp, remote_temp)
+            print(f"FTPS_PHASE attempt={attempt} phase=verify_temp_size elapsed_ms={round((time.monotonic() - phase_start) * 1000)}", flush=True)
             if actual != size:
                 raise UploadError(f"Uploaded size mismatch ({actual} != {size})")
             final_name = "pse-astro.zip"
+            phase_start = time.monotonic()
             try:
                 ftp.rename(remote_temp, final_name)
             except ftplib.error_perm:
@@ -118,6 +127,7 @@ def transfer(values: dict[str, str], archive: Path, remote_temp: str, size: int)
                 ftp.rename(remote_temp, final_name)
             if remote_size(ftp, final_name) != size:
                 raise UploadError("Final remote archive size mismatch")
+            print(f"FTPS_PHASE attempt={attempt} phase=rename_verify elapsed_ms={round((time.monotonic() - phase_start) * 1000)}", flush=True)
             print(f"FTPS_UPLOAD=PASS bytes={size} sha_prefix={remote_temp.split(".")[2][:12]}", flush=True)
             return
         except (OSError, EOFError, UploadError, *ftplib.all_errors) as exc:
