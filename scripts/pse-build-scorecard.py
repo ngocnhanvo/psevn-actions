@@ -264,6 +264,52 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
             f" | {ftp_ms / 1000:.3f}s | {effective_mibps:.2f}"
             f" | {slowest} ({m['stages'][slowest]['elapsed_ms'] / 1000:.1f}s) |"
         )
+    # Distinguish cold/media-change cohorts and every slow signed production
+    # run. These are diagnostics, NEVER counted as warm acceptance samples.
+    different = [
+        row for row in same_sha
+        if not row["metrics"]["warm"] or row["metrics"]["media_status"] != "unchanged"
+    ]
+    if different:
+        lines.extend([
+            "",
+            "### Cold / changed-media cohorts (NOT part of warm acceptance)",
+            "",
+            "| Run | Total | Cache | Media | Slowest measured stage |",
+            "| --- | ---: | --- | --- | --- |",
+        ])
+        for row in different[:8]:
+            metrics = row["metrics"]
+            slow = max(REQUIRED, key=lambda n: metrics["stages"][n]["elapsed_ms"])
+            warm_label = "warm" if metrics["warm"] else "cold / unverified"
+            lines.append(
+                f"| #{row['id']} | {row['seconds']:.1f}s | {warm_label}"
+                f" | {metrics['media_status']} | {slow}"
+                f" ({metrics['stages'][slow]['elapsed_ms'] / 1000:.1f}s) |"
+            )
+
+    slow_runs = [row for row in rows if row.get("metrics") and row["seconds"] > 180]
+    if slow_runs:
+        lines.extend([
+            "",
+            "### Slow signed production runs above 180s (diagnostic only)",
+            "",
+            "| Run | Astro SHA | Total | Cache | Media | Slowest measured stage |",
+            "| --- | --- | ---: | --- | --- | --- |",
+        ])
+        for row in slow_runs[:12]:
+            metrics = row["metrics"]
+            slow = max(REQUIRED, key=lambda n: metrics["stages"][n]["elapsed_ms"])
+            lines.append(
+                f"| #{row['id']} | \`{metrics['source_sha'][:9]}\`"
+                f" | {row['seconds']:.1f}s | {'warm' if metrics['warm'] else 'cold/unverified'}"
+                f" | {metrics['media_status']} | {slow}"
+                f" ({metrics['stages'][slow]['elapsed_ms'] / 1000:.1f}s) |"
+            )
+        lines.append(
+            "SHA cohorts remain separate; investigate each slow run's full job log"
+            " before attributing the delay to one stage."
+        )
     if eligible:
         latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
         latest_outside = unmeasured_seconds(eligible[0])
