@@ -137,8 +137,11 @@ try{
            state.firstRowCells.some(x=>x.width<width-75)):
            (state.firstDisplay!=="table"||state.firstRowCells[1].width<state.firstRowCells[0].width)))
         throw Error("NPK layout preview assertions failed at "+width);
-      if(broken.length>1||broken.some(x=>!x.src.includes("dpm.vn")))
-        throw Error("Unexpected broken images; do not misattribute source");
+      // One imported external image at source position 4 has no usable
+      // frontend src (known existing data defect). Never mask other broken images.
+      if(broken.length>1||(broken.length===1&&
+         (state.images.indexOf(broken[0])!==4||!structure.imageUrls[4]?.includes("dpm.vn"))))
+        throw Error("Unexpected broken image outside known imported source #4");
       if(width===1240||width===390)
         await pub.screenshot({path:dir+"/"+(live?"live":"preview")+"-"+width+".png",fullPage:true});
     }
