@@ -177,23 +177,30 @@ def main():
                 raise RuntimeError("Signed image inventory too large")
         inventory = {"images": images}
         # The signed PHP inventory may optionally include client-only HTML,
-        # CSS, JS and public JSON. Older PHP has no 'static' key: full ZIP fallback.
+        # CSS/JS/JSON and v2 approved public fonts/media, all signed by PHP.
+        # Older PHP has no 'static' key: full ZIP fallback.
         static = result.get("static")
         static_scope = result.get("static_scope")
-        if static_scope is not None and static_scope != "exclude-images-v1":
+        if static_scope is not None and static_scope not in (
+                "exclude-images-v1", "exclude-images-v2-media"):
             raise RuntimeError("Unsupported signed static inventory scope")
         if static_scope is not None and static is None:
             raise RuntimeError("Signed static inventory scope without static data")
         if static is not None:
             if not isinstance(static, dict) or len(static) > 5000:
                 raise RuntimeError("Invalid signed static inventory")
-            if static_scope == "exclude-images-v1" and any(
+            if static_scope in ("exclude-images-v1", "exclude-images-v2-media") and any(
                     name.startswith("images/") for name in static):
                 raise RuntimeError("Signed static inventory unexpectedly includes images")
             static_bytes = 0
+            # The explicit signed v2 capability is required before accepting
+            # public media/fonts; old/unspecified schemas keep v1 allowlist.
+            approved_ext = (r"\.(?:html|css|js|json|svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|eot|pdf)$"
+                            if static_scope == "exclude-images-v2-media"
+                            else r"\.(?:html|css|js|json)$")
             for name, meta in static.items():
                 if (not isinstance(name, str) or len(name) > 240 or name == "index.html"
-                    or not re.search(r"\.(?:html|css|js|json)$", name)):
+                    or not re.search(approved_ext, name)):
                     raise RuntimeError("Invalid signed static asset name")
                 pieces = name.split("/")
                 if (not all(re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*", p)
