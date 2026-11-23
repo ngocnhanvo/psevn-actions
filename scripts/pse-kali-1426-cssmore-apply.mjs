@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 
 const commitEvent=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
 const allowedMessage='cms(pse): style Kali variants via cssmore';
-const apply=commitEvent.head_commit?.message===allowedMessage;
+const apply=commitEvent.head_commit?.message===allowedMessage && process.env.PSE_KALI_CSSMORE_PREVIEW_ONLY!=='true';
 const originValue=(key)=>{
   const matches=String(process.env.ENV_FILE||'').split(/\r?\n/)
     .map(s=>s.trim().replace(/^export\s+/,'')).filter(x=>x.startsWith(key+'='));
