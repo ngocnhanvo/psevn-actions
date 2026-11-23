@@ -105,7 +105,7 @@ try{
   });
   console.log('PSE_KALI_DETAILED_ROWS='+JSON.stringify(rows));
 
-  const wpUrl=String(process.env.ENV_FILE||"").split(/\\r?\\n/).map(x=>x.trim())
+  const wpUrl=String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim())
     .find(x=>x.startsWith('WC_URL='))?.split('=').slice(1).join('=').replace(/^['"]|['"]$/g,'');
   if(wpUrl){
     const resp=await page.request.get(new URL('/wp-json/wp/v2/pages?slug=kali-phu-my-mo-ta-cac-bien-the&_fields=id,acf,content',wpUrl).href,{timeout:25000});
