@@ -2,40 +2,35 @@
 
 - Ngày: 2026-11-23 (Asia/Ho_Chi_Minh)
 - Project: pse.vn
-- Repository: ngocnhanvo/psevn-actions
-- Branch: main
+- Repository: ngocnhanvo/psevn-actions/main
 - Trạng thái: DONE — hoàn tất
-- WordPress Page: 83572, URL: https://pse.webnvn.com/kali-phu-my-mo-ta-cac-bien-the
-- Thay đổi thực tế: chỉ `acf.cssmore` của Page 83572; không thay post_content, HTML, hình ảnh, Astro source
-- Bản CSS cũ rollback: scripts/pse-kali-1426-cssmore.before-spacing.css
-- Bản CSS mới: scripts/pse-kali-1426-cssmore.css
-- Forensic preflight: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45135629942 — PASS
-- New CSS preview replacing existing WordPress style in-browser: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136193063 — PASS
-- WordPress DB backup + scoped save + REST readback: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136340276 — PASS
-- WordPress Build Website trigger: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136735156 — PASS
-- Astro production build/FTPS deploy: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136795942 — PASS
-- Playwright live QA no CSS injection: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45137045731 — PASS (1440,1240,768,390px)
+- URL: https://pse.webnvn.com/kali-phu-my-mo-ta-cac-bien-the
+- WordPress native Page: 83572
+- Scope: thêm `sizes="(max-width: 640px) 170px, 190px"` vào chính xác 3 thẻ img trong `post_content`; không đổi src/srcset URL, hình ảnh, text, CSS, ACF/action/key, Astro, production image pipeline
+- Script kiểm thử + cập nhật WordPress: scripts/pse-kali-1426-image-sizes.mjs
+- Workflow: .github/workflows/pse-kali-1426-image-sizes.yml
+- Browser preview (no WP writes): https://github.com/ngocnhanvo/psevn-actions/actions/runs/45184057404 — PASS
+- WordPress DB backup + Save + exact REST readback: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45184313796 — PASS
+- WordPress build via PHP: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45184896720 — PASS
+- Astro production build and FTPS deploy: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45184998706 — PASS
+- Production Playwright/browser QA (no HTML interception, no image sizing injection): https://github.com/ngocnhanvo/psevn-actions/actions/runs/45185350678 — PASS
 
-## Phản hồi cuối cùng
+## Đã hoàn tất
 
-Đã sửa xong khoảng trắng dưới tiêu đề và khoảng cách giữa ba sản phẩm trên **trang Kali Phú Mỹ** thông qua trường CSS bổ sung của WordPress Page `83572`.
+Ảnh của 3 sản phẩm Kali Phú Mỹ chỉ hiển thị khoảng 174×240 px tại viewport 1240 và DPR 2, nhưng trình duyệt trước đó chọn candidate 2560w do thiếu thẻ `sizes` dù đã có `srcset`.
 
-Đo trực tiếp trên production bằng Playwright, không chèn CSS giả lập:
+Đã thêm `sizes` vào đúng ba ảnh trong WordPress nguồn, được Astro giữ nguyên sau build. Live QA đo `currentSrc` của Chrome thật:
 
-- Khoảng cách từ cuối header tới bảng **80px trước → 16px sau**.
-- Ở 1440/1240px: bảng ba sản phẩm **1.002px → 861px**; mỗi hàng khoảng **286–287px** thay cho khoảng 328–339px.
-- Padding trong ô desktop giảm 20px xuống 10px; ảnh giới hạn 240px trên desktop, 210px trên mobile.
-- Ở 768px: bảng 868px, không tràn ngang.
-- Ở 390px: bảng 1602px, ảnh vẫn xếp trên nội dung, không tràn ngang.
-- Ba ảnh, thông tin sản phẩm, link và dữ liệu HTML giữ nguyên.
-- Chỉ `acf.cssmore` của Page 83572 thay đổi, đã có bản sao lưu DB và REST readback PASS; không thay CSS Astro chung.
+| Viewport | DPR | Responsive width (candidate) |
+| --- | --- | --- |
+| 1240px | 1 | 300w |
+| 1240px | 2 | 480w |
+| 390px | 2 | 480w |
+| 390px | 3 | 640w |
 
-[Trang đã cập nhật](https://pse.webnvn.com/kali-phu-my-mo-ta-cac-bien-the) ·
-[WordPress save PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136340276) ·
-[Production deploy PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45136795942) ·
-[Playwright live PASS](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45137045731).
+Mỗi browser case đều PASS; không chọn candidate 2560w; ảnh nguồn vẫn tải HTTP 200, giao diện CSS và nội dung giữ nguyên. Live content readback xác nhận đúng 3 `sizes` mới, CSS bổ sung giữ nguyên. Ảnh tối ưu tại DPR2 có payload đo được khoảng 34–35KB với 2 trong 3 ảnh (một ảnh response Content-Length không khai báo) — không suy ra kích thước của ảnh còn lại. Không xóa/cắt ảnh gốc, không thay đổi pipeline chung.
 
-Bạn có thể Ctrl + F5 để xem bản mới.
+[Trang đã sửa](https://pse.webnvn.com/kali-phu-my-mo-ta-cac-bien-the) · [WordPress save](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45184313796) · [Production deploy](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45184998706) · [Live QA](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45185350678).
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
