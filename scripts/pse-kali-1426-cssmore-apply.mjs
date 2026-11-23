@@ -95,7 +95,19 @@ try{
       {waitUntil:'domcontentloaded',timeout:60000});
     if(!await publicPage.locator('.pse-public-page .pse-historical-kali-1426 table tr').count())
       throw Error('Public Kali Page wrapper missing');
-    if(!liveVerification)await publicPage.addStyleTag({content:css});
+    if(!liveVerification){
+      // WordPress already rendered OLD cssmore in a <style> inside <main>.
+      // Adding to <head> can be overridden by that later style: replace the
+      // exact existing style in this in-memory Playwright page instead.
+      const replaced=await publicPage.evaluate(candidate=>{
+        const node=[...document.querySelectorAll('main style')].find(el=>
+          el.textContent.includes('/* Page 83572 / original Joomla 1426'));
+        if(!node)return false;
+        node.textContent=candidate;
+        return true;
+      },css);
+      if(!replaced)throw Error('Cannot simulate WordPress cssmore replacement');
+    }
     else if(!await publicPage.locator('main style').evaluateAll(nodes=>nodes.some(n=>n.textContent.includes('.pse-historical-kali-1426'))))
       throw Error('WordPress cssmore not published in Astro HTML yet');
     for(const width of [1240,768,390]){
@@ -115,12 +127,16 @@ try{
           table:r(table),rows:[...table.rows].map(r),
           cells:[...table.rows].map(row=>[...row.cells].map(r)),
           images:[...wrapper.querySelectorAll('img')].map(r),
+          firstCellPadding:getComputedStyle(table.rows[0].cells[0]).paddingTop,
+          imageCSSMaxHeight:getComputedStyle(table.rows[0].cells[0].querySelector('img')).maxHeight,
           label:document.querySelector('main h1')?.textContent.trim(),
           cssTableDisplay:getComputedStyle(table).display,
           imageCount:wrapper.querySelectorAll('img').length};
       });
       console.log('PSE_KALI_CSSMORE_PREVIEW='+JSON.stringify(result));
       if(result.gapAfterHeader>25||result.gapAfterHeader<0||
+         result.firstCellPadding!==(width<=640?'12px':'10px')||
+         result.imageCSSMaxHeight!==(width<=640?'210px':'240px')||
          result.imageCount!==3||result.documentWidth>width+3||
          result.images.some(i=>i.height>(width<=640?242:282)||i.width<=0)||
          result.table.height>(width<=640?2400:1500)||
