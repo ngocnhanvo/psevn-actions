@@ -1,5 +1,5 @@
-5f64dd810af852e33ed535cca41ef16c5372d3f0
-2026-11-25 PSE S5 latest news native ESC Table query configuration backend UI/source writer guarded production release.
-CI #45469566012 SUCCESS: 25/25 Astro Vitest suites including S5 parser, PHP S5 isolated in-memory single native cell Save, malformed query rejects and generated JS parser, php-lint, Astro parser/Tailwind. No CMS content mutation.
-PHP includes/text-editor.php validates categoryId, categorySlug, category, limit 1..5, order asc/desc, orderby date/modified/title only for actual native query-owned TablePress schema. All API records readonly, no new auto-mode writer. text-editor-ui.php labels typed query source fields, rejects invalid client inputs, warns source configuration requires Preview refresh and public build. Existing rich-text cell writes remain unchanged.
-Use only existing guarded PHP FTPS TLS+checksum/readback/rollback deployment. Do not build Astro here, do not write CMS/DB. Astro candidate will be released separately after PHP readback succeeds.
+aaa72d45e954a465649850d3a0a03e296d13fadd
+2026-11-25 PSE S2-S4 scoped manual reference authorization correction.
+Source-only CI #45511937457 SUCCESS, real-PHP auth regression PSE_S2_S4_REAL_AUTH_AND_PHYSICAL_ROW_GUARDS=PASS, 25/25 Astro suites 137 tests.
+Previously static text writer excluded all meta.api tables, accidentally making item-schema, delete and swap for valid manual API reference rows fail HTTP 403. This scoped fix keeps normal text writer dynamic-denied and only permits explicitly validated physical manual reference via item manager. Requires WordPress session, nonce, ticket owner, Page shortcode ownership, TablePress edit capability, strict physical manual key, optimistic table version and row hash; API auto/unknown denied.
+Only code PHP change; use existing FTPS TLS + SHA256 readback + rollback. NO ASTRO BUILD, NO CMS CONTENT WRITE.
