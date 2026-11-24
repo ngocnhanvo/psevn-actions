@@ -243,7 +243,7 @@ try {
  // Use page selector and actual authenticated iframe rather than guessing
  // TablePress IDs from project names; no WordPress REST write is performed.
  const sourceSurvey=[];
- const targets=options.filter(o=>o.value&&o.value!==homePageId).slice(0,12);
+ const targets=options.filter(o=>o.value&&o.value!==homePageId).slice(0,29);
  for(const option of targets){
    try{
      await page.locator('#esc-vb-page').selectOption(option.value);
@@ -254,6 +254,7 @@ try {
      const frame=page.frameLocator('#esc-vb-frame');
      await frame.locator('body').waitFor({state:'visible',timeout:30000});
      const result=await frame.locator('body').evaluate(()=>({
+       htmlParts:document.querySelectorAll('[data-esc-builder-html-part]').length,
        sections:[...document.querySelectorAll('[data-tablepress-preview]')]
          .filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
          .slice(0,32).map(n=>({
@@ -264,7 +265,7 @@ try {
            localCells:n.querySelectorAll('[data-esc-builder-cell-row][data-esc-builder-cell-field]').length
          }))
      }));
-     sourceSurvey.push({pageId:option.value,sections:result.sections});
+     sourceSurvey.push({pageId:option.value,htmlParts:result.htmlParts,sections:result.sections});
    }catch(error){
      sourceSurvey.push({pageId:option.value,sourceAudit:'NOT_TESTED',
        reason:String(error?.message||error).slice(0,100)});
