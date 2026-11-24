@@ -118,11 +118,21 @@ try{
     }finally{
       if(previewMatched){
         await send('esc-vb-item-sort-cancel',tableId,0,1,count,requestId);
-        const restored=await root.evaluate((el,selector)=>[...el.querySelectorAll(selector)]
-          .slice(0,2).map(node=>({token:node.getAttribute('data-pse-qa-swap'),
-            row:node.getAttribute('data-esc-builder-row')})),config.item);
-        if(restored[0]?.token!=='first'||restored[1]?.token!=='second'||
-           restored[0].row!=='0'||restored[1].row!=='1')
+        const restored=await root.evaluate((el,selector)=>new Promise(resolve=>{
+          const deadline=Date.now()+4000;
+          const poll=()=>{
+            const rows=[...el.querySelectorAll(selector)].slice(0,2).map(node=>({
+              token:node.getAttribute('data-pse-qa-swap'),
+              row:node.getAttribute('data-esc-builder-row')
+            }));
+            if(rows[0]?.token==='first'&&rows[1]?.token==='second'&&
+              rows[0].row==='0'&&rows[1].row==='1')resolve(true);
+            else if(Date.now()>deadline)resolve(false);
+            else setTimeout(poll,35);
+          };
+          poll();
+        }),config.item);
+        if(!restored)
           throw Error(config.name+' Preview cancel did not restore original DOM');
       }
       await root.evaluate(el=>el.querySelectorAll('[data-pse-qa-swap]')
