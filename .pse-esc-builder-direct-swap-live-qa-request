@@ -1,3 +1,3 @@
-2026-11-25 PSE physical-row visible-card swap final production acceptance (READ ONLY).
-Astro pinned deployed 1f7ac1575719d60ca3f384057fa1210bf0f27cc5 by signed #45467498238 SUCCESS (SIGNED_UNZIP_SUCCESS). PHP production 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 guarded #45463291680.
-Run scripts/pse-esc-builder-direct-swap-live-qa.mjs updated at eb30925349962f87281ee59380fc1ae75f1e8fab; physical Promise visible source rows 1,2,3, hidden metadata row0, validate direct swap-and-Cancel, section swaps, FAQ, Hotline, hero and guarded dry-run cases. No Save, no CMS/DB writes, no FTP/build.
+2026-11-25 PSE S5 change no-regression production direct Preview swap-only acceptance.
+Astro immutable 72b85a29ddd93e960a1041bcbd945bb11902d03a activated signed #45470261620 SUCCESS; PHP 5f64dd810af852e33ed535cca41ef16c5372d3f0 guarded SHA256 #45469815380.
+Rehearse and Cancel all six existing S1 physical source row swap adapters, especially Promise source rows1,2,3 with hidden row0 metadata; Page section swap and scoped Hotline WP REST dry-run/Cancel. News generated WP Posts not eligible for item swap. No WordPress CMS Save or write, no FTP/build.
