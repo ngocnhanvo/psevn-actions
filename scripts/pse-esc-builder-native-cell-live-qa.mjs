@@ -50,6 +50,16 @@ try {
    contactError='office location card not rendered or not visible';
  }
  if(!contactError){
+ // These are authored ESC Table cells, not values inferred from rendered
+ // text. Each field must expose the exact physical row + source key.
+ for(const field of ['name','address','phone','fax','email','mapUrl']){
+   const cell=office.locator('[data-esc-builder-cell-row="0"][data-esc-builder-cell-field="'+field+'"]');
+   if(await cell.count()!==1)
+     throw Error('PSE_CONTACT_SOURCE_COORDINATE=FAIL field='+field+' expected=one row0 cell');
+ }
+ if(await office.getAttribute('data-esc-builder-row')!=='0')
+   throw Error('PSE_CONTACT_SOURCE_COORDINATE=FAIL office physical row');
+ console.log('PSE_CONTACT_SOURCE_COORDINATES=PASS fields=6 row=0 READ_ONLY=true');
  const values=office.locator('dd');
  const count=await values.count();
  if(count<2)throw Error('Contact ESC office lacks address/phone source values');
