@@ -31,7 +31,25 @@ try {
  await Promise.all([page.waitForLoadState('domcontentloaded'),page.getByRole('button',{name:'Mở trang'}).click()]);
  const preview=page.frameLocator('#esc-vb-frame');
  const office=preview.locator('.pse-contact-office .pse-location-card');
- await office.waitFor({state:'visible',timeout:90000});
+ let contactError='';
+ try{
+   await office.waitFor({state:'visible',timeout:20000});
+ }catch(error){
+   // Fail fast on a missing source section. Record safe structural facts,
+   // not the actual WordPress contact details or session-bearing URLs.
+   const diagnostic=await preview.locator('body').evaluate(body=>({
+     pathname:location.pathname,
+     tableIds:[...document.querySelectorAll('[data-tablepress-preview]')]
+       .map(el=>el.getAttribute('data-tablepress-preview')).slice(0,30),
+     officeCount:body.querySelectorAll('.pse-contact-office').length,
+     cardCount:body.querySelectorAll('.pse-location-card').length,
+     tableCount:body.querySelectorAll('[data-tablepress-preview]').length,
+     iframeTitle:document.title.slice(0,100),
+   })).catch(e=>({readError:String(e).slice(0,160)}));
+   console.log('PSE_CONTACT_RENDER_DIAGNOSTIC='+JSON.stringify(diagnostic));
+   contactError='office location card not rendered or not visible';
+ }
+ if(!contactError){
  const values=office.locator('dd');
  const count=await values.count();
  if(count<2)throw Error('Contact ESC office lacks address/phone source values');
@@ -46,6 +64,7 @@ try {
  const phoneValue=await page.locator('#esc-vb-edit-title').inputValue();
  if(!phoneValue.trim()||phoneValue===addressValue)throw Error('Phone click did not select its distinct source cell');
  if(!await page.locator('#esc-vb-image-editor').isHidden())throw Error('Image editor incorrectly opened for a text cell');
+ }
  // Verify the independent Media workflow: clicking an actual ESC Table image
  // opens the image picker panel, never the text editor. No Save is performed.
  if(!homePageId||!options.some(o=>o.value===homePageId))
@@ -162,5 +181,7 @@ try {
      console.log('PSE_FOOTER_PUBLIC_BASELINE='+width+'px PASS certificates=3 bct=1 no_overflow=true');
    }finally{await publicPage.close();}
  }
+ if(contactError)throw Error('PSE_CONTACT_SOURCE_QA=FAIL '+contactError+
+   '; homepage QA completed independently; inspect PSE_CONTACT_RENDER_DIAGNOSTIC');
  console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click='+bannerDotResult+' distinct_editors=PASS PUBLIC_FOOTER_1440_768_390=PASS READ_ONLY=PASS NO_BUILD=PASS');
 } finally { await browser.close(); }
