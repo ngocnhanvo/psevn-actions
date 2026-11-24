@@ -60,6 +60,15 @@ try {
  if(!await page.locator('#esc-vb-text-editor').isHidden())throw Error('Text editor incorrectly opened for an ESC image cell');
  if(!(await page.locator('#esc-vb-image-caption').innerText()).trim())
    throw Error('Image editor did not identify its canonical ESC source');
+ // Section lifecycle: verify that a real Preview click exposes the new
+ // Page-only removal action. Do NOT activate confirmation or Save in live QA.
+ const removeSection=page.locator('#esc-vb-section-remove-open');
+ await removeSection.waitFor({state:'visible',timeout:15000});
+ if(await removeSection.isDisabled())
+   throw Error('Source-selected Page section cannot enter guarded removal mode');
+ if(await page.locator('#esc-vb-section-order-open').count()!==1)
+   throw Error('Direct Preview section swap inspector missing');
+ console.log('PSE_BUILDER_SECTION_REMOVE_CONTROL=PASS selected_preview=true READ_ONLY=true');
  // Wave 1 G1/G2/G3 Builder preview smoke (READ ONLY): not a Save test.
  // Header Menu markers and capability cues must exist in the deployed iframe;
  // activating the menu must never switch the inspected WordPress Page.
