@@ -156,6 +156,11 @@ try {
       throw Error('Useful links Preview differs from production count, order or URL');
     console.log('PSE_BUILDER_USEFUL_LINK_PUBLIC_PARITY=PASS count='+publicLinks.length);
   } finally {await publicPage.close();}
+  // Inspect Astro in its own Playwright Frame execution context. Evaluating
+  // from the WordPress parent cannot read a cross-origin Preview iframe.
+  const frameElement=await page.locator('#esc-vb-frame').elementHandle();
+  const liveFrame=await frameElement?.contentFrame();
+  if(!liveFrame)throw Error('Authenticated Astro Preview frame unavailable');
   const sourceLink=useful.locator('a[data-esc-builder-cell-row][data-esc-builder-cell-field]').first();
   await sourceLink.waitFor({state:'visible',timeout:20000});
   const linkRow=Number(await sourceLink.getAttribute('data-esc-builder-cell-row'));
@@ -178,11 +183,9 @@ try {
   const changed=draft.href;
   await input.fill(changed);
   try {
-    await page.waitForFunction(expectHref=>{
-      const iframe=document.querySelector('#esc-vb-frame');
-      const link=iframe?.contentDocument?.querySelector('.pse-tools__links a[data-esc-builder-cell-field]');
-      return link?.getAttribute('href')===expectHref;
-    },changed,{timeout:12000});
+    await liveFrame.waitForFunction(expectHref=>
+      document.querySelector('.pse-tools__links a[data-esc-builder-cell-field]')?.getAttribute('href')===expectHref,
+      changed,{timeout:12000});
   } catch (error) {
     // The Editor and Astro Preview have different origins: never rely on
     // iframe.contentDocument. Gather safe non-secret shape diagnostics from
@@ -209,7 +212,7 @@ try {
   const saveEnabled=await page.locator('#esc-vb-edit-save').isEnabled();
   if(!saveEnabled)throw Error('Canonical valid URL draft did not activate Save');
   await page.locator('#esc-vb-edit-cancel').click();
-  await page.waitForFunction(expectedHref=>
+  await liveFrame.waitForFunction(expectedHref=>
     document.querySelector('.pse-tools__links a[data-esc-builder-cell-field]')?.getAttribute('href')===expectedHref,
     originalLink,{timeout:12000});
   await input.fill('javascript:alert(1)');
