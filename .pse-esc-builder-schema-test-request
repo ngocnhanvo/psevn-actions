@@ -1,3 +1,3 @@
-2026-11-25 PSE visible-item physical Promise row adapter source final.
-Astro master 1f7ac1575719d60ca3f384057fa1210bf0f27cc5: strict no-fake-4th-card production-first Promise, physical source rows 1/2/3, hidden metadata row0, safe visible row swap/cancel, refuses hidden row0 and guards detached metadata. Tests for both metadata prefix/suffix and old 0/1 card layouts, plus shared Pse_01 http(s)/relative URL safety.
-Previous adapter source candidate CI #45466907244 started before this readability correction. This explicit request pins the final SHA for parser/Vitest/PHP regression. NO FTP/BUILD/CMS WRITES.
+2026-11-25 PSE S5 WordPress Posts API query configuration source-only acceptance wave.
+Astro master 72b85a29ddd93e960a1041bcbd945bb11902d03a supports per-local-ESC-row optional limit (1–5), order (asc/desc), orderby (date/modified/title), defaults unchanged (5 date desc), safe parser, no arbitrary API query, no editing/swapping generated WordPress Posts records. Physical source row index and table queryFields remain local; no fake builder query chips in Preview.
+PHP production current 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746. Run full PHP+Astro source CI, including new pseNewsQueryConfig.test.ts and existing visible-source tests. NO BUILD, NO FTP, NO CMS DATA WRITE.
