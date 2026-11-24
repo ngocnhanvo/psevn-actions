@@ -166,6 +166,131 @@ try{
   };
   const results=[];
   await waitForSource(home);
+  // Direct section swap is a separate Page-level operation: get only
+  // WordPress's own versioned swappable instances, not a guessed DOM pair.
+  const sectionCapability=await page.evaluate(async()=>{
+    const script=[...document.scripts].map(el=>el.textContent||'')
+      .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
+    const quoted=script?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
+    if(!quoted||typeof window.escVBGetTicket!=='function')
+      throw Error('Authenticated Builder Page section reader not installed');
+    const nonce=JSON.parse(quoted[1]),pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    const ticket=await window.escVBGetTicket();
+    const response=await fetch('/wp-json/esc-builder/v1/section-order',{
+      method:'POST',credentials:'same-origin',cache:'no-store',
+      headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+      body:JSON.stringify({page_id:pageId,ticket})
+    });
+    const data=await response.json();
+    if(!response.ok||data?.code)throw Error('Section-order preflight refused '+String(data?.code||response.status));
+    return {items:data.items||[],swappable:data.swappable||{},canReorder:data.can_reorder===true};
+  });
+  const homeSections=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
+    nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+      .map(n=>n.getAttribute('data-tablepress-preview')));
+  const sectionPair=sectionCapability.items.flatMap(item=>
+    (sectionCapability.swappable[item.id]||[])
+      .filter(to=>homeSections.includes(item.table_id||item.id) &&
+        sectionCapability.items.some(other=>other.id===to && homeSections.includes(other.table_id||other.id)))
+      .map(to=>({from:item.id,to}))
+  ).find(pair=>pair.from!==pair.to);
+  const sectionSwapResults={source:'WordPress Page',mode:'read_only_preview'};
+  if(!sectionPair){
+    sectionSwapResults.result='NOT_TESTED_NO_WORDPRESS_APPROVED_PAIR';
+  }else{
+    const requestId=99501;
+    const bridge=async(payload,ackType)=>{
+      return await page.evaluate(async({payload,ackType})=>{
+        const frame=document.querySelector('#esc-vb-frame');
+        if(!(frame instanceof HTMLIFrameElement)||!frame.contentWindow)
+          throw Error('Section Preview iframe is absent');
+        const origin=new URL(frame.src,location.href).origin;
+        if(!ackType){frame.contentWindow.postMessage(payload,origin);return {matched:true};}
+        return await new Promise((resolve,reject)=>{
+          const handler=event=>{
+            if(event.source!==frame.contentWindow||event.origin!==origin||
+              event.data?.type!==ackType||event.data?.requestId!==payload.requestId)return;
+            clearTimeout(timer);window.removeEventListener('message',handler);
+            resolve(event.data);
+          };
+          const timer=setTimeout(()=>{
+            window.removeEventListener('message',handler);
+            reject(Error('Section Preview acknowledgement missing: '+ackType));
+          },8000);
+          window.addEventListener('message',handler);
+          frame.contentWindow.postMessage(payload,origin);
+        });
+      },{payload,ackType});
+    };
+    const original=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
+      nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+        .map(n=>n.getAttribute('data-tablepress-preview')));
+    let pending=false;
+    try{
+      const pick=await bridge({
+        type:'esc-vb-section-pick-start',source:sectionPair.from,
+        allowed:[sectionPair.to],requestId
+      },'esc-vb-section-pick-ready');
+      if(pick.matched!==true)throw Error('Section red/green Preview picking refused source');
+      pending=true;
+      const targetId=sectionCapability.items.find(item=>item.id===sectionPair.to)?.table_id||
+        sectionPair.to;
+      const target=frame.locator('[data-tablepress-preview="'+targetId+'"]').first();
+      const ackPromise=page.evaluate(({requestId})=>new Promise((resolve,reject)=>{
+        const frame=document.querySelector('#esc-vb-frame');
+        const origin=new URL(frame.src,location.href).origin;
+        const listener=event=>{
+          if(event.source!==frame.contentWindow||event.origin!==origin||
+            event.data?.type!=='esc-vb-section-target-picked'||
+            event.data?.requestId!==requestId)return;
+          clearTimeout(timer);window.removeEventListener('message',listener);
+          resolve({allowed:event.data.allowed,tableId:event.data.tableId});
+        };
+        const timer=setTimeout(()=>{
+          window.removeEventListener('message',listener);
+          reject(Error('Section target click was not received'));
+        },8000);
+        window.addEventListener('message',listener);
+      }),{requestId});
+      await target.click({force:true,position:{x:16,y:12}});
+      const selected=await ackPromise;
+      if(selected.allowed!==true||selected.tableId!==sectionPair.to)
+        throw Error('Section green target selection chose wrong instance');
+      if(await frame.locator('[data-esc-vb-swap-source]').count()<1||
+        await frame.locator('[data-esc-vb-swap-target]').count()<1)
+        throw Error('Section source red/target green Preview markers missing');
+      const swapped=await bridge({
+        type:'esc-vb-sections-swap-preview',
+        first:sectionPair.from,second:sectionPair.to,requestId:requestId+1
+      },'esc-vb-section-order-applied');
+      if(swapped.matched!==true)throw Error('Section Preview refused WordPress-approved pair');
+      const newOrder=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
+        nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+          .map(n=>n.getAttribute('data-tablepress-preview')));
+      const sourceId=sectionCapability.items.find(item=>item.id===sectionPair.from)?.table_id||
+        sectionPair.from;
+      const fromIndex=original.indexOf(sourceId),toIndex=original.indexOf(targetId);
+      const expected=[...original];
+      [expected[fromIndex],expected[toIndex]]=[expected[toIndex],expected[fromIndex]];
+      if(JSON.stringify(expected)!==JSON.stringify(newOrder))
+        throw Error('Section swap moved unrelated Page section or wrong source');
+      sectionSwapResults.result='PASS';
+      sectionSwapResults.source=sectionPair.from;
+      sectionSwapResults.target=sectionPair.to;
+      sectionSwapResults.swappedTwoOnly=true;
+    }finally{
+      await bridge({type:'esc-vb-sections-cancel'},null);
+      await bridge({type:'esc-vb-section-pick-clear'},null);
+      if(pending){
+        const restored=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
+          nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+            .map(n=>n.getAttribute('data-tablepress-preview')));
+        if(JSON.stringify(restored)!==JSON.stringify(original))
+          throw Error('Section swap Preview cancel left Page order modified');
+      }
+    }
+  }
+  console.log('PSE_BUILDER_SECTION_SWAP_LIVE='+JSON.stringify(sectionSwapResults));
   for(const config of [
     {name:'PSE_PROMISE',component:'.pse-promise',
       item:'.pse-promise__highlight[data-esc-builder-row]',ready:false},
