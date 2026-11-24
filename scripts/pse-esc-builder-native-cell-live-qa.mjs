@@ -50,15 +50,31 @@ try {
    contactError='office location card not rendered or not visible';
  }
  if(!contactError){
- // These are authored ESC Table cells, not values inferred from rendered
- // text. Each field must expose the exact physical row + source key.
- for(const field of ['name','address','phone','fax','email','mapUrl']){
+ // Confirm only canonical physical ESC cells, never an inferred text value.
+ // A transiently missing/partial CMS row must be diagnosed without aborting
+ // independent homepage and Page-source coverage checks.
+ const expectedFields=['name','address','phone','fax','email','mapUrl'];
+ const missing=[];
+ for(const field of expectedFields){
    const cell=office.locator('[data-esc-builder-cell-row="0"][data-esc-builder-cell-field="'+field+'"]');
-   if(await cell.count()!==1)
-     throw Error('PSE_CONTACT_SOURCE_COORDINATE=FAIL field='+field+' expected=one row0 cell');
+   if(await cell.count()!==1)missing.push(field);
  }
- if(await office.getAttribute('data-esc-builder-row')!=='0')
-   throw Error('PSE_CONTACT_SOURCE_COORDINATE=FAIL office physical row');
+ const physicalRow=await office.getAttribute('data-esc-builder-row');
+ if(missing.length||physicalRow!=='0'){
+   const shape=await office.evaluate(node=>({
+     pathname:location.pathname,
+     physicalRow:node.getAttribute('data-esc-builder-row'),
+     renderedFields:[...node.querySelectorAll('[data-esc-builder-cell-field]')]
+       .map(el=>({row:el.getAttribute('data-esc-builder-cell-row'),
+         field:el.getAttribute('data-esc-builder-cell-field')})),
+     tableIds:[...document.querySelectorAll('[data-tablepress-preview]')]
+       .map(el=>el.getAttribute('data-tablepress-preview')).slice(0,20),
+   })).catch(()=>({readError:'iframe shape unavailable'}));
+   console.log('PSE_CONTACT_SOURCE_FIELD_DIAGNOSTIC='+JSON.stringify({
+     missing,expectedRow:'0',shape
+   }));
+   contactError='physical Contact ESC cell mapping missing or ambiguous';
+ }else{
  console.log('PSE_CONTACT_SOURCE_COORDINATES=PASS fields=6 row=0 READ_ONLY=true');
  const values=office.locator('dd');
  const count=await values.count();
@@ -74,6 +90,7 @@ try {
  const phoneValue=await page.locator('#esc-vb-edit-title').inputValue();
  if(!phoneValue.trim()||phoneValue===addressValue)throw Error('Phone click did not select its distinct source cell');
  if(!await page.locator('#esc-vb-image-editor').isHidden())throw Error('Image editor incorrectly opened for a text cell');
+ }
  }
  // Verify the independent Media workflow: clicking an actual ESC Table image
  // opens the image picker panel, never the text editor. No Save is performed.
