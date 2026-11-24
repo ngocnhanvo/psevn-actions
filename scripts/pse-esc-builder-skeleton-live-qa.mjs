@@ -242,200 +242,37 @@ try {
   console.log('PSE_BUILDER_HREF_CLICK_EDIT_CANCEL=PASS row='+linkRow+
     ' field='+linkField+' valid_draft=PASS unsafe_save_blocked=PASS NO_CMS_WRITE=PASS');
 
-  // The news tab is a real local ESC source row, while its generated
-  // WordPress Posts are readonly. Inspect native options without a Save.
+  // An S5 news tab is one real local TablePress row. The WordPress Posts
+  // resolved by that category are readonly and have no editable source rows.
   const newsTab=frame.locator('.pse-news__tab[data-pse-news-tab]').first();
   if(await newsTab.count()){
-    const tableId=await newsTab.evaluate(node=>node.closest('[data-tablepress-preview]')
+    const newsTableId=await newsTab.evaluate(node=>node.closest('[data-tablepress-preview]')
       ?.getAttribute('data-tablepress-preview')||'');
-    if(!tableId)throw Error('S5 news tab lost its canonical ESC Table owner');
-    const generated=frame.locator('.pse-news__featured[data-esc-vb-region-state="readonly"]');
-    if(!(await generated.count()))throw Error('Generated WordPress Posts are not explicitly readonly');
+    if(!newsTableId)throw Error('S5 tab does not have a native ESC Table owner');
+    if(!(await frame.locator('.pse-news__featured[data-esc-vb-region-state="readonly"]').count()))
+      throw Error('Generated WordPress Posts must remain readonly');
     await newsTab.click({modifiers:['Alt']});
     await page.waitForFunction(id=>
       (document.querySelector('#esc-vb-edit-caption')?.textContent||'').includes(id) &&
       (document.querySelector('#esc-vb-edit-row')?.options?.length||0)>0,
-      tableId,{timeout:35000});
+      newsTableId,{timeout:35000});
     const options=await page.locator('#esc-vb-edit-row option').evaluateAll(nodes=>
       nodes.map(node=>node.value));
-    const fields=[...new Set(options.filter(x=>/^\\d+:/.test(x)).map(x=>x.split(':').slice(1).join(':')))];
+    const fields=[...new Set(options.filter(x=>/^\d+:/.test(x)).map(x=>x.split(':').slice(1).join(':')))];
     const queryFields=['categoryId','categorySlug','category','limit','order','orderby']
       .filter(field=>fields.includes(field));
     if(!queryFields.length) {
       console.log('PSE_BUILDER_S5_QUERY_SOURCE=NOT_TESTED source='+
-        tableId+' reason=no_native_query_columns API_READONLY=PASS');
+        newsTableId+' reason=no_native_query_columns API_READONLY=PASS');
     }else {
       const priority=['limit','order','orderby','categoryId','categorySlug','category'];
-      const field=priority.find(field=>queryFields.includes(field));
-      const value=options.find(x=>new RegExp('^\\\\d+:'+field+'
-  // Verify real deployed inspector timer: fast cached data must never flash,
-  // stale completion must never close the currently active selection.
-  if(process.env.PSE_SKIP_STATIC_SKELETON!=='1'){
-  const result=await page.evaluate(async()=>{
-    const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-    const panel=document.querySelector('#esc-vb-selection-skeleton');
-    if(!panel)throw Error('Deployed skeleton missing');
-    const begin=window.escVBSelectionBegin,finish=window.escVBSelectionFinish;
-    const reset=window.escVBSelectionReset;
-    reset();
-    const quick=begin('footer','Fast response');
-    if(panel.getAttribute('aria-busy')!=='true')throw Error('Quick selection did not enter loading');
-    if(!finish(quick))throw Error('Quick selection cannot finish');
-    await sleep(175);
-    if(!panel.hidden||panel.getAttribute('aria-busy')!=='false')
-      throw Error('Fast selection flickered or stuck busy');
-    const slow=begin('menu','Slow request');
-    await sleep(185);
-    if(panel.hidden||panel.getAttribute('aria-busy')!=='true')
-      throw Error('Slow selection never showed skeleton');
-    if(!finish(slow)||!panel.hidden)throw Error('Slow selection never closed skeleton');
-    let previous=begin('menu','Rapid first');
-    for(let i=0;i<10;i++){
-      const newest=begin('footer','Rapid '+i);
-      if(finish(previous)!==false)throw Error('Stale response incorrectly finished new selection');
-      previous=newest;
-    }
-    await sleep(170);
-    if(panel.hidden||panel.getAttribute('aria-busy')!=='true')
-      throw Error('Rapid clicks lost newest loading state');
-    if(!finish(previous)||!panel.hidden||panel.getAttribute('aria-busy')!=='false')
-      throw Error('Latest response did not finish cleanly');
-    reset();
-    return {quick:'PASS',slow:'PASS',rapid_10:'PASS',stale:'PASS',stuck_loading:'NONE'};
-  });
-  console.log('PSE_BUILDER_G1_SKELETON_LIVE='+JSON.stringify(result));
-  } else { console.log('PSE_BUILDER_G1_SKELETON_LIVE=ALREADY_PASS_RUN_40437608156'); }
-
-  // Real event→WordPress REST→inspector race (read-only): delay the FIRST
-  // Footer selection request so that it arrives after the second one.
-  let intercepted=0;
-  await page.route('**/wp-json/esc-builder/v1/footer-asset*',async route=>{
-    if(route.request().method()!=='POST')return route.continue();
-    const seq=++intercepted;
-    await delay(seq===1?1200:80);
-    await route.continue();
-  });
-  const assets=frame.locator('#footer-contact [data-esc-vb-footer-asset-row][data-esc-vb-region-state="editable"]');
-  await assets.first().waitFor({state:'visible',timeout:25000});
-  if(await assets.count()<2){
-    const state=await frame.locator('#footer-contact [data-esc-vb-footer-asset-row]').evaluateAll(
-      nodes=>nodes.map(n=>({row:n.getAttribute('data-esc-vb-footer-asset-row'),status:n.getAttribute('data-esc-vb-region-state')})));
-    console.log('PSE_BUILDER_G1_ASSET_SELECTION_DIAG='+JSON.stringify(state));
-    throw Error('Expected at least two editable Footer rows');
-  }
-  const first=Number(await assets.nth(0).getAttribute('data-esc-vb-footer-asset-row'));
-  const second=Number(await assets.nth(1).getAttribute('data-esc-vb-footer-asset-row'));
-  if(!Number.isSafeInteger(first)||!Number.isSafeInteger(second)||first===second)
-    throw Error('Invalid distinct Footer row markers');
-  await assets.nth(0).click();
-  await assets.nth(1).click();
-  const afterSelection=await page.evaluate(()=>
-    document.getElementById('esc-vb-app')?.classList.contains('esc-vb-has-selection') &&
-    getComputedStyle(document.getElementById('esc-vb-section-order-panel')).display!=='none');
-  if(!afterSelection)throw Error('Builder did not reveal context tools after Preview click');
-  console.log('PSE_BUILDER_CLICK_TO_DISCLOSE=PASS');
-  const inspector=page.locator('#esc-vb-footer-assets-editor');
-  await inspector.waitFor({state:'visible',timeout:20000});
-  await page.waitForFunction(row=>{
-    const text=document.querySelector('#esc-vb-footer-assets-editor p')?.textContent||'';
-    return text.includes('dòng '+(row+1));
-  },second,{timeout:30000}).catch(()=>{});
-  // WordPress requests may take several seconds independent of our injected
-  // delays. Wait for the real latest inspector request to settle rather than
-  // treating an arbitrary 1.5-second observation as a stuck loader.
-  let settled=false;
-  try {
-    await page.waitForFunction(() => {
-      const skeleton=document.getElementById('esc-vb-selection-skeleton');
-      return skeleton?.getAttribute('aria-busy')==='false' && skeleton.hidden;
-    },null,{timeout:16000});
-    settled=true;
-  } catch {
-    const diag=await page.evaluate(()=>({
-      busy:document.getElementById('esc-vb-selection-skeleton')?.getAttribute('aria-busy'),
-      hidden:document.getElementById('esc-vb-selection-skeleton')?.hidden,
-      text:document.getElementById('esc-vb-footer-assets-editor')?.innerText.slice(0,240)
-    }));
-    console.log('PSE_BUILDER_G1_STUCK_DIAG='+JSON.stringify({intercepted,diag}));
-  }
-  const panelText=await inspector.innerText();
-  if(!settled)throw Error('Latest Footer selection loading never settled after 16 seconds');
-  if(!panelText.includes('dòng '+(second+1)))
-    throw Error('Out-of-order response changed selection; expected row '+second);
-  if(/Không tải được dòng Footer/.test(panelText))
-    throw Error('Footer REST selection failed under network delay');
-  if(intercepted<2)throw Error('Real WordPress API rapid-selection requests were not both intercepted');
-  console.log('PSE_BUILDER_G1_RAPID_FOOTER=PASS selection='+second+
-    ' first='+first+' requests='+intercepted+' READ_ONLY=PASS NO_CMS_WRITE=PASS NO_BUILD=PASS');
-
-  // Compare independent published Page outputs for three native S1 cohorts.
-  // The URL comes from the exact WordPress Page permalink; never guess a slug.
-  const subpageSources=[
-    {pageId:'80930',name:'FAQ',selector:'.pse-faq__item'},
-    {pageId:'80932',name:'HOTLINE',selector:'.pse-hotline__card'},
-    {pageId:'79301',name:'HISTORY',selector:'.pse-history__milestone'}
-  ];
-  const publicOrigin=await frame.locator('body').evaluate(()=>location.origin);
-  const normalizeText=text=>String(text||'').replace(/\\s+/g,' ').trim();
-  for(const target of subpageSources){
-    const wpPage=await page.evaluate(async id=>{
-      const response=await fetch('/wp-json/wp/v2/pages/'+id+
-        '?_fields=id,slug,link,status',{credentials:'same-origin',cache:'no-store'});
-      if(!response.ok)throw Error('Cannot read canonical published WordPress Page '+id+
-        ' HTTP '+response.status);
-      const result=await response.json();
-      if(result.id!==Number(id)||result.status!=='publish'||!result.slug||!result.link)
-        throw Error('Missing verified published Page source '+id);
-      return {id:result.id,slug:result.slug,link:result.link};
-    },target.pageId);
-    const wpPermalink=new URL(wpPage.link);
-    if(wpPermalink.origin!==wp.origin||
-       !wpPermalink.pathname.startsWith('/')||
-       wpPermalink.pathname==='/'||
-       wpPermalink.search||wpPermalink.hash)
-      throw Error('Unusable canonical PSE WordPress permalink for '+target.name);
-    await page.locator('#esc-vb-page').selectOption(target.pageId);
-    await Promise.all([page.waitForLoadState('domcontentloaded',{timeout:45000}),
-      page.getByRole('button',{name:'Mở trang'}).click({timeout:35000})]);
-    const part=page.frameLocator('#esc-vb-frame');
-    await part.locator(target.selector).first().waitFor({state:'visible',timeout:40000});
-    const previewRows=await part.locator(target.selector).evaluateAll(nodes=>
-      nodes.map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim()));
-    const sourceRows=await part.locator(target.selector).evaluateAll(nodes=>
-      nodes.map(x=>Number(x.getAttribute('data-esc-builder-row'))));
-    const visitor=await browser.newPage({viewport:{width:1440,height:900}});
-    let publicRows;
-    try {
-      const url=new URL(wpPermalink.pathname,publicOrigin);
-      const response=await visitor.goto(url.href,{waitUntil:'domcontentloaded',timeout:65000});
-      if(!response||!response.ok())throw Error('Public '+target.name+
-        ' route did not publish expected Page, HTTP '+(response?.status()||0));
-      await visitor.locator(target.selector).first().waitFor({state:'visible',timeout:35000});
-      publicRows=await visitor.locator(target.selector).evaluateAll(nodes=>
-        nodes.map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim()));
-    } finally {await visitor.close();}
-    if(!publicRows?.length || JSON.stringify(previewRows)!==JSON.stringify(publicRows))
-      throw Error(target.name+' public versus Preview card content/count differs');
-    // Hotline cards are grouped by source-owned group labels, so their
-    // visible order can be nonmonotonic. The physical identities must still
-    // be unambiguous, nonnegative and unique after any filtering.
-    if(sourceRows.some(row=>!Number.isSafeInteger(row)||row<0)||
-       new Set(sourceRows).size!==sourceRows.length)
-      throw Error(target.name+' lost unique physical row markers');
-    if(previewRows.some(text=>/Chưa nhập|Chưa chọn nhóm hotline|Cột mốc cần sửa/.test(text)))
-      throw Error(target.name+' contains Preview-only repair labels');
-    console.log('PSE_BUILDER_SUBPAGE_PUBLIC_PARITY=PASS page='+target.name+
-      ' count='+publicRows.length+' markers=PASS NO_CMS_WRITE=PASS');
-  }
-} finally {
-  await browser.close();
-}
-).test(x));
-      if(!field||!value)throw Error('Native S5 field selection is ambiguous');
-      await page.locator('#esc-vb-edit-row').selectOption(value);
+      const field=priority.find(value=>queryFields.includes(value));
+      const key=options.find(value=>/^\d+:/.test(value) && value.endsWith(':'+field));
+      if(!field||!key)throw Error('Cannot resolve the exact S5 native field row');
+      await page.locator('#esc-vb-edit-row').selectOption(key);
       const editor=page.locator('#esc-vb-edit-title');
       if(!await editor.isEnabled()) {
-        console.log('PSE_BUILDER_S5_QUERY_SOURCE=NOT_TESTED source='+tableId+
+        console.log('PSE_BUILDER_S5_QUERY_SOURCE=NOT_TESTED source='+newsTableId+
           ' field='+field+' reason=readonly_under_current_role API_READONLY=PASS');
       }else {
         const old=await editor.inputValue();
@@ -443,11 +280,11 @@ try {
           field==='orderby'?'rand':field==='categoryId'?'-1':'unsafe/path';
         await editor.fill(bad);
         if(await page.locator('#esc-vb-edit-save').isEnabled())
-          throw Error('Malformed source-owned S5 query value was offered as a Save');
+          throw Error('Malformed S5 query value became Save-enabled');
         await page.locator('#esc-vb-edit-cancel').click();
         if(await editor.inputValue()!==old)
-          throw Error('S5 config Cancel did not restore the original WordPress cell');
-        console.log('PSE_BUILDER_S5_QUERY_SOURCE=PASS source='+tableId+
+          throw Error('S5 query Cancel did not restore the native source value');
+        console.log('PSE_BUILDER_S5_QUERY_SOURCE=PASS source='+newsTableId+
           ' fields='+queryFields.join(',')+' invalid_save_blocked=PASS cancel=PASS'+
           ' API_READONLY=PASS NO_CMS_WRITE=PASS');
       }
