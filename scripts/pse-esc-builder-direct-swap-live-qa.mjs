@@ -278,6 +278,14 @@ try{
           idPresent:el.hasAttribute('id'),
           className:String(el.className||'').split(/\\s+/).slice(0,3).join(' '),
           siblings,
+          siblingSources:el.parentElement?[...el.parentElement.children]
+            .filter(child=>child!==el).map(child=>({
+              tag:child.tagName,
+              htmlPart:child.hasAttribute('data-esc-builder-html-part'),
+              childElements:child.querySelectorAll('*').length,
+              textChars:(child.textContent||'').trim().length,
+              htmlBytes:child.innerHTML.length
+            })):[],
           hasNonWhitespaceTextSiblings:el.parentElement?
             [...el.parentElement.childNodes].some(child=>child!==el&&
               child.nodeType===3&&Boolean(child.textContent?.trim())):false,
