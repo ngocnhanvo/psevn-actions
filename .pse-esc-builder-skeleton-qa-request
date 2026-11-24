@@ -1,4 +1,3 @@
-2026-11-25 PSE S1 sections production-first real website parity after #45465866289.
-Deployed Astro 7ca3dda14db276f87bea1f5fea9b11a174679ce0 signed activation SUCCESS; PHP 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 FTPS readback PASS.
-Current authenticated read-only Playwright scripts/pse-esc-builder-skeleton-live-qa.mjs compares public vs Preview utility links, latest-news tab labels, exactly three sustainability highlights, no query chips/fake icon/image, plus actual href click-valid draft-Cancel-unsafe-save guard, banner and footer rapid click.
-NO CMS WRITE, NO SAVE, NO BUILD, NO FTP.
+2026-11-25 PSE Visual Builder production release acceptance and subpage parity (READ ONLY).
+Astro pinned production 1f7ac1575719d60ca3f384057fa1210bf0f27cc5 via signed #45467498238; PHP production 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 protected via #45463291680.
+Playwright scripts/pse-esc-builder-skeleton-live-qa.mjs at 37878dcff97e5955a8a725b57c5f137ab6cce466 compares public with Preview useful links (6), homepage News and Promise (3), plus FAQ, Hotline, History Page via resolved real WordPress Page permalink; safe href draft/Cancel and invalid URL, banner/footer rapid selections. No Save, no CMS/DB mutation, no FTP/build.
