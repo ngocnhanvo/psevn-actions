@@ -155,6 +155,24 @@ try {
     if(JSON.stringify(previewLinks)!==JSON.stringify(publicLinks))
       throw Error('Useful links Preview differs from production count, order or URL');
     console.log('PSE_BUILDER_USEFUL_LINK_PUBLIC_PARITY=PASS count='+publicLinks.length);
+    const sections=(root)=>({
+      newsTabs:[...root.querySelectorAll('.pse-news__tab')].map(x=>x.textContent.replace(/\\s+/g,' ').trim()),
+      queryBadges:root.querySelectorAll('.pse-news__builder-query').length,
+      commitments:[...root.querySelectorAll('.pse-promise__highlight')].map(x=>
+        x.textContent.replace(/\\s+/g,' ').trim()),
+      fakePromiseMedia:root.querySelectorAll(
+        '.pse-promise img[alt="Chọn icon ESC Table"],.pse-promise img[alt="Chọn ảnh nền ESC Table"]').length,
+    });
+    const previewSections=await frame.locator('body').evaluate(sections);
+    const publishedSections=await publicPage.locator('body').evaluate(sections);
+    if(JSON.stringify(previewSections)!==JSON.stringify(publishedSections))
+      throw Error('News or sustainability Preview differs from public source content/layout');
+    if(previewSections.queryBadges || previewSections.fakePromiseMedia ||
+       previewSections.commitments.length>3)
+      throw Error('Builder invented unavailable news config, media or extra promises');
+    console.log('PSE_BUILDER_HOME_SECTIONS_PUBLIC_PARITY=PASS news_tabs='+
+      previewSections.newsTabs.length+' promises='+previewSections.commitments.length+
+      ' query_badges=0 fake_media=0');
   } finally {await publicPage.close();}
   // Inspect Astro in its own Playwright Frame execution context. Evaluating
   // from the WordPress parent cannot read a cross-origin Preview iframe.
