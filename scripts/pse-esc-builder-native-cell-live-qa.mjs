@@ -99,6 +99,11 @@ try {
  await page.locator('#esc-vb-page').selectOption(homePageId);
  await Promise.all([page.waitForLoadState('domcontentloaded'),page.getByRole('button',{name:'Mở trang'}).click()]);
  const homeFrame=page.frameLocator('#esc-vb-frame');
+ // A visible iframe body is not proof that the deferred Astro selection
+ // module finished bootstrapping. Wait for its installed style sentinel,
+ // avoiding a false click failure when WordPress switches Page source.
+ await homeFrame.locator('style[data-esc-vb-item-pick-style]')
+   .waitFor({state:'attached',timeout:60000});
  const images=homeFrame.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]');
  await images.first().waitFor({state:'visible',timeout:90000});
  await images.first().click({force:true});
