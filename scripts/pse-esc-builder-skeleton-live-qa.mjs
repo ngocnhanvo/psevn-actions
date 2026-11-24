@@ -88,16 +88,28 @@ try {
     textOpened=true;
   } catch {}
   if(!textOpened){
+    const heroOwner=await heroImage.evaluate(el=>({
+      tableId:el.closest('[data-tablepress-preview]')?.getAttribute('data-tablepress-preview')||'',
+      row:Number(el.getAttribute('data-esc-builder-image-row'))
+    }));
     const diag=await page.evaluate(()=>({
       bridge:typeof window.escVBOpenItemText,
       imageOpen:document.getElementById('esc-vb-image-editor')?.style.display,
       textOpen:document.getElementById('esc-vb-text-editor')?.style.display,
       textOptions:document.getElementById('esc-vb-edit-row')?.options?.length,
-      sourceStatus:document.getElementById('esc-vb-image-feedback')?.textContent?.includes('Chưa có trình sửa chữ hợp lệ')||false,
-      hasSelection:document.getElementById('esc-vb-app')?.classList.contains('esc-vb-has-selection')||false
+      imageFeedbackError:document.getElementById('esc-vb-image-feedback')?.textContent?.includes('Chưa có trình sửa chữ hợp lệ')||false,
+      hasSelection:document.getElementById('esc-vb-app')?.classList.contains('esc-vb-has-selection')||false,
+      buttonHidden:document.getElementById('esc-vb-image-open-text')?.hidden||false
     }));
-    console.log('PSE_BUILDER_HERO_TEXT_BRIDGE_DIAG='+JSON.stringify(diag));
-    throw Error('Related text/link panel was not disclosed after selecting a hero image');
+    const direct=await page.evaluate(({tableId,row})=>
+      typeof window.escVBOpenItemText==='function'?
+      window.escVBOpenItemText(tableId,row):false,heroOwner);
+    const directOpened=await page.locator('#esc-vb-text-editor').isVisible();
+    console.log('PSE_BUILDER_HERO_TEXT_BRIDGE_DIAG='+JSON.stringify({
+      ...diag,heroOwner:heroOwner.tableId?{tableId:heroOwner.tableId,rowValid:Number.isSafeInteger(heroOwner.row)}:null,
+      directReturned:direct,directOpened
+    }));
+    throw Error('Related text/link panel did not open on the actual inspector button click');
   }
   await page.waitForFunction(()=>
     (document.querySelector('#esc-vb-edit-row')?.options?.length||0)>0,
