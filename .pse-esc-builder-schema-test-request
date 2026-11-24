@@ -1,4 +1,4 @@
-2026-11-25 PSE production-first Visual Builder S1 sections parity wave 2 source-only regression.
-Astro master 0580a04f0056d0231821a68238fd2871b7201c41: normalize safe absolute/root-relative useful links, no Preview-only query chips in latest news, no fake extra 4th card/placeholder in sustainability, no hidden FAQ/hotline rows or source badges, no fake history repair cards. All physical sourceRow/field markers on visible public elements remain.
-PHP master 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 already released #45463291680 TLS SHA256 readback PASS.
-Run Pse_previewParity.test.ts and existing Pse_01/Pse_02/Pse_faq/Pse_hotline/pseHistory/sourceOwnedHref/native cell and URL tests, Astro parser, PHP JS syntax. Absolutely NO BUILD, NO FTP, NO CMS WRITE.
+2026-11-25 PSE production-first all S1 section parity wave 2 source CI retry.
+Astro master 7ca3dda14db276f87bea1f5fea9b11a174679ce0 fixes obsolete Pse_02 icon assertion after removing fake preview-only image. Existing real icon keeps canonical previewMode+hasOwn source field/row marker.
+Earlier source CI #45465259116: 23/24 suites passed, exactly one obsolete expectation of a removed fake-placeholder field; production component parsed successfully; regression assertion corrected at 7ca3dda14db276f87bea1f5fea9b11a174679ce0.
+Verify all prior PHP and Astro source ownership tests, Pse_previewParity, sourceOwnedHref, parser and Tailwind. NO BUILD, NO FTP, NO CMS WRITE.
