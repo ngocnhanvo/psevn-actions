@@ -15,6 +15,10 @@ if(wp.protocol!=='https:'||!wp.hostname||wp.username||wp.password||wp.search||wp
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:920}});
 page.on('pageerror',error=>console.log('PSE_SWAP_BROWSER_SCRIPT_ERROR='+String(error.name||'Error')));
+page.on('response',res=>{
+  if(res.status()>=400&&/\/(_astro|assets)\//.test(new URL(res.url()).pathname))
+    console.log('PSE_SWAP_ASSET_HTTP_ERROR='+res.status());
+});
 
 const send=async(type,tableId,from,to,count,requestId,providedItems=null)=>{
   return await page.evaluate(async payload=>{
@@ -72,8 +76,22 @@ try{
   await Promise.all([page.waitForLoadState('domcontentloaded'),
     page.getByRole('button',{name:'Mở trang'}).click()]);
   const frame=page.frameLocator('#esc-vb-frame');
-  await frame.locator('body').waitFor({state:'visible',timeout:40000});
+  // The Page body can be visible before Astro's deferred module registers
+  // installBuilderSectionDrafts(). Wait for the exact protected Page ticket
+  // and the module-owned style sentinel, not just visible public HTML.
+  const waitForSource=async(pageId)=>{
+    await page.waitForFunction(pageId=>{
+      const element=document.querySelector('#esc-vb-frame');
+      if(!(element instanceof HTMLIFrameElement))return false;
+      const path=new URL(element.src,location.href).pathname;
+      return path.endsWith('/esc-builder/preview/'+pageId);
+    },pageId,{timeout:55000});
+    await frame.locator('#esc-vb-nav-context').waitFor({state:'attached',timeout:55000});
+    await frame.locator('style[data-esc-vb-item-pick-style]')
+      .waitFor({state:'attached',timeout:55000});
+  };
   const results=[];
+  await waitForSource(home);
   for(const config of [
     {name:'PSE_PROMISE',component:'.pse-promise',
       item:'.pse-promise__highlight[data-esc-builder-row]',ready:false},
@@ -96,7 +114,7 @@ try{
       await page.locator('#esc-vb-page').selectOption(config.pageId);
       await Promise.all([page.waitForLoadState('domcontentloaded',{timeout:45000}),
         page.getByRole('button',{name:'Mở trang'}).click()]);
-      await frame.locator('body').waitFor({state:'visible',timeout:40000});
+      await waitForSource(config.pageId);
     }
     const root=frame.locator(config.component).first();
     if(!(await root.count())){results.push(config.name+':NOT_TESTED_NO_SECTION');continue}
