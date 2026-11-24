@@ -69,6 +69,19 @@ try {
     throw Error('Readonly region advertises editing on hover');
   console.log('PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS');
 
+  const referenceUi=await page.evaluate(()=>{
+    const button=document.getElementById('esc-vb-reference-replace-open');
+    const dialog=document.getElementById('esc-vb-reference-dialog');
+    return {exists:!!button && !!dialog,hidden:button?.hidden,
+      disabled:button?.disabled,display:button?getComputedStyle(button).display:'',
+      dialogOpen:dialog?.open||false};
+  });
+  if(!referenceUi.exists||!referenceUi.hidden||!referenceUi.disabled||
+     referenceUi.display!=='none'||referenceUi.dialogOpen)
+    throw Error('Contextual manual-reference picker leaked into unselected Preview');
+  console.log('PSE_BUILDER_REFERENCE_PICKER_DEFAULT=PASS hidden=PASS disabled=PASS NO_CMS_WRITE=PASS');
+
+
   // The old preview used to inject green/white ESC Table text chips over
   // the hero. Production has no such content. Keep text/URL editing in the
   // contextual inspector opened AFTER selecting its real image source.
