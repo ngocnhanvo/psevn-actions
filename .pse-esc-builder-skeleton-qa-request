@@ -1,9 +1,4 @@
-2026-11-25 PSE FINAL production-first banner / contextual inspector live QA, read-only.
-Astro production cec2caa69b7666844bb46bc2d19f08f518d3da02 deployed #45457945793 SUCCESS signed unzip + activation. PHP production 3dbe13bc071effae7a9d4b8c6510a5c6641b8b24 deployed #45457778416 TLS/sha256 readback PASS changed=3 checked=20 cleanup_pending=0.
-Use latest scripts/pse-esc-builder-skeleton-live-qa.mjs: initial inspector and section controls hidden, readonly hover no edit cues, hero has no white/green badges and same production slides, click actual image then contextual edit-text/link button opens real source-owned text row selector; rapid footer selection/stale loading still PASS. No CMS Save, FTP or build. Retain full STATIC + network tests.
-
-2026-11-25 follow-up: #45458329364 failed only at handoff after hero image contextual button. Diagnostic-only read-only retry with bounded wait and bridge status from scripts commit 3593eb366662bae35321186fe07935241efc5fe8; do not build or alter CMS.
-
-Diagnostic retry #2 after #45458799521 (bridge function defined, image panel remained open). Isolate direct source helper from button handler using committed QA 013cffa34d130408e7b31cfdfbce756f576aa450; read-only, NO CMS writes/build.
-
-Diagnostic retry #3 for banner button click guard after #45459136996: log existing inspector dirtiness/confirmation and accept only safe discard of local unsaved draft (NO CMS Save, no FTP, no build). Playwright source 25a4bc77b58de3b9290561a210f08bdd6e75700f.
+2026-11-25 FINAL production-first Builder banner source-ready click regression, READ ONLY.
+Production Astro master cec2caa69b7666844bb46bc2d19f08f518d3da02 deployed signed #45457945793; production PHP master cc10f0a7020746fa2834454eae27c2d38f75250d deployed guarded #45460083608 SUCCESS (2 PHP files activated sha256 PASS checked=20 cleanup_pending=0).
+Source CI #45459901430 PASS; precise prior Playwright diagnosis #45459523364: button was hidden=true while image source "đang đọc", WP admin CSS revealed hidden button, click raced source; patched CSS and disabled until verified canonical text fields.
+Use latest read-only QA scripts/pse-esc-builder-skeleton-live-qa.mjs with explicit wait hidden=false AND disabled=false AND caption source loaded; check clean hero chips=0, click actual image -> contextual text/link action -> real text inspector source field options, readonly hover silent and item swap controls on click, footer rapid out-of-order selection. NO CMS SAVE/BUILD/FTPS/CONTENT MUTATION.
