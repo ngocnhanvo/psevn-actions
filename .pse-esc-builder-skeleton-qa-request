@@ -1,3 +1,5 @@
 2026-11-25 PSE FINAL production-first banner / contextual inspector live QA, read-only.
 Astro production cec2caa69b7666844bb46bc2d19f08f518d3da02 deployed #45457945793 SUCCESS signed unzip + activation. PHP production 3dbe13bc071effae7a9d4b8c6510a5c6641b8b24 deployed #45457778416 TLS/sha256 readback PASS changed=3 checked=20 cleanup_pending=0.
 Use latest scripts/pse-esc-builder-skeleton-live-qa.mjs: initial inspector and section controls hidden, readonly hover no edit cues, hero has no white/green badges and same production slides, click actual image then contextual edit-text/link button opens real source-owned text row selector; rapid footer selection/stale loading still PASS. No CMS Save, FTP or build. Retain full STATIC + network tests.
+
+2026-11-25 follow-up: #45458329364 failed only at handoff after hero image contextual button. Diagnostic-only read-only retry with bounded wait and bridge status from scripts commit 3593eb366662bae35321186fe07935241efc5fe8; do not build or alter CMS.
