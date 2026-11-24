@@ -1,2 +1,2 @@
-5621d9fce58c6419b5ecf3650616e92edae43e44
-2026-10-27 PHP-only Menu inspector transient database error UX patch. Source PHP/JS contract Actions #40443274512 SUCCESS and #40443294401 SUCCESS. Upload only changed shared-menu-ui.php, SHA readback and rollback; no CMS write or Astro build.
+623426c84f5049c1d04ff108fd02ddc36139939c
+2026-11-24 Visual Builder direct-preview swap safety, dynamic readonly controls and green destination; source-only CI #45402421099 PASS. PHP-only verified FTPS; no Astro build or CMS data writes.
