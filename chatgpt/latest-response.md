@@ -1,42 +1,26 @@
 # Phản hồi ChatGPT mới nhất — PSE
 
-- Ngày: 2026-11-23 (Asia/Ho_Chi_Minh)
+- Ngày: 2026-11-25 (Asia/Ho_Chi_Minh)
 - Project: pse.vn
 - Repository: ngocnhanvo/psevn-actions/main
-- Trạng thái công việc: DONE — hoàn tất
-- WordPress Page: 83593, /npk-phu-my
-- WordPress backup + scoped CSS and 2 related text URLs save/readback: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45188429852 — PASS
-- Normal WordPress Build Website (pending count 1): https://github.com/ngocnhanvo/psevn-actions/actions/runs/45189033409 — PASS
-- Production Astro signed staging + FTPS deploy: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45189137966 — PASS
-- Production Playwright read-only layout + links QA: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45189619086 — PASS
-- Actions source commits: dc61ad350e8453ac7333f5653e37828876f8bd80, bee0c696f0edba4f1eb0f62b645ccfb7f3759963, 49fb855c379ec151a74483000aeb7687f165a8db.
+- Trạng thái: PARTIAL — chưa hoàn tất
+- Checkpoint chuẩn: docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md
+- PHP source mới: ngocnhanvo/psevn-php@master 4077306a1238c6e9f5deece31a99943cbe46bed6
+- Astro source/production (không đổi): ngocnhanvo/psevn-astro@master 05275b6a31ed4078efcd05ad385305ed3b705b76
+- Source-only CI: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45454932475 — SUCCESS
+- PHP-only signed FTPS/checksum/readback: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45455130090 — SUCCESS, changed=2 checked=20 cleanup_pending=0
+- Postdeploy authenticated read-only Playwright: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45455489053 — SUCCESS, six S1 item swaps/Cancel, Page swap/Cancel, Hotline clone/remove dry-run/Cancel, NO CMS WRITE.
 
-## Toàn bộ nội dung phản hồi gửi người dùng
+## Công việc phiên 25/11
 
-Mình đã xác định được cả hai vấn đề trên [trang NPK Phú Mỹ](https://pse.webnvn.com/npk-phu-my) bằng Playwright:
+Đã kiểm tra knowledge/main, commit/log/checkpoint PSE. Tiếp tục và triển khai bổ sung khả năng **gỡ một row tham chiếu API S2–S4** trực tiếp sau khi chọn item thật trong Visual Builder. REST PHP xác minh TablePress physical key, version, SHA-256 row hash và quyền; chỉ xóa reference row, không xóa Product/Page/Term/REST record; auto API cards bị khóa. UI xác nhận lại collection_mode/can_delete; tự khóa stale Preview sau thao tác. Bổ sung source regressions PHP + JS; CI PASS 116 Astro Vitest. Đã phát hành đúng hai PHP includes qua FTPS có kiểm tra checksum và rollback. Đã chạy lại production Browser QA sau phát hành, không có regression được quan sát.
 
-- **Khoảng cách tiêu đề:** phần cuối tiêu đề đến bảng sản phẩm đầu tiên đang cách khoảng **129px** trên desktop, khá lớn.
-- **“Các bài viết khác”:** có 3 liên kết còn trỏ về `pse.vn`, gồm “Nhóm phân đơn và phân phức hợp Phú Mỹ”, “Kali Phú Mỹ” và “Nội dung đang cập nhật”.
-- Ngoài ra, **20 hình sản phẩm NPK** vẫn chứa liên kết đến các trang biến thể trên website cũ.
+## Giới hạn và bước phải tiếp tục
 
-Mình sẽ thu gọn khoảng cách bằng CSS bổ sung của WordPress, chuyển hai bài viết có trang mới tương ứng và bỏ liên kết “Nội dung đang cập nhật” không còn hữu ích. Các liên kết biến thể sản phẩm cần được đối chiếu đúng mã trước khi chuyển, để tránh dẫn khách đến sai sản phẩm.
-
-Bản sửa đã **PASS kiểm thử giao diện ở 4 kích thước màn hình** (390, 768, 1240 và 1440px). Khoảng cách từ tiêu đề đến bảng sản phẩm giảm từ **129px xuống còn 29px**; 20 ảnh và 3 bảng nội dung vẫn giữ nguyên, không bị tràn ngang.
-
-Mình đã kích hoạt quy trình sao lưu và cập nhật WordPress có kiểm soát. Kết quả trên website thật vẫn cần được kiểm tra sau khi build và triển khai.
-
-**WordPress đã cập nhật thành công.** Bản sao lưu cơ sở dữ liệu được xác nhận trước khi ghi; kiểm tra đọc lại dữ liệu cho thấy CSS và các liên kết đã được lưu đúng vào Page `83593`, không làm thay đổi 20 ảnh hay 3 bảng sản phẩm.
-
-Bước còn lại là build website Astro và kiểm tra trực tiếp bản đã triển khai.
-
-**Astro production đã build và triển khai thành công** qua workflow hiện có. Mình đang chạy lượt kiểm tra cuối trên website thật để xác nhận khoảng cách 29px và các liên kết mới, thay vì chỉ dựa vào kết quả build thành công.
-
-**Đã hoàn tất và xác minh trên website thật.** Trang NPK Phú Mỹ hiện có khoảng cách từ tiêu đề tới bảng sản phẩm **29px** ở cả desktop, tablet và mobile. Không có tràn ngang; đủ 20 ảnh và 3 bảng sản phẩm/thông tin.
-
-Trong mục **“Các bài viết khác”**, hai liên kết đã trỏ về website mới: [Nhóm phân đơn và phân phức hợp Phú Mỹ](https://pse.webnvn.com/san-pham/nhom-phan-don-va-phan-phuc-hop-phu-my) và [Kali Phú Mỹ](https://pse.webnvn.com/kali-phu-my-mo-ta-cac-bien-the). Mục “Nội dung đang cập nhật” đã được gỡ bỏ. Các liên kết gắn trên 20 ảnh dẫn tới biến thể sản phẩm cũ vẫn được giữ nguyên, vì cần đối chiếu từng mã sản phẩm trước khi đổi.
-
-Bằng chứng: [lưu WordPress và sao lưu](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45188429852), [build/deploy production](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45189137966), [kiểm thử Playwright trực tiếp](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45189619086). Cả ba đều **PASS**.
+- **Chưa có live S2–S4 Save acceptance:** QA homepage phát hiện 0 API sections; khảo sát trước đó 29 Page phụ cũng không có dynamic. Không tạo/xóa CMS data để làm đẹp kết quả.
+- S2–S4 thêm/chọn reference bằng picker, sửa local fields; S5 API-auto cấu hình query; section add/hide/show/nested và nguồn/REST Save→reload→public, rollback/concurrency vẫn chưa hoàn tất.
+- Bước tiếp theo: triển khai adapter tiếp theo theo S1–S9 trên schema có nguồn thật, mở rộng isolated source tests; chỉ thử CMS Save trên fixture độc lập được phép rồi đọc lại và dọn sạch. Không rerun các build/QA đã PASS khi không có thay đổi liên quan.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
-Trạng thái: DONE — hoàn tất
+Trạng thái: PARTIAL — chưa hoàn tất
