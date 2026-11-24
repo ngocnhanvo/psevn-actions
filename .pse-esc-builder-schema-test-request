@@ -1,3 +1,4 @@
-2026-11-25 PSE Visual Builder guarded manual-reference removal source regression.
-PHP master 4077306a1238c6e9f5deece31a99943cbe46bed6: S2 Product/Page, S3 ProductCategory, S4 manual REST reference rows can be removed from ESC Table only when a real Preview row is selected and the user confirms. Writer authenticates, verifies physical source meta/schema, exact row hash, version, header/config invariants and preserves WordPress upstream record. API-auto remains blocked, adding reference still blocked pending source picker. Run existing native-cell PHP lint/PHP tests, PHP-rendered JS contract, Astro Vitest and parser. SOURCE ONLY: NO BUILD, NO FTP, NO CMS WRITE.
-Astro source remains 05275b6a31ed4078efcd05ad385305ed3b705b76.
+2026-11-25 PSE Visual Builder production-first click-to-edit source QA.
+Astro master 522da7040c55c35e6ae22efeae7f2f6821bc268d: retain production layout and visuals by default; only mark actionable regions on hover; readonly/unsupported sections never receive hover badges or forced edit cursor; tools and source explanations appear only after selecting. Preserve direct Preview section/item red-green picking, safe interactions and source-owned write guards.
+PHP master c34fab5a8cb5255cc8318447177b6ddf49fd5783: hide technical and section controls until verified iframe item/section/menu/image/footer click; maintain existing writer/nonce/version checks. Adds source regression for click-to-edit visibility.
+Run existing native-cell PHP lint, schema and JS source tests plus Astro Vitest and parser. SOURCE ONLY: NO BUILD, NO FTP, NO CMS WRITE.
