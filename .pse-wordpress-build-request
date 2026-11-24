@@ -1,5 +1,4 @@
-2026-11-25 PSE Visual Builder native useful links href production-first code release.
-Astro master b86b4823116654317b96386ec359e06c4e9a2a3e: public/Preview utility links now visually identical without synthetic URL labels; click on real anchor selects source-owned field href and row, supports draft/Cancel and strict safe URL check.
-PHP master 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746: protected canonical URL Save with version and hash, valid HTTP(S) or root-relative links only. Guarded PHP FTPS #45463291680 triggered separately.
-Source-only CI #45462866442 SUCCESS 22/22 Vitest test suites and PHP readback fixture; owner project code mode auto-build.
-Force exactly one code-only build via existing signed authenticated WordPress pipeline (no new deploy workflow); retain source/env/target signature/locks/readback/rollback. NO CMS CONTENT/DB WRITE.
+2026-11-25 PSE Visual Builder production-first S1 sections parity release via authenticated WordPress Build Website.
+Astro master 7ca3dda14db276f87bea1f5fea9b11a174679ce0 verified source-only CI #45465521223 SUCCESS 24/24 suites and Astro parser/Tailwind: Pse_01 no fake query configuration badges, Pse_02 public three highlights and no empty card/media placeholders, Pse_faq no preview-only hidden rows or visible chips, Pse_hotline no empty phones/groups/chips, Pse_history no generated fake repair milestones, Pse_03 absolute/root-relative safe link renderer preserving source coords.
+PHP writer production SHA 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 already released checksum/readback #45463291680 SUCCESS. Link click/draft/Cancel production browser #45465187664 SUCCESS, 6/6 public vs Preview links.
+Owner project code mode auto-build. Exactly one code-only build via existing signed zip/unzip, target/lock/rollback workflow. DO NOT TOUCH CMS content, Page rows, DB or remote WordPress records; no new workflow.
