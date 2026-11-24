@@ -36,16 +36,31 @@ jobs:
             php/wp-content/plugins/esc-visual-builder/includes/*.php; do
             php -l "$file"
           done
+          php php/wp-content/plugins/esc-visual-builder/tests/items-and-sections.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/auto-discovery.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-media-source.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-assets-source.test.php
-      - name: Checkout Astro development source (source only)
+          php php/wp-content/plugins/esc-visual-builder/tests/item-ui-script.test.php > /tmp/pse-builder-item-ui.js
+          node --check /tmp/pse-builder-item-ui.js
+          node php/wp-content/plugins/esc-visual-builder/tests/item-ui-ticket.test.cjs /tmp/pse-builder-item-ui.js
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const js=readFileSync('/tmp/pse-builder-item-ui.js','utf8');
+          for (const token of ['BUILDER_GAP','esc-vb-item-pick-start','esc-vb-item-sort-preview-ack']) {
+            if (!js.includes(token)) throw Error('Missing guarded item picker: '+token);
+          }
+          for (const forbidden of ['renderSortList(', 'fallbackPicker', 'sortList.', 'chooseItemSource(']) {
+            if (js.includes(forbidden)) throw Error('Unsafe list fallback remains: '+forbidden);
+          }
+          console.log('PSE_DIRECT_PREVIEW_SWAP_ONLY=PASS');
+          JS
+      - name: Checkout Astro master source (source only)
         uses: actions/checkout@v4
         with:
           repository: ngocnhanvo/psevn-astro
-          ref: github
+          ref: master
           token: ${{ secrets.SOURCE_REPO_PAT }}
           path: astro
           persist-credentials: false
@@ -89,7 +104,7 @@ jobs:
           pnpm install --frozen-lockfile --prefer-offline
           node ../scripts/pse-esc-builder-menu-inspector.test.mjs
           node ../scripts/pse-esc-builder-footer-assets-inspector.test.mjs
-          pnpm exec vitest run src/lib/wordpress/builderHeaderNavLock.test.ts src/lib/wordpress/builderEditabilityCues.test.ts src/lib/wordpress/builderFooterSelection.test.ts src/lib/wordpress/tablepress/pseFooterAssets.test.ts src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderCustomerSlider.test.mjs src/astro/tablepress/Home_00.mobile.test.ts src/astro/tablepress/Pse_support.cssOwnership.test.ts
+          pnpm exec vitest run src/lib/wordpress/builderHeaderNavLock.test.ts src/lib/wordpress/builderEditabilityCues.test.ts src/lib/wordpress/builderSectionDrafts.test.ts src/lib/wordpress/builderFooterSelection.test.ts src/lib/wordpress/tablepress/pseFooterAssets.test.ts src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderCustomerSlider.test.mjs src/astro/tablepress/Home_00.mobile.test.ts src/astro/tablepress/Pse_support.cssOwnership.test.ts
           node --input-type=module <<'NODE'
           import {readFile} from 'node:fs/promises';
           import {createRequire} from 'node:module';
