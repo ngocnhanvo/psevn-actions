@@ -15,6 +15,11 @@ if(wp.protocol!=='https:'||!wp.hostname||wp.username||wp.password||wp.search||wp
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:920}});
 page.on('pageerror',error=>console.log('PSE_SWAP_BROWSER_SCRIPT_ERROR='+String(error.name||'Error')));
+page.on('console',message=>{
+  const value=message.text();
+  if(value.startsWith('PSE_SECTION_SOURCE_NO_WRITE_DIAGNOSTIC='))
+    console.log(value);
+});
 page.on('response',res=>{
   if(res.status()>=400&&/\/(_astro|assets)\//.test(new URL(res.url()).pathname))
     console.log('PSE_SWAP_ASSET_HTTP_ERROR='+res.status());
