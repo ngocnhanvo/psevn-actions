@@ -88,7 +88,7 @@ const verifyCloneDryRun=async(tableId)=>{
   return await page.evaluate(async tableId=>{
     const script=[...document.scripts].map(node=>node.textContent||'')
       .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
-    const token=script?.match(/\\bconst nonce=("(?:[^"\\\\]|\\\\.)*")/);
+    const token=script?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
     if(!token)throw Error('WordPress REST nonce not found in authenticated Builder UI');
     const nonce=JSON.parse(token[1]);
     const getTicket=window.escVBGetTicket;
