@@ -1,2 +1,5 @@
 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746
-2026-11-25 PSE Visual Builder native source-owned safe URL editor. Source CI #45462866442 PASS 22/22 Vitest suites, PHP URL single-cell readback fixture, text inspector JS syntax, Astro parser/Tailwind. PHP master 5bdbfcb... guards HTTP(S)/root-relative URLs and rejects javascript/data/scheme-relative/userinfo before writing exact field, exposes URL-specific inspector validation. Existing protected PHP FTPS deploy only changed plugin PHP with TLS+checksum/readback and rollback; no Astro build, no CMS write. Astro source release requested separately for Pse_03 production-first parity and href draft adapter.
+2026-11-25 PSE safe source-owned useful-link URL inspector PHP release.
+Earlier release #45463120198 job SKIPPED because push commit message did not meet the existing workflow exact guard.
+Correctly requesting verified source pin after #45462866442 CI SUCCESS: PHP text-editor.php and text-editor-ui.php validate href values on both client and server, retain field/row/version/hash invariants, expose link editing only on direct Preview selection.
+Deploy existing guarded TLS FTPS SHA256/readback/rollback pipeline, NO ASTRO BUILD, NO CMS CONTENT WRITE.
