@@ -55,3 +55,16 @@ At 2026-11-25 01:07 local, `psevn-php/master` independently advanced beyond the 
 - Next: require Astro deploy SUCCESS with pin and runtime guard, then run authenticated read-only Playwright and reconcile failures. Any CMS Save requires isolated approved write scope, readback and rollback.
 
 **Trạng thái checkpoint: PARTIAL — chưa hoàn tất.**
+
+## Production-first follow-up 2026-11-25: clean hero and contextual editor
+
+- Previous click-only source CI #45456038256 PASS, first PHP FTPS #45456231054 PASS and first Astro deploy #45456461566 PASS; previous live click-only #45456865871 PASS; direct Preview swap #45456907538 PASS.
+- Found exact cause of user screenshot: Pse_00.astro injected `.pse-hero__builder-fields` with white-on-green source chips only in authenticated Builder. Source correction removed all badges and related CSS, fake empty image placeholder and preview-only extra blank slide rows. Real slides, physical sourceRow, image field mapping, arrows/dots remain.
+- Astro master HEAD cec2caa69b7666844bb46bc2d19f08f518d3da02; PHP master HEAD 3dbe13bc071effae7a9d4b8c6510a5c6641b8b24 adds generic contextual `Sửa chữ / liên kết của item` available after selecting a writable ESC image, routing to existing source-aware text inspector (no new writer).
+- Source CI #45457594916 SUCCESS, tests Pse_00 production parity and PHP image editor generated JS syntax + PHP tests. Previous partial CI #45457239383 also SUCCESS.
+- PHP **production deployed** #45457778416 SUCCESS; immutable SHA 3dbe13bc..., verified TLS/sha256 readback, changed=3 checked=20 cleanup_pending=0, NO CMS WRITE.
+- WordPress build trigger #45457798406 SUCCESS, Astro **production deployed** #45457945793 SUCCESS, immutable SHA cec2caa..., signed ZIP activation successful.
+- New authenticated read-only Playwright banner/inspector + rapid footer scenario #45458329364 triggered from script version 6562834de6df...; this checkpoint records **IN_PROGRESS** when written, not PASS until run ends.
+- Remaining full project S2-S5 inventory, true CMS Save/readback, URL validation and full desktop/mobile visual parity remain PARTIAL; don't claim full Builder coverage from UI test.
+
+**Trạng thái: PARTIAL — chưa hoàn tất.**
