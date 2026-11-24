@@ -1,2 +1,2 @@
-666761edda6139aa292f36c5c50f2d611125de88
-2026-11-24 Visual Builder source-only CI #45406005569 latest rerun SUCCESS: duplicate section selection/swap, Page-only removal, verified no upstream TablePress delete, PHP syntax and Astro Vitest. Upload exact pinned PHP plugin with FTPS readback and automatic rollback; no Astro build or CMS data writes.
+d9db1e773f3be16258b5ffcf0f103aa624261159
+2026-11-24 CORRECTED PSE Builder source safety release after source-only CI #45406005569 latest job 138531542342 SUCCESS. Reject any top-level Page wrapper removal even if the wrapper contains one shortcode; this avoids deleting unrelated WordPress Editor HTML. Existing release workflow now also runs items-and-sections.test.php in preflight. Pinned PHP FTPS upload only with checksum/readback/rollback; no CMS writes and no Astro build. Supersedes prior pin 666761edda6139aa292f36c5c50f2d611125de88.
