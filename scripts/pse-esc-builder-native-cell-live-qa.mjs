@@ -135,7 +135,7 @@ try {
    const row=await selected.getAttribute('data-esc-builder-row');
    const source=selected.locator('[data-esc-builder-cell-row][data-esc-builder-cell-field]').first();
    const field=await source.getAttribute('data-esc-builder-cell-field');
-   if(!/^\\d+$/.test(row||'')||!['label','title','href','url'].includes(field||'') ||
+   if(!/^[0-9]+$/.test(row||'')||!['label','title','href','url'].includes(field||'') ||
       await source.getAttribute('data-esc-builder-cell-row')!==row)
      throw Error('PSE_UTILITIES_SOURCE=FAIL invalid physical row or ESC local field');
    await source.click({modifiers:['Alt']});
