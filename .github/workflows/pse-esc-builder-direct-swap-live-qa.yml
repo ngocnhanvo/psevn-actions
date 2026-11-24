@@ -1,0 +1,36 @@
+name: PSE Visual Builder direct Preview item swap live QA (READ ONLY)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-esc-builder-direct-swap-live-qa-request
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-preview-swap:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install matching Playwright JS only (browser preinstalled)
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Rehearse and undo in-Preview item swap without a CMS mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-esc-builder-direct-swap-live-qa.mjs
+          node scripts/pse-esc-builder-direct-swap-live-qa.mjs
