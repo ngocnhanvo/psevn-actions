@@ -1,3 +1,4 @@
-2026-11-25 final production-first Builder direct Preview red/green swap regression after source-ready contextual image action patch.
-Astro production cec2caa69b7666844bb46bc2d19f08f518d3da02 signed activate #45457945793; PHP production cc10f0a7020746fa2834454eae27c2d38f75250d guarded FTPS SHA256 #45460083608; clean hero and image->text live click QA #45460414292 SUCCESS.
-Recheck direct physical row Preview swap/cancel, section swaps and clone/remove safe dry-run/cancel, readonly modes. This is no-write rehearsal; preserve public production and all CMS records. NO CMS SAVE, NO BUILD, NO FTPS.
+2026-11-25 PSE production-first sections direct Preview swap-and-cancel regression, READ ONLY.
+Deployed Astro 7ca3dda14db276f87bea1f5fea9b11a174679ce0 signed activation #45465866289 SUCCESS; deployed PHP 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 guarded #45463291680 SUCCESS.
+Public now shows only the first three sustainability highlights, never a fourth Builder-only card; test source-row 0/1 direct red/green Preview swap+Cancel, hero, hotline, FAQ, history, vision, section source swap, and clone/remove guarded dry-run. A separate safe adapter candidate #45466129675 may be deployed only after CI PASS; keep this run as actual current deployed baseline.
+NO CMS WRITE, NO SAVE, NO BUILD, NO FTP.
