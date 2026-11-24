@@ -21,7 +21,7 @@ const send=async(type,tableId,from,to,count,requestId)=>{
     if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
       throw Error('Missing authenticated Visual Builder frame');
     const target=new URL(iframe.src,location.href).origin;
-    if(typeOf(payload.type)==='none')throw Error('Bad message type');
+    if(typeof payload.type!=='string')throw Error('Bad message type');
     const waitForAck=payload.type==='esc-vb-item-sort-preview';
     if(!waitForAck){
       iframe.contentWindow.postMessage(payload,target);
@@ -46,7 +46,6 @@ const send=async(type,tableId,from,to,count,requestId)=>{
   },{type,tableId,from,to,requestId,
     items:Array.from({length:count},()=>({}))});
 };
-function typeOf(value){return value===undefined?'none':typeof value;}
 
 try{
   await page.goto(wp.origin+'/wp-admin/',{waitUntil:'domcontentloaded',timeout:60000});
