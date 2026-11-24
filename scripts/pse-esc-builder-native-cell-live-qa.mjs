@@ -126,6 +126,26 @@ try {
  }else{
    console.log('PSE_LATEST_NEWS_TAB_SOURCE=NOT_TESTED no published news tabs on current Page');
  }
+ // Utility links are raw ESC Table S1 rows. Verify the physical row and
+ // the exact source field on the displayed link; no external navigation.
+ const utilityRows=homeFrame.locator('.pse-tools__links li[data-esc-builder-row]');
+ const utilityCount=await utilityRows.count();
+ if(utilityCount>0){
+   const selected=utilityRows.first();
+   const row=await selected.getAttribute('data-esc-builder-row');
+   const source=selected.locator('[data-esc-builder-cell-row][data-esc-builder-cell-field]').first();
+   const field=await source.getAttribute('data-esc-builder-cell-field');
+   if(!/^\\d+$/.test(row||'')||!['label','title','href','url'].includes(field||'') ||
+      await source.getAttribute('data-esc-builder-cell-row')!==row)
+     throw Error('PSE_UTILITIES_SOURCE=FAIL invalid physical row or ESC local field');
+   await source.click({modifiers:['Alt']});
+   await page.waitForFunction(expected=>
+     document.querySelector('#esc-vb-edit-row')?.value===expected,
+     row+':'+field,{timeout:20000});
+   console.log('PSE_UTILITIES_SOURCE=PASS physical_row='+row+' field='+field+' READ_ONLY=true');
+ }else{
+   console.log('PSE_UTILITIES_SOURCE=NOT_TESTED no visible useful-link items on current Page');
+ }
  // Wave 1 G1/G2/G3 Builder preview smoke (READ ONLY): not a Save test.
  // Header Menu markers and capability cues must exist in the deployed iframe;
  // activating the menu must never switch the inspected WordPress Page.
