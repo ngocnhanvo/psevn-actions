@@ -571,6 +571,93 @@ try{
       if(count!==original)throw Error('Preview clone cancel left duplicate '+tableId);
     }
   }
+  // A real WordPress Page owns this shortcode. Verify the same backend
+  // remove transaction with dry_run and cancel the iframe Preview every time.
+  const deletion=await page.evaluate(async()=>{
+    const ui=[...document.scripts].map(el=>el.textContent||'')
+      .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
+    const token=ui?.match(/const nonce="([A-Za-z0-9_-]+)"/);
+    if(!token||typeof window.escVBGetTicket!=='function')
+      throw Error('Authenticated Builder source was not installed');
+    const nonce=token[1],pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    if(pageId!==80932)throw Error('Not on the expected Hotline WordPress Page');
+    const read=async(route,more={})=>{
+      const ticket=await window.escVBGetTicket();
+      const res=await fetch('/wp-json/esc-builder/v1/'+route,{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+        body:JSON.stringify({ticket,page_id:pageId,...more})
+      });
+      const json=await res.json();
+      if(!res.ok||json?.code)
+        throw Error('No-write section removal rejected: '+String(json?.code||res.status));
+      return json;
+    };
+    const before=await read('section-order');
+    const source=(before.items||[]).filter(x=>x.table_id==='pse_hotline_vi');
+    if(source.length!==1)throw Error('Hotline Page has ambiguous shortcode ownership');
+    const prepared=await read('remove-section',{
+      section_key:source[0].id,expected_version:before.version,dry_run:true
+    });
+    const after=await read('section-order');
+    return {key:source[0].id,mode:prepared.remove_mode,
+      ok:prepared.checked===true&&prepared.no_write===true&&
+        prepared.saved===false&&prepared.source_preserved===true&&
+        prepared.removed===source[0].id&&prepared.table_id==='pse_hotline_vi'&&
+        before.version===after.version&&prepared.version===before.version&&
+        before.items.length===after.items.length};
+  });
+  if(!deletion.ok||deletion.mode!=='shortcode_only')
+    throw Error('Source-checked Hotline Page removal preflight failed');
+  const beforeCount=await frame.locator('[data-tablepress-preview="pse_hotline_vi"]').count();
+  const htmlParts=await frame.locator('[data-esc-builder-html-part]').count();
+  let removalPreviewAck=false;
+  try{
+    removalPreviewAck=await page.evaluate(async({key,mode})=>{
+      const iframe=document.querySelector('#esc-vb-frame');
+      if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
+        throw Error('Live Preview iframe missing');
+      const target=new URL(iframe.src,location.href).origin,requestId=99044;
+      return await new Promise((resolve,reject)=>{
+        const handle=event=>{
+          if(event.source!==iframe.contentWindow||event.origin!==target||
+            event.data?.type!=='esc-vb-section-remove-preview-ack'||
+            event.data?.requestId!==requestId)return;
+          clearTimeout(timer);window.removeEventListener('message',handle);
+          resolve(event.data.matched===true);
+        };
+        const timer=setTimeout(()=>{
+          window.removeEventListener('message',handle);
+          reject(Error('No Preview removal acknowledgement'));
+        },7500);
+        window.addEventListener('message',handle);
+        iframe.contentWindow.postMessage({
+          type:'esc-vb-section-remove-preview',key,mode,requestId
+        },target);
+      });
+    },{key:deletion.key,mode:deletion.mode});
+    if(!removalPreviewAck||
+      await frame.locator('[data-tablepress-preview="pse_hotline_vi"]').count()!==beforeCount-1||
+      await frame.locator('[data-esc-builder-html-part]').count()!==htmlParts)
+      throw Error('Preview removal changed an unrelated Page HTML part');
+  }finally{
+    await page.evaluate(()=>{
+      const iframe=document.querySelector('#esc-vb-frame');
+      if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
+        throw Error('Missing Page iframe when canceling remove');
+      iframe.contentWindow.postMessage({type:'esc-vb-section-remove-cancel'},
+        new URL(iframe.src,location.href).origin);
+    });
+    await frame.locator('[data-tablepress-preview="pse_hotline_vi"]')
+      .first().waitFor({state:'attached',timeout:10000});
+    if(await frame.locator('[data-tablepress-preview="pse_hotline_vi"]').count()!==beforeCount||
+      await frame.locator('[data-esc-builder-html-part]').count()!==htmlParts)
+      throw Error('Preview Cancel failed to restore exact section and original Page HTML');
+  }
+  console.log('PSE_BUILDER_SECTION_REMOVAL_LIVE='+JSON.stringify({
+    tableId:'pse_hotline_vi',result:'PASS',mode:deletion.mode,
+    pageVersionUnchanged:true,serverDryRun:true,previewCancelled:true,noCmsWrite:true
+  }));
   console.log('PSE_BUILDER_SECTION_CLONE_LIVE='+JSON.stringify(sectionClones));
   if(!sectionClones.some(item=>item.result==='PASS'))
     throw Error('No real PSE Page section can be safely preview-cloned');
