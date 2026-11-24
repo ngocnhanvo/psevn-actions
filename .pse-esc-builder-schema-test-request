@@ -14,3 +14,5 @@ NO WEBSITE BUILD. NO FTP. NO CMS WRITE. Source-only final SHA verification after
 2026-11-24 PSE Visual Builder source-only latest checkout regression: PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7, Astro master ac18fb00b5f2f7b50d0b421a3a4cb082af653511; check no fake committed preview, stale Add/Delete/Swap guard, JS syntax, PHP lint, Vitest; source-only NO BUILD/FTP/CMS WRITE.
 
 2026-11-24 Final current source-only Visual Builder QA pin: Astro master 9c001a20f979cd88fa8326adda0ec8bc5fc4e1dc includes pending-preview interaction blocks and tests; PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7 includes stale mutation guards and JS tests. Run existing contract CI only, no WordPress mutation or website build.
+
+2026-11-24 PSE source-only Builder final patch pin PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7; Astro master e9a68ebc618818567105f89e07efd9806bd6eac1. Validate temporary draft cards do not claim physical ESC rows, pending edits block controls, PHP stale locks, all current tests. NO BUILD/FTP/CMS WRITE.
