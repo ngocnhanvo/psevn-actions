@@ -47,13 +47,15 @@ Status: PARTIAL. This checkpoint records exact source / deployment evidence and 
 
 - Additional Astro `master` fixes: `4f62fbc` disallows stale preview button interactions through the shared editability cues, with test `9c001a2`; `c568ab4` strips physical row identity from temporary draft card, with test `e9a68eb`. This closes an accidental source-selection path without enabling unsupported writers.
 
+- Astro `master` further fixes: `bb28198` grouped hotline Preview swap/cancel adapter, `222727a` retains nested ESC cell source-row identity on generic swaps, `b40d547` tests hotline group order + unsafe inputs, `4526445` supports self-wrapped hotline preview, `a3e0763` enforces exact nested source ownership, `e8b0171` rejects generic swaps with row markers outside the moved cards, `df391d0` tests that case. No proof of actual WordPress write or deployed UI yet.
+
 ## Remaining work (must not report DONE)
 - S2 Product/Page manual references, S3 ProductCategory refs, S4 REST manual refs: PHP item manager still rejects nonempty `meta.api` entirely. Build source-specific key/reference picker, distinct local field writer, validation of referenced IDs, and test that upstream API data never mutates.
 - S5 `api-key=auto`: only safe template/filter/query settings; no manual card add/swap, and source ownership UI must explicitly distinguish automatic collections from manually indexed references.
 - Section lifecycle: add/remove/duplicate/show/hide missing; current PHP `section-order.php` only supports safe section swap/order, and rejects duplicate table IDs. Implement occurrence-aware structural identities and Page-source guarded writes, not artificial DOM-only duplicate.
 - The generic committed placeholder is now removed (source fix `38b4864`), and unmatched insert/delete Preview explicitly returns `matched:false`, marks region pending and locks PHP item edits until refresh (`dae09dd`). **Remaining BUILDER_GAP:** implement exact source-backed re-render adapters for other sections beyond Home_00/Home_01; current fail-closed behavior is not equivalent to full inline Preview editing.
 - Source identity gaps remain in mixed API/news `Pse_01.astro` and mapped API records `Home_04..08` without physical TablePress row invariant. Pse_00 native hero source-row identity is fixed at `71f503b...`. Never tag API expansion index as source-row ID.
-- `Pse_hotline.astro` grouped cards: across-group swaps cannot pass generic sibling-root safety. Need group-aware component adapter whose Preview accurately reproduces the canonical WordPress data transform.
+- `Pse_hotline.astro` grouped-card Preview adapter was added in Astro `bb28198` and hardened through `a3e0763`; JSDOM regression authored `b40d547`. It moves real source-tagged cards across canonical group boundaries and can restore on cancel. **Source-only pending QA**: Vitest, PHP readback, authenticated Preview/Save, mobile and production have not been verified, so do not mark this acceptance complete.
 - Full WP Admin authenticated Playwright QA: click source/target in one Preview, cancel, save, WordPress read-after-write, refresh, public, stale version collision, 403, mobile. Use audit pages, preserve business data and do not leak secrets.
 - Per-section CSS/WordPress Editor source taxonomy and editor field rights still require a sitewide ownership map.
 
