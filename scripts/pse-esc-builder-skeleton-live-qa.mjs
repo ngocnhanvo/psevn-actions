@@ -342,6 +342,63 @@ try {
   if(intercepted<2)throw Error('Real WordPress API rapid-selection requests were not both intercepted');
   console.log('PSE_BUILDER_G1_RAPID_FOOTER=PASS selection='+second+
     ' first='+first+' requests='+intercepted+' READ_ONLY=PASS NO_CMS_WRITE=PASS NO_BUILD=PASS');
+
+  // Compare independent published Page outputs for three native S1 cohorts.
+  // The URL comes from the exact WordPress Page permalink; never guess a slug.
+  const subpageSources=[
+    {pageId:'80930',name:'FAQ',selector:'.pse-faq__item'},
+    {pageId:'80932',name:'HOTLINE',selector:'.pse-hotline__card'},
+    {pageId:'79301',name:'HISTORY',selector:'.pse-history__milestone'}
+  ];
+  const publicOrigin=await frame.locator('body').evaluate(()=>location.origin);
+  const normalizeText=text=>String(text||'').replace(/\\s+/g,' ').trim();
+  for(const target of subpageSources){
+    const wpPage=await page.evaluate(async id=>{
+      const response=await fetch('/wp-json/wp/v2/pages/'+id+
+        '?_fields=id,slug,link,status',{credentials:'same-origin',cache:'no-store'});
+      if(!response.ok)throw Error('Cannot read canonical published WordPress Page '+id+
+        ' HTTP '+response.status);
+      const result=await response.json();
+      if(result.id!==Number(id)||result.status!=='publish'||!result.slug||!result.link)
+        throw Error('Missing verified published Page source '+id);
+      return {id:result.id,slug:result.slug,link:result.link};
+    },target.pageId);
+    const wpPermalink=new URL(wpPage.link);
+    if(wpPermalink.origin!==wp.origin||
+       !wpPermalink.pathname.startsWith('/')||
+       wpPermalink.pathname==='/'||
+       wpPermalink.search||wpPermalink.hash)
+      throw Error('Unusable canonical PSE WordPress permalink for '+target.name);
+    await page.locator('#esc-vb-page').selectOption(target.pageId);
+    await Promise.all([page.waitForLoadState('domcontentloaded',{timeout:45000}),
+      page.getByRole('button',{name:'Mở trang'}).click({timeout:35000})]);
+    const part=page.frameLocator('#esc-vb-frame');
+    await part.locator(target.selector).first().waitFor({state:'visible',timeout:40000});
+    const previewRows=await part.locator(target.selector).evaluateAll(nodes=>
+      nodes.map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim()));
+    const sourceRows=await part.locator(target.selector).evaluateAll(nodes=>
+      nodes.map(x=>Number(x.getAttribute('data-esc-builder-row'))));
+    const visitor=await browser.newPage({viewport:{width:1440,height:900}});
+    let publicRows;
+    try {
+      const url=new URL(wpPermalink.pathname,publicOrigin);
+      const response=await visitor.goto(url.href,{waitUntil:'domcontentloaded',timeout:65000});
+      if(!response||!response.ok())throw Error('Public '+target.name+
+        ' route did not publish expected Page, HTTP '+(response?.status()||0));
+      await visitor.locator(target.selector).first().waitFor({state:'visible',timeout:35000});
+      publicRows=await visitor.locator(target.selector).evaluateAll(nodes=>
+        nodes.map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim()));
+    } finally {await visitor.close();}
+    if(!publicRows?.length || JSON.stringify(previewRows)!==JSON.stringify(publicRows))
+      throw Error(target.name+' public versus Preview card content/count differs');
+    if(sourceRows.some((row,i)=>!Number.isSafeInteger(row)||row<0||
+        (i>0 && row<=sourceRows[i-1])))
+      throw Error(target.name+' lost original monotonically ordered physical row markers');
+    if(previewRows.some(text=>/Chưa nhập|Chưa chọn nhóm hotline|Cột mốc cần sửa/.test(text)))
+      throw Error(target.name+' contains Preview-only repair labels');
+    console.log('PSE_BUILDER_SUBPAGE_PUBLIC_PARITY=PASS page='+target.name+
+      ' count='+publicRows.length+' markers=PASS NO_CMS_WRITE=PASS');
+  }
 } finally {
   await browser.close();
 }
