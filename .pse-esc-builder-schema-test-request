@@ -1,4 +1,3 @@
-2026-11-25 PSE production-first all S1 section parity wave 2 source CI retry.
-Astro master 7ca3dda14db276f87bea1f5fea9b11a174679ce0 fixes obsolete Pse_02 icon assertion after removing fake preview-only image. Existing real icon keeps canonical previewMode+hasOwn source field/row marker.
-Earlier source CI #45465259116: 23/24 suites passed, exactly one obsolete expectation of a removed fake-placeholder field; production component parsed successfully; regression assertion corrected at 7ca3dda14db276f87bea1f5fea9b11a174679ce0.
-Verify all prior PHP and Astro source ownership tests, Pse_previewParity, sourceOwnedHref, parser and Tailwind. NO BUILD, NO FTP, NO CMS WRITE.
+2026-11-25 PSE production-first visible-card swap adapter follow-up.
+Astro master 9697d0a4ce368a898f0f7ed71657d3ffa511fe95: after public/Builder both show first 3 sustainability highlights, `psePromiseSwapRows` validates contiguous visible raw rows but tolerates legitimate fourth hidden ESC row that owns section title/description/image metadata. Never move hidden source row or retag metadata during swapping visible cards, maintain direct click swap and Cancel; new JSDOM test real 3 visible + 1 hidden metadata, rejects attempts to swap hidden index.
+Previous wave S1 source CI #45465521223 PASS, new adapter must independently pass 24 suites + one test, PHP contracts, Astro parser/Tailwind. NO BUILD/FTP/CMS WRITE. This is source-only, not a claim that currently deploying Astro pin includes adapter.
