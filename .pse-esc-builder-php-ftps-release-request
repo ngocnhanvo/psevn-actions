@@ -1,2 +1,2 @@
-d9db1e773f3be16258b5ffcf0f103aa624261159
-2026-11-24 CORRECTED PSE Builder source safety release after source-only CI #45406005569 latest job 138531542342 SUCCESS. Reject any top-level Page wrapper removal even if the wrapper contains one shortcode; this avoids deleting unrelated WordPress Editor HTML. Existing release workflow now also runs items-and-sections.test.php in preflight. Pinned PHP FTPS upload only with checksum/readback/rollback; no CMS writes and no Astro build. Supersedes prior pin 666761edda6139aa292f36c5c50f2d611125de88.
+17834c5c733bb25af854d2bb1029ff74434033f6
+2026-11-24 PSE Visual Builder PHP Inspector source-safe section selection after saved Page occurrence swaps; source-only CI #45422629438 SUCCESS including exact PHP inspector JS test and Astro occurrence regression, no CMS write. Release only the pinned plugin PHP source through the existing FTPS checksum/readback and automatic rollback workflow, no independent Astro build.
