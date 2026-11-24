@@ -80,7 +80,14 @@ try {
   await heroImage.waitFor({state:'visible',timeout:25000});
   await heroImage.click({force:true});
   const relatedText=page.locator('#esc-vb-image-open-text');
-  await relatedText.waitFor({state:'visible',timeout:30000});
+  // WP .button CSS must not reveal controls before a validated REST source.
+  // Wait for actual availability, not just computed visibility.
+  await page.waitForFunction(()=>{
+    const button=document.getElementById('esc-vb-image-open-text');
+    const label=document.getElementById('esc-vb-image-caption')?.textContent||'';
+    return button && !button.hidden && !button.disabled && !label.includes('đang đọc');
+  },null,{timeout:35000});
+  await relatedText.waitFor({state:'visible',timeout:10000});
   const beforeRelatedClick=await page.evaluate(()=>({
     buttonHidden:document.getElementById('esc-vb-image-open-text')?.hidden,
     saveDisabled:document.getElementById('esc-vb-image-save')?.disabled,
