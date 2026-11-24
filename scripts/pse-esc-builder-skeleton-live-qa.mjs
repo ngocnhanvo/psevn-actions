@@ -69,6 +69,27 @@ try {
     throw Error('Readonly region advertises editing on hover');
   console.log('PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS');
 
+  // The old preview used to inject green/white ESC Table text chips over
+  // the hero. Production has no such content. Keep text/URL editing in the
+  // contextual inspector opened AFTER selecting its real image source.
+  const hero=frame.locator('.pse-hero');
+  await hero.waitFor({state:'visible',timeout:30000});
+  const overlayCount=await hero.locator('.pse-hero__builder-fields, [aria-label="Các ô nguồn ESC Table của banner"]').count();
+  if(overlayCount)throw Error('Builder still injects banner-only ESC Table text overlays');
+  const heroImage=hero.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]').first();
+  await heroImage.waitFor({state:'visible',timeout:25000});
+  await heroImage.click({force:true});
+  const relatedText=page.locator('#esc-vb-image-open-text');
+  await relatedText.waitFor({state:'visible',timeout:30000});
+  await relatedText.click();
+  await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:30000});
+  await page.waitForFunction(()=>
+    (document.querySelector('#esc-vb-edit-row')?.options?.length||0)>0,
+    null,{timeout:30000});
+  const textSources=await page.locator('#esc-vb-edit-row option').count();
+  if(!textSources)throw Error('Selected hero image cannot reach its canonical text/link inspector');
+  console.log('PSE_BUILDER_HERO_PRODUCTION_PARITY=PASS chips=0 text_editor_after_click=PASS source_options='+textSources);
+
 
   // Verify real deployed inspector timer: fast cached data must never flash,
   // stale completion must never close the currently active selection.
