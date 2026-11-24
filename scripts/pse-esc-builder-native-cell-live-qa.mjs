@@ -239,6 +239,40 @@ try {
      console.log('PSE_FOOTER_PUBLIC_BASELINE='+width+'px PASS certificates=3 bct=1 no_overflow=true');
    }finally{await publicPage.close();}
  }
+ // Read-only WordPress Page source inventory for the current PSE instance.
+ // Use page selector and actual authenticated iframe rather than guessing
+ // TablePress IDs from project names; no WordPress REST write is performed.
+ const sourceSurvey=[];
+ const targets=options.filter(o=>o.value&&o.value!==homePageId).slice(0,12);
+ for(const option of targets){
+   try{
+     await page.locator('#esc-vb-page').selectOption(option.value);
+     await Promise.all([
+       page.waitForLoadState('domcontentloaded',{timeout:35000}),
+       page.getByRole('button',{name:'Mở trang'}).click({timeout:25000})
+     ]);
+     const frame=page.frameLocator('#esc-vb-frame');
+     await frame.locator('body').waitFor({state:'visible',timeout:30000});
+     const result=await frame.locator('body').evaluate(()=>({
+       sections:[...document.querySelectorAll('[data-tablepress-preview]')]
+         .filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+         .slice(0,32).map(n=>({
+           id:n.getAttribute('data-tablepress-preview'),
+           source:n.getAttribute('data-esc-builder-api-source')||'static',
+           dynamic:n.getAttribute('data-esc-builder-dynamic')==='true',
+           rowCount:n.querySelectorAll('[data-esc-builder-row]').length,
+           localCells:n.querySelectorAll('[data-esc-builder-cell-row][data-esc-builder-cell-field]').length
+         }))
+     }));
+     sourceSurvey.push({pageId:option.value,sections:result.sections});
+   }catch(error){
+     sourceSurvey.push({pageId:option.value,sourceAudit:'NOT_TESTED',
+       reason:String(error?.message||error).slice(0,100)});
+   }
+ }
+ console.log('PSE_VB_SOURCE_SITE_INVENTORY='+JSON.stringify({
+   inspected:sourceSurvey.length,availablePages:options.length,results:sourceSurvey
+ }));
  if(contactError)throw Error('PSE_CONTACT_SOURCE_QA=FAIL '+contactError+
    '; homepage QA completed independently; inspect PSE_CONTACT_RENDER_DIAGNOSTIC');
  console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click='+bannerDotResult+' distinct_editors=PASS PUBLIC_FOOTER_1440_768_390=PASS READ_ONLY=PASS NO_BUILD=PASS');
