@@ -1,2 +1,2 @@
-88f4a7eeeaa96a43321261d5cc6f597e15003a35
-2026-11-24 PSE PHP-only protected release for immutable enum diagnostic of section clone rejection stages, no WP data writes, no permission or clone writer behavior changes. Source-only CI #45440321541 SUCCESS; PHP tests confirm reason_code=unsafe_markup/bounds_or_root, Astro master unchanged 93d0e78f8ca0c3a731cc02e8d5891cbc3204368a. Must use guarded checksum/readback automatic rollback, no independent Astro build.
+3f680d3ef21d439f1594e2de2916673d9e2ea25a
+2026-11-24 PSE Visual Builder exact isolated shortcode-only root wrapper clone, protected FTPS PHP-only release. Source-only CI #45441881853 SUCCESS: validated Page-only shared source, no edit to unrelated WP HTML/IDs, comments/attributes fake shortcodes rejected, original TablePress data unchanged; Astro already deployed 93d0e78f8ca0c3a731cc02e8d5891cbc3204368a. Release plugin via TLS staging with sha256 and automatic rollback, no Astro build, no CMS content write.
