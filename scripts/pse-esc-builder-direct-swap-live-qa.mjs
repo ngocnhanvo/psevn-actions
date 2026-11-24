@@ -268,6 +268,27 @@ try{
       continue;
     }
     const original=await frame.locator('[data-tablepress-preview="'+tableId+'"]').count();
+    const shape=await root.evaluate(node=>{
+      const chain=[];
+      for(let el=node,depth=0;el&&depth<7;depth++,el=el.parentElement){
+        const siblings=el.parentElement?[...el.parentElement.children]
+          .filter(child=>child!==el).map(child=>child.tagName):[];
+        chain.push({
+          depth,tag:el.tagName,
+          idPresent:el.hasAttribute('id'),
+          className:String(el.className||'').split(/\\s+/).slice(0,3).join(' '),
+          siblings,
+          hasNonWhitespaceTextSiblings:el.parentElement?
+            [...el.parentElement.childNodes].some(child=>child!==el&&
+              child.nodeType===3&&Boolean(child.textContent?.trim())):false,
+          innerIds:el.querySelectorAll('[id]').length,
+          innerControls:el.querySelectorAll('button,input,select,textarea,form,iframe,[aria-controls],[aria-owns]').length,
+          sourceSections:el.querySelectorAll('[data-tablepress-preview]').length,
+        });
+      }
+      return chain;
+    });
+    console.log('PSE_BUILDER_SECTION_CLONE_SHAPE='+JSON.stringify({tableId,chain:shape}));
     const requestId=99000+sectionClones.length;
     let matched=false;
     try{
