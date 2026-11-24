@@ -14,6 +14,7 @@ if(wp.protocol!=='https:'||!wp.hostname||wp.username||wp.password||wp.search||wp
   throw Error('Invalid WP origin');
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:920}});
+page.on('pageerror',error=>console.log('PSE_SWAP_BROWSER_SCRIPT_ERROR='+String(error.name||'Error')));
 
 const send=async(type,tableId,from,to,count,requestId,providedItems=null)=>{
   return await page.evaluate(async payload=>{
@@ -103,6 +104,17 @@ try{
       ?.getAttribute('data-tablepress-preview')||'');
     const cards=root.locator(config.item);
     const count=await cards.count();
+    const runtime=await root.evaluate(el=>({
+      installed:!!document.querySelector('style[data-esc-vb-item-pick-style]'),
+      previewClass:document.documentElement.classList.contains('esc-builder-preview'),
+      trustedParentConfigured:!!document.querySelector('#esc-vb-nav-context')?.getAttribute('data-parent-origin'),
+      sourceRows:[...el.querySelectorAll('[data-esc-builder-row]')].slice(0,20)
+        .map(x=>x.getAttribute('data-esc-builder-row')),
+      scriptCount:document.scripts.length
+    }));
+    console.log('PSE_SWAP_PAGE_DIAGNOSTIC='+JSON.stringify({
+      name:config.name,pageId:config.pageId||home,tableId,count,...runtime
+    }));
     if(!tableId||count<2){results.push(config.name+':NOT_TESTED_ROWS_'+count);continue}
     if(config.ready){
       const ready=await root.locator('[data-pse-slider]').first().getAttribute('data-ready');
@@ -140,6 +152,7 @@ try{
     let previewMatched=false;
     const requestId=88001+results.length;
     try{
+      if(!runtime.installed)throw Error(config.name+' Preview swap listener missing in actual iframe');
       const ack=await send('esc-vb-item-sort-preview',tableId,0,1,count,requestId,reordered);
       if(!ack.matched)throw Error(config.name+' Preview adapter refused an eligible source');
       previewMatched=true;
