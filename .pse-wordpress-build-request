@@ -1,3 +1,5 @@
-2026-11-25 PSE production-first banner parity correction via original authenticated WordPress Build Website.
-Astro master cec2caa69b7666844bb46bc2d19f08f518d3da02 removes preview-only green/white editable text badges, fake missing-image placeholders, and empty rows from published hero; keeps canonical physical row/image markers, arrow/dot interactions, and new click-only affordance. PHP master 3dbe13bc071effae7a9d4b8c6510a5c6641b8b24 adds contextual text/URL inspector button after image selection, no new writer.
-Source-only CI #45457594916 SUCCESS; owner mode auto-build. Force exactly one code-only production build under existing signed WordPress pipeline with source/env/deploy/rollback gates. NO CMS CONTENT/DB WRITE, no new workflow.
+2026-11-25 PSE Visual Builder native useful links href production-first code release.
+Astro master b86b4823116654317b96386ec359e06c4e9a2a3e: public/Preview utility links now visually identical without synthetic URL labels; click on real anchor selects source-owned field href and row, supports draft/Cancel and strict safe URL check.
+PHP master 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746: protected canonical URL Save with version and hash, valid HTTP(S) or root-relative links only. Guarded PHP FTPS #45463291680 triggered separately.
+Source-only CI #45462866442 SUCCESS 22/22 Vitest test suites and PHP readback fixture; owner project code mode auto-build.
+Force exactly one code-only build via existing signed authenticated WordPress pipeline (no new deploy workflow); retain source/env/target signature/locks/readback/rollback. NO CMS CONTENT/DB WRITE.
