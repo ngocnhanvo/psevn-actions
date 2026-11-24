@@ -176,7 +176,8 @@ def parse_ftps_release_phases(log: str, archive_bytes: int | None) -> dict | Non
     if expected_bytes != archive_bytes:
         return None
     remainder = log[start.end():]
-    ending = STAGES.search(remainder)
+    ending = next((m for m in STAGES.finditer(remainder)
+                   if m.group(1) != "runtime_env"), None)
     if not ending or ending.group(1) != "ftps":
         return None
     segment = remainder[:ending.start()]
@@ -249,7 +250,15 @@ def parse_metrics(log: str) -> dict | None:
         images_total, images_reused = map(int, image_delta.groups())
         if images_reused <= images_total:
             image_status = "unchanged" if images_reused == images_total else "changed"
+    parallel = re.search(r"PSE_PARALLEL_UPLOAD \S+_ms=(\d+) zip_exit=(\d+) env_exit=(\d+)", log)
+    parallel_ms = None
+    if parallel:
+        wall, zip_exit, env_exit = map(int, parallel.groups())
+        if zip_exit or env_exit or wall <= 0:
+            return None
+        parallel_ms = wall
     return {
+        "parallel_upload_ms": parallel_ms,
         "source_sha": match.group(1),
         "warm": astro_cache_warm and pnpm_cache_warm,
         "media_status": image_status,
@@ -277,7 +286,11 @@ def unmeasured_seconds(row: dict) -> float | None:
     metrics = row.get("metrics")
     if not metrics or not all(name in metrics["stages"] for name in REQUIRED):
         return None
-    measured = sum(metrics["stages"][name]["elapsed_ms"] for name in REQUIRED) / 1000
+    measured_ms = sum(metrics["stages"][name]["elapsed_ms"] for name in REQUIRED)
+    if metrics.get("parallel_upload_ms") is not None:
+        measured_ms -= sum(metrics["stages"][name]["elapsed_ms"] for name in ("ftps", "runtime_env"))
+        measured_ms += metrics["parallel_upload_ms"]
+    measured = measured_ms / 1000
     gap = row["seconds"] - measured
     # GitHub run timestamps are whole-second resolution. A negative result
     # means telemetry cannot be reconciled; never display it as zero overhead.
@@ -312,7 +325,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "- Cache warm requires a confirmed restored pnpm store and Astro `.cache`.",
         "- The image delta must confirm all existing images were reused; new-media/cold cohorts are separate.",
         "- Source revisions are never mixed in a statistical cohort.",
-        "- Outside-stages time = GitHub workflow total minus eight monotonic stages;",
+        "- Outside-stages time = GitHub workflow total minus measured stages (parallel uploads counted once);",
         "  it includes runner queue, checkout, preflight, cache restore/save and post-job.",
         "  It is **not** a measured single bottleneck or fully recoverable time.",
         "",
@@ -408,7 +421,14 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
                     " used the default ZIP setting. Differences in generated output"
                     " or FTPS network timing prevent causal speed claims."
                 )
-        latest_ftp = eligible[0]["metrics"]["stages"]["ftps"]["elapsed_ms"]
+        latest_metrics = eligible[0]["metrics"]
+        parallel_ms = latest_metrics.get("parallel_upload_ms")
+        if parallel_ms is not None:
+            sequential_ms = sum(latest_metrics["stages"][name]["elapsed_ms"] for name in ("ftps", "runtime_env"))
+            lines.append(f"- **Parallel upload (latest): {parallel_ms/1000:.3f}s wall time**, "
+                         f"individual durations sum to {sequential_ms/1000:.3f}s; "
+                         "overlap is not a controlled before/after speed comparison.")
+        latest_ftp = latest_metrics["stages"]["ftps"]["elapsed_ms"]
         release = eligible[0]["metrics"].get("ftps_release")
         if release:
             ms = release["elapsed_ms"]
