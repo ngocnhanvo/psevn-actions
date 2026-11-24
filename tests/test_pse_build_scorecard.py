@@ -45,6 +45,18 @@ class ScorecardTest(unittest.TestCase):
         self.assertIsNone(scorecard.parse_metrics(log(failed=True)))
         self.assertIsNone(scorecard.parse_metrics(log().replace("name=activate", "name=missing")))
 
+    def test_external_smoke_policy_requires_explicit_marker_and_preserves_failures(self):
+        source = "\n".join(line for line in log().splitlines() if "name=smoke " not in line)
+        self.assertIsNone(scorecard.parse_metrics(source))
+        parsed = scorecard.parse_metrics(source + "\nPSE_SMOKE_POLICY=external")
+        self.assertTrue(parsed["smoke_external"])
+        self.assertNotIn("smoke", parsed["stages"])
+        row = {"id": 5, "seconds": 50, "metrics": parsed}
+        self.assertEqual(scorecard.unmeasured_seconds(row), 39.5)
+        self.assertIn("1/12", scorecard.summarize([row], 0, 1))
+        self.assertIsNone(scorecard.parse_metrics(log(failed=True) + "\nPSE_SMOKE_POLICY=external"))
+        self.assertIsNone(scorecard.parse_metrics(source.replace("name=activate elapsed_ms=1500 exit=0", "name=activate elapsed_ms=1500 exit=1") + "\nPSE_SMOKE_POLICY=external"))
+
     def test_media_update_is_not_a_normal_warm_acceptance_sample(self):
         updated = scorecard.parse_metrics(log().replace(
             "total=901 reuse=901", "total=902 reuse=901",

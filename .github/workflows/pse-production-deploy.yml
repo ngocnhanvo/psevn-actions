@@ -431,56 +431,8 @@ jobs:
           python3 actions-hub/scripts/pse-build-metrics.py start activate
           trap 'status=$?; python3 actions-hub/scripts/pse-build-metrics.py stop activate "$status" || true' EXIT
           python3 actions-hub/scripts/pse-remote-unzip.py unpack
-      - name: Check homepage, WordPress-backed user SSR endpoint and SEO metadata (GET only)
-        shell: bash
-        timeout-minutes: 4
-        run: |
-          set -euo pipefail
-          python3 actions-hub/scripts/pse-build-metrics.py start smoke
-          trap 'status=$?; python3 actions-hub/scripts/pse-build-metrics.py stop smoke "$status" || true' EXIT
-          python3 - <<'PY'
-          import json,os,urllib.request,urllib.error,time
-          from concurrent.futures import ThreadPoolExecutor
-          base=os.environ['PSE_CLIENT_ORIGIN']
-          def fetch(path):
-              req=urllib.request.Request(base+path,headers={
-                  'Accept':'application/json' if path.startswith('/api/') else 'text/html',
-                  'Cache-Control':'no-cache',
-                  'User-Agent':'PSE-Stage-AfterDeploy/1.0',
-              })
-              try:
-                  with urllib.request.urlopen(req,timeout=18) as r:
-                      return r.status,r.headers.get('Content-Type',''),r.read(3500)
-              except urllib.error.HTTPError as e:
-                  return e.code,e.headers.get('Content-Type',''),e.read(3500)
-          # Node hosting may need a process restart for a newly uploaded bundle.
-          last=None
-          for attempt in range(5):
-              try:
-                  # Three independent GET smoke probes run concurrently,
-                  # but every original status/body requirement remains mandatory.
-                  with ThreadPoolExecutor(max_workers=3) as pool:
-                      home_future=pool.submit(fetch,'/')
-                      profile_future=pool.submit(fetch,'/api/user/info')
-                      robots_future=pool.submit(fetch,'/robots.txt')
-                      home=home_future.result()
-                      profile=profile_future.result()
-                      robots=robots_future.result()
-                  # Without a WordPress login cookie the active SSR user endpoint
-                  # must return a JSON object, not HTML or an internal error.
-                  profile_data=json.loads(profile[2]) if profile[0]==200 and 'json' in profile[1].lower() else None
-                  if home[0]==200 and 'html' in home[1].lower() and \
-                      profile[0]==200 and isinstance(profile_data,dict) and \
-                      robots[0]==200 and len(robots[2].strip())>0:
-                      print('PASS: PSE homepage, WordPress-backed SSR user API and robots metadata served.')
-                      raise SystemExit(0)
-                  last=(home[0],profile[0],robots[0])
-              except Exception as exc:
-                  last=('request-error',type(exc).__name__)
-              time.sleep(4)
-          print('NOT VERIFIED: staging Node process may need restart; observed:',last)
-          raise SystemExit(1)
-          PY
+          # Public readiness/SSR/SEO checks are reported by the separate read-only workflow.
+          echo 'PSE_SMOKE_POLICY=external'
       - name: Summarize PSE deploy stages and ZIP composition
         if: always()
         shell: bash

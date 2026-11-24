@@ -221,13 +221,16 @@ def parse_metrics(log: str) -> dict | None:
         if name in REQUIRED or name in DIAGNOSTICS:
             stage_results[name] = {"elapsed_ms": int(ms), "exit_code": int(exit_code)}
     match = SOURCE_SHA.search(log)
-    if not match or any(name not in stage_results for name in REQUIRED):
+    smoke_external = bool(re.search(r"\bPSE_SMOKE_POLICY=external[ \t]*$", log, re.MULTILINE)) and "smoke" not in stage_results
+    required = REQUIRED[:-1] if smoke_external else REQUIRED
+    if not match or any(name not in stage_results for name in required):
         return None
-    # Only the eight production stages are acceptance gates.
+    # Legacy runs require all eight stages. New runs explicitly delegate public
+    # smoke checks to separate QA; absence without the policy marker is invalid.
     # Preflight/cache_setup timers are intentionally best-effort (the
     # production workflow records them with "|| true"); a telemetry failure
     # must not invalidate an otherwise verified successful signed deploy.
-    if any(stage_results[name]["exit_code"] != 0 for name in REQUIRED):
+    if any(stage_results[name]["exit_code"] != 0 for name in required):
         return None
     zip_match = ZIP_META.search(log)
     try:
@@ -258,6 +261,7 @@ def parse_metrics(log: str) -> dict | None:
             return None
         parallel_ms = wall
     return {
+        "smoke_external": smoke_external,
         "parallel_upload_ms": parallel_ms,
         "source_sha": match.group(1),
         "warm": astro_cache_warm and pnpm_cache_warm,
@@ -284,9 +288,12 @@ def unmeasured_seconds(row: dict) -> float | None:
     This is NOT automatically wasted time or a guarantee it can be removed.
     """
     metrics = row.get("metrics")
-    if not metrics or not all(name in metrics["stages"] for name in REQUIRED):
+    if not metrics:
         return None
-    measured_ms = sum(metrics["stages"][name]["elapsed_ms"] for name in REQUIRED)
+    required = REQUIRED[:-1] if metrics.get("smoke_external") else REQUIRED
+    if not all(name in metrics["stages"] for name in required):
+        return None
+    measured_ms = sum(metrics["stages"][name]["elapsed_ms"] for name in required)
     if metrics.get("parallel_upload_ms") is not None:
         measured_ms -= sum(metrics["stages"][name]["elapsed_ms"] for name in ("ftps", "runtime_env"))
         measured_ms += metrics["parallel_upload_ms"]
@@ -325,6 +332,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         "- Cache warm requires a confirmed restored pnpm store and Astro `.cache`.",
         "- The image delta must confirm all existing images were reused; new-media/cold cohorts are separate.",
         "- Source revisions are never mixed in a statistical cohort.",
+        "- Public smoke QA may run outside the production workflow; its result is not inferred from build timing.",
         "- Outside-stages time = GitHub workflow total minus measured stages (parallel uploads counted once);",
         "  it includes runner queue, checkout, preflight, cache restore/save and post-job.",
         "  It is **not** a measured single bottleneck or fully recoverable time.",
@@ -334,7 +342,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
     ]
     for row in eligible:
         m = row["metrics"]
-        slowest = max(REQUIRED, key=lambda name: m["stages"][name]["elapsed_ms"])
+        slowest = max((name for name in REQUIRED if name in m["stages"]), key=lambda name: m["stages"][name]["elapsed_ms"])
         ftp_ms = m["stages"]["ftps"]["elapsed_ms"]
         archive_bytes = m["zip_bytes"] if type(m["zip_bytes"]) is int else 0
         effective_mibps = archive_bytes / (1024 * 1024) / (ftp_ms / 1000) if ftp_ms > 0 else 0
@@ -368,7 +376,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         ])
         for row in different[:8]:
             metrics = row["metrics"]
-            slow = max(REQUIRED, key=lambda n: metrics["stages"][n]["elapsed_ms"])
+            slow = max((n for n in REQUIRED if n in metrics["stages"]), key=lambda n: metrics["stages"][n]["elapsed_ms"])
             warm_label = "warm" if metrics["warm"] else "cold / unverified"
             lines.append(
                 f"| #{row['id']} | {row['seconds']:.1f}s | {warm_label}"
@@ -387,7 +395,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         ])
         for row in slow_runs[:12]:
             metrics = row["metrics"]
-            slow = max(REQUIRED, key=lambda n: metrics["stages"][n]["elapsed_ms"])
+            slow = max((n for n in REQUIRED if n in metrics["stages"]), key=lambda n: metrics["stages"][n]["elapsed_ms"])
             lines.append(
                 f"| #{row['id']} | `{metrics['source_sha'][:9]}`"
                 f" | {row['seconds']:.1f}s | {'warm' if metrics['warm'] else 'cold/unverified'}"
@@ -496,7 +504,7 @@ def summarize(rows: list[dict], failures: int, candidates: int) -> str:
         if latest_outside is None or latest_outside > 30:
             lines.append("")
             lines.append(
-                "**Workflow diagnostic:** more than 30s outside the eight"
+                "**Workflow diagnostic:** more than 30s outside the measured"
                 " measured stages (or inconsistent timings); inspect checkout,"
                 " signed preflight, cache restore and post-job steps individually."
             )

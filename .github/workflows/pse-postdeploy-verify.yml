@@ -1,6 +1,10 @@
 name: PSE production SSR postdeploy check (READ ONLY)
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - PSE Astro build and deploy via WordPress GitHub Trigger
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -9,7 +13,13 @@ permissions:
   contents: read
 jobs:
   live-ssr:
-    if: github.repository == 'ngocnhanvo/psevn-actions'
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == 'ngocnhanvo/psevn-actions' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event == 'repository_dispatch'))
     runs-on: ubuntu-latest
     timeout-minutes: 4
     env:
@@ -21,6 +31,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json,os,time,urllib.request,urllib.error
+          from concurrent.futures import ThreadPoolExecutor
           import xml.etree.ElementTree as ET
           from urllib.parse import urlsplit
           values={}
@@ -50,10 +61,8 @@ jobs:
           last=None
           for attempt in range(3):
               try:
-                  home=fetch('/')
-                  profile=fetch('/api/user/info')
-                  robots=fetch('/robots.txt')
-                  sitemap=fetch('/sitemap.xml')
+                  with ThreadPoolExecutor(max_workers=4) as pool:
+                      home,profile,robots,sitemap=pool.map(fetch, ('/','/api/user/info','/robots.txt','/sitemap.xml'))
                   status=(home[0],profile[0],robots[0])
                   last=status
                   # Public probe only. Never log session cookies or response bodies.
