@@ -49,6 +49,8 @@ Status: PARTIAL. This checkpoint records exact source / deployment evidence and 
 
 - Astro `master` further fixes: `bb28198` grouped hotline Preview swap/cancel adapter, `222727a` retains nested ESC cell source-row identity on generic swaps, `b40d547` tests hotline group order + unsafe inputs, `4526445` supports self-wrapped hotline preview, `a3e0763` enforces exact nested source ownership, `e8b0171` rejects generic swaps with row markers outside the moved cards, `df391d0` tests that case. No proof of actual WordPress write or deployed UI yet.
 
+- Current final Astro `master` HEAD `7559a5fdf6c1815fb44f64969357123f4c4e042b`; PHP `master` HEAD `0bc22d4b93eb7015134e6fb8b8f7816111cc47f7`. Latest NO-BUILD CI request marker Actions `main` `c6a06722370fe656946fa328731ec1209b59c823`; actual Actions run ID/conclusion **not retrieved** from the available GitHub commit-status and PR-workflow-run APIs. A source readback confirms the new hotline adapter, case-specific tests, pending guards, and corrected cell-row identity; inline PHP inspector JavaScript parse **PASS**, while PHP lint, Vitest, live CMS Save/readback, build and production QA remain **NOT_TESTED** for these HEADs. No deployed production claim.
+
 ## Remaining work (must not report DONE)
 - S2 Product/Page manual references, S3 ProductCategory refs, S4 REST manual refs: PHP item manager still rejects nonempty `meta.api` entirely. Build source-specific key/reference picker, distinct local field writer, validation of referenced IDs, and test that upstream API data never mutates.
 - S5 `api-key=auto`: only safe template/filter/query settings; no manual card add/swap, and source ownership UI must explicitly distinguish automatic collections from manually indexed references.
