@@ -1,5 +1,5 @@
-aaa72d45e954a465649850d3a0a03e296d13fadd
-2026-11-25 PSE S2-S4 scoped manual reference authorization correction.
-Source-only CI #45511937457 SUCCESS, real-PHP auth regression PSE_S2_S4_REAL_AUTH_AND_PHYSICAL_ROW_GUARDS=PASS, 25/25 Astro suites 137 tests.
-Previously static text writer excluded all meta.api tables, accidentally making item-schema, delete and swap for valid manual API reference rows fail HTTP 403. This scoped fix keeps normal text writer dynamic-denied and only permits explicitly validated physical manual reference via item manager. Requires WordPress session, nonce, ticket owner, Page shortcode ownership, TablePress edit capability, strict physical manual key, optimistic table version and row hash; API auto/unknown denied.
-Only code PHP change; use existing FTPS TLS + SHA256 readback + rollback. NO ASTRO BUILD, NO CMS CONTENT WRITE.
+e7210891178e0f3dd5c1e6f8ae0d34c9d537f921
+2026-11-25 PSE S2/S3 native manual reference picker and guarded one-cell replacement release.
+Source CI #45512543338 SUCCESS, PHP real authorization/source candidate/one-cell mutation tests and generated inspector JS parser; Astro 25/25 Vitest suites, 137/137 PASS.
+Only existing physical manual-reference rows from Product/Page/ProductCategory get a contextual picker; search returns published WordPress records, selection replaces one reference key after table version and whole-row SHA256 validation. No upstream Product/Page/Term modification, no writes to S4 arbitrary REST, auto-generated cards or unknown sources. Invalid/no-op/duplicate input blocked; inspector requires refresh to rebind API content before next edit.
+Use only existing guarded TLS FTPS + SHA256 activation/readback+rollback, no Astro build and no CMS content mutation by deploy.
