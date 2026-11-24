@@ -1,3 +1,1 @@
-2026-11-25 PSE reference picker UI selection-state hardening (NO BUILD).
-PHP master 02a0e6cc670fcb302168374db1e7573545c8bb8a. Previous native ref writer source CI #45512543338 SUCCESS; this follow-up prevents picker opening during in-Preview red/green physical row swapping or section swapping, and adds a source regression for gated controls/whole-row optimistic hash, without changing REST writer contract.
-Run real S2-S3 PHP fixture, generated inspector JS parse, Astro Vitest 25 suites. NO BUILD/FTP/CMS WRITE. Deploy only after prior pinned FTPS #45512712788 has finished.
+2026-11-25 PSE S2/S3 manual native reference insertion source-only CI. PHP HEAD b6797d7816ddea08ce7c2977d5a46fbec2c326ba; in-memory tests for one physical row insertion, immutable header/config/API mapping, optimistic selected row hash/version, published source and empty one-key case, no CMS write/deploy/build.
