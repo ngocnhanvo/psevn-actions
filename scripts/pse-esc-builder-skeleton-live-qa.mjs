@@ -177,10 +177,35 @@ try {
   draft.hash='esc-vb-preview-qa-only';
   const changed=draft.href;
   await input.fill(changed);
-  await page.waitForFunction(expectHref=>{
-    const link=document.querySelector('.pse-tools__links a[data-esc-builder-cell-field]');
-    return link?.getAttribute('href')===expectHref;
-  },changed,{timeout:12000});
+  try {
+    await page.waitForFunction(expectHref=>{
+      const iframe=document.querySelector('#esc-vb-frame');
+      const link=iframe?.contentDocument?.querySelector('.pse-tools__links a[data-esc-builder-cell-field]');
+      return link?.getAttribute('href')===expectHref;
+    },changed,{timeout:12000});
+  } catch (error) {
+    // The Editor and Astro Preview have different origins: never rely on
+    // iframe.contentDocument. Gather safe non-secret shape diagnostics from
+    // each origin through its own Playwright frame execution context.
+    const state=await frame.locator('body').evaluate(({row,field})=>{
+      const selector='[data-tablepress-preview="pse_03_vi"]';
+      const roots=[...document.querySelectorAll(selector)];
+      const anchors=roots.flatMap(root=>[...root.querySelectorAll('a[data-esc-builder-cell-row][data-esc-builder-cell-field]')])
+        .filter(a=>a.getAttribute('data-esc-builder-cell-row')===String(row) &&
+          a.getAttribute('data-esc-builder-cell-field')===field);
+      return {owners:roots.length,anchors:anchors.length,hrefs:anchors.map(a=>a.getAttribute('href')),
+        bodyLink:document.querySelector('.pse-tools__links a')?.getAttribute('href'),
+        sourceRows:[...new Set(anchors.map(a=>a.getAttribute('data-esc-builder-cell-row')))]};
+    },{row:linkRow,field:linkField});
+    const inspectorState=await page.evaluate(()=>({
+      field:document.querySelector('#esc-vb-edit-row')?.value,
+      disabled:document.querySelector('#esc-vb-edit-save')?.disabled,
+      textLength:document.querySelector('#esc-vb-edit-title')?.value?.length,
+      feedback:(document.querySelector('#esc-vb-edit-feedback')?.textContent||'').slice(0,155)
+    }));
+    console.log('PSE_BUILDER_HREF_DRAFT_DIAG='+JSON.stringify({state,inspectorState}));
+    throw error;
+  }
   const saveEnabled=await page.locator('#esc-vb-edit-save').isEnabled();
   if(!saveEnabled)throw Error('Canonical valid URL draft did not activate Save');
   await page.locator('#esc-vb-edit-cancel').click();
