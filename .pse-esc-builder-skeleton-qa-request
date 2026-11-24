@@ -5,3 +5,5 @@ Use latest scripts/pse-esc-builder-skeleton-live-qa.mjs: initial inspector and s
 2026-11-25 follow-up: #45458329364 failed only at handoff after hero image contextual button. Diagnostic-only read-only retry with bounded wait and bridge status from scripts commit 3593eb366662bae35321186fe07935241efc5fe8; do not build or alter CMS.
 
 Diagnostic retry #2 after #45458799521 (bridge function defined, image panel remained open). Isolate direct source helper from button handler using committed QA 013cffa34d130408e7b31cfdfbce756f576aa450; read-only, NO CMS writes/build.
+
+Diagnostic retry #3 for banner button click guard after #45459136996: log existing inspector dirtiness/confirmation and accept only safe discard of local unsaved draft (NO CMS Save, no FTP, no build). Playwright source 25a4bc77b58de3b9290561a210f08bdd6e75700f.
