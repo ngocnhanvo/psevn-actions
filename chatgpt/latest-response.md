@@ -5,7 +5,8 @@
 - Repository: ngocnhanvo/psevn-actions/main
 - Trạng thái: PARTIAL — chưa hoàn tất
 - Checkpoint chuẩn: docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md
-- PHP source mới: ngocnhanvo/psevn-php@master 4077306a1238c6e9f5deece31a99943cbe46bed6
+- PHP source **đã triển khai**: ngocnhanvo/psevn-php commit 4077306a1238c6e9f5deece31a99943cbe46bed6
+- PHP `master` đã tiến tiếp do thay đổi khác sau lần triển khai: `c34fab5a8cb5255cc8318447177b6ddf49fd5783` (code chỉ đổi `esc-visual-builder.php` và tests; source CI https://github.com/ngocnhanvo/psevn-actions/actions/runs/45456038256 SUCCESS). **Chưa xác minh deploy những commit mới này.**
 - Astro source/production (không đổi): ngocnhanvo/psevn-astro@master 05275b6a31ed4078efcd05ad385305ed3b705b76
 - Source-only CI: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45454932475 — SUCCESS
 - PHP-only signed FTPS/checksum/readback: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45455130090 — SUCCESS, changed=2 checked=20 cleanup_pending=0
@@ -19,7 +20,7 @@
 
 - **Chưa có live S2–S4 Save acceptance:** QA homepage phát hiện 0 API sections; khảo sát trước đó 29 Page phụ cũng không có dynamic. Không tạo/xóa CMS data để làm đẹp kết quả.
 - S2–S4 thêm/chọn reference bằng picker, sửa local fields; S5 API-auto cấu hình query; section add/hide/show/nested và nguồn/REST Save→reload→public, rollback/concurrency vẫn chưa hoàn tất.
-- Bước tiếp theo: triển khai adapter tiếp theo theo S1–S9 trên schema có nguồn thật, mở rộng isolated source tests; chỉ thử CMS Save trên fixture độc lập được phép rồi đọc lại và dọn sạch. Không rerun các build/QA đã PASS khi không có thay đổi liên quan.
+- Bước tiếp theo: kiểm tra riêng nhánh thay đổi giao diện mới hơn chưa triển khai, tránh FTPS chồng chéo; tiếp tục triển khai adapter tiếp theo theo S1–S9 trên schema có nguồn thật, mở rộng isolated source tests; chỉ thử CMS Save trên fixture độc lập được phép rồi đọc lại và dọn sạch. Không rerun các build/QA đã PASS khi không có thay đổi liên quan.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
