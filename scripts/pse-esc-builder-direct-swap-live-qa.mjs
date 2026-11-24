@@ -194,6 +194,7 @@ const verifyCloneDryRun=async(tableId)=>{
       noWrite:dry.no_write===true&&dry.saved===false,
       sourceShared:dry.source_shared===true,
       sourceExact:dry.table_id===tableId&&dry.duplicated===tableId,
+      sourceModeVerified:['shortcode_only','wrapper'].includes(dry.clone_mode),
       versionUnchanged:before.version===after.version&&dry.version===before.version,
       countUnchanged:before.items?.length===after.items?.length,
     };
