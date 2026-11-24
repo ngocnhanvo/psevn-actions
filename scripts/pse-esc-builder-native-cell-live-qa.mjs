@@ -279,7 +279,11 @@ try {
            source:n.getAttribute('data-esc-builder-api-source')||'static',
            dynamic:n.getAttribute('data-esc-builder-dynamic')==='true',
            rowCount:n.querySelectorAll('[data-esc-builder-row]').length,
-           localCells:n.querySelectorAll('[data-esc-builder-cell-row][data-esc-builder-cell-field]').length
+           localCells:n.querySelectorAll('[data-esc-builder-cell-row][data-esc-builder-cell-field]').length,
+           fields:[...new Set([...n.querySelectorAll('[data-esc-builder-cell-row][data-esc-builder-cell-field]')]
+             .map(el=>el.getAttribute('data-esc-builder-cell-field')).filter(Boolean))].sort(),
+           mediaFields:[...new Set([...n.querySelectorAll('[data-esc-builder-image-row][data-esc-builder-image-field]')]
+             .map(el=>el.getAttribute('data-esc-builder-image-field')).filter(Boolean))].sort()
          }))
      }));
      sourceSurvey.push({pageId:option.value,htmlParts:result.htmlParts,sections:result.sections});
@@ -291,6 +295,26 @@ try {
  console.log('PSE_VB_SOURCE_SITE_INVENTORY='+JSON.stringify({
    inspected:sourceSurvey.length,availablePages:options.length,results:sourceSurvey
  }));
+ // Current PSE's actually discovered S1 sources. Don't infer an editable
+ // API record from a data row, and don't pass source parity based on HTTP 200.
+ const mandatory={
+   pse_hotline_vi:['group','label','phone','note'],
+   pse_faq_vi:['question','answer','visible'],
+   pse_history_vi:['date','title','details'],
+   pse_vision_vi:['title','details'],
+   pse_contact_office_vi:['name','address','phone','fax','email','mapUrl'],
+ };
+ const found=sourceSurvey.flatMap(page=>page.sections||[]);
+ for(const [table,fields] of Object.entries(mandatory)){
+   const instances=found.filter(source=>source.id===table);
+   if(instances.length!==1)
+     throw Error('PSE_VB_PAGE_SOURCE=FAIL missing_or_duplicated '+table+' instances='+instances.length);
+   const missing=fields.filter(field=>!instances[0].fields.includes(field));
+   if(missing.length)
+     throw Error('PSE_VB_PAGE_SOURCE=FAIL '+table+' missing='+missing.join(',')+
+       ' present='+instances[0].fields.join(','));
+ }
+ console.log('PSE_VB_PAGE_SOURCE=PASS all_5_real_ESC_tables=true physical_fields=true READ_ONLY=true');
  if(contactError)throw Error('PSE_CONTACT_SOURCE_QA=FAIL '+contactError+
    '; homepage QA completed independently; inspect PSE_CONTACT_RENDER_DIAGNOSTIC');
  console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click='+bannerDotResult+' distinct_editors=PASS PUBLIC_FOOTER_1440_768_390=PASS READ_ONLY=PASS NO_BUILD=PASS');
