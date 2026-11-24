@@ -103,8 +103,70 @@ const verifyCloneDryRun=async(tableId)=>{
         body:JSON.stringify({page_id:pageId,ticket,...params})
       });
       const result=await response.json();
-      if(!response.ok||result.code)
+      if(!response.ok||result.code){
+        if(route==='duplicate-section-shared'){
+          // Inspect source structure only; NEVER log raw Page HTML, rendered
+          // prose, WordPress credentials, ticket, nonce or page response.
+          const record=await fetch('/wp-json/wp/v2/pages/'+pageId+
+            '?context=edit&_fields=content',{
+              credentials:'same-origin',cache:'no-store',
+              headers:{'X-WP-Nonce':nonce}
+            }).catch(()=>null);
+          const pageData=record?.ok?await record.json():{};
+          const raw=typeof pageData?.content?.raw==='string'?
+            pageData.content.raw:'';
+          const target=String(params.section_key||'').replace(/@[0-9]+$/,'');
+          const regex=/\\[table\\s+id\\s*=\\s*["']?([a-zA-Z0-9_-]{1,80})(?:["'])?\\s*\\/\\]/gi;
+          const found=[...raw.matchAll(regex)].map(m=>({id:m[1],start:m.index,end:m.index+m[0].length}));
+          const selected=found.find(x=>x.id===target);
+          const tags=[...raw.matchAll(/<[^>]+>/gs)];
+          const stack=[],frames=[];
+          for(const token of tags){
+            const markup=token[0],start=token.index;
+            if(/^<!--|^<!|^<\\?/.test(markup))continue;
+            const part=/^<\\s*(\\/?)\\s*([a-z][a-z0-9:-]*)\\b/i.exec(markup);
+            if(!part)continue;
+            const name=part[2].toLowerCase();
+            if(part[1]){
+              const frame=stack.pop();
+              if(frame&&frames[frame].tag===name){
+                frames[frame].closeStart=start;
+                frames[frame].end=start+markup.length;
+              }
+            }else if(!['img','br','hr','input','meta','link','source','area',
+              'base','col','embed','param','track','wbr'].includes(name)&&
+              !/\\/\\s*>$/.test(markup)){
+              frames.push({tag:name,start,openEnd:start+markup.length,
+                parent:stack.length?stack[stack.length-1]:-1});
+              stack.push(frames.length-1);
+            }
+          }
+          const candidates=selected?frames.filter(f=>
+            f.openEnd<=selected.start&&f.closeStart>=selected.end&&
+            ['div','section','article','li'].includes(f.tag) &&
+            found.filter(x=>x.start>=f.openEnd&&x.end<=f.closeStart).length===1
+          ).sort((a,b)=>(a.end-a.start)-(b.end-b.start)):[];
+          const chosen=candidates[0];
+          const snippet=chosen?raw.slice(chosen.start,chosen.end):'';
+          const shape={
+            code:String(result.code||response.status),
+            wpSourceReadable:raw.length>0,
+            shortcodeCount:found.length,
+            targetCount:found.filter(x=>x.id===target).length,
+            chosenTag:chosen?.tag||'raw_shortcode',
+            chosenParentIndex:chosen?.parent??null,
+            topLevel:chosen?.parent===-1,
+            wrapperBytes:snippet.length,
+            wrapperHasId:/<[^>]+\\sid\\s*=/i.test(snippet),
+            wrapperHasName:/<[^>]+\\sname\\s*=/i.test(snippet),
+            wrapperHasControl:/<(?:script|style|form|input|button|iframe|video|audio|canvas|template)\\b/i.test(snippet),
+            wrapperHasEventHandler:/\\bon[a-z]+\\s*=/i.test(snippet),
+            rawHtmlTags:tags.length
+          };
+          console.log('PSE_SECTION_SOURCE_NO_WRITE_DIAGNOSTIC='+JSON.stringify(shape));
+        }
         throw Error('Page clone preflight refused: '+String(result.code||response.status));
+      }
       return result;
     };
     const before=await request('section-order');
