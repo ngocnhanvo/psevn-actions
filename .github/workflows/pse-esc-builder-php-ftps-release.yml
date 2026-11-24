@@ -47,6 +47,7 @@ jobs:
           for file in source-php/wp-content/plugins/esc-visual-builder/esc-visual-builder.php source-php/wp-content/plugins/esc-visual-builder/includes/*.php; do
             php -l "$file" >/dev/null
           done
+          php source-php/wp-content/plugins/esc-visual-builder/tests/items-and-sections.test.php
           php source-php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
           php source-php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
           php source-php/wp-content/plugins/esc-visual-builder/tests/shared-footer-assets-source.test.php
