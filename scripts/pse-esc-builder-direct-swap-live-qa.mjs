@@ -82,6 +82,50 @@ const previewSection=async(type,key,requestId)=>{
   },{type,key,requestId});
 };
 
+// This invokes the production writer's dry-run branch only, then verifies
+// that the versioned Page remains byte-equivalent from the CMS perspective.
+const verifyCloneDryRun=async(tableId)=>{
+  return await page.evaluate(async tableId=>{
+    const script=[...document.scripts].map(node=>node.textContent||'')
+      .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
+    const token=script?.match(/\\bconst nonce=("(?:[^"\\\\]|\\\\.)*")/);
+    if(!token)throw Error('WordPress REST nonce not found in authenticated Builder UI');
+    const nonce=JSON.parse(token[1]);
+    const getTicket=window.escVBGetTicket;
+    if(typeof getTicket!=='function')throw Error('Missing renewable Builder ticket');
+    const pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    if(!Number.isSafeInteger(pageId)||pageId<1)throw Error('Invalid scoped Page');
+    const request=async(route,params={})=>{
+      const ticket=await getTicket();
+      const response=await fetch('/wp-json/esc-builder/v1/'+route,{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+        body:JSON.stringify({page_id:pageId,ticket,...params})
+      });
+      const result=await response.json();
+      if(!response.ok||result.code)
+        throw Error('Page clone preflight refused: '+String(result.code||response.status));
+      return result;
+    };
+    const before=await request('section-order');
+    const match=(before.items||[]).filter(item=>item.id===tableId);
+    if(match.length!==1)throw Error('Cannot identify unique Page section occurrence');
+    const dry=await request('duplicate-section-shared',{
+      section_key:tableId,expected_version:before.version,
+      share_source:true,dry_run:true
+    });
+    const after=await request('section-order');
+    return {
+      checked:dry.checked===true,
+      noWrite:dry.no_write===true&&dry.saved===false,
+      sourceShared:dry.source_shared===true,
+      sourceExact:dry.table_id===tableId&&dry.duplicated===tableId,
+      versionUnchanged:before.version===after.version&&dry.version===before.version,
+      countUnchanged:before.items?.length===after.items?.length,
+    };
+  },tableId);
+};
+
 try{
   await page.goto(wp.origin+'/wp-admin/',{waitUntil:'domcontentloaded',timeout:60000});
   if(await page.locator('#user_login').count()){
@@ -310,7 +354,12 @@ try{
             .map(item=>item.getAttribute('data-esc-builder-row'))));
         if(JSON.stringify(rows[0])!==JSON.stringify(rows[1]))
           throw Error('Shared clone changed physical ESC Table rows '+tableId);
-        sectionClones.push({tableId,result:'PASS',sharedSource:true});
+        const server=await verifyCloneDryRun(tableId);
+        if(!Object.values(server).every(value=>value===true))
+          throw Error('Server refused exact source-preserving no-write preflight '+tableId);
+        sectionClones.push({
+          tableId,result:'PASS',sharedSource:true,serverDryRun:true,sourceVersionUnchanged:true
+        });
       }else{
         sectionClones.push({tableId,result:'REJECTED_UNSAFE_WRAPPER'});
       }
