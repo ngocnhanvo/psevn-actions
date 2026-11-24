@@ -81,6 +81,18 @@ try {
   await heroImage.click({force:true});
   const relatedText=page.locator('#esc-vb-image-open-text');
   await relatedText.waitFor({state:'visible',timeout:30000});
+  const beforeRelatedClick=await page.evaluate(()=>({
+    buttonHidden:document.getElementById('esc-vb-image-open-text')?.hidden,
+    saveDisabled:document.getElementById('esc-vb-image-save')?.disabled,
+    cancelDisabled:document.getElementById('esc-vb-image-cancel')?.disabled,
+    imageCaption:document.getElementById('esc-vb-image-caption')?.textContent?.slice(0,80)
+  }));
+  console.log('PSE_HERO_CONTEXT_BEFORE_CLICK='+JSON.stringify(beforeRelatedClick));
+  page.once('dialog',async dialog=>{
+    console.log('PSE_HERO_CONTEXT_DIALOG='+JSON.stringify({type:dialog.type(),draftWarning:/bản nháp chưa lưu|Bỏ/.test(dialog.message())}));
+    if(dialog.type()==='confirm' && /bản nháp chưa lưu|Bỏ/.test(dialog.message()))await dialog.accept();
+    else await dialog.dismiss();
+  });
   await relatedText.click();
   let textOpened=false;
   try {
