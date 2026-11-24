@@ -1,8 +1,3 @@
-PSE G1 dedicated read-only live QA on deployed Wave1; user requested continue without duplicate deployment. Astro master d81e2b216c3b11b011b94075490085cbab543708, PHP master/deployed d3f640b8d6b16a2deba73f4631ca476e56013453. No CMS Save, no FTP, no Astro build.
-
-NETWORK_ONLY
-G1 static skeleton quick/slow/rapid/stale PASSED in run 40437608156; retry only real network selection after waiting for capability markers.
-
-Retry after workflow YAML correction 0159061e; ONLY network race, static skeleton already passed #40437608156.
-
-Retry network-only with completion-based timeout after #40437946466 prematurely measured busy at 1.5 seconds.
+2026-11-25 Production-first PSE Builder live click-only parity QA on verified deployed code.
+Astro deployed master 522da7040c55c35e6ae22efeae7f2f6821bc268d via #45456461566 SUCCESS signed ZIP activated; PHP deployed master c34fab5a8cb5255cc8318447177b6ddf49fd5783 via #45456231054 FTPS sha256 readback PASS.
+Use scripts/pse-esc-builder-skeleton-live-qa.mjs source at fd6ac8bf133d01076c8d3e3388155b669c44362a (or later main): assert no technical/section tools before selection, readonly hover unmarked, after actual Footer click context controls appear. Retain rapid-click out-of-order read-only REST test. Full static and network assertions. NO ASTRO BUILD, NO FTPS, NO CMS WRITES.
