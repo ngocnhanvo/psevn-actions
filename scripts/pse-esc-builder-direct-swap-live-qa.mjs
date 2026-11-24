@@ -52,6 +52,36 @@ const send=async(type,tableId,from,to,count,requestId,providedItems=null)=>{
     items:providedItems||Array.from({length:count},()=>({}))});
 };
 
+// A Page section clone must be previewed with a real WordPress occurrence
+// identity and must be fully rolled back without any REST write to the CMS.
+const previewSection=async(type,key,requestId)=>{
+  return await page.evaluate(({type,key,requestId})=>{
+    const iframe=document.querySelector('#esc-vb-frame');
+    if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
+      throw Error('No authenticated section preview iframe');
+    const target=new URL(iframe.src,location.href).origin;
+    if(type==='esc-vb-section-duplicate-cancel'){
+      iframe.contentWindow.postMessage({type},target);
+      return Promise.resolve({matched:true});
+    }
+    return new Promise((resolve,reject)=>{
+      const timeout=setTimeout(()=>{
+        window.removeEventListener('message',handle);
+        reject(Error('Missing section clone Preview acknowledgement'));
+      },6500);
+      const handle=event=>{
+        if(event.origin!==target||event.source!==iframe.contentWindow||
+          event.data?.type!=='esc-vb-section-duplicate-preview-ack'||
+          event.data?.requestId!==requestId)return;
+        clearTimeout(timeout);window.removeEventListener('message',handle);
+        resolve({matched:event.data.matched===true});
+      };
+      window.addEventListener('message',handle);
+      iframe.contentWindow.postMessage({type,key,requestId},target);
+    });
+  },{type,key,requestId});
+};
+
 try{
   await page.goto(wp.origin+'/wp-admin/',{waitUntil:'domcontentloaded',timeout:60000});
   if(await page.locator('#user_login').count()){
@@ -222,6 +252,51 @@ try{
         .forEach(node=>node.removeAttribute('data-pse-qa-swap')));
     }
   }
+  // Three real WordPress Pages with static ESC Table source ownership.
+  // Do not click Save in the PHP inspector, and do not modify business data.
+  const sectionClones=[];
+  for(const [pageId,tableId] of [
+    ['80930','pse_faq_vi'],['79303','pse_vision_vi'],['80932','pse_hotline_vi']
+  ]){
+    await page.locator('#esc-vb-page').selectOption(pageId);
+    await Promise.all([page.waitForLoadState('domcontentloaded',{timeout:45000}),
+      page.getByRole('button',{name:'Mở trang'}).click()]);
+    await waitForSource(pageId);
+    const root=frame.locator('[data-tablepress-preview="'+tableId+'"]').first();
+    if(await root.count()!==1){
+      sectionClones.push({tableId,result:'NOT_TESTED_NO_SECTION'});
+      continue;
+    }
+    const original=await frame.locator('[data-tablepress-preview="'+tableId+'"]').count();
+    const requestId=99000+sectionClones.length;
+    let matched=false;
+    try{
+      const response=await previewSection('esc-vb-section-duplicate-preview',tableId,requestId);
+      matched=response.matched;
+      if(matched){
+        const count=await frame.locator('[data-tablepress-preview="'+tableId+'"]').count();
+        if(count!==original+1)throw Error('Preview cloned unexpected section count '+tableId);
+        const rows=await frame.locator('[data-tablepress-preview="'+tableId+'"]').evaluateAll(
+          nodes=>nodes.map(node=>[...node.querySelectorAll('[data-esc-builder-row]')]
+            .map(item=>item.getAttribute('data-esc-builder-row'))));
+        if(JSON.stringify(rows[0])!==JSON.stringify(rows[1]))
+          throw Error('Shared clone changed physical ESC Table rows '+tableId);
+        sectionClones.push({tableId,result:'PASS',sharedSource:true});
+      }else{
+        sectionClones.push({tableId,result:'REJECTED_UNSAFE_WRAPPER'});
+      }
+    }finally{
+      await previewSection('esc-vb-section-duplicate-cancel',tableId,requestId);
+      await frame.locator('[data-tablepress-preview="'+tableId+'"]')
+        .first().waitFor({state:'attached',timeout:10000});
+      const count=await frame.locator('[data-tablepress-preview="'+tableId+'"]').count();
+      if(count!==original)throw Error('Preview clone cancel left duplicate '+tableId);
+    }
+  }
+  console.log('PSE_BUILDER_SECTION_CLONE_LIVE='+JSON.stringify(sectionClones));
+  if(!sectionClones.some(item=>item.result==='PASS'))
+    throw Error('No real PSE Page section can be safely preview-cloned');
+
   console.log('PSE_BUILDER_SWAP_LIVE='+JSON.stringify(results));
   if(!results.some(s=>s.includes(':PASS')))
     throw Error('No populated live PSE item collection could be rehearsed');
