@@ -137,6 +137,65 @@ try {
   if(!textSources)throw Error('Selected hero image cannot reach its canonical text/link inspector');
   console.log('PSE_BUILDER_HERO_PRODUCTION_PARITY=PASS chips=0 text_editor_after_click=PASS source_options='+textSources);
 
+  // S1 useful links: public and unselected Builder must show the SAME
+  // physical links, with URL controls hidden in the context editor only.
+  const useful=frame.locator('.pse-tools__links');
+  await useful.waitFor({state:'visible',timeout:30000});
+  if(await frame.locator('.pse-tools__url').count())
+    throw Error('Builder injected technical URL chips over the public useful links');
+  const previewLinks=await useful.locator('a').evaluateAll(links=>
+    links.map(a=>({text:a.textContent.trim(),href:a.getAttribute('href')||''})));
+  const frontOrigin=new URL(await frame.locator('body').evaluate(()=>location.href)).origin;
+  const publicPage=await browser.newPage({viewport:{width:1440,height:900}});
+  try {
+    await publicPage.goto(frontOrigin+'/',{waitUntil:'domcontentloaded',timeout:60000});
+    await publicPage.locator('.pse-tools__links').waitFor({state:'visible',timeout:25000});
+    const publicLinks=await publicPage.locator('.pse-tools__links a').evaluateAll(links=>
+      links.map(a=>({text:a.textContent.trim(),href:a.getAttribute('href')||''})));
+    if(JSON.stringify(previewLinks)!==JSON.stringify(publicLinks))
+      throw Error('Useful links Preview differs from production count, order or URL');
+    console.log('PSE_BUILDER_USEFUL_LINK_PUBLIC_PARITY=PASS count='+publicLinks.length);
+  } finally {await publicPage.close();}
+  const sourceLink=useful.locator('a[data-esc-builder-cell-row][data-esc-builder-cell-field]').first();
+  await sourceLink.waitFor({state:'visible',timeout:20000});
+  const linkRow=Number(await sourceLink.getAttribute('data-esc-builder-cell-row'));
+  const linkField=await sourceLink.getAttribute('data-esc-builder-cell-field');
+  if(!Number.isSafeInteger(linkRow)||linkRow<0||!['href','url','link'].includes(linkField))
+    throw Error('A useful link is missing canonical ESC Table row/URL field identity');
+  const originalLink=await sourceLink.getAttribute('href');
+  const arrow=sourceLink.locator('span[aria-hidden="true"]').first();
+  await arrow.click();
+  await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:30000});
+  await page.waitForFunction(rowField=>
+    document.getElementById('esc-vb-edit-row')?.value===rowField,
+    linkRow+':'+linkField,{timeout:30000});
+  const input=page.locator('#esc-vb-edit-title');
+  const originalRaw=await input.inputValue();
+  if(!originalRaw||!originalLink||!originalLink.startsWith('http'))
+    throw Error('The useful link editor did not load its original HTTPS source');
+  const draft=new URL(originalRaw);
+  draft.hash='esc-vb-preview-qa-only';
+  const changed=draft.href;
+  await input.fill(changed);
+  await page.waitForFunction(expectHref=>{
+    const link=document.querySelector('.pse-tools__links a[data-esc-builder-cell-field]');
+    return link?.getAttribute('href')===expectHref;
+  },changed,{timeout:12000});
+  const saveEnabled=await page.locator('#esc-vb-edit-save').isEnabled();
+  if(!saveEnabled)throw Error('Canonical valid URL draft did not activate Save');
+  await page.locator('#esc-vb-edit-cancel').click();
+  await page.waitForFunction(expectedHref=>
+    document.querySelector('.pse-tools__links a[data-esc-builder-cell-field]')?.getAttribute('href')===expectedHref,
+    originalLink,{timeout:12000});
+  await input.fill('javascript:alert(1)');
+  if(await page.locator('#esc-vb-edit-save').isEnabled())
+    throw Error('Unsafe URL draft was offered as a WordPress Save');
+  if(await sourceLink.getAttribute('href')!==originalLink)
+    throw Error('An invalid URL mutated the Builder link');
+  await page.locator('#esc-vb-edit-cancel').click();
+  console.log('PSE_BUILDER_HREF_CLICK_EDIT_CANCEL=PASS row='+linkRow+
+    ' field='+linkField+' valid_draft=PASS unsafe_save_blocked=PASS NO_CMS_WRITE=PASS');
+
 
   // Verify real deployed inspector timer: fast cached data must never flash,
   // stale completion must never close the currently active selection.
