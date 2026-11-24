@@ -114,7 +114,7 @@ jobs:
           const compiler=await import(pathToFileURL(astroRequire.resolve('@astrojs/compiler')).href);
           const path='src/pages/esc-builder/preview/[pageId].astro';
           await compiler.transform(await readFile(path,'utf8'),{filename:path});
-          for (const other of ['src/astro/tablepress/Pse_hotline.astro','src/astro/tablepress/Pse_faq.astro','src/astro/tablepress/Pse_history.astro','src/astro/tablepress/Pse_02.astro','src/astro/tablepress/Pse_contact_warehouses.astro','src/astro/components/Contact/PseContactLocationCard.astro','src/astro/components/Layout/Footer.astro','src/astro/components/Menu/Desktop.astro','src/astro/components/Menu/DesktopBranch.astro','src/astro/components/Menu/MobileBranch.astro']) {
+          for (const other of ['src/astro/tablepress/Pse_hotline.astro','src/astro/tablepress/Pse_faq.astro','src/astro/tablepress/Pse_history.astro','src/astro/tablepress/Pse_02.astro','src/astro/tablepress/Pse_contact_warehouses.astro','src/astro/tablepress/Pse_00.astro','src/astro/tablepress/Home_09.astro','src/astro/tablepress/Home_11.astro','src/astro/tablepress/Home_13.astro','src/astro/components/Contact/PseContactLocationCard.astro','src/astro/components/Layout/Footer.astro','src/astro/components/Menu/Desktop.astro','src/astro/components/Menu/DesktopBranch.astro','src/astro/components/Menu/MobileBranch.astro']) {
             await compiler.transform(await readFile(other,'utf8'),{filename:other});
           }
           for (const file of [
@@ -129,6 +129,16 @@ jobs:
                 !source.includes('sourceRow={sourceRow}')) {
               throw Error('Missing canonical ESC row identity: ' + file);
             }
+          }
+          const directCards = [
+            ['src/astro/tablepress/Pse_00.astro', 'data-esc-builder-row={slide.sourceRow}'],
+            ['src/astro/tablepress/Home_09.astro', 'data-esc-builder-row={index}'],
+            ['src/astro/tablepress/Home_11.astro', 'data-esc-builder-row={index}'],
+            ['src/astro/tablepress/Home_13.astro', 'data-esc-builder-row={index}']
+          ];
+          for (const [file, marker] of directCards) {
+            if (!(await readFile(file, 'utf8')).includes(marker))
+              throw Error('Missing directly selectable slide/card marker: '+file);
           }
           console.log('PSE_ESC_NATIVE_SOURCE_ROW_MARKERS=PASS');
           console.log('ESC_BUILDER_ASTRO_PARSE=PASS');
