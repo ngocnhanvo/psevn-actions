@@ -391,9 +391,12 @@ try {
     } finally {await visitor.close();}
     if(!publicRows?.length || JSON.stringify(previewRows)!==JSON.stringify(publicRows))
       throw Error(target.name+' public versus Preview card content/count differs');
-    if(sourceRows.some((row,i)=>!Number.isSafeInteger(row)||row<0||
-        (i>0 && row<=sourceRows[i-1])))
-      throw Error(target.name+' lost original monotonically ordered physical row markers');
+    // Hotline cards are grouped by source-owned group labels, so their
+    // visible order can be nonmonotonic. The physical identities must still
+    // be unambiguous, nonnegative and unique after any filtering.
+    if(sourceRows.some(row=>!Number.isSafeInteger(row)||row<0)||
+       new Set(sourceRows).size!==sourceRows.length)
+      throw Error(target.name+' lost unique physical row markers');
     if(previewRows.some(text=>/Chưa nhập|Chưa chọn nhóm hotline|Cột mốc cần sửa/.test(text)))
       throw Error(target.name+' contains Preview-only repair labels');
     console.log('PSE_BUILDER_SUBPAGE_PUBLIC_PARITY=PASS page='+target.name+
