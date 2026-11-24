@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PSE-only maintenance. No CMS, deployment, workflow-file or artifact deletion."""
+"""PSE-only run maintenance. Deleting a run also removes its logs/artifacts. Never modify workflow files, CMS or deployments."""
 from __future__ import annotations
 
 import collections
@@ -18,6 +18,8 @@ REPO = "ngocnhanvo/psevn-actions"
 API = "https://api.github.com/repos/" + REPO
 AUDIT = Path(".pse-actions-history-audit.json")
 LIMIT = 1200
+FULL_LIMIT = 5000
+LOCAL_TZ = dt.timezone(dt.timedelta(hours=7))
 PROTECTED_WORKFLOWS = {
     "pse-production-deploy.yml", "pse-wordpress-build-request.yml",
     "pse-php-live-release.yml", "pse-postdeploy-verify.yml",
@@ -37,6 +39,18 @@ def old_completed(run, cutoff):
     return (run.get("status") == "completed" and run.get("conclusion") in TERMINAL
             and bool(run.get("created_at")) and bool(run.get("updated_at"))
             and utc(run["created_at"]) < cutoff and utc(run["updated_at"]) < cutoff)
+
+def before_local_day(run, cutoff):
+    # Explicit owner request: keep today's runs (creation time), regardless
+    # of workflow or conclusion. Active runs are never deleted.
+    return (run.get("status") == "completed"
+            and bool(run.get("created_at"))
+            and utc(run["created_at"]) < cutoff)
+
+def select_all_old(runs, cutoff):
+    candidates = sorted((r for r in runs if before_local_day(r, cutoff)),
+                        key=lambda row: (row["created_at"], row["id"]))
+    return candidates, {"today_or_active": len(runs) - len(candidates)}
 
 def select(runs, artifact_ids, reference_ids, cutoff):
     groups = collections.defaultdict(list)
@@ -87,6 +101,17 @@ def self_test():
     assert sum(kept.values()) + len(ids) == len(rows)
     assert not old_completed(row(99, created_at="2026-11-17T00:00:00Z"), cutoff)
     assert not old_completed(row(99, conclusion=None), cutoff)
+    local_cutoff = utc("2026-11-23T17:00:00Z")
+    rows2 = [
+        row(21, name="PSE production deploy", created_at="2026-11-23T16:59:59Z"),
+        row(22, created_at="2026-11-23T17:00:00Z"),
+        row(23, status="in_progress", conclusion=None),
+        row(24, updated_at="2026-11-24T03:00:00Z"),
+        row(25, workflow_id=99, conclusion="skipped"),
+    ]
+    all_old, kept2 = select_all_old(rows2, local_cutoff)
+    assert {x["id"] for x in all_old} == {21, 24, 25}
+    assert kept2 == {"today_or_active": 2}
     print("PSE_CLEANUP_SELECTION_UNIT=PASS")
 
 def request(path, method="GET", missing_ok=False):
@@ -106,6 +131,15 @@ def request(path, method="GET", missing_ok=False):
             if exc.code == 404 and missing_ok:
                 return None
             retry = exc.headers.get("Retry-After")
+            if attempt < 3 and exc.code == 403 and exc.headers.get("X-RateLimit-Remaining") == "0":
+                reset = exc.headers.get("X-RateLimit-Reset", "")
+                if reset.isdigit():
+                    delay = max(5, int(reset) - int(time.time()) + 5)
+                    if delay > 3700:
+                        raise RuntimeError("Unexpected rate limit reset; refusing long retry")
+                    print(f"PSE_CLEANUP_RATE_LIMIT pause_seconds={delay}", flush=True)
+                    time.sleep(delay)
+                    continue
             if attempt < 3 and (exc.code in (429, 500, 502, 503, 504) or (exc.code == 403 and retry)):
                 delay = min(120, max(5, int(retry))) if retry and retry.isdigit() else 15 * (attempt + 1)
                 time.sleep(delay)
@@ -156,26 +190,38 @@ def main():
         return
     if os.environ.get("GITHUB_REPOSITORY") != REPO or os.environ.get("GITHUB_REF") != "refs/heads/main":
         raise RuntimeError("Wrong repository or branch; no deletion")
-    if len(sys.argv) != 3 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", sys.argv[1]) or sys.argv[2] not in ("preview", "apply"):
-        raise RuntimeError("Expected UTC YYYY-MM-DD and preview/apply")
-    cutoff = utc(sys.argv[1] + "T00:00:00Z")
-    if cutoff > dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7):
-        raise RuntimeError("Must retain at least seven days of runs")
+    if len(sys.argv) != 3 or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", sys.argv[1]) or sys.argv[2] not in ("preview", "apply", "apply-all-before-local-day"):
+        raise RuntimeError("Expected YYYY-MM-DD and a recognized cleanup mode")
     mode = sys.argv[2]
+    full = mode == "apply-all-before-local-day"
+    if full:
+        # Fixed owner-authorized calendar date in Vietnam, never a moving
+        # cutoff that could delete later days if the runner is delayed.
+        cutoff = dt.datetime.combine(dt.date.fromisoformat(sys.argv[1]), dt.time.min, tzinfo=LOCAL_TZ)
+        if cutoff.date() > dt.datetime.now(LOCAL_TZ).date():
+            raise RuntimeError("Cannot delete today's or future runs")
+    else:
+        cutoff = utc(sys.argv[1] + "T00:00:00Z")
+        if cutoff > dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7):
+            raise RuntimeError("Must retain at least seven days of runs")
+    cutoff = cutoff.astimezone(dt.timezone.utc)
+    limit = FULL_LIMIT if full else LIMIT
     rows = pages("/actions/runs", "workflow_runs")
-    artifacts = pages("/actions/artifacts", "artifacts")
-    # Retain any run with a listed artifact, even one marked expired.
-    artifact_ids = set()
-    for a in artifacts:
-        run = a.get("workflow_run")
-        if not isinstance(run, dict) or type(run.get("id")) is not int:
-            raise RuntimeError("Artifact run linkage missing; refusing deletion")
-        artifact_ids.add(run["id"])
-    refs = references()
-    candidates, kept = select(rows, artifact_ids, refs, cutoff)
+    if full:
+        candidates, kept = select_all_old(rows, cutoff)
+    else:
+        artifacts = pages("/actions/artifacts", "artifacts")
+        artifact_ids = set()
+        for a in artifacts:
+            run = a.get("workflow_run")
+            if not isinstance(run, dict) or type(run.get("id")) is not int:
+                raise RuntimeError("Artifact run linkage missing; refusing deletion")
+            artifact_ids.add(run["id"])
+        refs = references()
+        candidates, kept = select(rows, artifact_ids, refs, cutoff)
     audit = {"repository": REPO, "cutoff_utc": cutoff.isoformat(), "mode": mode,
              "inventoried": len(rows), "retained": kept, "eligible": len(candidates),
-             "batch_limit": LIMIT, "candidates": [compact(x) for x in candidates],
+             "batch_limit": limit, "candidates": [compact(x) for x in candidates],
              "deleted": [], "already_absent": [], "changed_retained": [], "error": None}
     persist(audit)
     summary(f"PSE_CLEANUP_PLAN mode={mode} runs={len(rows)} eligible={len(candidates)} protected={len(rows)-len(candidates)} cutoff={sys.argv[1]}")
@@ -183,16 +229,18 @@ def main():
     if mode == "preview":
         return
     try:
-        for row in candidates[:LIMIT]:
+        for row in candidates[:limit]:
             ident = row["id"]
             # A historical run can be re-run after the inventory snapshot.
             # Recheck completion and update timestamp, and never delete an active run.
             fresh = request(f"/actions/runs/{ident}", missing_ok=True)
             if fresh is None:
                 audit["already_absent"].append(ident)
-            elif (not old_completed(fresh, cutoff) or critical(fresh)
+            elif ((not before_local_day(fresh, cutoff) if full
+                   else (not old_completed(fresh, cutoff) or critical(fresh)))
                   or fresh.get("run_attempt") != row.get("run_attempt")
-                  or fresh.get("workflow_id") != row.get("workflow_id")):
+                  or fresh.get("workflow_id") != row.get("workflow_id")
+                  or fresh.get("updated_at") != row.get("updated_at")):
                 audit["changed_retained"].append(ident)
             else:
                 result = request(f"/actions/runs/{ident}", method="DELETE", missing_ok=True)
@@ -208,9 +256,17 @@ def main():
         persist(audit)
         raise
     finally:
-        summary(f"PSE_CLEANUP_RESULT deleted={len(audit['deleted'])} absent={len(audit['already_absent'])} changed_retained={len(audit['changed_retained'])} unprocessed={max(0,len(candidates)-LIMIT)}")
+        summary(f"PSE_CLEANUP_RESULT deleted={len(audit['deleted'])} absent={len(audit['already_absent'])} changed_retained={len(audit['changed_retained'])} unprocessed={max(0,len(candidates)-limit)}")
     after = request("/actions/runs?per_page=1")
     summary(f"PSE_CLEANUP_TOTAL_AFTER={after['total_count']}")
+    if full:
+        remaining = pages("/actions/runs", "workflow_runs")
+        old = [r for r in remaining if utc(r["created_at"]) < cutoff]
+        audit["remaining_old"] = [compact(r) for r in old]
+        persist(audit)
+        summary(f"PSE_CLEANUP_OLD_REMAINING={len(old)}")
+        if old:
+            raise RuntimeError("Old runs remain (active, changed, or batch limit); inspect audit")
 
 if __name__ == "__main__":
     main()
