@@ -1,4 +1,4 @@
-2026-11-25 PSE Visual Builder useful-links click-to-edit first live read-only acceptance.
-Astro currently deployed b86b4823116654317b96386ec359e06c4e9a2a3e from #45464017250 SUCCESS signed activation; PHP deployed 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 via #45463291680 SUCCESS TLS sha256 readback changed=2 checked=20 cleanup_pending=0.
-Source-only CI #45462866442 SUCCESS; new read-only Playwright QA script bac3d98bc786f42e2e7c3c3b1db66410e5304994 tests public-vs-Preview link parity, exact native href click, valid draft and Cancel, invalid JS URL disabled, previous banner and rapid selection regressions.
-NO CMS WRITE, NO SAVE, NO FTPS, NO BUILD. A separate source-only candidate for relative URL rendering is in CI #45464211422 SUCCESS and will be independently released only after verifying this currently deployed baseline.
+2026-11-25 PSE Visual Builder useful-link href draft cross-origin QA correction, READ ONLY.
+Production Astro b86b4823116654317b96386ec359e06c4e9a2a3e verified #45464017250, production PHP 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 verified #45463291680. Public vs Builder useful links count/links parity PASS in #45464372132, then first draft assertion timed out because QA script mistakenly executed page.waitForFunction in WordPress parent instead of Astro iframe. No confirmed application bug from that run.
+New Actions script ed521072b99426b9d13d9dd5f5bd62d5e106c81f uses iframe contentFrame().waitForFunction for draft and Cancel. Reverify visual parity, native href click, safe valid draft, CANCEL and unsafe-save guard, skeleton/footer regression. Source-only relative URL candidate and wider section parity fixes remain un-deployed; this QA checks existing pin only.
+NO CONTENT/DB WRITES, NO SAVE, NO BUILD, NO FTPS.
