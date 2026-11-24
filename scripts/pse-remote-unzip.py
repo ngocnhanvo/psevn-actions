@@ -271,6 +271,10 @@ def main():
             or result.get("sha256") != expected or result.get("files_activated", 0) < 2):
         raise RuntimeError("Unzip response did not match the uploaded deployment package")
     print("SIGNED_UNZIP_SUCCESS: target=%s files=%s" % (ftp_target, result["files_activated"]))
+    timings = result.get("timings_ms")
+    allowed = ("bootstrap", "auth_target_lock", "archive_sha256", "zip_extract", "image_restore", "static_restore", "sitemap_activate", "cleanup")
+    if isinstance(timings, dict) and all(type(timings.get(k)) is int and 0 <= timings[k] <= 240000 for k in allowed):
+        print("PSE_ACTIVATE_PHP_MS " + json.dumps({k: timings[k] for k in allowed}, sort_keys=True))
 
 
 if __name__ == "__main__":
