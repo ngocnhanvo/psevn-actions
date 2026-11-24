@@ -1,4 +1,4 @@
-2026-11-25 PSE Visual Builder production-first click-to-edit source QA.
-Astro master 522da7040c55c35e6ae22efeae7f2f6821bc268d: retain production layout and visuals by default; only mark actionable regions on hover; readonly/unsupported sections never receive hover badges or forced edit cursor; tools and source explanations appear only after selecting. Preserve direct Preview section/item red-green picking, safe interactions and source-owned write guards.
-PHP master c34fab5a8cb5255cc8318447177b6ddf49fd5783: hide technical and section controls until verified iframe item/section/menu/image/footer click; maintain existing writer/nonce/version checks. Adds source regression for click-to-edit visibility.
-Run existing native-cell PHP lint, schema and JS source tests plus Astro Vitest and parser. SOURCE ONLY: NO BUILD, NO FTP, NO CMS WRITE.
+2026-11-25 PSE production-first banner source regression after removing exposed ESC Table labels.
+Astro master cec2caa69b7666844bb46bc2d19f08f518d3da02: Pse_00.astro displays the same filtered slide rows as production; removes synthetic editable text chips/green banner badges and placeholder media in Builder while retaining sourceRow and image field identity, same image carousel controls, readonly region behavior, and click-to-disclose inspector.
+PHP production/master remains c34fab5a8cb5255cc8318447177b6ddf49fd5783 (FTPS readback #45456231054).
+Run existing native-cell source CI including Pse_00.sourceOwnership.test.ts, other Astro Vitest/parser and PHP tests. NO BUILD, NO FTP, NO CMS WRITE.
