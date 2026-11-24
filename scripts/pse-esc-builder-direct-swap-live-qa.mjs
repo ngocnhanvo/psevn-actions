@@ -413,7 +413,19 @@ try{
     const tableId=await root.evaluate(el=>el.closest('[data-tablepress-preview]')
       ?.getAttribute('data-tablepress-preview')||'');
     const cards=root.locator(config.item);
-    const count=await cards.count();
+    const visibleCount=await cards.count();
+    const rowIdentity=await root.evaluate((el,selector)=>({
+      visible:[...el.querySelectorAll(selector)].map(node=>Number(node.getAttribute('data-esc-builder-row'))),
+      all:[...el.querySelectorAll('[data-esc-builder-row],[data-esc-builder-cell-row],[data-esc-builder-image-row]')]
+        .map(node=>Number(node.getAttribute('data-esc-builder-row')||
+          node.getAttribute('data-esc-builder-cell-row')||
+          node.getAttribute('data-esc-builder-image-row'))).filter(Number.isSafeInteger)
+    }),config.item);
+    // Public Promise renders physical rows [1,2,3]; row 0 is section
+    // metadata. Never pretend visible index 0 is physical row 0.
+    const from=config.name==='PSE_PROMISE'?rowIdentity.visible[0]:0;
+    const to=config.name==='PSE_PROMISE'?rowIdentity.visible[1]:1;
+    const count=config.name==='PSE_PROMISE'?Math.max(...rowIdentity.all)+1:visibleCount;
     const runtime=await root.evaluate(el=>({
       installed:!!document.querySelector('style[data-esc-vb-item-pick-style]'),
       previewClass:document.documentElement.classList.contains('esc-builder-preview'),
@@ -423,21 +435,24 @@ try{
       scriptCount:document.scripts.length
     }));
     console.log('PSE_SWAP_PAGE_DIAGNOSTIC='+JSON.stringify({
-      name:config.name,pageId:config.pageId||home,tableId,count,...runtime
+      name:config.name,pageId:config.pageId||home,tableId,count,visibleCount,from,to,...runtime
     }));
-    if(!tableId||count<2){results.push(config.name+':NOT_TESTED_ROWS_'+count);continue}
+    if(!tableId||visibleCount<2||!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||
+      !Number.isSafeInteger(count)||count<2||from===to){
+      results.push(config.name+':NOT_TESTED_ROWS_'+visibleCount);continue
+    }
     if(config.ready){
       const ready=await root.locator('[data-pse-slider]').first().getAttribute('data-ready');
       if(ready!=='true'){results.push(config.name+':NOT_TESTED_CONTROLLER_NOT_READY');continue}
     }
-    await root.evaluate((el,selector)=>{
+    await root.evaluate((el,{selector,from,to})=>{
       const cards=[...el.querySelectorAll(selector)];
-      const first=cards.find(card=>card.getAttribute('data-esc-builder-row')==='0');
-      const second=cards.find(card=>card.getAttribute('data-esc-builder-row')==='1');
-      if(!first||!second)throw Error('Physical source rows 0 and 1 not unique');
+      const first=cards.find(card=>card.getAttribute('data-esc-builder-row')===String(from));
+      const second=cards.find(card=>card.getAttribute('data-esc-builder-row')===String(to));
+      if(!first||!second)throw Error('Two distinct visible physical source rows not found');
       first.setAttribute('data-pse-qa-swap','first');
       second.setAttribute('data-pse-qa-swap','second');
-    },config.item);
+    },{selector:config.item,from,to});
     let original=Array.from({length:count},()=>({}));
     if(config.name==='PSE_HOTLINE'){
       // The group structure is the source-correct Preview representation.
@@ -458,12 +473,12 @@ try{
         throw Error('PSE hotline group references incomplete');
     }
     const reordered=[...original];
-    [reordered[0],reordered[1]]=[reordered[1],reordered[0]];
+    [reordered[from],reordered[to]]=[reordered[to],reordered[from]];
     let previewMatched=false;
     const requestId=88001+results.length;
     try{
       if(!runtime.installed)throw Error(config.name+' Preview swap listener missing in actual iframe');
-      const ack=await send('esc-vb-item-sort-preview',tableId,0,1,count,requestId,reordered);
+      const ack=await send('esc-vb-item-sort-preview',tableId,from,to,count,requestId,reordered);
       if(!ack.matched)throw Error(config.name+' Preview adapter refused an eligible source');
       previewMatched=true;
       const actual=await root.evaluate((el,selector)=>{
@@ -483,30 +498,30 @@ try{
       },config.item);
       const first=actual.byToken.find(node=>node.token==='first');
       const second=actual.byToken.find(node=>node.token==='second');
-      if(first?.row!=='1'||second?.row!=='0'||!first.nested||!second.nested||
+      if(first?.row!==String(to)||second?.row!==String(from)||!first.nested||!second.nested||
         (config.name!=='PSE_HOTLINE'&&
           (actual.firstTwo[0]!=='second'||actual.firstTwo[1]!=='first')))
         throw Error(config.name+' client Preview reordered wrong source cells');
       results.push(config.name+':PASS direct_swap=true physical_rows=true');
     }finally{
       if(previewMatched){
-        await send('esc-vb-item-sort-cancel',tableId,0,1,count,requestId,original);
-        const restored=await root.evaluate((el,selector)=>new Promise(resolve=>{
+        await send('esc-vb-item-sort-cancel',tableId,from,to,count,requestId,original);
+        const restored=await root.evaluate((el,{selector,from,to})=>new Promise(resolve=>{
           const deadline=Date.now()+4000;
           const poll=()=>{
             const rows=[...el.querySelectorAll(selector)];
             const first=rows.find(node=>node.getAttribute('data-pse-qa-swap')==='first');
             const second=rows.find(node=>node.getAttribute('data-pse-qa-swap')==='second');
             const ordered=rows.slice(0,2);
-            if(first?.getAttribute('data-esc-builder-row')==='0'&&
-               second?.getAttribute('data-esc-builder-row')==='1'&&
+            if(first?.getAttribute('data-esc-builder-row')===String(from)&&
+               second?.getAttribute('data-esc-builder-row')===String(to)&&
                (rows.some(node=>node.closest('.pse-hotline__grid'))||
                 (ordered[0]===first&&ordered[1]===second)))resolve(true);
             else if(Date.now()>deadline)resolve(false);
             else setTimeout(poll,35);
           };
           poll();
-        }),config.item);
+        }),{selector:config.item,from,to});
         if(!restored)
           throw Error(config.name+' Preview cancel did not restore original DOM');
       }
