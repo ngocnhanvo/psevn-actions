@@ -68,3 +68,17 @@ At 2026-11-25 01:07 local, `psevn-php/master` independently advanced beyond the 
 - Remaining full project S2-S5 inventory, true CMS Save/readback, URL validation and full desktop/mobile visual parity remain PARTIAL; don't claim full Builder coverage from UI test.
 
 **Trạng thái: PARTIAL — chưa hoàn tất.**
+
+## Chốt production-first UX 2026-11-25 — banner 1:1, click-to-edit và Source Ready PASS
+
+- Owner rule: visually faithful production Preview, no white-on-green ESC Table banner chips; mark only genuinely actionable areas and disclose controls after click.
+- Knowledge `main` commit `c2d9be499f6793d91ed5c3bcf8782b0c9745f886` merged via PR #36 and indexed through AGENTS, Theme stack and CHANGELOG.
+- Astro production: master `cec2caa69b7666844bb46bc2d19f08f518d3da02` activated by signed build #45457945793; banner `Pse_00.astro` renders only real source slides, retains sourceRow/media identity and carousel controls, does not insert white/green overlay or fake missing image.
+- PHP production: master `cc10f0a7020746fa2834454eae27c2d38f75250d` activated via guarded FTPS #45460083608. Changed 2 PHP files `esc-visual-builder.php` and `includes/image-editor-ui.php`, `sha256=PASS`, `changed=2 checked=20 cleanup_pending=0`. Astro unchanged; NO CMS WRITE.
+- Root cause discovered by authenticated read-only QA #45459523364: `#esc-vb-image-open-text` had `hidden=true` with image caption still `đang đọc ESC Table...`, but WordPress core `.button` styling made it visually clickable before async canonical image read; direct source bridge later worked. Fixed explicit `#esc-vb-image-open-text[hidden]{display:none!important}`, disabled while loading, only enable after verified source and only for ESC Tables with a real writable text column (no false image-only/readonly action).
+- Source CI #45459901430 SUCCESS at new PHP source; tests PHP source guards/JS parse, Astro unit/parser. Prior failures #45458329364, #45458799521, #45459136996 and #45459523364 were diagnostic; do NOT count as final acceptance.
+- **Final live authenticated READ_ONLY Playwright #45460414292 SUCCESS** on exact new source and production: `PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS`; `PSE_HERO_CONTEXT_BEFORE_CLICK={buttonHidden:false,saveDisabled:true,cancelDisabled:true,imageCaption:'pse_00_vi · img · dòng 1'}` (no longer reading); `PSE_BUILDER_HERO_PRODUCTION_PARITY=PASS chips=0 text_editor_after_click=PASS source_options=56`; `PSE_BUILDER_CLICK_TO_DISCLOSE=PASS`; skeleton quick/slow/rapid_10/stale PASS; `PSE_BUILDER_G1_RAPID_FOOTER=PASS` (read only, no CMS write or build).
+- Existing direct red/green Preview item/section swap-and-Cancel regression also previously PASSED #45456907538; no content mutation, no Save claimed.
+- **UX scope COMPLETED**, but **whole Visual Builder still PARTIAL**: S2–S4 reference add/edit/delete live isolated Save/readback, S5 automatic query editor, responsive pixel parity across all pages, canonical href/ALT Save→REST→public readback require scoped and auditable acceptance; no admin/content writes were made just for proof.
+
+**Trạng thái tổng thể: PARTIAL — chưa hoàn tất; UX production-first banner and click-disclose verified DONE.**
