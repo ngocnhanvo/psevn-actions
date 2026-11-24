@@ -1,3 +1,3 @@
-2026-11-25 rerun S2-S3 native manual-reference picker PHP/JS source CI after correcting isolated fixture write-count (one authorized replace + one earlier guarded swap).
-PHP master e7210891178e0f3dd5c1e6f8ae0d34c9d537f921. Previous #45512441350 stopped on incorrect test assertion expecting writes=1 after intentional second authorized reference replace. Runtime writer logic unchanged.
-Check real scoped auth, candidate published-only, wrong type/no-op/stale/duplicate, single-cell Save, generated inspector JS parser and Astro 25 suites. NO BUILD/FTPS/CMS WRITE.
+2026-11-25 PSE reference picker UI selection-state hardening (NO BUILD).
+PHP master 02a0e6cc670fcb302168374db1e7573545c8bb8a. Previous native ref writer source CI #45512543338 SUCCESS; this follow-up prevents picker opening during in-Preview red/green physical row swapping or section swapping, and adds a source regression for gated controls/whole-row optimistic hash, without changing REST writer contract.
+Run real S2-S3 PHP fixture, generated inspector JS parse, Astro Vitest 25 suites. NO BUILD/FTP/CMS WRITE. Deploy only after prior pinned FTPS #45512712788 has finished.
