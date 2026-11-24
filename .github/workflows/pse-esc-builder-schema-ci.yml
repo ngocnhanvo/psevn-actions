@@ -140,6 +140,9 @@ jobs:
             if (!(await readFile(file, 'utf8')).includes(marker))
               throw Error('Missing directly selectable slide/card marker: '+file);
           }
+          const heroSource = await readFile('src/astro/tablepress/Pse_00.astro','utf8');
+          if (heroSource.includes('data-esc-builder-image-row={slide.sourceRow}'))
+            throw Error('Hero Media must not advertise editing without verified original ESC cell coordinates');
           console.log('PSE_ESC_NATIVE_SOURCE_ROW_MARKERS=PASS');
           console.log('ESC_BUILDER_ASTRO_PARSE=PASS');
           NODE
