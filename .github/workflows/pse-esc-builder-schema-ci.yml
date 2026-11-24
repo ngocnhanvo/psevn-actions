@@ -38,6 +38,9 @@ jobs:
           done
           php php/wp-content/plugins/esc-visual-builder/tests/items-and-sections.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/auto-discovery.test.php
+          php php/wp-content/plugins/esc-visual-builder/tests/text-href.test.php
+          php php/wp-content/plugins/esc-visual-builder/tests/text-ui-script.test.php > /tmp/pse-builder-text-ui.js
+          node --check /tmp/pse-builder-text-ui.js
           php php/wp-content/plugins/esc-visual-builder/tests/shared-menu-source.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-source.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/shared-footer-media-source.test.php
@@ -106,7 +109,7 @@ jobs:
           pnpm install --frozen-lockfile --prefer-offline
           node ../scripts/pse-esc-builder-menu-inspector.test.mjs
           node ../scripts/pse-esc-builder-footer-assets-inspector.test.mjs
-          pnpm exec vitest run src/lib/wordpress/builderHeaderNavLock.test.ts src/lib/wordpress/builderEditabilityCues.test.ts src/lib/wordpress/builderSectionDrafts.test.ts src/lib/wordpress/tablepress/builderCollectionMode.test.ts src/lib/wordpress/builderFooterSelection.test.ts src/lib/wordpress/tablepress/pseFooterAssets.test.ts src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderCustomerSlider.test.mjs src/astro/tablepress/Home_00.mobile.test.ts src/lib/seo/pseHistoryTable.test.ts src/lib/seo/pseNativeContactSections.test.ts src/lib/seo/pseAwardsTable.test.ts src/lib/seo/pseVisionMission.test.ts src/astro/tablepress/Pse_01.sourceOwnership.test.ts src/astro/tablepress/Pse_03.sourceCoordinates.test.ts src/astro/tablepress/Pse_faq.sourceOwnership.test.ts src/astro/tablepress/Pse_02.sourceOwnership.test.ts src/astro/tablepress/Pse_00.sourceOwnership.test.ts src/astro/tablepress/Pse_hotline.sourceOwnership.test.ts src/astro/tablepress/Pse_support.cssOwnership.test.ts
+          pnpm exec vitest run src/lib/wordpress/builderHeaderNavLock.test.ts src/lib/wordpress/builderEditabilityCues.test.ts src/lib/wordpress/builderSectionDrafts.test.ts src/lib/wordpress/tablepress/builderCollectionMode.test.ts src/lib/wordpress/builderFooterSelection.test.ts src/lib/wordpress/tablepress/pseFooterAssets.test.ts src/lib/wordpress/builderAutoText.test.mjs src/lib/wordpress/builderLinkDraft.test.mjs src/lib/wordpress/builderAutoDiscovery.test.mjs src/lib/wordpress/builderCustomerSlider.test.mjs src/astro/tablepress/Home_00.mobile.test.ts src/lib/seo/pseHistoryTable.test.ts src/lib/seo/pseNativeContactSections.test.ts src/lib/seo/pseAwardsTable.test.ts src/lib/seo/pseVisionMission.test.ts src/astro/tablepress/Pse_01.sourceOwnership.test.ts src/astro/tablepress/Pse_03.sourceCoordinates.test.ts src/astro/tablepress/Pse_faq.sourceOwnership.test.ts src/astro/tablepress/Pse_02.sourceOwnership.test.ts src/astro/tablepress/Pse_00.sourceOwnership.test.ts src/astro/tablepress/Pse_hotline.sourceOwnership.test.ts src/astro/tablepress/Pse_support.cssOwnership.test.ts
           node --input-type=module <<'NODE'
           import {readFile} from 'node:fs/promises';
           import {createRequire} from 'node:module';
