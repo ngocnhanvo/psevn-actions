@@ -1,5 +1,5 @@
-5bdbfcb1ca7da0a1822d7c0eff938bffabf37746
-2026-11-25 PSE safe source-owned useful-link URL inspector PHP release.
-Earlier release #45463120198 job SKIPPED because push commit message did not meet the existing workflow exact guard.
-Correctly requesting verified source pin after #45462866442 CI SUCCESS: PHP text-editor.php and text-editor-ui.php validate href values on both client and server, retain field/row/version/hash invariants, expose link editing only on direct Preview selection.
-Deploy existing guarded TLS FTPS SHA256/readback/rollback pipeline, NO ASTRO BUILD, NO CMS CONTENT WRITE.
+5f64dd810af852e33ed535cca41ef16c5372d3f0
+2026-11-25 PSE S5 latest news native ESC Table query configuration backend UI/source writer guarded production release.
+CI #45469566012 SUCCESS: 25/25 Astro Vitest suites including S5 parser, PHP S5 isolated in-memory single native cell Save, malformed query rejects and generated JS parser, php-lint, Astro parser/Tailwind. No CMS content mutation.
+PHP includes/text-editor.php validates categoryId, categorySlug, category, limit 1..5, order asc/desc, orderby date/modified/title only for actual native query-owned TablePress schema. All API records readonly, no new auto-mode writer. text-editor-ui.php labels typed query source fields, rejects invalid client inputs, warns source configuration requires Preview refresh and public build. Existing rich-text cell writes remain unchanged.
+Use only existing guarded PHP FTPS TLS+checksum/readback/rollback deployment. Do not build Astro here, do not write CMS/DB. Astro candidate will be released separately after PHP readback succeeds.
