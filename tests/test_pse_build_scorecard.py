@@ -116,6 +116,15 @@ class ScorecardTest(unittest.TestCase):
         self.assertIsNone(scorecard.unmeasured_seconds(inconsistent))
         self.assertIn("unreconciled", scorecard.summarize([inconsistent], 0, 1))
 
+    def test_parallel_upload_wall_time_is_counted_once(self):
+        source = log() + "\nPSE_PARALLEL_UPLOAD ela***d_ms=1800 zip_exit=0 env_exit=0"
+        parsed = scorecard.parse_metrics(source)
+        self.assertEqual(parsed["parallel_upload_ms"], 1800)
+        row = {"id": 1, "seconds": 50.0, "metrics": parsed}
+        self.assertEqual(scorecard.unmeasured_seconds(row), 39.2)
+        self.assertIn("Parallel upload (latest): 1.800s", scorecard.summarize([row], 0, 1))
+        self.assertIsNone(scorecard.parse_metrics(source.replace("env_exit=0", "env_exit=1")))
+
     def test_optional_telemetry_failure_does_not_disqualify_signed_deploy(self):
         source = log()
         # Best-effort timer failure only, signed production stages still passed.
@@ -281,6 +290,8 @@ class ScorecardTest(unittest.TestCase):
         metrics = scorecard.parse_metrics(log() + "\n" + helper + "\n" + signed)
         measured = metrics["ftps_release"]
         self.assertIsNotNone(measured)
+        interleaved = signed.replace("FTPS_UPLOAD=PASS", "PSE_STAGE name=runtime_env elapsed_ms=4800 exit=0\nFTPS_UPLOAD=PASS")
+        self.assertEqual(scorecard.parse_ftps_release_phases(interleaved, 2032324), measured)
         self.assertEqual(measured["elapsed_ms"]["transfer"], 18000)
         self.assertEqual(measured["elapsed_ms"]["connect_tls"], 2200)
         self.assertEqual(measured["attempt"], 1)
