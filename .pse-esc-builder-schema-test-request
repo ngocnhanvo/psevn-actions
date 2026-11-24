@@ -10,3 +10,5 @@ NO WEBSITE BUILD. NO FTP. NO CMS WRITE. Source-only final SHA verification after
 2026-10-27 regression for user-observed WordPress database HTML in Menu Inspector; PHP master 5621d9fc; no Astro build or CMS writes.
 
 2026-11-24 PSE Visual Builder source-only regression: Astro master 4230974770bf476a90f992a2a690a091b0ab235f blocks synthetic committed preview cards; PHP master dae09dd950321363adf32f315055949d12b70170 blocks stale mutation until exact component render/refresh. Validate PHP lint, inspector JS, Vitest; NO BUILD/FTP/CMS WRITE.
+
+2026-11-24 PSE Visual Builder source-only latest checkout regression: PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7, Astro master ac18fb00b5f2f7b50d0b421a3a4cb082af653511; check no fake committed preview, stale Add/Delete/Swap guard, JS syntax, PHP lint, Vitest; source-only NO BUILD/FTP/CMS WRITE.
