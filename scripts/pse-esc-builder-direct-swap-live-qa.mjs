@@ -155,6 +155,7 @@ const verifyCloneDryRun=async(tableId)=>{
           const snippet=chosen?raw.slice(chosen.start,chosen.end):'';
           const shape={
             code:String(result.code||response.status),
+            rejectionReason:String(result.data?.reason_code||'not-provided'),
             wpSourceReadable:raw.length>0,
             shortcodeCount:found.length,
             targetCount:found.filter(x=>x.id===target).length,
