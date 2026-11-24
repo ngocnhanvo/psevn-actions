@@ -82,3 +82,10 @@ At 2026-11-25 01:07 local, `psevn-php/master` independently advanced beyond the 
 - **UX scope COMPLETED**, but **whole Visual Builder still PARTIAL**: S2–S4 reference add/edit/delete live isolated Save/readback, S5 automatic query editor, responsive pixel parity across all pages, canonical href/ALT Save→REST→public readback require scoped and auditable acceptance; no admin/content writes were made just for proof.
 
 **Trạng thái tổng thể: PARTIAL — chưa hoàn tất; UX production-first banner and click-disclose verified DONE.**
+
+## Final post-release direct Preview swap regression — 2026-11-25
+
+- Final deployed production Astro `cec2caa69b7666844bb46bc2d19f08f518d3da02`, PHP `cc10f0a7020746fa2834454eae27c2d38f75250d`; all verified as documented above.
+- Read-only authenticated Playwright [#45460750452](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45460750452) **SUCCESS** after final PHP deployment, no writes or builds.
+- Production direct section swap `pse_00_vi` ↔ `pse_01_vi` `result=PASS swappedTwoOnly=true`; six real physical ESC Table cohorts `PSE_PROMISE`, `PSE_HERO`, `PSE_HOTLINE`, `PSE_FAQ`, `PSE_HISTORY`, `PSE_VISION` all `PASS direct_swap=true physical_rows=true`; `PSE_BUILDER_SWAP_READ_ONLY=PASS NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true`.
+- Final status of production-first unselected visual presentation, click-to-edit source readiness, banner clean, and Preview swap/cancel **DONE (read-only acceptance)**. Whole project remains **PARTIAL** until explicitly authorized actual Save→REST readback and S2–S5 coverage.
