@@ -1,4 +1,3 @@
-2026-11-25 PSE production-first sections direct Preview swap-and-cancel regression, READ ONLY.
-Deployed Astro 7ca3dda14db276f87bea1f5fea9b11a174679ce0 signed activation #45465866289 SUCCESS; deployed PHP 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 guarded #45463291680 SUCCESS.
-Public now shows only the first three sustainability highlights, never a fourth Builder-only card; test source-row 0/1 direct red/green Preview swap+Cancel, hero, hotline, FAQ, history, vision, section source swap, and clone/remove guarded dry-run. A separate safe adapter candidate #45466129675 may be deployed only after CI PASS; keep this run as actual current deployed baseline.
-NO CMS WRITE, NO SAVE, NO BUILD, NO FTP.
+2026-11-25 PSE physical-row visible-card swap final production acceptance (READ ONLY).
+Astro pinned deployed 1f7ac1575719d60ca3f384057fa1210bf0f27cc5 by signed #45467498238 SUCCESS (SIGNED_UNZIP_SUCCESS). PHP production 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 guarded #45463291680.
+Run scripts/pse-esc-builder-direct-swap-live-qa.mjs updated at eb30925349962f87281ee59380fc1ae75f1e8fab; physical Promise visible source rows 1,2,3, hidden metadata row0, validate direct swap-and-Cancel, section swaps, FAQ, Hotline, hero and guarded dry-run cases. No Save, no CMS/DB writes, no FTP/build.
