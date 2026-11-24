@@ -40,3 +40,18 @@
 ### Concurrent source HEAD noted after this PHP-only release
 
 At 2026-11-25 01:07 local, `psevn-php/master` independently advanced beyond the deployed immutable pin `4077306` to `c34fab5a8cb5255cc8318447177b6ddf49fd5783` (commits `710313a`, `be631b5`, `c34fab5`) modifying only `esc-visual-builder.php` and its source test to hide inspector controls until actual Preview selection. Independent source CI [#45456038256](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45456038256) reports SUCCESS; these later files **were not part of this task's two-file FTPS release**. Avoid conflating `PHP master HEAD` with `PHP deployed SHA`, and coordinate the separate pending entrypoint release to avoid an overlapping FTPS write. The guarded reference deletion from `4077306` remains included in newer master history.
+
+## Tiếp nối 2026-11-25 — production-first Preview / click-to-disclose
+
+- Chỉ đạo chủ sở hữu: Builder chưa chọn phải hiển thị như production; hover chỉ đánh dấu nhẹ vùng có thao tác thật, readonly/unsupported không hiện nhãn; nhấp field/item/section mới mở editor; hoán đổi trên Preview, không mở danh sách.
+- Knowledge main PR #36 MERGED commit c2d9be499f6793d91ed5c3bcf8782b0c9745f886; cập nhật AGENTS.md, Theme stack, CHANGELOG.
+- Astro master HEAD 522da7040c55c35e6ae22efeae7f2f6821bc268d: bỏ global crosshair, gray readonly hover, nhãn hover nổi; chỉ 1px nhẹ cho editable; giữ Preview interactions/source guards.
+- PHP master HEAD c34fab5a8cb5255cc8318447177b6ddf49fd5783: ẩn technical và section toolbar trước chọn, hiện sau authenticated iframe section/item/menu/image/footer selection; PHP regression test.
+- SOURCE_CI_PASS: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45456038256 (PHP source/unit, Astro Vitest/parser; NO BUILD/NO CMS WRITE).
+- PHP_PRODUCTION_DEPLOY_PASS: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45456231054 (pinned PHP, TLS SHA256 readback, changed=1 checked=20 cleanup_pending=0, NO ASTRO BUILD/NO CMS WRITE).
+- WORDPRESS_TRIGGER_PASS: https://github.com/ngocnhanvo/psevn-actions/actions/runs/45456288303 . Astro build/deploy https://github.com/ngocnhanvo/psevn-actions/actions/runs/45456461566 was IN_PROGRESS when this checkpoint was written; no activation claim yet.
+- Added read-only Playwright assertions to scripts/pse-esc-builder-skeleton-live-qa.mjs for pre-click tools hidden, readonly hover silent, click reveals tools; run from existing .pse-esc-builder-skeleton-qa-request only AFTER deploy.
+- STILL UNVERIFIED: full public/Preview pixel parity desktop/mobile, actual CMS Save/readback, S2-S5 picker/autoconfig, all URL/media fields. Source CI is not CMS Save.
+- Next: require Astro deploy SUCCESS with pin and runtime guard, then run authenticated read-only Playwright and reconcile failures. Any CMS Save requires isolated approved write scope, readback and rollback.
+
+**Trạng thái checkpoint: PARTIAL — chưa hoàn tất.**
