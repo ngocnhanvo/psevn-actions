@@ -1,0 +1,62 @@
+name: PSE old Actions run history cleanup
+on:
+  workflow_dispatch:
+    inputs:
+      cutoff:
+        description: Delete eligible completed runs strictly before this UTC date (YYYY-MM-DD)
+        required: true
+        type: string
+      apply:
+        description: Permanently delete eligible old run history (default is preview)
+        required: true
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - .pse-actions-history-cleanup-request
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: pse-actions-history-cleanup
+  cancel-in-progress: false
+jobs:
+  prune:
+    if: github.repository == 'ngocnhanvo/psevn-actions' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate selection and fail-closed cleanup rules
+        run: |
+          python3 -m py_compile scripts/pse-actions-history-cleanup.py
+          python3 scripts/pse-actions-history-cleanup.py --self-test
+      - name: Inventory old runs and prune eligible history only
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_CUTOFF: ${{ inputs.cutoff }}
+          INPUT_APPLY: ${{ inputs.apply }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            read -r cutoff mode extra < .pse-actions-history-cleanup-request
+            [[ "$mode" == "apply" && -z "${extra:-}" ]]
+          else
+            cutoff="$INPUT_CUTOFF"
+            mode=preview
+            if [[ "$INPUT_APPLY" == "true" ]]; then mode=apply; fi
+          fi
+          python3 -u scripts/pse-actions-history-cleanup.py "$cutoff" "$mode"
+      - name: Preserve cleanup audit metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pse-actions-history-cleanup-audit
+          path: .pse-actions-history-audit.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 90
