@@ -18,3 +18,5 @@ NO WEBSITE BUILD. NO FTP. NO CMS WRITE. Source-only final SHA verification after
 2026-11-24 PSE source-only Builder final patch pin PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7; Astro master e9a68ebc618818567105f89e07efd9806bd6eac1. Validate temporary draft cards do not claim physical ESC rows, pending edits block controls, PHP stale locks, all current tests. NO BUILD/FTP/CMS WRITE.
 
 2026-11-24 Visual Builder source-only QA after group-aware Hotline preview: Astro master df391d032f975aba50ec987f92e4dc68e5feb876; PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7. Check hotline swaps across groups, cancel, nested cell source row, unsafe source marker rejection, pending preview and stale actions. NO BUILD / FTP / CMS WRITE.
+
+2026-11-24 PSE final source-only Visual Builder regression pin: Astro master 7559a5fdf6c1815fb44f64969357123f4c4e042b, PHP master 0bc22d4b93eb7015134e6fb8b8f7816111cc47f7. Verify grouped hotline item swap, cancel and saved mode, physical cell-row anchors, pending/unrendered item read-only protection, original PHP item manager and section-order regression. No Astro build, FTP or CMS writes.
