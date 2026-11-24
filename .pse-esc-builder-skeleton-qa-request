@@ -1,4 +1,4 @@
-2026-11-25 PSE Visual Builder useful-link href draft cross-origin QA correction, READ ONLY.
-Production Astro b86b4823116654317b96386ec359e06c4e9a2a3e verified #45464017250, production PHP 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 verified #45463291680. Public vs Builder useful links count/links parity PASS in #45464372132, then first draft assertion timed out because QA script mistakenly executed page.waitForFunction in WordPress parent instead of Astro iframe. No confirmed application bug from that run.
-New Actions script ed521072b99426b9d13d9dd5f5bd62d5e106c81f uses iframe contentFrame().waitForFunction for draft and Cancel. Reverify visual parity, native href click, safe valid draft, CANCEL and unsafe-save guard, skeleton/footer regression. Source-only relative URL candidate and wider section parity fixes remain un-deployed; this QA checks existing pin only.
-NO CONTENT/DB WRITES, NO SAVE, NO BUILD, NO FTPS.
+2026-11-25 PSE S1 sections production-first real website parity after #45465866289.
+Deployed Astro 7ca3dda14db276f87bea1f5fea9b11a174679ce0 signed activation SUCCESS; PHP 5bdbfcb1ca7da0a1822d7c0eff938bffabf37746 FTPS readback PASS.
+Current authenticated read-only Playwright scripts/pse-esc-builder-skeleton-live-qa.mjs compares public vs Preview utility links, latest-news tab labels, exactly three sustainability highlights, no query chips/fake icon/image, plus actual href click-valid draft-Cancel-unsafe-save guard, banner and footer rapid click.
+NO CMS WRITE, NO SAVE, NO BUILD, NO FTP.
