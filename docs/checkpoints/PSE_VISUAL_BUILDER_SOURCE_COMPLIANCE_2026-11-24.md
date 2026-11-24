@@ -107,3 +107,34 @@ Status: PARTIAL. This checkpoint records exact source / deployment evidence and 
 - **PSE S5 News local field mapping:** `Pse_01` query template chips expose only exact original ESC Table local row fields; WordPress Posts/results remain readonly. Other API reference writers are not yet implemented and must not be conflated with this.
 - **Outstanding BUILDER_GAP (remain PARTIAL):** mismatch in live Page PHP clone wrapper; Page add and visibility; independent table source duplication; S2/S3/S4 manual reference picker/writer and exact API identity; S5 typed generic query filter/limit/sort; source-specific exact Preview insert/delete re-render beyond supported adapters; isolated authorized CMS Save/readback/reload/public QA; cross-locale and accessibility mobile section/item contract. A green CI and successful deployment do NOT clear those functional gaps.
 
+
+## Continuation — 2026-11-24 17:14Z: Section root removal production & source-honest acceptance
+
+### Exact verified production source
+- `psevn-astro@master` **`244c1f8d5a4b7a89f770632511f49b93bf79f482`** — native WordPress Build Website request [#45445069024](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45445069024) SUCCESS, same existing signed Astro production deploy [#45445298696](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45445298696) SUCCESS; log `PSE_DEPLOY_COMMIT=244c1f8...`, `SIGNED_UNZIP_SUCCESS`, `PSE_STAGE name=activate exit=0`, `PSE_RUNTIME_ENV_FTPS=PASS state=unchanged`.
+- `psevn-php@master` **`4c72855595340fb378fba1159b0ee751e4ee9288`** — protected FTPS [#45444724893](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45444724893) SUCCESS; `includes/section-order.php` SHA-256 readback PASS, `changed=1 checked=20 cleanup_pending=0`. This source includes the earlier same-table selection identity guard in `item-section-ui.php` (source released and checksum-verified [#45443189330](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45443189330)).
+- `psevn-actions@main`: protected marker request `33edd1310f4b7a75d3fc3cce5f35745f52b658bf`, read-only QA marker `348d76a26e6ea0cb612fe61d6c6bb98efc98b2f6`, Playwright script revision `40e3f3197389b0aee1245fe66a6094c4878757d8`.
+- **Source-only CI** [#45444490855](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45444490855) SUCCESS, **111/111 Astro Vitest + PHP unit/JS ticket + source compiler**; no CMS writes/FTP/Astro build.
+
+### Actual WordPress authenticated acceptance — NO CMS content writes
+- **PASS** [#45445760199](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45445760199), protected WordPress Page and Astro Preview, source-only/read-only:
+  1. Section `pse_00_vi` red source, `pse_01_vi` green target; direct two-section swap in iframe and Cancel: `PSE_BUILDER_SECTION_SWAP_LIVE ... result=PASS swappedTwoOnly=true`.
+  2. Page `80932` `pse_hotline_vi`: shared-source duplicate Preview, strict WordPress Page REST `dry_run:true` checks unchanged Page version and item counts, Cancel restores original DOM: PASS.
+  3. Same Page Hotline: PHP `remove-section dry_run:true` verifies native physical shortcode and returns `remove_mode=shortcode_only`; iframe removes only native shortcode section (not WordPress HTML-part siblings), Cancel restores. `PSE_BUILDER_SECTION_REMOVAL_LIVE ... result=PASS serverDryRun=true pageVersionUnchanged=true previewCancelled=true noCmsWrite=true`.
+  4. FAQ `pse_faq_vi` and Vision `pse_vision_vi` generated/global HTML IDs: shared-source clone **REJECTED_UNSAFE_WRAPPER** deliberately; no CMS write, not accepted as working clone.
+- Static S1 item direct swap+Cancel six sections still previously **PASS** [#45431656468](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45431656468); this latest QA `PSE_CLONE_DIAG_ONLY=1` intentionally did not rerun six cases.
+- **Do not claim SAVE_PASS**: no actual authorized business WordPress Page or ESC Table record was changed; all removal/duplication persistence writers are validated in PHP isolated/unit tests and live no-write preflight. No production Save → REST readback → reload → public order test; no temporary test records created.
+
+### New lifecycle implementation details
+- PHP `section-order.php`: section removal now keeps all unrelated WordPress Editor HTML in top-level root wrapper or unwrapped Page; deletes **only exact shortcode at validated byte range**, validates comment/attribute/raw-text context, optimistic Page hash and reparsed Table IDs before writing; `dry_run` computes same transaction without write; explicit `remove_mode=shortcode_only|wrapper`. PHP Page-only shared-source clone remains opt-in with strict server no-write preflight and unchanged TablePress source.
+- PHP `item-section-ui.php`: Inspector preflights removal/clone by authenticated WordPress REST, matches occurrence+table+version+mode, then communicates Preview ack, only then Save; failed/stale events rollback. On a new iframe event lacking validated `sectionKey` or source ownership, clears old occurrence/locks item mutation **even if Table ID did not change**.
+- Astro `builderSectionDrafts.ts`: root removal in `shortcode_only` mode detaches only the actual ExtractHTML table wrapper, preserves two WordPress Editor HTML-part spans; Cancel restores exact DOM; existing isolated-wrapper mode unchanged. JSDOM covers both and source ownership.
+
+### Remaining BUILDER_GAP — PARTIAL
+1. S2 Product/Page manual references, S3 ProductCategory references, S4 REST manual references: the PHP item writer still rejects nonempty `meta.api` globally. Must add typed reference-row picker + exact source version/ID writer, preserve local fields, keep Product/Term/Post records readonly, support red/green reference card swap in actual Preview. Avoid treating expanded/fetched API card index as physical TablePress row.
+2. S5 automatic queries: typed filter/limit/sort/template local editor incomplete; never allow manual add/delete/swap of generated remote cards.
+3. Section add via verified theme registry, section show/hide with source-backed persistence, independent-table source clone are missing. Shared-source clone only works for safe wrappers (Hotline); FAQ/Vision with DOM IDs safely reject.
+4. Broader item insert/delete exact source-backed re-render beyond the supported S1 adapters and nested TablePress, source-aware editability map for all Pages/fields.
+5. Real approved isolated CMS Save/readback/reload/public desktop+mobile, concurrent 409, shortcode after build, Section and S2-S4 tests. Current QA was non-mutating by design.
+6. Checkpoint is completion evidence **for the above S1/section Preview scopes only**, not implementation or acceptance of the full Knowledge S1–S9 contract. **Use `Trạng thái: PARTIAL — chưa hoàn tất`.**
+
