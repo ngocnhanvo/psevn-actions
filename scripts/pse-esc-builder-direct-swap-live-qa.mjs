@@ -5,6 +5,12 @@
  * postMessage bridge, then reverts every preview mutation.
  */
 import {chromium} from 'playwright';
+import {readFileSync} from 'node:fs';
+
+// Short, no-write structural diagnostics do not need to re-run the six
+// already verified item swaps. Full acceptance runs them all again.
+const cloneDiagnosticOnly=readFileSync('.pse-esc-builder-direct-swap-live-qa-request','utf8')
+  .includes('PSE_CLONE_DIAG_ONLY=1');
 
 const env=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,''));
 const values=env.filter(s=>s.startsWith('WC_URL='));
@@ -359,7 +365,7 @@ try{
     }
   }
   console.log('PSE_BUILDER_SECTION_SWAP_LIVE='+JSON.stringify(sectionSwapResults));
-  for(const config of [
+  for(const config of (cloneDiagnosticOnly?[]:[
     {name:'PSE_PROMISE',component:'.pse-promise',
       item:'.pse-promise__highlight[data-esc-builder-row]',ready:false},
     {name:'PSE_HERO',component:'.pse-hero',
@@ -372,7 +378,7 @@ try{
       item:'.pse-history__milestone[data-esc-builder-row]',ready:false},
     {name:'PSE_VISION',pageId:'79303',component:'.pse-vision',
       item:'.pse-vision__card[data-esc-builder-row]',ready:false},
-  ]){
+  ])){
     if(config.pageId){
       // These Page IDs were collected from the real WordPress Page selector
       // by the complete read-only site inventory #45428213552.
@@ -569,7 +575,9 @@ try{
     throw Error('No real PSE Page section can be safely preview-cloned');
 
   console.log('PSE_BUILDER_SWAP_LIVE='+JSON.stringify(results));
-  if(!results.some(s=>s.includes(':PASS')))
+  if(!cloneDiagnosticOnly&&!results.some(s=>s.includes(':PASS')))
     throw Error('No populated live PSE item collection could be rehearsed');
-  console.log('PSE_BUILDER_SWAP_READ_ONLY=PASS NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true');
+  console.log('PSE_BUILDER_SWAP_READ_ONLY='+
+    (cloneDiagnosticOnly?'NOT_TESTED_DIAGNOSTIC_ONLY':'PASS')+
+    ' NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true');
 }finally{await browser.close()}
