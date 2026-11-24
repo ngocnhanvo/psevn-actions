@@ -30,7 +30,11 @@ Status: PARTIAL. This checkpoint records exact source / deployment evidence and 
    - Extended PHP item + Astro source-row CI `https://github.com/ngocnhanvo/psevn-actions/actions/runs/45403973054` SUCCESS.
 4. First PHP live release `https://github.com/ngocnhanvo/psevn-actions/actions/runs/45402751626`: SUCCESS, checksum/readback/rollback-capable FTPS.
 5. First frontend build `https://github.com/ngocnhanvo/psevn-actions/actions/runs/45403146731`: SUCCESS through native WordPress Build Website.
-6. Second frontend build requested through same native WordPress gate at `https://github.com/ngocnhanvo/psevn-actions/actions/runs/45404178279` for Astro master `7685cd88d44e3ddd76b838d14230f089fcd43f31`. Confirm resulting production deploy run and actual pinned SHA; do not mark as deployed before success.
+6. Second frontend build source `7685cd88d44e3ddd76b838d14230f089fcd43f31`:
+   - Normal WordPress Build Website `#45404178279` correctly declined `NO_PENDING_CHANGES` (source-only change; pending_count=0). No unauthorized independent dispatch.
+   - Existing one-time owner Visual Builder exception through authenticated WordPress PHP Build Website `#45404396515` SUCCESS.
+   - Production deployment `https://github.com/ngocnhanvo/psevn-actions/actions/runs/45404569944` initially FAILED protected runtime .env FTPS guard `ValueError`; separate ZIP staged but not activated. Retried same failed job with all security checks intact: **run attempt #2 SUCCESS** (source pin `7685cd88d44e3ddd76b838d14230f089fcd43f31`), includes signed activation of staging bundle, verified FTPS, PHP rollback support. Do not bypass runtime .env guard.
+7. Authenticated read-only WordPress Builder live QA `https://github.com/ngocnhanvo/psevn-actions/actions/runs/45405415059` requested. Check final result; this is not CMS mutation evidence.
 
 ## Remaining work (must not report DONE)
 - S2 Product/Page manual references, S3 ProductCategory refs, S4 REST manual refs: PHP item manager still rejects nonempty `meta.api` entirely. Build source-specific key/reference picker, distinct local field writer, validation of referenced IDs, and test that upstream API data never mutates.
