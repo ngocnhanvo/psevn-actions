@@ -98,6 +98,34 @@ try {
  if(await page.locator('#esc-vb-section-order-open').count()!==1)
    throw Error('Direct Preview section swap inspector missing');
  console.log('PSE_BUILDER_SECTION_REMOVE_CONTROL=PASS selected_preview=true READ_ONLY=true');
+ // PSE homepage latest news has local ESC Table tab configuration but the
+ // fetched Posts themselves belong to WordPress. The normal tab click must
+ // remain interactive, while Alt+click selects the exact local ESC source.
+ const newsTabs=homeFrame.locator('.pse-news [data-pse-news-tab]');
+ const newsCount=await newsTabs.count();
+ if(newsCount>=2){
+   const second=newsTabs.nth(1),first=newsTabs.first();
+   await second.click();
+   if(await second.getAttribute('aria-selected')!=='true')
+     throw Error('PSE_LATEST_NEWS_TAB=FAIL native tab interaction intercepted');
+   await first.click();
+   if(await first.getAttribute('aria-selected')!=='true')
+     throw Error('PSE_LATEST_NEWS_TAB=FAIL returning to first tab');
+   const localCell=first.locator('[data-esc-builder-cell-row="0"][data-esc-builder-cell-field]');
+   if(await localCell.count()!==1)
+     throw Error('PSE_LATEST_NEWS_SOURCE=FAIL first ESC tab label not mapped');
+   const field=await localCell.getAttribute('data-esc-builder-cell-field');
+   if(!['label','title'].includes(field||''))
+     throw Error('PSE_LATEST_NEWS_SOURCE=FAIL unsupported local field '+field);
+   await localCell.click({modifiers:['Alt']});
+   await page.waitForFunction(expected=>
+     document.querySelector('#esc-vb-edit-row')?.value===expected,
+     '0:'+field,{timeout:20000});
+   console.log('PSE_LATEST_NEWS_TAB_SOURCE=PASS normal_tab=PASS alt_source='+field+
+     ' Posts_API=READ_ONLY no_CMS_write=true');
+ }else{
+   console.log('PSE_LATEST_NEWS_TAB_SOURCE=NOT_TESTED no published news tabs on current Page');
+ }
  // Wave 1 G1/G2/G3 Builder preview smoke (READ ONLY): not a Save test.
  // Header Menu markers and capability cues must exist in the deployed iframe;
  // activating the menu must never switch the inspected WordPress Page.
