@@ -39,6 +39,37 @@ try {
   await page.waitForFunction(()=>typeof window.escVBSelectionBegin==='function' &&
     typeof window.escVBSelectionFinish==='function',null,{timeout:20000});
 
+  // Production-first contract: the authentic Builder opens as an unaltered
+  // production canvas. No inspector tools are expanded before selecting.
+  await frame.locator('[data-esc-vb-region-state="editable"]').first()
+    .waitFor({state:'attached',timeout:20000});
+  const pristine=await page.evaluate(()=>{
+    const app=document.getElementById('esc-vb-app');
+    const hidden=id=>{
+      const el=document.getElementById(id);
+      return Boolean(el && getComputedStyle(el).display==='none');
+    };
+    return {selected:app?.classList.contains('esc-vb-has-selection')||false,
+      sectionControlsHidden:hidden('esc-vb-section-order-panel'),
+      technicalHidden:hidden('esc-vb-inspector-details'),
+      refreshHidden:hidden('esc-vb-refresh-section')};
+  });
+  if(pristine.selected||!pristine.sectionControlsHidden||
+     !pristine.technicalHidden||!pristine.refreshHidden)
+    throw Error('Builder displayed editing tools before a real Preview selection');
+  const hover=await frame.locator('body').evaluate(root=>{
+    const readonly=root.querySelector('[data-esc-vb-region-state="readonly"]') ||
+      root.querySelector('[data-esc-vb-region-state="unsupported"]');
+    const hint=document.getElementById('esc-vb-editability-hint');
+    if(!readonly||!hint)return {verified:false};
+    readonly.dispatchEvent(new PointerEvent('pointerover',{bubbles:true}));
+    return {verified:true,hintHidden:hint.hidden,readonlyCursor:getComputedStyle(readonly).cursor};
+  });
+  if(!hover.verified||!hover.hintHidden||hover.readonlyCursor==='crosshair')
+    throw Error('Readonly region advertises editing on hover');
+  console.log('PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS');
+
+
   // Verify real deployed inspector timer: fast cached data must never flash,
   // stale completion must never close the currently active selection.
   if(process.env.PSE_SKIP_STATIC_SKELETON!=='1'){
@@ -100,6 +131,11 @@ try {
     throw Error('Invalid distinct Footer row markers');
   await assets.nth(0).click();
   await assets.nth(1).click();
+  const afterSelection=await page.evaluate(()=>
+    document.getElementById('esc-vb-app')?.classList.contains('esc-vb-has-selection') &&
+    getComputedStyle(document.getElementById('esc-vb-section-order-panel')).display!=='none');
+  if(!afterSelection)throw Error('Builder did not reveal context tools after Preview click');
+  console.log('PSE_BUILDER_CLICK_TO_DISCLOSE=PASS');
   const inspector=page.locator('#esc-vb-footer-assets-editor');
   await inspector.waitFor({state:'visible',timeout:20000});
   await page.waitForFunction(row=>{
