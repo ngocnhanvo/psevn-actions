@@ -82,7 +82,23 @@ try {
   const relatedText=page.locator('#esc-vb-image-open-text');
   await relatedText.waitFor({state:'visible',timeout:30000});
   await relatedText.click();
-  await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:30000});
+  let textOpened=false;
+  try {
+    await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:7000});
+    textOpened=true;
+  } catch {}
+  if(!textOpened){
+    const diag=await page.evaluate(()=>({
+      bridge:typeof window.escVBOpenItemText,
+      imageOpen:document.getElementById('esc-vb-image-editor')?.style.display,
+      textOpen:document.getElementById('esc-vb-text-editor')?.style.display,
+      textOptions:document.getElementById('esc-vb-edit-row')?.options?.length,
+      sourceStatus:document.getElementById('esc-vb-image-feedback')?.textContent?.includes('Chưa có trình sửa chữ hợp lệ')||false,
+      hasSelection:document.getElementById('esc-vb-app')?.classList.contains('esc-vb-has-selection')||false
+    }));
+    console.log('PSE_BUILDER_HERO_TEXT_BRIDGE_DIAG='+JSON.stringify(diag));
+    throw Error('Related text/link panel was not disclosed after selecting a hero image');
+  }
   await page.waitForFunction(()=>
     (document.querySelector('#esc-vb-edit-row')?.options?.length||0)>0,
     null,{timeout:30000});
