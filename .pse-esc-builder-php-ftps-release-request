@@ -1,2 +1,2 @@
-623426c84f5049c1d04ff108fd02ddc36139939c
-2026-11-24 Visual Builder direct-preview swap safety, dynamic readonly controls and green destination; source-only CI #45402421099 PASS. PHP-only verified FTPS; no Astro build or CMS data writes.
+666761edda6139aa292f36c5c50f2d611125de88
+2026-11-24 Visual Builder source-only CI #45406005569 latest rerun SUCCESS: duplicate section selection/swap, Page-only removal, verified no upstream TablePress delete, PHP syntax and Astro Vitest. Upload exact pinned PHP plugin with FTPS readback and automatic rollback; no Astro build or CMS data writes.
