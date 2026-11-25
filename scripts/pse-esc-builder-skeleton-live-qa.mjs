@@ -550,6 +550,47 @@ try {
       page.getByRole('button',{name:'Mở trang'}).click({timeout:35000})]);
     const part=page.frameLocator('#esc-vb-frame');
     await part.locator(target.selector).first().waitFor({state:'visible',timeout:40000});
+    // Section instance actions are separate from item editors. The PHP
+    // inspector must prove BOTH no-write Page/occurrence dry-runs before
+    // exposing shared-source clone or detach. Unsupported isolated wrappers
+    // never receive a clickable action. No Save is performed here.
+    if(target.name==='FAQ'||target.name==='HOTLINE'){
+      const marker=part.locator('style[data-esc-vb-item-pick-style]');
+      await marker.waitFor({state:'attached',timeout:45000});
+      const source=part.locator(target.selector+'[data-esc-builder-row]').first();
+      await source.click({force:true});
+      await page.waitForFunction(()=>{
+        const panel=document.getElementById('esc-vb-section-order-panel');
+        return panel && ['ready','unsupported','unavailable']
+          .includes(panel.dataset.sectionCaps||'');
+      },null,{timeout:25000});
+      const capability=await page.evaluate(()=>{
+        const panel=document.getElementById('esc-vb-section-order-panel');
+        const detach=document.getElementById('esc-vb-section-remove-open');
+        const clone=document.getElementById('esc-vb-section-duplicate-shared');
+        return {state:panel?.dataset.sectionCaps||'',
+          key:panel?.dataset.sectionCapsKey||'',
+          removeHidden:detach?.hidden,removeDisabled:detach?.disabled,
+          cloneHidden:clone?.hidden,cloneDisabled:clone?.disabled};
+      });
+      if(capability.state!=='ready')
+        throw Error('Section source dry-run did not finish for '+target.name+
+          ': '+JSON.stringify(capability));
+      const canDuplicate=target.name==='HOTLINE';
+      if(canDuplicate?(capability.cloneHidden||capability.cloneDisabled):
+        (!capability.cloneHidden||!capability.cloneDisabled))
+        throw Error('Unverified shared-source section clone leaked on '+target.name+
+          ': '+JSON.stringify(capability));
+      if(target.name==='HOTLINE'&&
+        (capability.removeHidden||capability.removeDisabled))
+        throw Error('Known root-only Page section detach did not unlock: '+
+          JSON.stringify(capability));
+      console.log('PSE_BUILDER_SECTION_SOURCE_CAPABILITIES=PASS page='+target.name+
+        ' dry_run_no_write=PASS shared_clone='+
+        (canDuplicate?'SUPPORTED':'REJECTED_UNSAFE_WRAPPER')+
+        ' remove='+(!capability.removeHidden?'SUPPORTED':'NOT_SUPPORTED')+
+        ' NO_CMS_WRITE=PASS');
+    }
     const previewRows=await part.locator(target.selector).evaluateAll(nodes=>
       nodes.map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim()));
     const sourceRows=await part.locator(target.selector).evaluateAll(nodes=>
