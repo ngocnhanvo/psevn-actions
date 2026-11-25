@@ -362,7 +362,7 @@ try {
    '[data-tablepress-preview="pse_hotline_vi"] [data-esc-builder-cell-field="label"]').first();
  await labelSource.waitFor({state:'visible',timeout:25000});
  const noteRow=await labelSource.getAttribute('data-esc-builder-cell-row');
- if(!/^\\d+$/.test(noteRow||''))throw Error('Hotline label lacks a canonical source row');
+ if(!/^\d+$/.test(noteRow||''))throw Error('Hotline label lacks a canonical source row');
  await labelSource.click({force:true});
  await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:20000});
  await page.waitForFunction(expected=>
