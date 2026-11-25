@@ -521,7 +521,7 @@ try{
       if(ready!=='true'){results.push(config.name+':NOT_TESTED_CONTROLLER_NOT_READY');continue}
     }
     if(config.name==='PSE_PROMISE'){
-      const target=cards.filter('[data-esc-builder-row="'+to+'"]').first();
+      const target=root.locator(config.item+'[data-esc-builder-row="'+to+'"]').first();
       const priorTabindex=await target.getAttribute('tabindex'),requestId=99672;
       try{
         const ready=await previewPickMessage({
