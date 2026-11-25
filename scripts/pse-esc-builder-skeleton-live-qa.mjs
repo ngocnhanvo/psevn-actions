@@ -153,7 +153,10 @@ try {
   await hero.waitFor({state:'visible',timeout:30000});
   const overlayCount=await hero.locator('.pse-hero__builder-fields, [aria-label="Các ô nguồn ESC Table của banner"]').count();
   if(overlayCount)throw Error('Builder still injects banner-only ESC Table text overlays');
-  const heroImage=hero.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]').first();
+  // Carousel advances while extra source-security probes run. Selecting
+  // the *first physical slide* is wrong when it has rotated out of view.
+  // Select the genuinely visible slide on the live Preview instead.
+  const heroImage=hero.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]:visible').first();
   await heroImage.waitFor({state:'visible',timeout:25000});
   await heroImage.click({force:true});
   const staticReferenceTools=await page.evaluate(()=>
