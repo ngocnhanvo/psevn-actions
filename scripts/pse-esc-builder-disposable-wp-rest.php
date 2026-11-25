@@ -53,6 +53,11 @@ function qa_request($action,$params,$expect_error=false) {
 function qa_ref_swap_roundtrip($model,$id) {
     $before=qa_table_rows($model,$id);
     $schema=qa_request('item-schema',['table_id'=>$id]);
+    echo 'PSE_QA_REF_DIAG source='.json_encode(get_option('tablepress_meta_'.$id,[])['api']??'').
+      ' count='.intval($schema['count']??-1).
+      ' can_swap='.json_encode($schema['can_swap']??null).
+      ' row_hashes='.count($schema['row_hashes']??[]).
+      ' collection='.json_encode($schema['collection_mode']??'')."\n";
     qa_assert(($schema['can_swap']??false)===true &&
         count($schema['row_hashes']??[])===2,
         'native reference source ready for guarded swap');
