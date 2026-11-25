@@ -68,6 +68,17 @@ try {
   if(!hover.verified||!hover.hintHidden||hover.readonlyCursor==='crosshair')
     throw Error('Readonly region advertises editing on hover');
   console.log('PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS');
+  // A successful live WordPress source refresh must not create a phantom
+  // 14px blue info strip that shifts the Page relative to public production.
+  // Real synchronization errors stay visible and fail the source-ready QA.
+  const sourceBanner=await frame.locator('[data-esc-builder-refresh-status]')
+    .evaluate(el=>({hidden:el.hidden,ready:el.getAttribute('data-source-ready'),
+      display:getComputedStyle(el).display,role:el.getAttribute('role')}));
+  if(!sourceBanner.hidden||sourceBanner.ready!=='true'||sourceBanner.display!=='none')
+    throw Error('Preview adds a source-success banner or has a failed CMS refresh: '+
+      JSON.stringify(sourceBanner));
+  console.log('PSE_BUILDER_SOURCE_READY_VISUAL_PARITY=PASS success_banner_hidden=PASS');
+
 
   const referenceUi=await page.evaluate(()=>{
     const buttonIds=['esc-vb-reference-replace-open',
