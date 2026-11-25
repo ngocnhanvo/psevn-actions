@@ -1,3 +1,3 @@
-2026-11-25 PSE Visual Builder Preview Escape cancellation source-only acceptance.
-Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d; PHP master e4d3d835a36c18820d5573303e26a77f184809ee.
-Verify only the active Preview pick session can request Escape cancellation; WordPress checks trusted iframe and exact table/source/requestId, delegates to existing no-write Cancel button and restores DOM/tabindex. Forged/stale pick events cannot commit or delete. All old keyboard Enter/Space + direct red/green Preview swap tests must remain passing. PHP generated Inspector JS parse, PHP contract tests, Astro Vitest, Astro parser, Tailwind source-only. NO CMS WRITE, NO ASTRO BUILD, NO FTP.
+2026-11-25 PSE section-order preflight and no-op save protection.
+PHP master 09207b69ae197d5a99c5e537ac43aaba803ceb10; Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
+Run existing source-only CI: PHP lint, items-and-sections.test.php preflights real section transforms without any WordPress revisions, PHP generated UI contract, Astro Vitest/parser/Tailwind. Confirm dry_run section swaps/reorders are read-only and indistinguishable raw shortcode swaps cannot produce a CMS revision. No CMS writes, Astro build or FTP.
