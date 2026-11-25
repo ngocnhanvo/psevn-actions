@@ -1112,6 +1112,94 @@ delete_option('tablepress_meta_'.$faqSource);
 echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_SECTION_COPY_SAVE_READBACK_ROLLBACK=PASS\n";
 echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_COPY_FAILURE_COMPENSATION=PASS\n";
 
+// Real WordPress TinyMCE editor artwork surrounds an S1 shortcode on
+// published PSE Pages. An independent copy MUST be a SECOND canonical
+// wrapper, never inserted inside the original editor badge. The original
+// <img id> is an Editor artifact and may NOT be duplicated.
+$hotlineRows=[
+    ['group','label','phone','note'],['Group','Label','Phone','Note'],
+    ['QA','Hotline QA','0901234567','Native S1'],
+];
+$hotlineTemp=qa_new_table($model,$hotlineRows,'Disposable hotline source');
+qa_assert($model->change_table_id($hotlineTemp,'pse_hotline_vi')===true,
+    'S1 hotline canonical TablePress fixture source');
+$hotlineMeta=['title'=>'Disposable Hotline','api'=>''];
+update_option('tablepress_meta_pse_hotline_vi',$hotlineMeta,false);
+$hotlineEditor='<div class="tablepress-preview-wrap mceNonEditable"'.
+    ' data-table-id="pse_hotline_vi" style="position:relative">'.
+    '<img id="tablepress-img-pse_hotline_vi" src="/editor-photo.jpg" alt="Editor artwork" />'.
+    '<span class="tablepress-preview-badge">[table id=pse_hotline_vi /]</span></div>';
+$hotlinePage=wp_insert_post([
+    'post_type'=>'page','post_status'=>'publish',
+    'post_title'=>'Disposable native PSE Editor wrapper',
+    'post_content'=>$hotlineEditor,
+],true);
+qa_assert(!is_wp_error($hotlinePage),'disposable TinyMCE Page created');
+update_post_meta((int)$hotlinePage,'product_lang','vi');
+$GLOBALS['qa_page']=(int)$hotlinePage;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$hotlinePage,'user_id'=>get_current_user_id()
+],120);
+$hotlineRead=qa_request('section-order',[]);
+qa_assert(count($hotlineRead['items'])===1 &&
+    $hotlineRead['items'][0]['table_id']==='pse_hotline_vi',
+    'one original shortcode under true Editor image wrapper');
+$hotlineOriginalRows=qa_table_rows($model,'pse_hotline_vi');
+$hotlineParams=[
+    'section_key'=>$hotlineRead['items'][0]['id'],
+    'expected_version'=>$hotlineRead['version'],
+    'share_source'=>false
+];
+$hotlineDry=qa_request('duplicate-section-independent',$hotlineParams+[
+    'dry_run'=>true
+]);
+qa_assert(($hotlineDry['checked']??false)===true &&
+    ($hotlineDry['renderer']??'')==='Pse_hotline' &&
+    ($hotlineDry['no_write']??false)===true &&
+    get_post($hotlinePage)->post_content===$hotlineEditor,
+    'exact TinyMCE source dry_run does not Save or duplicate artifacts');
+$hotlineCopied=qa_request('duplicate-section-independent',$hotlineParams);
+$hotlineNew=(string)($hotlineCopied['new_table_id']??'');
+$hotlineMinimal='<div class="tablepress-preview-wrap" data-table-id="'.
+    $hotlineNew.'"><span class="tablepress-preview-badge">[table id='.
+    $hotlineNew.' /]</span></div>';
+$hotlineSaved=(string)get_post($hotlinePage)->post_content;
+qa_assert(($hotlineCopied['saved']??false)===true &&
+    (bool)preg_match('/^escvb_[a-f0-9]{16}$/D',$hotlineNew) &&
+    $hotlineSaved===$hotlineEditor.$hotlineMinimal &&
+    substr_count($hotlineSaved,'tablepress-img-pse_hotline_vi')===1 &&
+    qa_table_rows($model,$hotlineNew)===$hotlineOriginalRows &&
+    qa_table_rows($model,'pse_hotline_vi')===$hotlineRows,
+    'two separate normalizable Editor wrappers and physically isolated native rows');
+$hotlineAfter=qa_request('section-order',[]);
+qa_assert(count($hotlineAfter['items'])===2 &&
+    $hotlineAfter['version']===$hotlineCopied['version'],
+    'WordPress Page source with new S1 TablePress shortcode independently read back');
+$hotlineRemove=qa_request('remove-section',[
+    'section_key'=>$hotlineNew,
+    'expected_version'=>$hotlineAfter['version']
+]);
+qa_assert(($hotlineRemove['saved']??false)===true &&
+    ($hotlineRemove['remove_mode']??'')==='wrapper' &&
+    get_post($hotlinePage)->post_content===$hotlineEditor &&
+    qa_table_rows($model,'pse_hotline_vi')===$hotlineOriginalRows,
+    'TinyMCE independent Clone -> Remove native exact original Page bytes');
+qa_assert($model->table_exists($hotlineNew)===true,
+    'Page source detach never deletes independent TablePress data');
+delete_option('tablepress_meta_'.$hotlineNew);
+qa_assert($model->delete($hotlineNew)===true &&
+    !$model->table_exists($hotlineNew) &&
+    $model->delete('pse_hotline_vi')===true,
+    'cleanup only disposable hotlines and detached source');
+delete_option('tablepress_meta_pse_hotline_vi');
+$GLOBALS['qa_page']=(int)$page;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$page,'user_id'=>get_current_user_id()
+],120);
+echo "PSE_DISPOSABLE_NATIVE_S1_EDITOR_WRAPPER_CLONE_REMOVE=PASS NATIVE_EXACT_BYTES=PASS\n";
+
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S1_S2_S3_S4_S5_SAVE_READBACK_ROLLBACK=PASS\n";
