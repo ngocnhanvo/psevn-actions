@@ -1,3 +1,3 @@
-2026-11-25 PSE Page section source fake-shortcode safety rerun.
-PHP master 4bf3b35ce3e423849bbb1375b813d22130b95cfe. Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
-Prior CI #45551304314 failed on immediate textarea fake section boundary; PHP scanner now verifies still-open raw scope after scanner reaches shortcode byte position. Tests cover immediate script/style/noscript/textarea/template, comments, quoted HTML attrs, authentic two-section swap + dry_run. Run source-only PHP/JS + Astro Vitest/parser/Tailwind. NO CMS WRITE, NO FTPS, NO BUILD.
+2026-11-25 PSE Visual Builder source-owned ESC Table authorization hardening.
+PHP master 950aeebd568ba49d3a6518c7cf81be1f3e0341aa. Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
+Source-only PHP tests require editor/page owner to match exact physical native shortcode text, rejecting lookalikes inside HTML comments, quoted attribute with '>', script/style/textarea/template/noscript, immediate and pseudo closing raw tag; every forged source must reject real REST Save and preserve source table. Genuine section with unrelated comment remains authorized. Section swap uses this same guard when real plugin loads all PHP. Run full PHP native/contract + generated JS, Astro Vitest/parser/Tailwind. No CMS writes, deploy or Astro build.
