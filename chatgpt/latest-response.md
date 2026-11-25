@@ -1,46 +1,49 @@
 # PSE Visual Builder — Phản hồi mới nhất
 
 - Ngày: 2026-11-25 (Asia/Ho_Chi_Minh)
-- Project: `pse.vn`
-- Repository ghi: `ngocnhanvo/psevn-actions@main`
-- PHP production: `ngocnhanvo/psevn-php@master` `796b00dbad6c1f292601b7b54448dcc496eac1fc`
-- Astro source: `ngocnhanvo/psevn-astro@master` `b16a0bc9da447a76a23ca0abe3bae5602dd85e51`; Astro runtime production signed SHA `9a80fa78f6c893d0989761c083a42a0acbbd0141`
-- Source CI: `45561807982` SUCCESS
-- Guarded PHP FTPS: `45562079421` SUCCESS
-- Real Inspector read-only E2E: `45562326752` SUCCESS
-- Checkpoint commit: `cd06b8960c15b8a86e39d8aa6647888c3545f2d8`
-- Kết luận: UI_PASS / PRODUCTION_READ_ONLY_PASS; SAVE_INTEGRITY_PASS chưa kiểm chứng.
+- Project: pse.vn
+- Repository: ngocnhanvo/psevn-actions@main
+- Checkpoint: f1b64136e86d609c95ec0649d70779611bf19d41
+- PHP production: 796b00dbad6c1f292601b7b54448dcc496eac1fc
+- Astro source: b16a0bc9da447a76a23ca0abe3bae5602dd85e51
+- Current QA run: 45565364105 IN_PROGRESS at last observation
 
-## Nguyên văn phản hồi cuối cùng
+## Nội dung phản hồi
 
-**Chức năng “Thêm section sau vị trí chọn” đã PASS trên production.**
+### 1. Khôi phục trạng thái dự án PSE
 
-[Playwright #45560060922](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45560060922) xác nhận:
+Đã đối chiếu được HEAD của cả ba repository và checkpoint mới nhất ngày 25/11/2026.
 
-- Chọn section nguồn `pse_02_vi`, đặt sau `pse_00_vi` trực tiếp trên Preview: **PASS**.
-- WordPress xác minh nguồn và vị trí chèn bằng `dry_run`: **PASS**.
-- Hủy bản nháp và khôi phục Preview: **PASS**.
-- Hoán đổi section, sáu nhóm item và thao tác Enter/Space/Escape: **PASS**.
+| Repository | Branch | Commit mới nhất lúc bắt đầu |
+|---|---|---|
+| PSE Astro | master | b16a0bc |
+| PSE PHP | master | 796b00d |
+| PSE Actions | main | 2f88c2f |
 
-Kết quả kiểm thử: `NO_CMS_WRITE=true`, `NO_SAVE=true`, `PREVIEW_CANCELLED=true`. Bản sửa PHP đã được phát hành và xác minh SHA256; Astro production không cần build lại.
+[Checkpoint Visual Builder mới nhất](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md)
 
-Đây là nghiệm thu **Preview và kiểm tra lưu giả lập**, chưa phải nghiệm thu một lần Save thật lên WordPress.
+### 2. Những phần phiên trước đã hoàn thành
 
-**Inspector đã nghiệm thu thành công trên production.**
+- Hoán đổi hai section trực tiếp trên Preview.
+- Hoán đổi item của 6 nhóm dữ liệu S1.
+- Chọn nguồn và vị trí chèn section dùng chung ESC Table.
+- Thao tác bàn phím, hủy thao tác và khôi phục Preview.
+- Triển khai bản vá PHP lên production.
+- Kiểm thử Astro: 157/157 test thành công.
 
-[Playwright #45562326752](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45562326752) xác nhận toàn bộ thao tác thực tế:
+[Playwright production gần nhất](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45562326752) SUCCESS, kiểm thử không ghi CMS, chưa phải nghiệm thu Save thật.
 
-- Nhấp section nguồn `pse_02_vi`.
-- Nút **Thêm section sau vị trí chọn (chung nguồn)** xuất hiện và sử dụng được.
-- Nhấp section đích `pse_00_vi` ngay trên Preview; nguồn viền đỏ, đích viền xanh.
-- Nút xác nhận được mở đúng điều kiện; bấm **Hủy** khôi phục trạng thái, không lưu WordPress.
+### 3. Công việc thực hiện trong phiên này
 
-Kết quả: `PSE_BUILDER_SECTION_INSERT_INSPECTOR_LIVE=PASS`. Các bài kiểm tra hoán đổi section, item, bàn phím và gỡ/nhân bản an toàn vẫn PASS.
+- Bổ sung bài test đối chiếu Preview/public ở cùng kích thước 1440px và 390px, 5 vùng giao diện, dung sai 2px. Commit ea0f0f4.
+- Run #45565163442 FAIL do kích thước iframe không khớp; chưa đến bước so sánh. Sửa test-only commit 521d60d (content-box, border 0 và log chẩn đoán).
+- Run #45565364105 đang chạy tại lần kiểm tra cuối. Không ghi CMS, không sửa Astro/PHP, không build/deploy lại.
+- Checkpoint f1b6413 đã ghi rõ lỗi, retry và bước tiếp theo.
 
-Mình đã cập nhật [checkpoint Visual Builder](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md) với commit `cd06b8960c15b8a86e39d8aa6647888c3545f2d8`. Phiên bản PHP đã phát hành: `796b00dbad6c1f292601b7b54448dcc496eac1fc`, [FTPS #45562079421](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45562079421) **SUCCESS**. [CI #45561807982](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45561807982) **PASS 157/157 bài test**.
+Chưa hoàn tất: đọc kết quả run retry, sửa sai lệch nếu có, ẩn/hiện section, clone nguồn độc lập, ESC Table lồng nhau, nghiệm thu Save thật và nguồn S2–S5. Bài QA hiện tại chỉ so hình học/nội dung, chưa so toàn bộ pixel. Đã rà các core Knowledge nhưng chưa đọc lại đầy đủ mọi tài liệu stack, và file latest-response được đọc muộn trong lượt này.
 
-**Phần vẫn chưa hoàn tất của toàn bộ Visual Builder:** ẩn/hiện section với cơ chế lưu và render thật; nhân bản ESC Table với **nguồn độc lập**; xử lý bảng ESC lồng nhau; các hợp đồng nguồn S2–S5 còn thiếu dữ liệu kiểm thử; và nghiệm thu Save thật → REST readback → Preview/public desktop/mobile → rollback trên dữ liệu đã được phép thay đổi. Mình không tạo dữ liệu giả hay ghi thử lên CMS production để báo PASS. Tính năng thêm section dùng chung nguồn đã hoàn tất ở mức **UI + Preview + dry-run production**, không đồng nghĩa đã nghiệm thu Save thật.
+Lưu phản hồi: ghi tại chatgpt/latest-response.md trên main.
 
-Chế độ code: auto-build  
-Cổng ghi source: bypass  
+Chế độ code: auto-build
+Cổng ghi source: bypass
 Trạng thái: PARTIAL — chưa hoàn tất
