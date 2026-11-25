@@ -491,14 +491,20 @@ set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
 ],120);
 
 // S8 genuine WordPress Menu and ACF Info owner, not a mock of WordPress
-// records. The active PSE theme supplies the real locale/menu resolvers.
+// records. Load the exact PSE theme menu module without its unrelated theme
+// group creation hooks, which require migrated site data absent in the runner.
+if (!function_exists('esc_pse_page_lang')) {
+    $pseMenuFile=WP_CONTENT_DIR.'/themes/vibe-code-theme/inc/tools/menu.php';
+    qa_assert(is_file($pseMenuFile),'real PSE Menu helper module is present');
+    require_once $pseMenuFile;
+}
 qa_assert(function_exists('esc_pse_page_lang') &&
     function_exists('esc_pse_find_menu_object') &&
     function_exists('esc_pse_get_menu_meta') &&
     function_exists('esc_pse_get_menu_item_link_mode') &&
     function_exists('acf_add_local_field_group') &&
     function_exists('update_field'),
-    'production PSE theme and real ACF active for S8 native tests');
+    'bundled PSE Menu resolver and real ACF active for S8 native tests');
 update_post_meta((int)$page,'product_lang','vi');
 qa_assert(esc_pse_page_lang((int)$page)==='vi',
     'S8 source Page language uses real PSE theme resolver');

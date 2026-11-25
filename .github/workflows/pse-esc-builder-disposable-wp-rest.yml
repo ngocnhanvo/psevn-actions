@@ -80,7 +80,9 @@ jobs:
           wp core install --path=php --url=https://127.0.0.1:8099 --title="PSE disposable" --admin_user=pse_qa --admin_password=qa-only --admin_email=qa@example.invalid --skip-email --quiet
           wp plugin activate esc-table esc-visual-builder --path=php --quiet
           wp plugin activate advanced-custom-fields --path=php --quiet
-          wp theme activate vibe-code-theme --path=php --quiet
+          # The full production theme loads unrelated TablePress group hooks
+          # on blank WP installs. Load only its actual source menu module in
+          # the disposable REST harness rather than changing production theme.
           # Real PSE REST origin uses pretty /wp-json/wp/v2/posts; default
           # clean WP installs otherwise expose ?rest_route= and fail closed.
           wp rewrite structure '/%postname%/' --path=php --quiet
