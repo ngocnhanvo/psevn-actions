@@ -1,4 +1,4 @@
-ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb
-2026-11-25 PSE Visual Builder WordPress Page section swap exact-source dry_run preflight.
-Source-only CI #45549580775 SUCCESS on pinned PHP master ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb. PHP section-order.php now predicts exact version and two-position swap without writes; Inspector uses no-write preflight and blocks stale/mismatched/no-op Save; PHP source and Inspector ticket contract tests PASS, Astro 26 suites/150 tests PASS.
-Deploy only changed Visual Builder PHP plugin files via existing guarded FTPS, verify SHA256 readback and rollback/cleanup. NO CMS CONTENT WRITE, NO ASTRO BUILD. Postrelease authenticated read-only Playwright follows in existing workflow.
+4bf3b35ce3e423849bbb1375b813d22130b95cfe
+2026-11-25 PSE Visual Builder section source context hardening (PHP only).
+Source-only CI #45551437442 SUCCESS against PHP master 4bf3b35ce3e423849bbb1375b813d22130b95cfe and Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d. PHP scanner excludes shortcode lookalikes inside HTML comments, quoted attributes even when containing '>', and script/style/textarea/template/noscript raw-text scopes including immediately adjacent tags. Page source reader returns no editable section candidates when ambiguous; dry_run and real Page swap writer both fail closed; existing valid Page source swap remains supported. PHP lint/contract, Astro Vitest 26 suites 150 tests, parser, Tailwind PASS.
+Deploy only actually changed Visual Builder PHP plugin files using existing guarded FTPS, verify SHA256 readback + rollback and cleanup. NO CMS CONTENT WRITE; NO ASTRO BUILD.
