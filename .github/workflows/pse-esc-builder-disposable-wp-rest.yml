@@ -49,7 +49,7 @@ jobs:
           test -f php/wp-settings.php
           php -l scripts/pse-esc-builder-disposable-wp-rest.php
           wp config create --path=php --dbname=pse_builder_qa --dbuser=pseqa --dbpass=qa-local-only --dbhost=127.0.0.1 --skip-check --quiet
-          wp core install --path=php --url=http://127.0.0.1:8099 --title="PSE disposable" --admin_user=pse_qa --admin_password=qa-only --admin_email=qa@example.invalid --skip-email --quiet
+          wp core install --path=php --url=https://127.0.0.1:8099 --title="PSE disposable" --admin_user=pse_qa --admin_password=qa-only --admin_email=qa@example.invalid --skip-email --quiet
           wp plugin activate esc-table esc-visual-builder --path=php --quiet
       - name: Authenticated source Save readback and rollback
         shell: bash

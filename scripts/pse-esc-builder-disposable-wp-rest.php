@@ -4,7 +4,7 @@
  * This file refuses any non-loopback WP installation.
  */
 if (!defined('WP_CLI') || !WP_CLI || getenv('PSE_DISPOSABLE_WP')!=='1' ||
-    !preg_match('~^http://127\.0\.0\.1:8099/?$~D',(string)get_option('home'))) {
+    !preg_match('~^https://127\.0\.0\.1:8099/?$~D',(string)get_option('home'))) {
     throw new RuntimeException('Refusing non-disposable WordPress execution');
 }
 function qa_assert($condition,$message) {
@@ -50,6 +50,30 @@ function qa_request($action,$params,$expect_error=false) {
     }
     return $data;
 }
+function qa_ref_swap_roundtrip($model,$id) {
+    $before=qa_table_rows($model,$id);
+    $schema=qa_request('item-schema',['table_id'=>$id]);
+    qa_assert(($schema['can_swap']??false)===true &&
+        count($schema['row_hashes']??[])===2,
+        'native reference source ready for guarded swap');
+    $res=qa_request('swap-items',[
+        'table_id'=>$id,'from_row'=>0,'to_row'=>1,
+        'expected_version'=>$schema['version'],
+        'expected_row_hashes'=>$schema['row_hashes']
+    ]);
+    $swapped=qa_table_rows($model,$id);
+    qa_assert(($res['saved']??false)===true &&
+        $swapped[2]===$before[3] && $swapped[3]===$before[2],
+        'S2/S3/S4 physical reference Save/readback');
+    $now=qa_request('item-schema',['table_id'=>$id]);
+    qa_request('swap-items',[
+        'table_id'=>$id,'from_row'=>0,'to_row'=>1,
+        'expected_version'=>$now['version'],
+        'expected_row_hashes'=>$now['row_hashes']
+    ]);
+    qa_assert(qa_table_rows($model,$id)===$before,
+        'S2/S3/S4 exact original reference row rollback');
+}
 $child=qa_new_table($model,[
     ['label','visible'],['Label','Visibility'],
     ['Nested A','1'],['Nested B','1']
@@ -64,10 +88,49 @@ $query=qa_new_table($model,[
     ['','','','',''],
     ['Latest news','tin-tuc','5','desc','date']
 ],'Query config');
+// S2/S3/S4 native manual references use published local WordPress owners.
+$ref_pages=[];
+foreach (['Published QA Page A','Published QA Page B'] as $name) {
+    $id=wp_insert_post(['post_type'=>'page','post_status'=>'publish',
+        'post_title'=>$name,'post_content'=>'Local reference'],true);
+    qa_assert(!is_wp_error($id),'local published Page');
+    $ref_pages[]=(int)$id;
+}
+$ref_posts=[];
+foreach (['Published QA Post A','Published QA Post B'] as $name) {
+    $id=wp_insert_post(['post_type'=>'post','post_status'=>'publish',
+        'post_title'=>$name,'post_content'=>'Local post'],true);
+    qa_assert(!is_wp_error($id),'local published Post');
+    $ref_posts[]=(int)$id;
+}
+if (!taxonomy_exists('product_cat')) register_taxonomy('product_cat','post');
+$ref_cats=[];
+foreach (['QA Product Category A','QA Product Category B'] as $name) {
+    $term=wp_insert_term($name,'product_cat');
+    qa_assert(!is_wp_error($term),'local product_cat term');
+    $ref_cats[]=(int)$term['term_id'];
+}
+$ref_ids=[];
+foreach ([
+    'S2 Pages'=>['api'=>'Page','ids'=>$ref_pages],
+    'S3 Categories'=>['api'=>'ProductCategory','ids'=>$ref_cats],
+    'S4 Posts'=>['api'=>'/wp-json/wp/v2/posts','ids'=>$ref_posts]
+] as $name=>$ref) {
+    $ids=$ref['ids'];
+    $tid=qa_new_table($model,[
+        ['api-key','api-title','label'],['','',''],
+        [(string)$ids[0],'title','Local A'],[(string)$ids[1],'title','Local B']
+    ],$name);
+    update_option('tablepress_meta_'.$tid,['api'=>$ref['api']]);
+    $ref_ids[]=$tid;
+}
+$qa_page_body='<div>[table id='.$parent.' /]</div>'
+    .'<div>[table id='.$query.' /]</div>';
+foreach ($ref_ids as $id) $qa_page_body.='<div>[table id='.$id.' /]</div>';
 $page=wp_insert_post([
     'post_type'=>'page','post_status'=>'publish',
     'post_title'=>'Local disposable Visual Builder',
-    'post_content'=>'<div>[table id='.$parent.' /]</div><div>[table id='.$query.' /]</div>'
+    'post_content'=>$qa_page_body
 ],true);
 qa_assert(!is_wp_error($page),'disposable Page insert');
 $GLOBALS['qa_page']=(int)$page;
@@ -124,8 +187,8 @@ qa_request('save-text',[
 ]);
 qa_assert(qa_table_rows($model,$query)===$queryBefore,
     'exact S5 query restoration after REST roundtrip');
-qa_assert(get_post($page)->post_content==='<'.
-    'div>[table id='.$parent.' /]</div><div>[table id='.$query.' /]</div>',
-    'Page content untouched during table-only writes');
-echo "PSE_DISPOSABLE_REAL_WORDPRESS_NESTED_S1_S5_SAVE_READBACK_ROLLBACK=PASS\n";
+foreach ($ref_ids as $id) qa_ref_swap_roundtrip($model,$id);
+qa_assert(get_post($page)->post_content===$qa_page_body,
+    'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S1_S2_S3_S4_S5_SAVE_READBACK_ROLLBACK=PASS\n";
 echo "NO_PRODUCTION_CMS_WRITE=true NO_FTP=true NO_ASTRO_BUILD=true\n";
