@@ -41,3 +41,7 @@ Astro production 5ec5a5427dedccce2cb508c06dbd51f2164f33aa, signed deploy #455691
 2026-11-26 01:01 ICT: Postrelease native S1 independent section no-write browser preflight. Astro signed #45668569106 source f4f16f315b8902ced948d37f9ecea87335c3a0c6, PHP guarded FTPS #45669023209 source b32aa0ca2c3440205a9f7f8219594e109ebc247b, source CI #45659556764 PASS, real isolated WP #45659417142 PASS. Verify Page Hotline 80932 eligible duplicate-section-independent dry_run, exact Page version and no real copy; also existing Page/section/Preview guards. NO CMS SAVE, NO TABLE CREATE, NO BUILD.
 PSE_INDEPENDENT_CLONE_LIVE=1
 PSE_CLONE_DIAG_ONLY=1
+
+2026-11-26 01:19 ICT: Repeat exact native S1 Hotline Page 80932 independent copy PREVIEW-ONLY dry_run after real production TinyMCE clone wrapper repair. Astro signed #45668569106 SHA f4f16f315b8902ced948d37f9ecea87335c3a0c6; PHP guarded FTPS #45671269566 SHA 3235413ceffdfbb68c38447b4b918d5a8c7ad46e changed=2 SHA256 PASS. Source CI #45670718103 SUCCESS; ephemeral REST #45671084126 SUCCESS. NO REAL COPIES / NO CMS WRITE / NO BUILD.
+PSE_INDEPENDENT_CLONE_LIVE=1
+PSE_CLONE_DIAG_ONLY=1
