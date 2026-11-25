@@ -591,6 +591,66 @@ try{
     }
   }
   console.log('PSE_BUILDER_SECTION_INSERT_SHARED_DRY_RUN_LIVE='+JSON.stringify(sectionInsertResult));
+  // Exercise the REAL Inspector's new control end-to-end, not only raw
+  // postMessage/REST. Source click reveals safe capability, button chooses
+  // INSERT mode, actual Preview target click shows a green marker; cancel
+  // returns without ever triggering the Save button.
+  const inspectorInsert={result:'NOT_TESTED_NO_SAFE_SOURCE',noCmsWrite:true};
+  if(sectionInsertResult.result==='PASS'){
+    const source=sectionInsertResult.source,targetKey=sectionInsertResult.target;
+    const srcTable=sectionCapability.items.find(x=>x.id===source)?.table_id||source;
+    const dstTable=sectionCapability.items.find(x=>x.id===targetKey)?.table_id||targetKey;
+    const originalOrder=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
+      nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+        .map(n=>n.getAttribute('data-tablepress-preview')));
+    await frame.locator('[data-tablepress-preview="'+srcTable+'"]').first()
+      .click({force:true,position:{x:12,y:12}});
+    const insertButton=page.locator('#esc-vb-section-insert-shared');
+    // The live Editor grants this capability only after both server
+    // source and Preview source checks finish; hidden means no promise.
+    await page.waitForFunction(()=>{
+      const el=document.querySelector('#esc-vb-section-order-panel');
+      return el instanceof HTMLElement&&
+        ['ready','unsupported','unavailable'].includes(el.dataset.sectionCaps||'');
+    },null,{timeout:25000});
+    if(await insertButton.isVisible() && await insertButton.isEnabled()){
+      const approve=dialog=>dialog.accept();
+      page.once('dialog',approve);
+      await insertButton.click();
+      const orderBody=page.locator('#esc-vb-section-order-body');
+      await orderBody.waitFor({state:'visible',timeout:25000});
+      await frame.locator('[data-esc-vb-swap-source]').first()
+        .waitFor({state:'attached',timeout:10000});
+      const target=frame.locator('[data-tablepress-preview="'+dstTable+'"]').first();
+      await target.click({force:true,position:{x:12,y:12}});
+      await page.waitForFunction(()=>{
+        const save=document.querySelector('#esc-vb-section-order-save');
+        return save instanceof HTMLButtonElement&&
+          !save.disabled&&save.textContent?.includes('thêm section');
+      },null,{timeout:15000});
+      if(await frame.locator('[data-esc-vb-swap-target]').count()<1)
+        throw Error('Inspector insert lacks selected green target marker on Preview');
+      // The Save button is deliberately NEVER clicked by this QA.
+      await page.locator('#esc-vb-section-order-cancel').click();
+      await orderBody.waitFor({state:'hidden',timeout:10000});
+      await frame.locator('[data-esc-vb-swap-source],[data-esc-vb-swap-target]')
+        .first().waitFor({state:'detached',timeout:10000});
+      const restored=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
+        nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
+          .map(n=>n.getAttribute('data-tablepress-preview')));
+      if(JSON.stringify(restored)!==JSON.stringify(originalOrder))
+        throw Error('Inspector insertion cancel changed original Page section order');
+      inspectorInsert.result='PASS';
+      inspectorInsert.source=source;
+      inspectorInsert.target=targetKey;
+      inspectorInsert.selectedViaPreview=true;
+      inspectorInsert.cancelled=true;
+    }else{
+      inspectorInsert.result='NOT_TESTED_SOURCE_CAPABILITY_HIDDEN';
+      inspectorInsert.source=source;
+    }
+  }
+  console.log('PSE_BUILDER_SECTION_INSERT_INSPECTOR_LIVE='+JSON.stringify(inspectorInsert));
   const sectionSwapResults={source:'WordPress Page',mode:'read_only_preview'};
   if(sectionPair){
     // Same authenticated REST endpoint used by the Inspector: verify the
