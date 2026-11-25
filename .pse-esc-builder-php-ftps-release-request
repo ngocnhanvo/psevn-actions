@@ -1,5 +1,4 @@
-02a0e6cc670fcb302168374db1e7573545c8bb8a
-2026-11-25 PSE native reference picker final inspector concurrency guard patch.
-Previous production source e7210891178e0f3dd5c1e6f8ae0d34c9d537f921 deployed #45512712788 SUCCESS, FTPS activated item-manager and item-section-ui checksums PASS.
-Current source-only CI #45512929080 SUCCESS at 02a0e6cc..., PHP real S2/S3 reference selected item writer tests, generated JavaScript, Astro 25 suites/137 tests. UI only change prevents picker opening concurrently with direct red-green item or section swap. PHP REST writer unchanged from deployed baseline.
-Use existing guarded PHP FTPS TLS staging SHA256/readback rollback. NO ASTRO BUILD, NO CMS DATA WRITE.
+31b2633b7ca629b2939d8e7ffc804db57c6d2b92
+2026-11-25 PSE native S2/S3 reference Add and local presentation editor production deployment.
+Source-only CI #45514892928 SUCCESS: PHP real ticket/nonce+one-row insertion and single raw local-cell Save with row+cell SHA256, no API writes; generated inspector JavaScript parser PASS; Astro 25 suites/137 tests PASS. Prior #45514304798 backend insertion CI also PASS.
+PHP item-manager.php adds /insert-reference and /save-local-item-field with native published Product/Page/ProductCategory source validation, optimistic version/row/cell hash, safe href, source ownership; item-section-ui.php adds contextual Add and local form with Cancel, refresh guard and stale-lock. S4 arbitrary REST picker and S5 API-generated cards remain blocked. PHP PORTING documentation updated. NO ASTRO BUILD / NO CMS CONTENT WRITE; only guarded FTPS TLS SHA256 activation/readback rollback. Publish exact source pin, avoid overlapping release.
