@@ -302,7 +302,8 @@ set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
 // S6: real WordPress Page HTML token writer, independent of ESC Table data.
 // The Builder must preserve all markup and the adjacent native shortcode.
 $s6Source='<section class="editor-copy"><h2>Tiêu đề gốc</h2>'
-    .'<p>Thông tin sản phẩm &amp; dịch vụ</p></section>'
+    .'<p>Thông tin sản phẩm &amp; dịch vụ</p>'
+    .'<img src="https://127.0.0.1:8099/wp-content/uploads/qa-media.jpg" alt="Ảnh gốc" width="48"></section>'
     .'<div>[table id='.$parent.' /]</div>';
 $s6Page=wp_insert_post([
     'post_type'=>'page','post_status'=>'publish',
@@ -362,6 +363,48 @@ qa_assert(($s6Rollback['saved']??false)===true &&
     qa_table_rows($model,$parent)===$nativeBefore,
     'S6 native Page HTML exact rollback no shortcode/ESC table mutation');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S6_PAGE_TEXT_SAVE_READBACK_ROLLBACK=PASS\n";
+// S6 Page-owned media ALT is a separate source/cell, not an ESC Table image.
+// Changing ALT must leave src, width, sibling HTML and TablePress untouched.
+$s6Images=qa_request('editable-page-images',[]);
+qa_assert(($s6Images['source']??'')==='page_html' &&
+    count($s6Images['images']??[])===1 &&
+    ($s6Images['images'][0]['field']??'')==='image' &&
+    $s6Images['version']===hash('sha256',$s6Source),
+    'S6 Page image physical source and version');
+$img=$s6Images['images'][0];
+$altSave=qa_request('save-page-image',[
+    'part'=>$img['part'],'index'=>$img['row'],
+    'expected_version'=>$s6Images['version'],
+    'original_hash'=>$img['hash'],'alt'=>'Ảnh mới'
+]);
+$altSavedBody=(string)get_post($s6Page)->post_content;
+qa_assert(($altSave['saved']??false)===true &&
+    $altSavedBody===str_replace('alt="Ảnh gốc"','alt="Ảnh mới"',$s6Source) &&
+    $altSave['version']===hash('sha256',$altSavedBody) &&
+    qa_table_rows($model,$parent)===$nativeBefore,
+    'S6 native image ALT Save canonical readback without changing source URL');
+qa_request('save-page-image',[
+    'part'=>$img['part'],'index'=>$img['row'],
+    'expected_version'=>$s6Images['version'],
+    'original_hash'=>$img['hash'],'alt'=>'Giá trị cũ'
+],true);
+qa_assert((string)get_post($s6Page)->post_content===$altSavedBody,
+    'S6 image ALT stale version rejects mutation');
+$refreshed=qa_request('editable-page-images',[]);
+$newImage=$refreshed['images'][0]??[];
+qa_assert(($newImage['hash']??'')!==$img['hash'] &&
+    $refreshed['version']===$altSave['version'],
+    'S6 Page image ALT new REST version and physical hash');
+$altRevert=qa_request('save-page-image',[
+    'part'=>$newImage['part'],'index'=>$newImage['row'],
+    'expected_version'=>$refreshed['version'],
+    'original_hash'=>$newImage['hash'],'alt'=>'Ảnh gốc'
+]);
+qa_assert(($altRevert['saved']??false)===true &&
+    (string)get_post($s6Page)->post_content===$s6Source &&
+    qa_table_rows($model,$parent)===$nativeBefore,
+    'S6 native Page image ALT rollback exact Page source bytes');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S6_PAGE_IMAGE_ALT_SAVE_READBACK_ROLLBACK=PASS\n";
 $GLOBALS['qa_page']=(int)$page;
 $GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
 set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
