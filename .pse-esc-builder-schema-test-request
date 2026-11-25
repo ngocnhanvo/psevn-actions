@@ -1,3 +1,3 @@
-2026-11-25 PSE Section-source-context test diagnostic without CMS writes.
-PHP master b431d0a72da12224eae701851e325c158a823fd5; Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
-Re-run existing source-only PHP/JS and Astro contract to identify exact synthetic fixture and error code in case Page section dry_run/live reorder source context is unsafe. No release, FTP, build, CMS mutation.
+2026-11-25 PSE Page section source fake-shortcode safety rerun.
+PHP master 4bf3b35ce3e423849bbb1375b813d22130b95cfe. Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
+Prior CI #45551304314 failed on immediate textarea fake section boundary; PHP scanner now verifies still-open raw scope after scanner reaches shortcode byte position. Tests cover immediate script/style/noscript/textarea/template, comments, quoted HTML attrs, authentic two-section swap + dry_run. Run source-only PHP/JS + Astro Vitest/parser/Tailwind. NO CMS WRITE, NO FTPS, NO BUILD.
