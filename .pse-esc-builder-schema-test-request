@@ -11,3 +11,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 PHP master 21a1f83bd571632e36fdb661356e4f30cfaeeab1 fixes fixture WP_REST_Request::has_param required by existing image-editor.php; previous source CI #45572710277 failed only PHP fixture missing this method; rerun full source-only schema test without changing runtime behavior.
 
 2026-11-25 PHP master bb7f45d3600f636d164e4a583fc297265516c154 guards Inspector Page section swap/clone/remove after POST Save: independent REST section-order readback, fail closed on unknown persistence, never claim WordPress unchanged or re-arm stale source coordinates. Source CI: PHP generated JS regression and parse; NO BUILD/FTP/CMS writes.
+
+2026-11-25 PHP master 80414dd34f931f2c5f94b42def151575216dee74: scope insertion preflight-before-write assertion inside commitSectionInsert to avoid matching separate SectionSwap writeRequested flag. Rerun full native source CI with real Inspector generated JS, no CMS writes/FTP/build.
