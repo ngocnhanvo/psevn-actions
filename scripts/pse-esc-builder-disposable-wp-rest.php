@@ -910,7 +910,16 @@ $copyNativePost=(int)(esc_vb_get_table_mapping()[$newFaqId]??0);
 qa_assert($copyNativePost>0 &&
     get_post_type($copyNativePost)==='tablepress_table',
     'new physical TablePress post resolved for GitHub Trigger source');
-$copyPublic=vcs_get_tablepress_pure_data($copyNativePost);
+$rawTablepressOption=get_option('tablepress_tables',[]);
+$mapTypes=is_string($rawTablepressOption)?json_decode($rawTablepressOption,true):$rawTablepressOption;
+$rawMapped=$mapTypes['table_post'][$newFaqId]??null;
+echo 'PSE_QA_S1_TABLE_MAPPING_KIND='.wp_json_encode([
+    'copy_post_type'=>gettype($copyNativePost),
+    'mapping_value_type'=>gettype($rawMapped),
+    'mapping_equals_post'=>(string)$rawMapped===(string)$copyNativePost,
+])."\n";
+$copyPublic=vcs_get_tablepress_pure_data($newFaqId); // Public all-tables API uses physical shortcode ID, not WP post ID.
+
 echo 'PSE_QA_S1_PUBLIC_SOURCE_DIAG='.wp_json_encode([
     'id'=>is_array($copyPublic)?($copyPublic['id']??null):'WP_ERROR',
     'expected_id'=>$newFaqId,
