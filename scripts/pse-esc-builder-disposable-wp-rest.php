@@ -816,6 +816,139 @@ qa_assert($deleteDuplicate!==false &&
     'disposable Info duplicate cleanup restores original source selection');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_AUTH_LOCALE_SOURCE_DENIAL=PASS\n";
 
+
+// Real source-independent S1 Page + native TablePress clone, on disposable
+// WordPress only. The new copy must be editable WITHOUT rewriting the source.
+$originalFaqRows=[
+    ['question','answer','visible'],['Question','Answer','Visible'],
+    ['QA FAQ Alpha','A native answer','1'],['QA FAQ Beta','Another answer','1']
+];
+$faqTempId=qa_new_table($model,$originalFaqRows,'Disposable S1 FAQ');
+qa_assert($model->change_table_id($faqTempId,'pse_faq_vi')===true,
+    'rename native S1 table to canonical PSE renderer source');
+$faqSource='pse_faq_vi';
+$faqPageBody=$qa_page_body.'<section><div>[table id=pse_faq_vi /]</div></section>';
+$updatedPage=wp_update_post(wp_slash([
+    'ID'=>(int)$page,'post_content'=>$faqPageBody
+]),true);
+qa_assert(!is_wp_error($updatedPage) && get_post($page)->post_content===$faqPageBody,
+    'temporary disposable Page owns canonical FAQ TablePress section');
+$faqOrder=qa_request('section-order',[]);
+$faqBlock=array_values(array_filter($faqOrder['items'],
+    static fn($item)=>($item['table_id']??'')==='pse_faq_vi'));
+qa_assert(count($faqBlock)===1,'exact physical FAQ Page section');
+$faqKey=$faqBlock[0]['id'];
+$readOnlyTables=count(esc_vb_get_table_mapping());
+$independentParams=[
+    'section_key'=>$faqKey,'expected_version'=>$faqOrder['version'],
+    'share_source'=>false
+];
+$independentDry=qa_request('duplicate-section-independent',
+    $independentParams+['dry_run'=>true]);
+qa_assert(($independentDry['checked']??false)===true &&
+    ($independentDry['source_shared']??true)===false &&
+    ($independentDry['renderer']??'')==='Pse_faq' &&
+    ($independentDry['would_copy_tables']??0)===1 &&
+    count(esc_vb_get_table_mapping())===$readOnlyTables &&
+    get_post($page)->post_content===$faqPageBody,
+    'S1 independent clone dry_run is genuinely read-only');
+$nativeClone=qa_request('duplicate-section-independent',$independentParams);
+$newFaqId=$nativeClone['new_table_id']??'';
+qa_assert(($nativeClone['saved']??false)===true &&
+    ($nativeClone['source_shared']??true)===false &&
+    is_string($newFaqId) &&
+    preg_match('/^[1-9][0-9]{0,18}$/D',$newFaqId) &&
+    ($nativeClone['renderer']??'')==='Pse_faq' &&
+    $newFaqId!==$faqSource &&
+    count(esc_vb_get_table_mapping())===$readOnlyTables+1,
+    'S1 native copy has a new physical numeric TablePress ID');
+$cloneMeta=get_option('tablepress_meta_'.$newFaqId,[]);
+qa_assert($cloneMeta===[
+    'escBuilderCloneVersion'=>'1',
+    'escBuilderCloneOf'=>'pse_faq_vi',
+    'builderComponent'=>'Pse_faq','api'=>''
+], 'S1 cloned physical table owns the exact Astro source renderer alias');
+qa_assert(qa_table_rows($model,$newFaqId)===$originalFaqRows &&
+    qa_table_rows($model,$faqSource)===$originalFaqRows,
+    'S1 independent source cloned with exact native TablePress rows');
+$clonedBody=get_post($page)->post_content;
+qa_assert(str_contains($clonedBody,'[table id='.$newFaqId.' /]') &&
+    str_contains($clonedBody,'[table id='.$faqSource.' /]') &&
+    substr_count($clonedBody,'[table id='.$faqSource.' /]')===1,
+    'Page now owns one distinct cloned native shortcode');
+qa_request('duplicate-section-independent',$independentParams,true);
+$cloneVersion=esc_vb_text_current_version($page,$newFaqId);
+$cloneCellSave=qa_request('save-text',[
+    'table_id'=>$newFaqId,'row'=>0,'field'=>'question',
+    'title'=>'QA FAQ Alpha independent','expected_version'=>$cloneVersion,
+    'original_hash'=>hash('sha256','QA FAQ Alpha')
+]);
+qa_assert(($cloneCellSave['saved']??false)===true &&
+    qa_table_rows($model,$newFaqId)[2][0]==='QA FAQ Alpha independent' &&
+    qa_table_rows($model,$faqSource)===$originalFaqRows,
+    'editing independent S1 native clone NEVER modifies original source');
+$cloneCellRestore=qa_request('save-text',[
+    'table_id'=>$newFaqId,'row'=>0,'field'=>'question',
+    'title'=>'QA FAQ Alpha',
+    'expected_version'=>esc_vb_text_current_version($page,$newFaqId),
+    'original_hash'=>hash('sha256','QA FAQ Alpha independent')
+]);
+qa_assert(($cloneCellRestore['saved']??false)===true &&
+    qa_table_rows($model,$newFaqId)===$originalFaqRows,
+    'independent S1 field exact inverse native rows');
+$clonedOrder=qa_request('section-order',[]);
+qa_assert(($clonedOrder['version']??'')===$nativeClone['version'] &&
+    count(array_filter($clonedOrder['items'],
+        static fn($item)=>($item['table_id']??'')===$newFaqId))===1,
+    'REST section readback lists the one new source owner');
+$detach=qa_request('remove-section',[
+    'section_key'=>$newFaqId,'expected_version'=>$clonedOrder['version']
+]);
+qa_assert(($detach['saved']??false)===true &&
+    get_post($page)->post_content===$faqPageBody &&
+    qa_table_rows($model,$faqSource)===$originalFaqRows,
+    'section detach restores exact Page bytes without deleting original TablePress');
+qa_assert($model->table_exists($newFaqId)===true,
+    'detach intentionally retains newly copied table for manual reuse');
+delete_option('tablepress_meta_'.$newFaqId);
+qa_assert($model->delete($newFaqId)===true &&
+    !$model->table_exists($newFaqId),
+    'clean up only disposable detached source with verified ID');
+
+// Failure-injection: simulate a Page post_content filter suppressing the
+// second write AFTER TablePress copy. The writer must compensate by deleting
+// ONLY its fresh, unreferenced native table.
+$copyCountBefore=count(esc_vb_get_table_mapping());
+$restoreViaHook=static function($data) use ($faqPageBody) {
+    if (($data['post_type']??'')==='page' &&
+        str_contains((string)($data['post_content']??''),'[table id=pse_faq_vi /]') &&
+        preg_match('/\[table id=[1-9][0-9]* \/\]/',
+            (string)($data['post_content']??''))) {
+        $data['post_content']=$faqPageBody;
+    }
+    return $data;
+};
+add_filter('wp_insert_post_data',$restoreViaHook,99,2);
+$failedCopy=qa_request('duplicate-section-independent',[
+    'section_key'=>$faqKey,'share_source'=>false,
+    'expected_version'=>hash('sha256',$faqPageBody)
+],true);
+remove_filter('wp_insert_post_data',$restoreViaHook,99);
+qa_assert(($failedCopy['code']??'')==='section_copy_page_write_failed' &&
+    get_post($page)->post_content===$faqPageBody &&
+    count(esc_vb_get_table_mapping())===$copyCountBefore &&
+    qa_table_rows($model,$faqSource)===$originalFaqRows,
+    'Page failure automatically compensates new TablePress; original untouched');
+$resetFaq=wp_update_post(wp_slash([
+    'ID'=>(int)$page,'post_content'=>$qa_page_body
+]),true);
+qa_assert(!is_wp_error($resetFaq) &&
+    get_post($page)->post_content===$qa_page_body &&
+    $model->delete($faqSource)===true,
+    'cleanup disposable original FAQ table and Page wrapper');
+echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_SECTION_COPY_SAVE_READBACK_ROLLBACK=PASS\n";
+echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_COPY_FAILURE_COMPENSATION=PASS\n";
+
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S1_S2_S3_S4_S5_SAVE_READBACK_ROLLBACK=PASS\n";
