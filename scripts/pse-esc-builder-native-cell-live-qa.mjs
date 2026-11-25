@@ -329,7 +329,7 @@ try {
  // deliberately never render as text. The Inspector must still expose both
  // native source columns with an authenticated writer.
  const mandatory={
-   pse_hotline_vi:['group','label','phone'],
+   pse_hotline_vi:['label','phone'],
    pse_faq_vi:['question','answer'],
    pse_history_vi:['date','title','details'],
    pse_vision_vi:['title','details'],
@@ -378,12 +378,14 @@ try {
  if(!/^\d+$/.test(noteRow||''))throw Error('Hotline label lacks a canonical source row');
  await labelSource.click({force:true});
  await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:20000});
- await page.waitForFunction(expected=>
-   [...(document.querySelector('#esc-vb-edit-row')?.options||[])]
-     .some(option=>option.value===expected),
-   noteRow+':note',{timeout:25000});
- console.log('PSE_HOTLINE_EMPTY_NOTE_SCHEMA=PASS source_row='+noteRow+
-   ' selectable_in_Inspector=true public_placeholder=false NO_CMS_WRITE=true');
+ for(const sourceOnlyField of ['group','note']){
+   await page.waitForFunction(expected=>
+     [...(document.querySelector('#esc-vb-edit-row')?.options||[])]
+       .some(option=>option.value===expected),
+     noteRow+':'+sourceOnlyField,{timeout:25000});
+ }
+ console.log('PSE_HOTLINE_OPTIONAL_SOURCE_SCHEMA=PASS source_row='+noteRow+
+   ' group_and_note_selectable_in_Inspector=true public_placeholder=false NO_CMS_WRITE=true');
  await page.locator('#esc-vb-edit-cancel').click();
  // FAQ visible is a physical TablePress config cell, managed by the native
  // item-visibility control, never a fake text marker on a public question.
