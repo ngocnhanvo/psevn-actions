@@ -1,3 +1,3 @@
-2026-11-25 PSE Visual Builder live Preview keyboard source-only QA request.
-Astro master 2936ecb0a2ee62ac46f94d0a1f42290cf47ab75b; PHP master 09b60096b76d6eb6c0ef4ff8f06aeeb78f6c9fe8.
-Verify section and physical S1 item keyboard targets on actual Preview: Tab + Enter or Space only while red/green destination picker active, owner-isolated nested ESC Table, exact previous tabindex restored on Cancel and disposal. Do not add visible chips, links or alternate sorting UI. Run all existing PHP schema/JS tests and all Astro source Vitest including new keyboard tests. NO CMS WRITE, NO BUILD, NO FTP.
+2026-11-25 PSE Visual Builder Preview Escape cancellation source-only acceptance.
+Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d; PHP master e4d3d835a36c18820d5573303e26a77f184809ee.
+Verify only the active Preview pick session can request Escape cancellation; WordPress checks trusted iframe and exact table/source/requestId, delegates to existing no-write Cancel button and restores DOM/tabindex. Forged/stale pick events cannot commit or delete. All old keyboard Enter/Space + direct red/green Preview swap tests must remain passing. PHP generated Inspector JS parse, PHP contract tests, Astro Vitest, Astro parser, Tailwind source-only. NO CMS WRITE, NO ASTRO BUILD, NO FTP.
