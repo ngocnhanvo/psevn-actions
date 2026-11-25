@@ -1,2 +1,5 @@
 PSE_SUBPAGE_VIEWPORT_PARITY_ONLY=1
-request=2026-11-25-history-responsive-source-diagnostic
+request=2026-11-25-history-published-responsive-parity-after-signed-deploy-45569129797
+Astro production SHA=5ec5a5427dedccce2cb508c06dbd51f2164f33aa
+source_only_ci=45568850944 SUCCESS 689/689; signed Astro production deploy 45569129797 SUCCESS; no WordPress content write.
+Require FAQ, Hotline, History, Vision 1440x900 and 390x900: 8/8 PASS with <=2px geometry, unchanged strict assertions; inspect history cover source if not pass.
