@@ -70,16 +70,26 @@ try {
   console.log('PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS');
 
   const referenceUi=await page.evaluate(()=>{
-    const button=document.getElementById('esc-vb-reference-replace-open');
-    const dialog=document.getElementById('esc-vb-reference-dialog');
-    return {exists:!!button && !!dialog,hidden:button?.hidden,
-      disabled:button?.disabled,display:button?getComputedStyle(button).display:'',
-      dialogOpen:dialog?.open||false};
+    const buttonIds=['esc-vb-reference-replace-open',
+      'esc-vb-reference-insert-open','esc-vb-reference-local-open'];
+    const dialogIds=['esc-vb-reference-dialog','esc-vb-local-dialog'];
+    const buttons=buttonIds.map(id=>{
+      const button=document.getElementById(id);
+      return {id,exists:!!button,hidden:button?.hidden,
+        disabled:button?.disabled,
+        display:button?getComputedStyle(button).display:''};
+    });
+    const dialogs=dialogIds.map(id=>{
+      const dialog=document.getElementById(id);
+      return {id,exists:!!dialog,open:dialog?.open||false};
+    });
+    return {buttons,dialogs};
   });
-  if(!referenceUi.exists||!referenceUi.hidden||!referenceUi.disabled||
-     referenceUi.display!=='none'||referenceUi.dialogOpen)
-    throw Error('Contextual manual-reference picker leaked into unselected Preview');
-  console.log('PSE_BUILDER_REFERENCE_PICKER_DEFAULT=PASS hidden=PASS disabled=PASS NO_CMS_WRITE=PASS');
+  if(referenceUi.buttons.some(b=>!b.exists||!b.hidden||!b.disabled||
+      b.display!=='none')||referenceUi.dialogs.some(d=>!d.exists||d.open))
+    throw Error('Manual-reference controls leaked into unselected Preview: '+
+      JSON.stringify(referenceUi));
+  console.log('PSE_BUILDER_REFERENCE_PICKER_DEFAULT=PASS hidden=PASS disabled=PASS controls=3 NO_CMS_WRITE=PASS');
 
 
   // The old preview used to inject green/white ESC Table text chips over
@@ -92,6 +102,16 @@ try {
   const heroImage=hero.locator('img[data-esc-builder-image-row][data-esc-builder-image-field]').first();
   await heroImage.waitFor({state:'visible',timeout:25000});
   await heroImage.click({force:true});
+  const staticReferenceTools=await page.evaluate(()=>
+    ['esc-vb-reference-replace-open','esc-vb-reference-insert-open',
+     'esc-vb-reference-local-open'].map(id=>{
+      const b=document.getElementById(id);
+      return {id,hidden:b?.hidden,disabled:b?.disabled};
+    }));
+  if(staticReferenceTools.some(b=>!b.hidden||!b.disabled))
+    throw Error('Reference writer advertised on static S1 hero: '+
+      JSON.stringify(staticReferenceTools));
+  console.log('PSE_BUILDER_REFERENCE_STATIC_SOURCE_LOCK=PASS NO_CMS_WRITE=PASS');
   const relatedText=page.locator('#esc-vb-image-open-text');
   // WP .button CSS must not reveal controls before a validated REST source.
   // Wait for actual availability, not just computed visibility.
