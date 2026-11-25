@@ -8,3 +8,5 @@ Test latest scripts/pse-esc-builder-skeleton-live-qa.mjs dual Page versioned no-
 2026-11-25 18:25 VN: exact Astro production activated 82a4f2d via signed build #45600151501 SUCCESS. Postdeploy production-first homepage responsive visual parity at 1440/1024/390 and subpage readonly. NO_CMS_WRITE; NETWORK_ONLY.
 
 2026-11-25 ~18:45 VN: Postdeploy responsive-production-preview READ ONLY at exact Astro e345b24eec08def52be6620d64859432b72a7118 signed build #45603256811 SUCCESS and PHP 3a29d06263 unchanged. Verify actual authenticated production Preview, 1440/1024/390 responsive parity when applicable, section/item pick and Cancel; NO_CMS_WRITE; NO_BUILD.
+
+2026-11-25 18:58 ICT: Real postrelease authenticated READ ONLY Preview/Public responsive parity after signed Astro #45608622865 (c8a46ee17b5e239aab79e71587d8458b4b7f0b9d) and PHP guarded FTPS #45608877504 (c4ec3b915d140f7dfc1978716162d55e6af57b66); inspect 1440/1024/390 layouts, source selection, no CMS writing. NETWORK_ONLY.
