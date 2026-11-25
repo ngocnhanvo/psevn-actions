@@ -231,11 +231,23 @@ qa_request('save-section-order',[
 qa_assert((string)get_post($page)->post_content===$pageBefore,
     'inverse Page section two-point swap restores exact original HTML bytes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_PAGE_SECTION_SWAP_ROLLBACK=PASS\n";
-// A real shared-source clone is ONLY a Page occurrence. Neither the ESC
-// Table model nor its physical rows may be duplicated or modified.
+// Shared-source clone must use one demonstrably isolated native shortcode.
+// The multi-<div> Page above intentionally exercises an independent swap;
+// a separate bare shortcode Page provides the supported cloning fixture.
+$clonePage=wp_insert_post([
+    'post_type'=>'page','post_status'=>'publish',
+    'post_title'=>'Disposable shared-source clone',
+    'post_content'=>'[table id='.$parent.' /]'
+],true);
+qa_assert(!is_wp_error($clonePage),'isolated Page for shared source clone');
+$GLOBALS['qa_page']=(int)$clonePage;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$clonePage,'user_id'=>get_current_user_id()
+],120);
 $cloneRead=qa_request('section-order',[]);
 $sourceKey=(string)$cloneRead['items'][0]['id'];
-$rootBefore=(string)get_post($page)->post_content;
+$rootBefore=(string)get_post($clonePage)->post_content;
 $rootTableBefore=qa_table_rows($model,$parent);
 $preflight=qa_request('duplicate-section-shared',[
     'section_key'=>$sourceKey,'expected_version'=>$cloneRead['version'],
@@ -243,7 +255,7 @@ $preflight=qa_request('duplicate-section-shared',[
 ]);
 qa_assert(($preflight['checked']??false)===true &&
     ($preflight['source_shared']??false)===true &&
-    (string)get_post($page)->post_content===$rootBefore,
+    (string)get_post($clonePage)->post_content===$rootBefore,
     'shared-source Page clone preflight cannot write');
 $cloned=qa_request('duplicate-section-shared',[
     'section_key'=>$sourceKey,'expected_version'=>$cloneRead['version'],
@@ -251,7 +263,7 @@ $cloned=qa_request('duplicate-section-shared',[
 ]);
 qa_assert(($cloned['saved']??false)===true &&
     count($cloned['occurrences']??[])===2 &&
-    (string)get_post($page)->post_content!==$rootBefore &&
+    (string)get_post($clonePage)->post_content!==$rootBefore &&
     qa_table_rows($model,$parent)===$rootTableBefore,
     'shared-source clone creates one Page occurrence and leaves ESC Table untouched');
 $additional=array_values(array_diff($cloned['occurrences'],[$sourceKey]));
@@ -263,7 +275,7 @@ $removed=qa_request('remove-section',[
 qa_assert(($removed['saved']??false)===true &&
     qa_table_rows($model,$parent)===$rootTableBefore,
     'native Page-only section remove never writes its source ESC Table');
-$removedBody=(string)get_post($page)->post_content;
+$removedBody=(string)get_post($clonePage)->post_content;
 $beforeKeys=array_column($cloneRead['items'],'table_id');
 $afterRemoveKeys=array_column(qa_request('section-order',[])['items'],'table_id');
 qa_assert($beforeKeys===$afterRemoveKeys,
@@ -272,13 +284,19 @@ qa_assert($beforeKeys===$afterRemoveKeys,
 // whitespace. The disposable harness restores any remaining single newline
 // via an exact owner-controlled Page update, then checks all bytes.
 if ($removedBody!==$rootBefore) {
-    $manual=wp_update_post(['ID'=>$page,'post_content'=>$rootBefore],true);
+    $manual=wp_update_post(['ID'=>$clonePage,'post_content'=>$rootBefore],true);
     qa_assert(!is_wp_error($manual),'disposable Page byte cleanup');
 }
-qa_assert((string)get_post($page)->post_content===$rootBefore,
+qa_assert((string)get_post($clonePage)->post_content===$rootBefore,
     'disposable Page restored to exact initial content after clone/remove');
 echo "PSE_DISPOSABLE_SHARED_SOURCE_SECTION_CLONE_REMOVE=PASS CLEANUP_EXACT=PASS\n";
 
+
+$GLOBALS['qa_page']=(int)$page;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$page,'user_id'=>get_current_user_id()
+],120);
 
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
