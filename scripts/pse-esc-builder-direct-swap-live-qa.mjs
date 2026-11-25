@@ -779,7 +779,18 @@ try{
       const sourceTable=candidate.tableId;
       const targetTable=sectionCapability.items.find(item=>item.id===candidate.after)?.table_id;
       const countBefore=await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count();
-      const htmlBefore=await frame.locator('body').evaluate(el=>el.innerHTML);
+      // Take physical DOM node identities rather than raw homepage HTML:
+      // the public slider may legitimately autoplay while the Preview is
+      // open. Cancel must retain every original section node, child and
+      // sibling slot, and leave no extra physical section occurrence.
+      await frame.evaluate(()=>{
+        const nodes=[...document.querySelectorAll('[data-tablepress-preview]')]
+          .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'));
+        window.__pseInsertQaBaseline=nodes.map(node=>({
+          node,parent:node.parentNode,next:node.nextSibling,
+          children:[...node.childNodes]
+        }));
+      });
       const requestId=99227+index;
       const preview=await previewSection('esc-vb-section-duplicate-preview',
         candidate.source,requestId,candidate.after);
@@ -807,20 +818,46 @@ try{
       }finally{
         await previewSection('esc-vb-section-duplicate-cancel',
           candidate.source,requestId,candidate.after);
-        // postMessage is asynchronous: do not sample iframe DOM before its
-        // existing Cancel handler has consumed the message. Keep strict
-        // byte-for-byte equality, only wait for the actual restoration.
+        // postMessage is async. Assert strict identity and source ordering
+        // of the REAL section DOM, without falsely rejecting a separately
+        // rotating hero slider's transient class/aria state.
         try{
-          await frame.waitForFunction(expected=>document.body.innerHTML===expected,
-            htmlBefore,{timeout:10000});
+          await frame.waitForFunction(()=>{
+            const baseline=window.__pseInsertQaBaseline;
+            const current=[...document.querySelectorAll('[data-tablepress-preview]')]
+              .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'));
+            return Array.isArray(baseline)&&current.length===baseline.length&&
+              current.every((node,index)=>{
+                const prior=baseline[index];
+                return node===prior.node&&node.parentNode===prior.parent&&
+                  node.nextSibling===prior.next&&
+                  node.childNodes.length===prior.children.length&&
+                  [...node.childNodes].every((child,i)=>child===prior.children[i]);
+              });
+          },null,{timeout:10000});
         }catch{
-          const after=await frame.locator('body').evaluate(el=>el.innerHTML);
+          const diag=await frame.evaluate(()=>{
+            const baseline=window.__pseInsertQaBaseline||[];
+            const current=[...document.querySelectorAll('[data-tablepress-preview]')]
+              .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'));
+            return {
+              expectedSections:baseline.length,actualSections:current.length,
+              reordered:current.some((node,i)=>node!==baseline[i]?.node),
+              movedParent:current.some((node,i)=>node.parentNode!==baseline[i]?.parent),
+              movedSibling:current.some((node,i)=>node.nextSibling!==baseline[i]?.next),
+              changedChildren:current.some((node,i)=>
+                node.childNodes.length!==baseline[i]?.children.length||
+                [...node.childNodes].some((child,j)=>child!==baseline[i]?.children[j]))
+            };
+          });
           console.log('PSE_SECTION_INSERT_CANCEL_READBACK_DIAG='+JSON.stringify({
-            expectedLength:htmlBefore.length,actualLength:after.length,
-            previewOccurrences:await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count(),
+            ...diag,previewOccurrences:
+              await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count(),
             noCmsWrite:true
           }));
-          throw Error('Section insertion Cancel failed to restore exact Preview DOM');
+          throw Error('Section insertion Cancel failed to restore exact physical section DOM');
+        }finally{
+          await frame.evaluate(()=>{delete window.__pseInsertQaBaseline;});
         }
       }
       if(sectionInsertResult.result==='PASS')break;
