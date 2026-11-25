@@ -961,6 +961,22 @@ qa_assert(!$allRest->is_error() && count($fromAll)===1 &&
     $fromAll[0]['title']==='Disposable S1 FAQ',
     'Astro production paginated all-tables REST includes native cloned source');
 echo "PSE_DISPOSABLE_NATIVE_S1_ASTRO_TABLEPRESS_SOURCE_ALIAS=PASS\n";
+// Verify the EXISTING WordPress build-log endpoint also exports new
+// standalone ESC Table records, not only the full paginated table feed.
+$incremental=rest_do_request(new WP_REST_Request('GET',
+    '/astro/v1/get-tablepress-logs'));
+$incrementalRows=$incremental->get_data();
+$copyEvents=is_array($incrementalRows)?array_values(array_filter($incrementalRows,
+    static fn($entry)=>is_array($entry) &&
+        ($entry['type']??'')==='tablepress' &&
+        (int)($entry['id']??0)===$copyNativePost)):[];
+qa_assert(!$incremental->is_error() && count($copyEvents)===1 &&
+    ($copyEvents[0]['action']??'')==='modify' &&
+    ($copyEvents[0]['table']['component']??'')==='esc_vb_s1:pse_faq_vi' &&
+    (string)($copyEvents[0]['table']['id']??'')===$newFaqId,
+    'original PSE incremental build-log REST exports cloned TablePress source');
+echo "PSE_DISPOSABLE_NATIVE_S1_ASTRO_BUILD_LOG_ALIAS=PASS\n";
+
 
 
 qa_assert(qa_fresh_table_rows($newFaqId)===$originalFaqRows &&
