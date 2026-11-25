@@ -33,3 +33,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 18:30 ICT: Final Astro master 75ee2e9193c0a1f922a47cfcb295987f95972327 guards API-owned media markers in Home_09/Home_11/Home_13; source regression tests included. Run source-only schema CI at this pin; NO_BUILD NO_FTP NO_CMS_WRITE.
 
 2026-11-25 18:32 ICT: Final candidate Astro master e345b24eec08def52be6620d64859432b72a7118 with guarded Home_09/Home_11/Home_13 icon/background source markers and native S1 Home_11 title edit marker; test updated. Source-only CI, no deploy, no CMS writes.
+
+2026-11-25 18:xx ICT: PHP master ad5cdb55a4dd316c9f2f31bd9e5f6c0980054e4a test-only extends existing live ESC auto-discovery regression for Home_02 native button_link/image columns. PHP runtime content (includes/site-config.php) is byte-identical to deployed 3a29d06263. Rerun source-only CI, no FTP/Build/CMS writes. Astro production e345b24 deployed with readonly QA success #45603540957 #45603547124.
