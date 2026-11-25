@@ -287,9 +287,17 @@ try {
        page.waitForLoadState('domcontentloaded',{timeout:35000}),
        page.getByRole('button',{name:'Mở trang'}).click({timeout:25000})
      ]);
-     const frame=page.frameLocator('#esc-vb-frame');
-     await frame.locator('body').waitFor({state:'visible',timeout:30000});
-     const result=await frame.locator('body').evaluate(()=>({
+     const frameElement=await page.locator('#esc-vb-frame').elementHandle();
+     const contentFrame=await frameElement?.contentFrame();
+     if(!contentFrame)throw Error('Selected Page has no Astro Preview frame');
+     // Parent WordPress DOMContentLoaded is not an iframe readiness signal.
+     // Wait for the exact selected Page identity before reading source rows.
+     await contentFrame.waitForURL(
+       new RegExp('/esc-builder/preview/'+option.value+'(?:[/?#]|$)'),
+       {timeout:50000});
+     await contentFrame.locator('style[data-esc-vb-item-pick-style]')
+       .waitFor({state:'attached',timeout:50000});
+     const result=await contentFrame.locator('body').evaluate(()=>({
        htmlParts:document.querySelectorAll('[data-esc-builder-html-part]').length,
        sections:[...document.querySelectorAll('[data-tablepress-preview]')]
          .filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
@@ -350,10 +358,15 @@ try {
      page.waitForLoadState('domcontentloaded',{timeout:35000}),
      page.getByRole('button',{name:'Mở trang'}).click({timeout:25000})
    ]);
-   const view=page.frameLocator('#esc-vb-frame');
-   await view.locator('style[data-esc-vb-item-pick-style]')
+   const iframeHandle=await page.locator('#esc-vb-frame').elementHandle();
+   const verifiedFrame=await iframeHandle?.contentFrame();
+   if(!verifiedFrame)throw Error('Selected Page has no Preview frame');
+   await verifiedFrame.waitForURL(
+     new RegExp('/esc-builder/preview/'+pageId+'(?:[/?#]|$)'),
+     {timeout:50000});
+   await verifiedFrame.locator('style[data-esc-vb-item-pick-style]')
      .waitFor({state:'attached',timeout:45000});
-   return view;
+   return page.frameLocator('#esc-vb-frame');
  };
  // A blank optional note has no public <p>, but the canonical value is
  // listed in the authenticated ESC Table text editor for its physical row.
