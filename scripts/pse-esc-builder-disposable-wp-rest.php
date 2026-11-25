@@ -857,6 +857,17 @@ $independentParams=[
     'section_key'=>$faqKey,'expected_version'=>$faqOrder['version'],
     'share_source'=>false
 ];
+// An API-managed ESC Table must never be cloned as independent S1.
+$beforeBadDryTables=count(esc_vb_get_table_mapping());
+update_option('tablepress_meta_'.$faqSource,array_merge($faqOriginalMeta,['api'=>'Product']),false);
+$deniedDynamic=qa_request('duplicate-section-independent',
+    $independentParams+['dry_run'=>true],true);
+qa_assert(($deniedDynamic['code']??'')==='section_copy_dynamic' &&
+    count(esc_vb_get_table_mapping())===$beforeBadDryTables &&
+    get_post($page)->post_content===$faqPageBody,
+    'API-backed source is denied with zero physical table/Page writes');
+update_option('tablepress_meta_'.$faqSource,$faqOriginalMeta,false);
+
 $independentDry=qa_request('duplicate-section-independent',
     $independentParams+['dry_run'=>true]);
 qa_assert(($independentDry['checked']??false)===true &&
@@ -922,6 +933,16 @@ qa_assert(($clonedOrder['version']??'')===$nativeClone['version'] &&
     count(array_filter($clonedOrder['items'],
         static fn($item)=>($item['table_id']??'')===$newFaqId))===1,
     'REST section readback lists the one new source owner');
+// Never recursively copy numeric alias tables. One original component
+// source is authoritative; a copy is a writable physical table, not a theme.
+$copyOfClone=qa_request('duplicate-section-independent',[
+    'section_key'=>$newFaqId,
+    'expected_version'=>$clonedOrder['version'],
+    'share_source'=>false,'dry_run'=>true
+],true);
+qa_assert(($copyOfClone['code']??'')==='section_independent_renderer_missing',
+    'cloned numeric TablePress source cannot spoof original renderer');
+
 $detach=qa_request('remove-section',[
     'section_key'=>$newFaqId,'expected_version'=>$clonedOrder['version']
 ]);
@@ -960,6 +981,28 @@ qa_assert(($failedCopy['code']??'')==='section_copy_page_write_failed' &&
     count(esc_vb_get_table_mapping())===$copyCountBefore &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
     'Page failure automatically compensates new TablePress; original untouched');
+// Duplicated static DOM IDs must fail on the server, even if an attacker
+// calls REST directly instead of relying on Preview's safety probe.
+$idWrapperBody=$qa_page_body.'<section id="qa-global-id">[table id=pse_faq_vi /]</section>';
+$setWrapper=wp_update_post(wp_slash([
+    'ID'=>(int)$page,'post_content'=>$idWrapperBody
+]),true);
+qa_assert(!is_wp_error($setWrapper) &&
+    get_post($page)->post_content===$idWrapperBody,
+    'isolated Page wrapper with a global ID');
+$idWrapperOrder=qa_request('section-order',[]);
+$fakeIdSection=array_values(array_filter($idWrapperOrder['items'],
+    static fn($entry)=>($entry['table_id']??'')===$faqSource));
+qa_assert(count($fakeIdSection)===1,'unsafe wrapper physical source is unique');
+$unsafeRejected=qa_request('duplicate-section-independent',[
+    'section_key'=>$fakeIdSection[0]['id'],
+    'expected_version'=>$idWrapperOrder['version'],
+    'share_source'=>false,'dry_run'=>true
+],true);
+qa_assert(count(esc_vb_get_table_mapping())===$copyCountBefore &&
+    get_post($page)->post_content===$idWrapperBody,
+    'global-ID duplicate rejected without creating any TablePress data');
+echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_CLONE_UNSAFE_SOURCE_DENIAL=PASS\n";
 $resetFaq=wp_update_post(wp_slash([
     'ID'=>(int)$page,'post_content'=>$qa_page_body
 ]),true);
