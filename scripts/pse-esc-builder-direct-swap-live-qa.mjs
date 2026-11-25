@@ -807,9 +807,21 @@ try{
       }finally{
         await previewSection('esc-vb-section-duplicate-cancel',
           candidate.source,requestId,candidate.after);
-        const htmlAfterCancel=await frame.locator('body').evaluate(el=>el.innerHTML);
-        if(htmlAfterCancel!==htmlBefore)
+        // postMessage is asynchronous: do not sample iframe DOM before its
+        // existing Cancel handler has consumed the message. Keep strict
+        // byte-for-byte equality, only wait for the actual restoration.
+        try{
+          await frame.waitForFunction(expected=>document.body.innerHTML===expected,
+            htmlBefore,{timeout:10000});
+        }catch{
+          const after=await frame.locator('body').evaluate(el=>el.innerHTML);
+          console.log('PSE_SECTION_INSERT_CANCEL_READBACK_DIAG='+JSON.stringify({
+            expectedLength:htmlBefore.length,actualLength:after.length,
+            previewOccurrences:await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count(),
+            noCmsWrite:true
+          }));
           throw Error('Section insertion Cancel failed to restore exact Preview DOM');
+        }
       }
       if(sectionInsertResult.result==='PASS')break;
     }
