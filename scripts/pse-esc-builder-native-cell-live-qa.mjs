@@ -57,7 +57,14 @@ try {
  const missing=[];
  for(const field of expectedFields){
    const cell=office.locator('[data-esc-builder-cell-row="0"][data-esc-builder-cell-field="'+field+'"]');
-   if(await cell.count()!==1)missing.push(field);
+   const rows=await cell.evaluateAll(nodes=>nodes.map(node=>({
+     row:node.getAttribute('data-esc-builder-cell-row'),
+     field:node.getAttribute('data-esc-builder-cell-field')
+   })));
+   // Phone/email can be displayed both as a link and text; both must map
+   // to the SAME physical TablePress cell, not to one DOM location only.
+   if(!rows.length||rows.some(x=>x.row!=='0'||x.field!==field))
+     missing.push(field);
  }
  const physicalRow=await office.getAttribute('data-esc-builder-row');
  if(missing.length||physicalRow!=='0'){
@@ -160,7 +167,14 @@ try {
    if(!/^[0-9]+$/.test(row||'')||!['label','title','href','url'].includes(field||'') ||
       await source.getAttribute('data-esc-builder-cell-row')!==row)
      throw Error('PSE_UTILITIES_SOURCE=FAIL invalid physical row or ESC local field');
-   await source.click({modifiers:['Alt']});
+   // A source-owned link's visible arrow belongs to the parent <a> href
+   // field. Normal click must open that canonical URL editor without
+   // navigating; Alt+click on an anchor is a native browser shortcut and is
+   // not the production-first interaction contract.
+   const arrow=selected.locator('a[data-esc-builder-cell-row][data-esc-builder-cell-field] span[aria-hidden="true"]').first();
+   if(!await arrow.count())throw Error('PSE_UTILITIES_SOURCE=FAIL missing source link arrow');
+   await arrow.click();
+   await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:20000});
    await page.waitForFunction(expected=>
      document.querySelector('#esc-vb-edit-row')?.value===expected,
      row+':'+field,{timeout:20000});
