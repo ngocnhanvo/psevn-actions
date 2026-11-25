@@ -1450,6 +1450,59 @@ try{
       if(count!==original)throw Error('Preview clone cancel left duplicate '+tableId);
     }
   }
+  // Opt-in production READ-ONLY acceptance for new S1 independent copy:
+  // native TablePress copy must NOT be created by this browser QA. Only the
+  // identical backend dry_run guard can confirm eligibility + Page version.
+  if(qaRequest.includes('PSE_INDEPENDENT_CLONE_LIVE=1')){
+    const independent=await page.evaluate(async()=>{
+      const source=[...document.scripts].map(s=>s.textContent||'')
+        .find(s=>s.includes('duplicateIndependent:')&&s.includes('const nonce='));
+      const literal=source?.match(/const nonce=("(?:[^"\\]|\\.)*")/);
+      if(!literal||typeof window.escVBGetTicket!=='function')
+        throw Error('Real independent-source WordPress inspector not loaded');
+      const nonce=JSON.parse(literal[1]);
+      const pageId=Number(document.querySelector('#esc-vb-page')?.value);
+      if(pageId!==80932)throw Error('Unexpected production Page for S1 clone dry run');
+      const call=async(route,params={})=>{
+        const ticket=await window.escVBGetTicket();
+        const res=await fetch('/wp-json/esc-builder/v1/'+route,{
+          method:'POST',credentials:'same-origin',cache:'no-store',
+          headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+          body:JSON.stringify({ticket,page_id:pageId,...params})
+        });
+        const response=await res.json();
+        if(!res.ok||response?.code)
+          throw Error('S1 independent clone read-only preflight: '+String(response?.code||res.status));
+        return response;
+      };
+      const before=await call('section-order');
+      const matched=(before.items||[]).filter(x=>x.table_id==='pse_hotline_vi');
+      if(matched.length!==1)
+        throw Error('S1 source Page does not own exactly one hotline table');
+      const prepared=await call('duplicate-section-independent',{
+        section_key:matched[0].id,expected_version:before.version,
+        share_source:false,dry_run:true
+      });
+      const after=await call('section-order');
+      return {
+        eligible:prepared.checked===true,
+        readonly:prepared.no_write===true&&prepared.saved===false,
+        independent:prepared.source_shared===false,
+        source:prepared.source_table_id==='pse_hotline_vi',
+        renderer:prepared.renderer==='Pse_hotline',
+        singleTable:prepared.would_copy_tables===1 &&
+          prepared.would_add_instances===1,
+        versionUnchanged:prepared.version===before.version &&
+          after.version===before.version,
+        itemsUnchanged:JSON.stringify(before.items)===JSON.stringify(after.items)
+      };
+    });
+    if(!Object.values(independent).every(Boolean))
+      throw Error('PSE independent S1 clone read-only REST source integrity mismatch');
+    console.log('PSE_BUILDER_S1_INDEPENDENT_CLONE_LIVE=PASS '+
+      'DRY_RUN=true NO_CMS_WRITE=true NO_TABLEPRESS_COPY=true '+JSON.stringify(independent));
+  }
+
   // A real WordPress Page owns this shortcode. Verify the same backend
   // remove transaction with dry_run and cancel the iframe Preview every time.
   const deletion=await page.evaluate(async()=>{
