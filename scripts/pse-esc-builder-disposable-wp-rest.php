@@ -839,6 +839,8 @@ $faqTempId=qa_new_table($model,$originalFaqRows,'Disposable S1 FAQ');
 qa_assert($model->change_table_id($faqTempId,'pse_faq_vi')===true,
     'rename native S1 table to canonical PSE renderer source');
 $faqSource='pse_faq_vi';
+$faqOriginalMeta=['title'=>'Câu hỏi thường gặp (QA)','description'=>'Mô tả từ bảng gốc'];
+update_option('tablepress_meta_'.$faqSource,$faqOriginalMeta,false);
 $faqPageBody=$qa_page_body.'<section><div>[table id=pse_faq_vi /]</div></section>';
 $updatedPage=wp_update_post(wp_slash([
     'ID'=>(int)$page,'post_content'=>$faqPageBody
@@ -875,11 +877,13 @@ qa_assert(($nativeClone['saved']??false)===true &&
     count(esc_vb_get_table_mapping())===$readOnlyTables+1,
     'S1 native copy has a new physical numeric TablePress ID');
 $cloneMeta=get_option('tablepress_meta_'.$newFaqId,[]);
-qa_assert($cloneMeta===[
+qa_assert($cloneMeta===array_merge($faqOriginalMeta,[
     'escBuilderCloneVersion'=>'1',
     'escBuilderCloneOf'=>'pse_faq_vi',
     'builderComponent'=>'Pse_faq','api'=>''
-], 'S1 cloned physical table owns the exact Astro source renderer alias');
+]), 'S1 cloned table keeps visual metadata AND exact Astro renderer alias');
+qa_assert(get_option('tablepress_meta_'.$faqSource,[])===$faqOriginalMeta,
+    'native source metadata untouched by independent clone');
 qa_assert(qa_fresh_table_rows($newFaqId)===$originalFaqRows &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
     'S1 independent source cloned with exact native TablePress rows');
@@ -958,6 +962,7 @@ qa_assert(!is_wp_error($resetFaq) &&
     get_post($page)->post_content===$qa_page_body &&
     $model->delete($faqSource)===true,
     'cleanup disposable original FAQ table and Page wrapper');
+delete_option('tablepress_meta_'.$faqSource);
 echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_SECTION_COPY_SAVE_READBACK_ROLLBACK=PASS\n";
 echo "PSE_DISPOSABLE_NATIVE_S1_INDEPENDENT_COPY_FAILURE_COMPENSATION=PASS\n";
 
