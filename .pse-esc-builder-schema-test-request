@@ -1,3 +1,3 @@
-2026-11-25 PSE final source-only CI for Page section swap preflight.
-PHP master ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb. Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d. Actions live QA script ad226dbba1b6fd4c4d9cf3bdcdec569a07ea11b4.
-Verify PHP section-order preflight dry_run before Inspector WordPress Save, exact source version and order, no-op revision block and stale session protection. PHP test suite and generated WordPress Inspector script syntax/contracts plus Astro Vitest/parser/Tailwind, source-only; no FTP, no CMS writes, no Astro website build.
+2026-11-25 PSE Visual Builder physical Page section source context hardening.
+PHP master 225c94f486407cc564ac0c76d7a0246469f6a3e4. Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
+Source-only CI for section-order.php: never advertise or save fake [table] source in comments, HTML attributes including quoted greater-than, script, style, textarea, template. Both dry_run and real writer must fail closed; real shortcode + unrelated markup remains eligible. Keep S1–S4 physical section swap, UI script, 26 Astro suites, parser and Tailwind pass. NO FTP, NO CMS WRITE, NO ASTRO BUILD.
