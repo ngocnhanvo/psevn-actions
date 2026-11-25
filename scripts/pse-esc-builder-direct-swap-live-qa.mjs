@@ -487,6 +487,10 @@ try{
         const panel=document.querySelector('#esc-vb-section-order-body');
         return panel instanceof HTMLElement&&panel.hidden===true;
       },null,{timeout:12000});
+      // The parent sends pick-clear across an iframe boundary after hiding
+      // the Inspector; wait for the asynchronous DOM acknowledgment.
+      await frame.locator('[data-esc-vb-swap-source],[data-esc-vb-swap-target]').first()
+        .waitFor({state:'detached',timeout:10000});
       if(await frame.locator('[data-esc-vb-swap-source],[data-esc-vb-swap-target]').count())
         throw Error('Inspector section Escape left stale red/green Preview markers');
       console.log('PSE_BUILDER_INSPECTOR_ESCAPE_SECTION_LIVE=PASS no_save=true parent_cancel=true');
@@ -602,6 +606,11 @@ try{
           const panel=document.querySelector('#esc-vb-item-sort-body');
           return panel instanceof HTMLElement&&panel.hidden===true;
         },null,{timeout:12000});
+        // Inspector hidden is a parent-window state; the iframe processes
+        // esc-vb-item-pick-clear on the next event-loop turn. Do not mistake
+        // that normal message latency for a persistent Preview defect.
+        await frame.locator('[data-esc-vb-item-source],[data-esc-vb-item-target]').first()
+          .waitFor({state:'detached',timeout:10000});
         if(await frame.locator('[data-esc-vb-item-source],[data-esc-vb-item-target]').count())
           throw Error('Inspector item Escape left stale Preview row markers');
         console.log('PSE_BUILDER_INSPECTOR_ESCAPE_ITEM_LIVE=PASS no_save=true parent_cancel=true physical_row=true');
