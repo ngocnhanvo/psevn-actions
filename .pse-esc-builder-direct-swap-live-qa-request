@@ -17,3 +17,5 @@ Astro production 5ec5a5427dedccce2cb508c06dbd51f2164f33aa, signed deploy #455691
 2026-11-25 exact postrelease read-only Inspector/Preview browser regression after PHP master 9d111532f7175294bbc305f7616d1f55e8724bce, guarded FTPS #45593920629 SUCCESS SHA256 item-section-ui.php, prior item-manager.php FTPS #45593602994 SUCCESS. Validate direct source/target Preview selection, native item and Page section swaps preview-and-Cancel, keyboard Escape, protected insert/remove/duplicate Inspector without CMS Save. NO ASTRO BUILD, NO CMS WRITE.
 
 2026-11-25 exact post-release authenticated no-write Inspector regression AFTER PHP production pinned 3a29d06263182d14119a150778fd60cd1076b185 guarded FTPS #45597088063 SUCCESS (includes/section-order.php SHA256 PASS, changed=1). Verify direct section/item Preview swap and Cancel, safe remove/duplicate dry_run and no CMS writes, no Astro build.
+
+2026-11-25 18:25 VN: postrelease Astro 82a4f2d signed deploy #45600151501 SUCCESS; exact authenticated in-Preview section/item swap, keyboard and protected remove/clone Cancel; READ ONLY, NO_CMS_WRITE.
