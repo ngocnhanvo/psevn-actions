@@ -1,3 +1,3 @@
-2026-11-25 PSE section-order preflight and no-op save protection.
-PHP master 09207b69ae197d5a99c5e537ac43aaba803ceb10; Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
-Run existing source-only CI: PHP lint, items-and-sections.test.php preflights real section transforms without any WordPress revisions, PHP generated UI contract, Astro Vitest/parser/Tailwind. Confirm dry_run section swaps/reorders are read-only and indistinguishable raw shortcode swaps cannot produce a CMS revision. No CMS writes, Astro build or FTP.
+2026-11-25 PSE final source-only CI for Page section swap preflight.
+PHP master ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb. Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d. Actions live QA script ad226dbba1b6fd4c4d9cf3bdcdec569a07ea11b4.
+Verify PHP section-order preflight dry_run before Inspector WordPress Save, exact source version and order, no-op revision block and stale session protection. PHP test suite and generated WordPress Inspector script syntax/contracts plus Astro Vitest/parser/Tailwind, source-only; no FTP, no CMS writes, no Astro website build.
