@@ -58,3 +58,4 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 
 2026-11-25 21:xx ICT: PHP master 21064b45053bc13be97ec579ab2caa650b3aa3da makes S4 unvetted REST item collection strictly read-only for remove/swap (server denial + Inspector capability), while preserving exact same-origin wp/v2/posts manual reference editing. Native PHP auth regression tests invalid foreign/source-query variants and zero TablePress writes; source CI only, NO CMS WRITE / NO FTP / NO ASTRO BUILD.
 2026-11-25 nested ESC ownership: run source-only CI at PHP 94ae3282a5f8b862c0795e3a383383dffccdd3ff with standalone test guard.
+2026-11-25 numeric TablePress source IDs: PHP f803f6f9c23999a102e017d8ecbad87046f93abf, rerun unit and disposable WP REST acceptance.

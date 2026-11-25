@@ -71,13 +71,6 @@ $page=wp_insert_post([
 ],true);
 qa_assert(!is_wp_error($page),'disposable Page insert');
 $GLOBALS['qa_page']=(int)$page;
-$owned=esc_vb_page_owned_table_ids($page);
-$literal=esc_vb_source_literal_table_ids((string)get_post($page)->post_content);
-$stored=qa_table_rows($model,$parent);
-$cell_ids=esc_vb_source_literal_table_ids((string)$stored[2][1]);
-echo 'PSE_DISPOSABLE_SCOPE_DIAG direct='.json_encode($literal)
-    .' nested='.json_encode($cell_ids).' resolved='.json_encode($owned)
-    .' parent_api='.json_encode(get_option('tablepress_meta_'.$parent,[]))."\n";
 qa_assert(esc_vb_text_page_owns_table($page,$child),
     'physical nested table recognized by actual WordPress');
 qa_assert(!esc_vb_text_page_owns_table($page,'ghost_fixture'),
