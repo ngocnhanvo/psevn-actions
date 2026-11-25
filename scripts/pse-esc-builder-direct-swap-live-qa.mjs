@@ -9,8 +9,9 @@ import {readFileSync} from 'node:fs';
 
 // Short, no-write structural diagnostics do not need to re-run the six
 // already verified item swaps. Full acceptance runs them all again.
-const cloneDiagnosticOnly=readFileSync('.pse-esc-builder-direct-swap-live-qa-request','utf8')
-  .includes('PSE_CLONE_DIAG_ONLY=1');
+const qaRequest=readFileSync('.pse-esc-builder-direct-swap-live-qa-request','utf8');
+const cloneDiagnosticOnly=qaRequest.includes('PSE_CLONE_DIAG_ONLY=1');
+const inspectorEscapeE2E=qaRequest.includes('PSE_INSPECTOR_ESCAPE_E2E=1');
 
 const env=String(process.env.ENV_FILE||'').split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,''));
 const values=env.filter(s=>s.startsWith('WC_URL='));
@@ -463,6 +464,33 @@ try{
         throw Error('Keyboard section Cancel did not restore source tabindex');
     }
     console.log('PSE_BUILDER_SECTION_KEYBOARD_PICK_LIVE=PASS Enter=true Escape_request=true restored_tabindex=true NO_CMS_WRITE=true');
+    if(inspectorEscapeE2E){
+      // Exercise the REAL WordPress inspector, not a synthetic parent pick
+      // state. Open only the readonly picker, then Escape. Never click Save.
+      const sourceId=sectionCapability.items.find(item=>item.id===sectionPair.from)?.table_id||
+        sectionPair.from;
+      await frame.locator('[data-tablepress-preview="'+sourceId+'"]').first()
+        .click({force:true,position:{x:12,y:12}});
+      const open=page.locator('#esc-vb-section-order-open');
+      await open.waitFor({state:'visible',timeout:15000});
+      await page.waitForFunction(()=>{
+        const button=document.querySelector('#esc-vb-section-order-open');
+        return button instanceof HTMLButtonElement&&!button.disabled;
+      },null,{timeout:15000});
+      await open.click();
+      await frame.locator('[data-esc-vb-swap-source]').first()
+        .waitFor({state:'attached',timeout:25000});
+      const target=frame.locator('[data-tablepress-preview="'+targetId+'"]').first();
+      await target.focus();
+      await target.press('Escape');
+      await page.waitForFunction(()=>{
+        const panel=document.querySelector('#esc-vb-section-order-body');
+        return panel instanceof HTMLElement&&panel.hidden===true;
+      },null,{timeout:12000});
+      if(await frame.locator('[data-esc-vb-swap-source],[data-esc-vb-swap-target]').count())
+        throw Error('Inspector section Escape left stale red/green Preview markers');
+      console.log('PSE_BUILDER_INSPECTOR_ESCAPE_SECTION_LIVE=PASS no_save=true parent_cancel=true');
+    }
   }
   for(const config of (cloneDiagnosticOnly?[]:[
     {name:'PSE_PROMISE',component:'.pse-promise',
@@ -554,6 +582,30 @@ try{
           throw Error('Keyboard item Cancel did not restore original tabindex');
       }
       console.log('PSE_BUILDER_ITEM_KEYBOARD_PICK_LIVE=PASS Space=true Escape_request=true physical_row=true restored_tabindex=true NO_CMS_WRITE=true');
+      if(inspectorEscapeE2E){
+        // Read-only S1 item inspector flow: select the physical row, open
+        // Preview destination mode and Escape without accepting a swap.
+        await root.locator(config.item+'[data-esc-builder-row="'+from+'"]').first()
+          .click({force:true});
+        const open=page.locator('#esc-vb-item-sort-open');
+        await open.waitFor({state:'visible',timeout:15000});
+        await page.waitForFunction(()=>{
+          const button=document.querySelector('#esc-vb-item-sort-open');
+          return button instanceof HTMLButtonElement&&!button.disabled;
+        },null,{timeout:15000});
+        await open.click();
+        await frame.locator('[data-esc-vb-item-source]').first()
+          .waitFor({state:'attached',timeout:25000});
+        await target.focus();
+        await target.press('Escape');
+        await page.waitForFunction(()=>{
+          const panel=document.querySelector('#esc-vb-item-sort-body');
+          return panel instanceof HTMLElement&&panel.hidden===true;
+        },null,{timeout:12000});
+        if(await frame.locator('[data-esc-vb-item-source],[data-esc-vb-item-target]').count())
+          throw Error('Inspector item Escape left stale Preview row markers');
+        console.log('PSE_BUILDER_INSPECTOR_ESCAPE_ITEM_LIVE=PASS no_save=true parent_cancel=true physical_row=true');
+      }
     }
     await root.evaluate((el,{selector,from,to})=>{
       const cards=[...el.querySelectorAll(selector)];
