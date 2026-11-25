@@ -701,6 +701,53 @@ qa_assert(($restoredBct['saved']??false)===true &&
     'S8 native Info Media ID inverse; Hotline unchanged');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_FOOTER_MEDIA_SAVE_READBACK_ROLLBACK=PASS\n";
 
+$assetRows=[
+    ['group','label','image','value','href','visible'],['','','','','',''],
+    ['certification','Chứng nhận QA','<img src="/wp-content/uploads/qa.png" alt="QA">','Đã đăng ký','/chung-nhan','1'],
+    ['credit','Thiết kế QA','','Vibe Code','https://example.org/','1']
+];
+$assetNewId=qa_new_table($model,$assetRows,'Disposable Footer assets');
+qa_assert($model->change_table_id($assetNewId,'pub_footer_assets_vi')===true,
+    'native TablePress table ID changed for Footer source');
+$assetRead=qa_request('footer-asset',['row_index'=>0]);
+qa_assert(($assetRead['source_kind']??'')==='footer.asset' &&
+    ($assetRead['table_id']??'')==='pub_footer_assets_vi',
+    'S8 Footer exact locale-bound ESC Table ownership');
+$assetSaved=qa_request('save-footer-asset',[
+    'row_index'=>0,'field'=>'label','value'=>'Chứng nhận mới',
+    'expected_version'=>$assetRead['version']
+]);
+$afterAssets=qa_table_rows($model,'pub_footer_assets_vi');
+qa_assert(($assetSaved['saved']??false)===true &&
+    $afterAssets[2][1]==='Chứng nhận mới' &&
+    $afterAssets[2][2]===$assetRows[2][2] &&
+    $afterAssets[3]===$assetRows[3],
+    'S8 native Footer TablePress label Save/readback isolates image and sibling');
+qa_request('save-footer-asset',[
+    'row_index'=>0,'field'=>'label','value'=>'Stale',
+    'expected_version'=>$assetRead['version']
+],true);
+$assetFresh=qa_request('footer-asset',['row_index'=>0]);
+qa_request('save-footer-asset',[
+    'row_index'=>0,'field'=>'image','value'=>'blocked',
+    'expected_version'=>$assetFresh['version']
+],true);
+qa_request('save-footer-asset',[
+    'row_index'=>0,'field'=>'href','value'=>'javascript:alert(1)',
+    'expected_version'=>$assetFresh['version']
+],true);
+qa_assert(qa_table_rows($model,'pub_footer_assets_vi')===$afterAssets,
+    'S8 Footer stale/image/executable href invalid writes rejected');
+$assetRestored=qa_request('save-footer-asset',[
+    'row_index'=>0,'field'=>'label','value'=>'Chứng nhận QA',
+    'expected_version'=>$assetFresh['version']
+]);
+qa_assert(($assetRestored['saved']??false)===true &&
+    qa_table_rows($model,'pub_footer_assets_vi')===$assetRows,
+    'S8 Footer native exact 6-column TablePress rollback');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_FOOTER_ASSETS_SAVE_READBACK_ROLLBACK=PASS\n";
+
+
 // All source and locale protections use the actual production Menu/Info
 // adapters, not a client-provided guessed capability.
 $fakeTicket=qa_request('save-footer-info',[
