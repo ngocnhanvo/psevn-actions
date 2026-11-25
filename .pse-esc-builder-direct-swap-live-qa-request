@@ -45,3 +45,8 @@ PSE_CLONE_DIAG_ONLY=1
 2026-11-26 01:19 ICT: Repeat exact native S1 Hotline Page 80932 independent copy PREVIEW-ONLY dry_run after real production TinyMCE clone wrapper repair. Astro signed #45668569106 SHA f4f16f315b8902ced948d37f9ecea87335c3a0c6; PHP guarded FTPS #45671269566 SHA 3235413ceffdfbb68c38447b4b918d5a8c7ad46e changed=2 SHA256 PASS. Source CI #45670718103 SUCCESS; ephemeral REST #45671084126 SUCCESS. NO REAL COPIES / NO CMS WRITE / NO BUILD.
 PSE_INDEPENDENT_CLONE_LIVE=1
 PSE_CLONE_DIAG_ONLY=1
+
+2026-11-26 01:30 ICT: production READ-ONLY UI acceptance on published PSE Hotline Page 80932. S1 independent source REST dry_run PASS #45671578866; Astro signed #45668569106 f4f16f315b8902ced948d37f9ecea87335c3a0c6; PHP FTPS #45671269566 source 3235413ceffdfbb68c38447b4b918d5a8c7ad46e, SHA256 PASS. Verify click on exact native Hotline item reveals enabled #esc-vb-section-duplicate-independent with same table source; DO NOT click button, no REST Save, no copy, no build.
+PSE_INDEPENDENT_CLONE_LIVE=1
+PSE_INDEPENDENT_CLONE_UI_LIVE=1
+PSE_CLONE_DIAG_ONLY=1
