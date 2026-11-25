@@ -316,9 +316,13 @@ try {
  }));
  // Current PSE's actually discovered S1 sources. Don't infer an editable
  // API record from a data row, and don't pass source parity based on HTTP 200.
+ // Rendered fields and source-only configuration are distinct. Empty
+ // Hotline notes do not render a public paragraph; FAQ visible toggles
+ // deliberately never render as text. The Inspector must still expose both
+ // native source columns with an authenticated writer.
  const mandatory={
-   pse_hotline_vi:['group','label','phone','note'],
-   pse_faq_vi:['question','answer','visible'],
+   pse_hotline_vi:['group','label','phone'],
+   pse_faq_vi:['question','answer'],
    pse_history_vi:['date','title','details'],
    pse_vision_vi:['title','details'],
    pse_contact_office_vi:['name','address','phone','fax','email','mapUrl'],
@@ -334,6 +338,55 @@ try {
        ' present='+instances[0].fields.join(','));
  }
  console.log('PSE_VB_PAGE_SOURCE=PASS all_5_real_ESC_tables=true physical_fields=true READ_ONLY=true');
+ const findPageFor=table=>{
+   const match=sourceSurvey.find(item=>item.sections?.some(section=>section.id===table));
+   if(!match||!options.some(option=>option.value===match.pageId))
+     throw Error('Missing published Page owner for source '+table);
+   return match.pageId;
+ };
+ const openSourcePage=async pageId=>{
+   await page.locator('#esc-vb-page').selectOption(pageId);
+   await Promise.all([
+     page.waitForLoadState('domcontentloaded',{timeout:35000}),
+     page.getByRole('button',{name:'Mở trang'}).click({timeout:25000})
+   ]);
+   const view=page.frameLocator('#esc-vb-frame');
+   await view.locator('style[data-esc-vb-item-pick-style]')
+     .waitFor({state:'attached',timeout:45000});
+   return view;
+ };
+ // A blank optional note has no public <p>, but the canonical value is
+ // listed in the authenticated ESC Table text editor for its physical row.
+ const hotlineFrame=await openSourcePage(findPageFor('pse_hotline_vi'));
+ const labelSource=hotlineFrame.locator(
+   '[data-tablepress-preview="pse_hotline_vi"] [data-esc-builder-cell-field="label"]').first();
+ await labelSource.waitFor({state:'visible',timeout:25000});
+ const noteRow=await labelSource.getAttribute('data-esc-builder-cell-row');
+ if(!/^\\d+$/.test(noteRow||''))throw Error('Hotline label lacks a canonical source row');
+ await labelSource.click({force:true});
+ await page.locator('#esc-vb-text-editor').waitFor({state:'visible',timeout:20000});
+ await page.waitForFunction(expected=>
+   [...(document.querySelector('#esc-vb-edit-row')?.options||[])]
+     .some(option=>option.value===expected),
+   noteRow+':note',{timeout:25000});
+ console.log('PSE_HOTLINE_EMPTY_NOTE_SCHEMA=PASS source_row='+noteRow+
+   ' selectable_in_Inspector=true public_placeholder=false NO_CMS_WRITE=true');
+ await page.locator('#esc-vb-edit-cancel').click();
+ // FAQ visible is a physical TablePress config cell, managed by the native
+ // item-visibility control, never a fake text marker on a public question.
+ const faqFrame=await openSourcePage(findPageFor('pse_faq_vi'));
+ const question=faqFrame.locator(
+   '[data-tablepress-preview="pse_faq_vi"] [data-esc-builder-cell-field="question"]').first();
+ await question.waitFor({state:'visible',timeout:25000});
+ await question.click({force:true,modifiers:['Alt']});
+ const visibility=page.locator('#esc-vb-item-visibility-open');
+ await visibility.waitFor({state:'visible',timeout:25000});
+ if(await visibility.isDisabled())
+   throw Error('FAQ source-owned visible column cannot open Inspector');
+ await visibility.click();
+ await page.locator('#esc-vb-visibility-dialog').waitFor({state:'visible',timeout:25000});
+ await page.locator('#esc-vb-visibility-cancel').click();
+ console.log('PSE_FAQ_NATIVE_VISIBLE_SCHEMA=PASS source_owned=true inspector_dry_only=true NO_CMS_WRITE=true');
  if(contactError)throw Error('PSE_CONTACT_SOURCE_QA=FAIL '+contactError+
    '; homepage QA completed independently; inspect PSE_CONTACT_RENDER_DIAGNOSTIC');
  console.log('PSE_ESC_BUILDER_LIVE=PASS text_click=PASS image_click=PASS banner_dot_click='+bannerDotResult+' distinct_editors=PASS PUBLIC_FOOTER_1440_768_390=PASS READ_ONLY=PASS NO_BUILD=PASS');
