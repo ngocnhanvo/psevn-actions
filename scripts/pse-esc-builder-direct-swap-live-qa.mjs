@@ -489,7 +489,7 @@ try{
     };
     const before=await request('section-order');
     if(!before.ok)throw Error('Cannot read Page before section insert test');
-    let approved=null;
+    const approved=[];
     const rejected=[];
     for(const candidate of candidates.slice(0,20)){
       const attempt=await request('duplicate-section-shared',{
@@ -514,7 +514,7 @@ try{
         data.next_order.length!==(before.data.items||[]).length+1||
         !/^[a-f0-9]{64}$/.test(data.next_version||''))
         throw Error('Unsafe or inconsistent section insert preflight contract');
-      approved=candidate;break;
+      approved.push(candidate);
     }
     const after=await request('section-order');
     if(!after.ok||after.data.version!==before.data.version||
@@ -530,30 +530,54 @@ try{
     source:'WordPress Page',mode:'dry_run',eligibleCandidates:insertionCheck.eligibleCandidates,
     result:'NOT_TESTED_NO_SAFE_SOURCE',noCmsWrite:true
   };
-  if(insertionCheck.approved){
-    const candidate=insertionCheck.approved;
-    const sourceTable=candidate.tableId;
-    const countBefore=await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count();
-    const htmlBefore=await frame.locator('body').evaluate(el=>el.innerHTML);
-    const preview=await previewSection('esc-vb-section-duplicate-preview',
-      candidate.source,99227,candidate.after);
-    if(preview.matched){
+  if(insertionCheck.approved.length){
+    // A server-approved source can still be ineligible in the real Preview
+    // (e.g. a slider with global DOM IDs). Probe all safe sibling candidates,
+    // rather than accidentally treating the first ineligible source as a
+    // missing feature. Never bypass either the source or Preview guard.
+    let refusedPreview=0;
+    for(const [index,candidate] of insertionCheck.approved.entries()){
+      const sourceTable=candidate.tableId;
+      const targetTable=sectionCapability.items.find(item=>item.id===candidate.after)?.table_id;
+      const countBefore=await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count();
+      const htmlBefore=await frame.locator('body').evaluate(el=>el.innerHTML);
+      const requestId=99227+index;
+      const preview=await previewSection('esc-vb-section-duplicate-preview',
+        candidate.source,requestId,candidate.after);
+      if(!preview.matched){
+        refusedPreview++;
+        continue;
+      }
       try{
         const countAfter=await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count();
         if(countAfter!==countBefore+1)
           throw Error('Preview inserted shared source into wrong TablePress collection');
+        // The new source occurrence must sit immediately AFTER the original
+        // destination on the actual page, not merely exist somewhere in DOM.
+        const actualOrder=await frame.locator('body').evaluate(()=>
+          [...document.querySelectorAll('[data-tablepress-preview]')]
+            .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'))
+            .map(node=>node.getAttribute('data-tablepress-preview')));
+        if(typeof targetTable!=='string'||
+          actualOrder.filter(id=>id===targetTable).length!==1||
+          actualOrder[actualOrder.indexOf(targetTable)+1]!==sourceTable)
+          throw Error('Preview inserted section at a different physical destination');
         sectionInsertResult.result='PASS';
         sectionInsertResult.source=candidate.source;
         sectionInsertResult.target=candidate.after;
       }finally{
         await previewSection('esc-vb-section-duplicate-cancel',
-          candidate.source,99227,candidate.after);
+          candidate.source,requestId,candidate.after);
         const htmlAfterCancel=await frame.locator('body').evaluate(el=>el.innerHTML);
         if(htmlAfterCancel!==htmlBefore)
           throw Error('Section insertion Cancel failed to restore exact Preview DOM');
       }
-    }else{
+      if(sectionInsertResult.result==='PASS')break;
+    }
+    if(sectionInsertResult.result!=='PASS'){
       sectionInsertResult.result='NOT_TESTED_UNSAFE_PREVIEW_SOURCE';
+      sectionInsertResult.previewRefused=refusedPreview;
+      sectionInsertResult.serverApproved=insertionCheck.approved.length;
     }
   }
   console.log('PSE_BUILDER_SECTION_INSERT_SHARED_DRY_RUN_LIVE='+JSON.stringify(sectionInsertResult));
