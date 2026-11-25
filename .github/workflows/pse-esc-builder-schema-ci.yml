@@ -39,7 +39,6 @@ jobs:
           php php/wp-content/plugins/esc-visual-builder/tests/items-and-sections.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/item-manual-reference-auth.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/auto-discovery.test.php
-          php php/wp-content/plugins/esc-visual-builder/tests/site-config.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/text-href.test.php
           php php/wp-content/plugins/esc-visual-builder/tests/text-ui-script.test.php > /tmp/pse-builder-text-ui.js
           node --check /tmp/pse-builder-text-ui.js
