@@ -1,2 +1,2 @@
-fb890606d37525a6c2a02c24bdfb5b0741957481
-2026-11-25 PSE ESC Visual Builder Inspector Page section + item swap post-Save readback and unknown-persistence fail-closed UI; committed PHP fb890606d37525a6c2a02c24bdfb5b0741957481, full source-only schema CI #45573846554 SUCCESS. Deploy ONLY item-section-ui.php by existing TLS guarded FTPS with SHA256 readback and rollback. Existing text/media and Page/item writers already released. No CMS data write or Astro build.
+ae1591df0809a6e91b260b2ad51e14ac1d662459
+2026-11-25 PSE Visual Builder protected uncertain-POST response and stale coordinate quarantine for existing ESC item insert/duplicate, deletion, manual references, local presentation cell, and visibility Save handlers. Exact source CI #45575123249 SUCCESS. Deploy only updated includes/item-section-ui.php via established guarded FTPS (SHA256 activated readback). No Astro build or CMS content write.
