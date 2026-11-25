@@ -900,6 +900,25 @@ qa_assert($cloneMeta===array_merge($faqOriginalMeta,[
 ]), 'S1 cloned table keeps visual metadata AND exact Astro renderer alias');
 qa_assert(get_option('tablepress_meta_'.$faqSource,[])===$faqOriginalMeta,
     'native source metadata untouched by independent clone');
+// Simulate the original PSE theme's ESC Table Admin Save, which writes
+// only api/image/cols/rows. It must not erase the clone's identity marker.
+$nativeAdminMeta=['api'=>'','image'=>'/wp-content/uploads/disposable.jpg',
+    'cols'=>'{}','rows'=>'{}'];
+update_option('tablepress_meta_'.$newFaqId,$nativeAdminMeta,false);
+$afterNativeAdmin=get_option('tablepress_meta_'.$newFaqId,[]);
+qa_assert(($afterNativeAdmin['component']??'')==='esc_vb_s1:pse_faq_vi' &&
+    ($afterNativeAdmin['escBuilderCloneOf']??'')==='pse_faq_vi' &&
+    ($afterNativeAdmin['builderComponent']??'')==='Pse_faq' &&
+    ($afterNativeAdmin['escBuilderCloneVersion']??'')==='1' &&
+    ($afterNativeAdmin['image']??'')===$nativeAdminMeta['image'] &&
+    ($afterNativeAdmin['cols']??'')==='{}' &&
+    get_option('tablepress_meta_'.$faqSource,[])===$faqOriginalMeta,
+    'native Admin metadata Save retains immutable S1 clone alias and editable image');
+update_option('tablepress_meta_'.$newFaqId,$cloneMeta,false);
+qa_assert(get_option('tablepress_meta_'.$newFaqId,[])===$cloneMeta,
+    'restore disposable S1 metadata exact bytes after native Admin emulation');
+echo "PSE_DISPOSABLE_NATIVE_S1_THEME_EDITOR_META_PRESERVED=PASS\n";
+
 $tableRoutes=array_keys(rest_get_server()->get_routes());
 $tableRoutes=array_values(array_filter($tableRoutes,
     static fn($route)=>stripos($route,'tablepress')!==false));
