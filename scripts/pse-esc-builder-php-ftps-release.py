@@ -25,6 +25,7 @@ FILES = (
     "includes/item-section-ui.php",
     "includes/page-image.php",
     "includes/page-text.php",
+    "includes/section-independent.php",
     "includes/section-order.php",
     "includes/shared-footer-assets-ui.php",
     "includes/shared-footer-assets.php",
