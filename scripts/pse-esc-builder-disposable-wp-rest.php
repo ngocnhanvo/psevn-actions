@@ -911,6 +911,16 @@ qa_assert($copyNativePost>0 &&
     get_post_type($copyNativePost)==='tablepress_table',
     'new physical TablePress post resolved for GitHub Trigger source');
 $copyPublic=vcs_get_tablepress_pure_data($copyNativePost);
+echo 'PSE_QA_S1_PUBLIC_SOURCE_DIAG='.wp_json_encode([
+    'id'=>is_array($copyPublic)?($copyPublic['id']??null):'WP_ERROR',
+    'expected_id'=>$newFaqId,
+    'component'=>is_array($copyPublic)?($copyPublic['component']??null):null,
+    'title'=>is_array($copyPublic)?($copyPublic['title']??null):null,
+    'description'=>is_array($copyPublic)?($copyPublic['description']??null):null,
+    'api'=>is_array($copyPublic)?($copyPublic['meta']['api']??null):null,
+    'error'=>is_wp_error($copyPublic)?$copyPublic->get_error_code():null,
+])."\n";
+
 qa_assert(!is_wp_error($copyPublic) && is_array($copyPublic) &&
     (string)($copyPublic['id']??'')===$newFaqId &&
     ($copyPublic['component']??'')==='esc_vb_s1:pse_faq_vi' &&
