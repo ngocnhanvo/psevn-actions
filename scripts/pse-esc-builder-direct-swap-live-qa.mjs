@@ -368,12 +368,21 @@ try{
     const before=await request('section-order');
     if(!before.ok)throw Error('Cannot read Page before section insert test');
     let approved=null;
+    const rejected=[];
     for(const candidate of candidates.slice(0,20)){
       const attempt=await request('duplicate-section-shared',{
         section_key:candidate.source,insert_after_key:candidate.after,
         expected_version:before.data.version,share_source:true,dry_run:true
       });
-      if(!attempt.ok)continue; // A structurally unsafe source stays readonly.
+      if(!attempt.ok){
+        rejected.push({
+          source:candidate.source,
+          after:candidate.after,
+          code:String(attempt.data?.code||'UNKNOWN').slice(0,60),
+          reason:String(attempt.data?.data?.reason_code||'unspecified').slice(0,60)
+        });
+        continue; // A structurally unsafe source stays readonly.
+      }
       const data=attempt.data;
       if(data.checked!==true||data.no_write!==true||data.saved!==false||
         data.source_shared!==true||data.duplicated!==candidate.source||
@@ -389,8 +398,12 @@ try{
     if(!after.ok||after.data.version!==before.data.version||
       JSON.stringify(after.data.items)!==JSON.stringify(before.data.items))
       throw Error('Read-only section insert altered live Page state');
-    return {approved,eligibleCandidates:candidates.length,readOnly:true};
+    return {approved,eligibleCandidates:candidates.length,readOnly:true,
+      rejected};
   },insertionCandidates);
+  const denied=insertionCheck.rejected||[];
+  if(denied.length)console.log('PSE_BUILDER_SECTION_INSERT_DENIALS_READ_ONLY='+
+    JSON.stringify(denied));
   const sectionInsertResult={
     source:'WordPress Page',mode:'dry_run',eligibleCandidates:insertionCheck.eligibleCandidates,
     result:'NOT_TESTED_NO_SAFE_SOURCE',noCmsWrite:true
