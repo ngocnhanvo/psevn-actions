@@ -342,3 +342,13 @@ The postdeploy gallery check previously pending in the section above completed *
 - No Astro/PHP or CMS writes, no production build in this wave. Prior remaining acceptance gaps unchanged.
 
 **Overall: PARTIAL — chưa hoàn tất.**
+
+
+### 2026-11-25 — History editorial image parity repair, signed production build pending
+
+- Root cause proven by read-only browser #45567096524: History public desktop is 1134×397.90625 in `/images/pages/...` responsive WebP, Builder is 1024×359 in /wp-content/uploads original JPG; all seven History landmarks shift exactly 38.90625px. Other 7/8 page/width cases PASS, mobile History PASS; image fully decoded, no CSS timeline issue.
+- Astro master `8aee3a7dc5b20d621bb2a463f5197b99847bce6e` introduced shared `editorialImageParity.ts` with exact local upload provenance for build-generated responsive srcsets and source-safe reuse in live Builder page overlay, preserving current image `src`, ALT, dimensions, editor ownership and different/new source images. Astro `958fcf68a439a9a83b3530e7002e7b35c288cdc6` guards optional Page HTML; existing unrelated Hotline source-string assertions adjusted at `5ec5a5427dedccce2cb508c06dbd51f2164f33aa` (CURRENT Astro master). No PHP or CMS source changes.
+- First full source-only run #45568526887 FAIL only two pre-existing Hotline test expectations (new image tests 4/4 PASS). Corrected source-only Actions #45568850944 **SUCCESS** pinned Astro `5ec5a542...`: 148/148 suites, **689/689 tests**. No Astro build, FTP or CMS writes in CI.
+- Authenticated WordPress production Build Website request #45569034903 **SUCCESS**, explicit approved Visual Builder one-time exception (`PSE_WP_PENDING_CHANGE_COUNT=0`, `PSE_WP_BUILD_REQUEST_MODE=owner-approved-exception`, WordPress dispatch accepted). Same signed production pipeline Astro build/deploy #45569129797 **IN_PROGRESS at checkpoint writing**; require release log proof `PSE_DEPLOY_COMMIT=5ec5a54...`, signed unzip activation and runtime guard before claiming deployment. Do not duplicate build request while active.
+- NEXT: after signed Astro build succeeds, trigger existing `.pse-esc-builder-direct-swap-live-qa-request` with `PSE_SUBPAGE_VIEWPORT_PARITY_ONLY=1`. Require **8/8** read-only public vs Builder FAQ/Hotline/History/Vision at 1440×900 and 390×900, exact matching content and ≤2px geometry, no overflow, no WP Save; inspect `PSE_BUILDER_SUBPAGE_VIEWPORT_SUMMARY`. If History remains failed, inspect exact live source / published provenance and fix shared image adapter; do not weaken threshold or use per-page CSS. Do not claim QA PASS from source CI.
+- Overall project Visual Builder still PARTIAL (separate Save→REST→public/readback/rollback and advanced S2–S5/section ownership work).
