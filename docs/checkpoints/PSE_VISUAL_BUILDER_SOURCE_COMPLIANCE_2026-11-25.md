@@ -304,3 +304,11 @@ The postdeploy gallery check previously pending in the section above completed *
 - Overall gaps carried forward: legitimate source Save/readback/rollback, independently owned section hide/show and clone, nested tables and missing S2–S5 published source fixtures. No production business data writes or build in this QA wave.
 
 **Overall Visual Builder: PARTIAL — chưa hoàn tất.**
+
+### Matching-viewport QA retry
+
+- First run [#45565163442](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565163442) completed **FAIL**. JS syntax check passed; browser reached the authenticated iframe, but `frame.waitForFunction` at line 333 timed out waiting for exact 1440×900 content viewport. No geometry comparison was reached. This is a QA setup failure, not established public layout regression.
+- Test-only commit [521d60d](https://github.com/ngocnhanvo/psevn-actions/commit/521d60da2730a14ae7b5f4e3de952ee20b8d45c6) pins iframe content-box sizing without borders, padding or flex constraints; logs actual viewport and outer CSS dimensions on failure. Strict 2px geometry tolerance and exact viewport requirements unchanged.
+- Request commit `2982bffba9677d81b84dc5ec73bc7c5d51e4c60c` triggered [#45565364105](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565364105), job 139038727868. Last observed IN_PROGRESS (container initialization); resume by checking this exact run and log markers `PSE_BUILDER_HOME_VIEWPORT_PARITY` / `PSE_BUILDER_HOME_VIEWPORT_PARITY_PASS` or `PSE_BUILDER_VIEWPORT_SETUP_DIAG`. No additional runs while this one is active. No Astro/PHP source, deployment or CMS data changed.
+
+**Overall: PARTIAL — chưa hoàn tất.**
