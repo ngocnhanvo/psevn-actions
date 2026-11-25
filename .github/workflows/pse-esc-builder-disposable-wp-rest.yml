@@ -42,6 +42,15 @@ jobs:
           extensions: mysqli, mbstring, curl, zip, gd
           tools: wp-cli
           coverage: none
+      - name: Audit bundled PSE native menu and locale helper ownership (read only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R -l -E 'function[[:space:]]+esc_pse_(page_lang|get_menu_meta|find_menu_object|get_menu_item_link_mode)' \
+            php/wp-content/mu-plugins php/wp-content/plugins/esc-table \
+            php/wp-content/plugins/esc-visual-builder php/wp-content/themes/vibe-code-theme \
+            --include='*.php' || true
+          echo 'PSE_S8_SOURCE_HELPER_INVENTORY=PASS NO_WRITE=true'
       - name: Verify WP-CLI or recover a pinned upstream release
         shell: bash
         run: |
