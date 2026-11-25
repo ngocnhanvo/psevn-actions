@@ -42,6 +42,25 @@ jobs:
           extensions: mysqli, mbstring, curl, zip, gd
           tools: wp-cli
           coverage: none
+      - name: Verify WP-CLI or recover a pinned upstream release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v wp >/dev/null 2>&1; then
+            version=2.12.0
+            base="https://github.com/wp-cli/wp-cli/releases/download/v${version}/wp-cli-${version}.phar"
+            curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
+              --max-time 90 "$base" --output /tmp/pse-wp-cli.phar
+            curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
+              --max-time 30 "$base.sha256" --output /tmp/pse-wp-cli.sha256
+            expected="$(tr -d '\r\n ' < /tmp/pse-wp-cli.sha256)"
+            [[ "$expected" =~ ^[0-9a-fA-F]{64}$ ]] || exit 1
+            echo "$expected  /tmp/pse-wp-cli.phar" | sha256sum --check -
+            sudo install -m 0755 /tmp/pse-wp-cli.phar /usr/local/bin/wp
+            echo "PSE_WP_CLI_RECOVERY=PASS SHA256=PASS VERSION=$version"
+          fi
+          command -v wp
+          wp --info | grep -E 'WP-CLI version'
       - name: Install loopback-only WordPress
         shell: bash
         run: |
