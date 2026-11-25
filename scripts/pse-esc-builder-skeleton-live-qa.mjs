@@ -250,6 +250,39 @@ try {
         await document.fonts?.ready;
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       });
+      // Check independent geometry settling BEFORE comparing two pages.
+      // Fonts + a double rAF can still precede late images/section hydration
+      // on one origin. Never wait for the pages to MATCH (that would hide a
+      // real difference); require only that each one's own landmarks stop
+      // shifting, with a bounded timeout and unchanged 5px parity limit.
+      const settle=async()=>{
+        const selectors=['#main-header','.pse-hero','.pse-hero__slides',
+          '.pse-tools__links','.pse-promise'];
+        const stableRects=()=>selectors.map(selector=>{
+          const node=document.querySelector(selector);
+          if(!node)return null;
+          const r=node.getBoundingClientRect();
+          return [r.x,r.y,r.width,r.height];
+        });
+        const near=(a,b)=>a&&b&&a.every((n,i)=>Math.abs(n-b[i])<=1);
+        const timeLimit=performance.now()+6000;
+        let previous=null,stable=0;
+        while(performance.now()<timeLimit){
+          const next=stableRects();
+          if(next.every((r,i)=>r===null?previous?.[i]===null:
+              near(r,previous?.[i]))){
+            stable++;
+            if(stable>=3)return;
+          }else stable=0;
+          previous=next;
+          await new Promise(resolve=>setTimeout(resolve,150));
+        }
+        throw Error('Homepage landmarks did not settle independently within 6s');
+      };
+      await Promise.all([
+        current.locator('html').evaluate(settle),
+        visitor.locator('html').evaluate(settle)
+      ]);
       const sample=()=>{
         const landmarks=['#main-header','.pse-hero','.pse-hero__slides',
           '.pse-tools__links','.pse-promise'];
