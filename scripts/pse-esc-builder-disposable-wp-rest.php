@@ -648,6 +648,73 @@ qa_assert(($footerRestore['saved']??false)===true &&
     'S8 native ACF Info exact source value rollback');
 qa_request('footer-info',['field'=>'not_allowed_field'],true);
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_FOOTER_ACF_SAVE_READBACK_ROLLBACK=PASS\n";
+// All source and locale protections use the actual production Menu/Info
+// adapters, not a client-provided guessed capability.
+$fakeTicket=qa_request('save-footer-info',[
+    'ticket'=>'forged-session-token','field'=>'hotline',
+    'expected_version'=>$footerRestore['version'],'value'=>'S8 spoof'
+],true);
+qa_assert(get_field('hotline',(int)$infoId,false)==='0123456789',
+    'forged S8 Footer ticket cannot mutate real ACF Info');
+$wrongLocalePage=wp_insert_post([
+    'post_type'=>'page','post_status'=>'publish',
+    'post_title'=>'Disposable EN Page'
+],true);
+qa_assert(!is_wp_error($wrongLocalePage),'local English Page');
+update_post_meta((int)$wrongLocalePage,'product_lang','en');
+$GLOBALS['qa_page']=(int)$wrongLocalePage;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$wrongLocalePage,'user_id'=>get_current_user_id()
+],120);
+$enFooter=qa_request('footer-info',['field'=>'hotline'],true);
+qa_assert(($enFooter['code']??'')==='footer_info_source_ambiguous',
+    'English Page may not silently fall back to Vietnamese WordPress Info');
+$enMenu=qa_request('menu-item',['item_id'=>$menuItem],true);
+qa_assert(($enMenu['code']??'')==='menu_preview_source_missing',
+    'English Page cannot access the Vietnamese-only Header');
+$GLOBALS['qa_page']=(int)$page;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$page,'user_id'=>get_current_user_id()
+],120);
+// A valid WordPress Menu item outside this Page's Header remains readonly.
+$outsideMenu=wp_create_nav_menu('Disposable unrelated source Menu');
+qa_assert(!is_wp_error($outsideMenu),'independent unrelated native Menu');
+update_term_meta($outsideMenu,'_esc_menu_code','Footer');
+update_term_meta($outsideMenu,'_esc_menu_lang','vi');
+$outsideItem=wp_update_nav_menu_item($outsideMenu,0,[
+    'menu-item-title'=>'Foreign Menu',
+    'menu-item-url'=>'https://example.org/foreign',
+    'menu-item-type'=>'custom','menu-item-status'=>'publish'
+]);
+qa_assert(!is_wp_error($outsideItem),'foreign native item');
+$foreignMenu=qa_request('menu-item',['item_id'=>(int)$outsideItem],true);
+qa_assert(($foreignMenu['code']??'')==='menu_item_outside_preview',
+    'foreign menu item rejected despite valid WordPress admin auth');
+$badMenuUrl=qa_request('save-menu-item',[
+    'item_id'=>$menuItem,
+    'label'=>'QA Native A',
+    'expected_version'=>qa_request('menu-item',['item_id'=>$menuItem])['version'],
+    'custom_url'=>'javascript:alert(1)'
+],true);
+qa_assert(($badMenuUrl['code']??'')==='menu_url_invalid' &&
+    get_post_field('post_title',$menuItem)==='QA Native A',
+    'executable Header URL rejected without changing native Menu');
+$duplicateInfo=wp_insert_post([
+    'post_type'=>'thong-tin-chung','post_status'=>'publish',
+    'post_title'=>'Duplicate disposable VI Info'
+],true);
+qa_assert(!is_wp_error($duplicateInfo),'second disposable Info source');
+update_post_meta((int)$duplicateInfo,'product_lang','vi');
+$ambiguous=qa_request('footer-info',['field'=>'hotline'],true);
+qa_assert(($ambiguous['code']??'')==='footer_info_source_ambiguous',
+    'two published VI Info records fail closed rather than guess ownership');
+$deleteDuplicate=wp_delete_post((int)$duplicateInfo,true);
+qa_assert($deleteDuplicate!==false &&
+    qa_request('footer-info',['field'=>'hotline'])['value']==='0123456789',
+    'disposable Info duplicate cleanup restores original source selection');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_AUTH_LOCALE_SOURCE_DENIAL=PASS\n";
 
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
