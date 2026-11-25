@@ -883,8 +883,33 @@ try{
     const originalOrder=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
       nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
         .map(n=>n.getAttribute('data-tablepress-preview')));
-    await frame.locator('[data-tablepress-preview="'+srcTable+'"]').first()
-      .click({force:true,position:{x:12,y:12}});
+    await page.evaluate(()=>{
+      window.__pseSourceClickTrace=[];
+      window.addEventListener('message',event=>{
+        const d=event.data||{};
+        if(!['esc-vb-section','esc-vb-item-selected','esc-vb-image-selected'].includes(d.type))return;
+        const v=d.type==='esc-vb-section'?(d.section||{}):d;
+        const entry={type:d.type,tableId:v.tableId||null,
+          sectionKey:v.sectionKey||null,row:v.row??null};
+        if(window.__pseSourceClickTrace.length<20)
+          window.__pseSourceClickTrace.push(entry);
+      },true);
+    });
+    const sourceFrame=frame.locator('[data-tablepress-preview="'+srcTable+'"]').first();
+    const frameIdentity=await sourceFrame.evaluate(el=>({
+      tableId:el.getAttribute('data-tablepress-preview'),
+      pageKey:Reflect.get(el,'__escVbPageSectionKey')||null
+    }));
+    await sourceFrame.click({force:true,position:{x:12,y:12}});
+    await page.waitForTimeout(450);
+    const eventTrace=await page.evaluate(()=>({
+      messages:window.__pseSourceClickTrace||[],
+      caps:document.querySelector('#esc-vb-section-order-panel')?.dataset.sectionCaps||null,
+      context:document.querySelector('#esc-vb-item-context')?.textContent||null
+    }));
+    console.log('PSE_SECTION_SOURCE_EVENT_DIAG='+JSON.stringify({
+      frameIdentity,eventTrace
+    }));
     const insertButton=page.locator('#esc-vb-section-insert-shared');
     // The live Editor grants this capability only after both server
     // source and Preview source checks finish; hidden means no promise.
