@@ -388,6 +388,78 @@ try{
   });
   console.log('PSE_SECTION_INSERT_PHYSICAL_SOURCE_SHAPES_READ_ONLY='+
     JSON.stringify(physicalSourceShapes));
+  // Diagnose exact byte-range PHP section wrapper tokenization without
+  // revealing editor text, HTML, nonce, or arbitrary source attributes.
+  const wrapperSourceResidual=await page.evaluate(async()=>{
+    const script=[...document.scripts].map(node=>node.textContent||'')
+      .find(text=>text.includes('duplicateSection:')&&text.includes('const nonce='));
+    const quoted=script?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
+    if(!quoted)throw Error('No authenticated Page read nonce');
+    const nonce=JSON.parse(quoted[1]);
+    const pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    const response=await fetch('/wp-json/wp/v2/pages/'+pageId+'?context=edit&_fields=content',{
+      credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':nonce}
+    });
+    if(!response.ok)throw Error('No authenticated Page editor structure');
+    const raw=(await response.json())?.content?.raw;
+    if(typeof raw!=='string'||raw.length>1000000)throw Error('Invalid Page content');
+    const shortcodes=[...raw.matchAll(/\[table\s+id\s*=\s*["']?([a-zA-Z0-9_-]{1,80})(?:["'])?\s*\/\]/gi)]
+      .map(m=>({id:m[1],start:m.index,end:m.index+m[0].length}));
+    const tags=[...raw.matchAll(/<[^>]+>/gs)];
+    const frames=[],stack=[];
+    const voids=['img','br','hr','input','meta','link','source','area',
+      'base','col','embed','param','track','wbr'];
+    for(const item of tags){
+      const token=item[0],at=item.index;
+      if(/^<!--|^<!|^<\?/.test(token))continue;
+      const match=/^<\s*(\/?)\s*([a-z][a-z0-9:-]*)\b/i.exec(token);
+      if(!match)continue;
+      const tag=match[2].toLowerCase();
+      if(match[1]){
+        const last=stack.pop();
+        if(last===undefined||frames[last].tag!==tag)
+          throw Error('Page wrapper parse mismatch');
+        frames[last].end=at+token.length;
+        frames[last].closeStart=at;
+      }else if(!voids.includes(tag)&&!/\/\s*>$/.test(token)){
+        frames.push({tag,start:at,openEnd:at+token.length,parent:stack.at(-1)??-1});
+        stack.push(frames.length-1);
+      }
+    }
+    const names=['pse_00_vi','pse_01_vi','pse_02_vi','pse_03_vi'];
+    return names.map(name=>{
+      const item=shortcodes.find(shortcode=>shortcode.id===name);
+      if(!item)return {name,located:false};
+      const candidates=frames.filter(frame=>
+        ['div','section','article','li'].includes(frame.tag)&&
+        frame.openEnd<=item.start&&frame.closeStart>=item.end&&
+        shortcodes.filter(s=>s.start>=frame.openEnd&&s.end<=frame.closeStart).length===1
+      ).sort((a,b)=>(a.end-a.start)-(b.end-b.start));
+      const slot=candidates[0];
+      if(!slot)return {name,located:true,isolated:false};
+      const fragment=raw.slice(slot.start,slot.end);
+      const without=fragment.slice(0,item.start-slot.start)+
+        fragment.slice(item.end-slot.start);
+      const remainder=without.replace(/<[^>]*>/gs,'');
+      const clean=remainder.replace(/(?:&nbsp;|&#0*160;|&#x0*a0;|&ensp;|&emsp;|\u00a0)/gi,'');
+      const tokens=[...without.matchAll(/<\s*\/?\s*([a-z][a-z0-9:-]*)\b[^>]*>/gi)]
+        .map(m=>m[1].toLowerCase());
+      return {name,located:true,isolated:true,
+        parentRoot:slot.parent===-1,tag:slot.tag,
+        tokenTags:[...new Set(tokens)].slice(0,15),
+        markupComments:/<!--/.test(without),
+        nonRenderedDeclaration:/<!/.test(without),
+        hasUnexpectedTag:tokens.some(t=>!['div','section','article','li','span','p','br'].includes(t)),
+        rawTrimBytes:remainder.trim().length,
+        remainingAfterKnownWhitespace:clean.trim().length,
+        containsEncodedSpace:/&nbsp;|&#0*160;|&#x0*a0;|&ensp;|&emsp;|\u00a0/i.test(remainder),
+        containsHtmlEntities:/&[#a-z0-9]+;/i.test(remainder),
+        strippedBytes:remainder.length,withoutBytes:without.length,
+      };
+    });
+  });
+  console.log('PSE_SECTION_INSERT_PHP_RESIDUAL_CLASS_READ_ONLY='+
+    JSON.stringify(wrapperSourceResidual));
   // Source-owned add-section contract: only exact Page occurrences in one
   // sibling group, with explicit shared ESC Table. This is a READ-ONLY
   // rehearsal: WordPress only receives dry_run:true and Page version is
