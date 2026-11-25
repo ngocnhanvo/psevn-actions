@@ -1,24 +1,21 @@
-# Phản hồi ChatGPT mới nhất — PSE
+# PSE Visual Builder — checkpoint tiếp nối 25/11/2026
 
-- Ngày: 2026-11-25 (Asia/Ho_Chi_Minh)
-- Project: pse.vn
-- Repository: ngocnhanvo/psevn-actions/main
-- Trạng thái: PARTIAL — chưa hoàn tất
-- Checkpoint: docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md
-- PHP production pin: 02a0e6cc670fcb302168374db1e7573545c8bb8a
-- Astro production pin: 72b85a29ddd93e960a1041bcbd945bb11902d03a
-- PHP docs-only HEAD: 181d28aec4fe0dc2175ba55dee427cd70a8cca85
+## Nguồn phát hành đã xác minh
 
-## Nội dung phản hồi
+- Astro production: `ngocnhanvo/psevn-astro@master` `87f4c37f077dd87f3e42116beb947969ee70ecba`; signed WordPress trigger [#45525483787](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45525483787) **SUCCESS**, signed Astro production build/deploy [#45525561538](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45525561538) **SUCCESS**, exact immutable source SHA and signed unzip proven. Không viết CMS.
+- PHP production: `ngocnhanvo/psevn-php@master` `b0f750711c0cc298d83ed139223f18e3982787f9`; guarded FTPS [#45526948922](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45526948922) **SUCCESS**, 2 changed/20 checked, SHA256 readback PASS, cleanup 0. Không rebuild Astro.
+- CI static source [#45526531612](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45526531612) **SUCCESS**, PHP S1 visibility source hide/show rollback + S2/S3 reference insert, JS syntax and Astro 25/25 suites, 138/138 tests.
+- Browser production [#45527861359](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45527861359) **SUCCESS**: production-first successful source sync info hidden, genuine FAQ source `pse_faq_vi` has 15 original rows + `visible` cell, `can_toggle_visibility=true`, contextual Hide/Show inspector after real source item click; no-op Save disabled, draft enabled, Hủy without writing; FAQ 15/Hotline 3/History 6 public-vs-Preview parity; History six milestone cards identical geometries/text/font at CSS inner viewport widths 1024 and 390; Footer rapid-click and invalid-ticket denial PASS.
+- Direct Preview item/section swap-and-Cancel [#45528157545](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45528157545) **SUCCESS** after latest PHP release: six S1 physical source cohorts, Page section swap `pse_00_vi`↔`pse_01_vi`, `NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true`.
+- False QA failures resolved: iframe CSS width 1024 yielded actual innerWidth 1022 (border 2px) crossing Tailwind breakpoint; script now aligns innerWidth from within cross-origin Astro frame. FAQ click previously before deferred Astro item-picker listener, script now waits for `style[data-esc-vb-item-pick-style]`; full final browser PASS.
 
-Đã tiếp tục triển khai trực tiếp Visual Builder PSE.vn, không lặp các bước S1 đã PASS.
+## Tiếp tục đúng phần còn thiếu (không lặp test đã PASS)
 
-- **S2–S4:** Sửa lỗi xác thực khiến nguồn ESC Table có `meta.api` bị từ chối HTTP 403 dù là tham chiếu thủ công hợp lệ. Bản sửa đã deploy an toàn [#45512104162](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45512104162).
-- **S2–S3:** Bổ sung bộ chọn record WordPress đã xuất bản cho Product, Page và ProductCategory; thay đúng một khóa tham chiếu theo TableID, row hash và version. Không sửa bản ghi API gốc, không mở quyền nguồn REST S4 chưa có adapter. PHP bản cuối [#45513074831](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45513074831) **PASS** checksum/readback.
-- **Kiểm thử:** Source CI [#45512929080](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45512929080) PASS, 137 bài Astro. Browser [#45513333492](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45513333492) và hoán đổi/hủy [#45513348345](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45513348345) đều PASS, không ghi CMS.
-- Đã cập nhật tài liệu triển khai và [checkpoint mới nhất](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md).
-
-**Chưa thể chốt toàn bộ Builder:** chưa có nguồn S2–S3 xuất bản phù hợp để nghiệm thu Save→REST→public thật; còn thêm tham chiếu, sửa trường local, adapter REST S4, S5 trên cấu hình thực, quản lý section bổ sung và kiểm thử responsive. Không tự tạo/xóa nội dung production để ép test PASS.
+- **Không báo DONE toàn Builder.** Live FAQ source has `hidden_source_rows=0`; actual CMS hide→restore Save/readback/rollback **NOT_TESTED**. The PHP in-memory fixture verifies hide/show bitwise restoration, not production write.
+- S2 Product/Page and S3 ProductCategory native manual references: picker/replace/add/local cell code deployed, but published inspected Pages have **zero manual reference collections**; actual authenticated WP Save→REST→Preview→public/rollback NOT_TESTED.
+- S4 arbitrary REST typed picker/approved endpoint schema not implemented; S5 actual source query config fields missing from `pse_01_vi`, query Save NOT_TESTED. Independent section insert/hide, independent-source clone, nested TablePress and sitewide responsive visual parity remain gaps.
+- **Next safe independent implementation:** inspect Page/ESC Table owner for section-visibility storage; implement schema-bound, versioned Page-owned section show/hide only with exact source mapping/rollback and no invented Page markup or shared-source mutation. Alternatively add S2/S3 isolated approved fixture acceptance if a real scoped published Page becomes available. Run source CI, guarded deploy, authenticated readonly QA; do not create dummy production Page/records solely for PASS.
+- Detailed authoritative checkpoint: `docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md` (actions/main). Preserve source-owner and Click→controls UX contract.
 
 Chế độ code: auto-build  
 Cổng ghi source: bypass  
