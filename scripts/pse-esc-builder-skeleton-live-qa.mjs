@@ -606,26 +606,74 @@ try {
            payload.dry_run!==true)
           throw Error('Section dry-run was not scoped to exact Page/version: '+target.name);
       }
-      const canRemove=removeResponse.ok()&&removed?.checked===true&&
+      const pageCanRemove=removeResponse.ok()&&removed?.checked===true&&
         removed?.saved===false&&removed?.no_write===true&&
         removed?.source_preserved===true&&removed?.removed===capability.key&&
         removed?.table_id===tableId&&removed?.version===read.version&&
         ['wrapper','shortcode_only'].includes(removed?.remove_mode);
-      const canDuplicate=cloneResponse.ok()&&duplicated?.checked===true&&
+      const pageCanDuplicate=cloneResponse.ok()&&duplicated?.checked===true&&
         duplicated?.saved===false&&duplicated?.no_write===true&&
         duplicated?.source_shared===true&&duplicated?.duplicated===capability.key&&
         duplicated?.table_id===tableId&&duplicated?.version===read.version&&
         duplicated?.would_add_instances===1;
+      const previewCountBefore=await part.locator('[data-tablepress-preview]').count();
+      // Independently ask the live Astro iframe for a NON-MUTATING visual
+      // eligibility result. The previously detected FAQ defect was a Page
+      // dry-run that passed while the iframe's actual wrapper was unsafe.
+      const previewCan=await page.evaluate(async({key,removeMode,remove,duplicate})=>{
+        const frame=document.querySelector('#esc-vb-frame');
+        if(!(frame instanceof HTMLIFrameElement)||!frame.contentWindow)
+          throw Error('Missing real Astro section Preview');
+        const origin=new URL(frame.src,location.href).origin;
+        const check=(mode,id,modeParam='')=>new Promise(resolve=>{
+          let timeoutId=null;
+          const finish=matched=>{
+            if(timeoutId!==null)clearTimeout(timeoutId);
+            window.removeEventListener('message',handle);
+            resolve(matched===true);
+          };
+          const handle=event=>{
+            if(event.origin!==origin||event.source!==frame.contentWindow||
+              event.data?.type!=='esc-vb-section-action-check-ack'||
+              event.data?.requestId!==id||
+              event.data?.key!==key||event.data?.mode!==mode)return;
+            finish(event.data.matched===true);
+          };
+          window.addEventListener('message',handle);
+          timeoutId=setTimeout(()=>finish(false),7000);
+          frame.contentWindow.postMessage({
+            type:'esc-vb-section-action-check',
+            key,mode,removeMode:modeParam,requestId:id
+          },origin);
+        });
+        const [removeOk,duplicateOk]=await Promise.all([
+          remove?check('remove',65901,removeMode):Promise.resolve(false),
+          duplicate?check('duplicate',65902):Promise.resolve(false)
+        ]);
+        return {remove:removeOk,duplicate:duplicateOk};
+      },{key:capability.key,removeMode:removed?.remove_mode||'',
+        remove:pageCanRemove,duplicate:pageCanDuplicate});
+      const previewCountAfter=await part.locator('[data-tablepress-preview]').count();
+      if(previewCountBefore!==previewCountAfter)
+        throw Error('Read-only section action probe mutated Preview DOM');
+      const canRemove=pageCanRemove&&previewCan.remove;
+      const canDuplicate=pageCanDuplicate&&previewCan.duplicate;
       if(capability.removeHidden===canRemove||
          capability.removeDisabled===canRemove||
          capability.cloneHidden===canDuplicate||
          capability.cloneDisabled===canDuplicate)
-        throw Error('Section controls disagree with exact WordPress dry-run: '+
-          JSON.stringify({page:target.name,capability,canRemove,canDuplicate}));
+        throw Error('Section buttons disagree with Page+Astro dual safety: '+
+          JSON.stringify({page:target.name,capability,pageCanRemove,
+            pageCanDuplicate,previewCan}));
+      if(target.name==='FAQ'&&
+        (!pageCanDuplicate||previewCan.duplicate||canDuplicate))
+        throw Error('Known unsafe FAQ wrapper was not rejected by Astro');
+      if(target.name==='HOTLINE'&&(!canDuplicate||!canRemove))
+        throw Error('Verified Hotline Page+Astro section actions stayed locked');
       console.log('PSE_BUILDER_SECTION_SOURCE_CAPABILITIES=PASS page='+target.name+
         ' dry_run_no_write=PASS shared_clone='+
-        (canDuplicate?'SUPPORTED':'REJECTED_BY_SOURCE')+
-        ' remove='+(canRemove?'SUPPORTED':'REJECTED_BY_SOURCE')+
+        (canDuplicate?'SUPPORTED':'REJECTED_BY_PAGE_OR_IFRAME')+
+        ' remove='+(canRemove?'SUPPORTED':'REJECTED_BY_PAGE_OR_IFRAME')+
         ' NO_CMS_WRITE=PASS');
     }
     const previewRows=await part.locator(target.selector).evaluateAll(nodes=>
