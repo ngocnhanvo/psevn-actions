@@ -515,21 +515,34 @@ try {
   // components identical; this test only resizes the iframe in QA memory.
   if(!historyPublicPath)throw Error('Missing independent WP History permalink');
   for(const targetWidth of [1024,390]){
-    await page.locator('#esc-vb-frame').evaluate((el,width)=>{
-      for(const name of ['width','min-width','max-width'])
-        el.style.setProperty(name,width+'px','important');
-      el.style.setProperty('flex','0 0 '+width+'px','important');
-    },targetWidth);
+    const resizeIframe=async cssWidth=>{
+      await page.locator('#esc-vb-frame').evaluate((el,width)=>{
+        for(const name of ['width','min-width','max-width'])
+          el.style.setProperty(name,width+'px','important');
+        el.style.setProperty('flex','0 0 '+width+'px','important');
+      },cssWidth);
+    };
+    await resizeIframe(targetWidth);
     const current=page.frameLocator('#esc-vb-frame');
     await current.locator('.pse-history__milestone').first()
       .waitFor({state:'visible',timeout:30000});
-    const actualWidth=await current.locator('html').evaluate(async()=>{
-      await document.fonts?.ready;
-      return window.innerWidth;
-    });
-    if(Math.abs(actualWidth-targetWidth)>3)
-      throw Error('Cannot align Builder iframe responsive viewport '+targetWidth+
+    // The WP Admin iframe has a 2px border (content viewport != iframe
+    // CSS width). Crossing the lg:1024 Tailwind breakpoint by those 2px
+    // changes padding from 32 to 20px and creates a false 22px "parity"
+    // failure. Align *innerWidth*, never accept near-equality here.
+    let actualWidth=await current.locator('html').evaluate(()=>innerWidth);
+    if(actualWidth!==targetWidth){
+      await resizeIframe(targetWidth+(targetWidth-actualWidth));
+      await page.waitForFunction(target=>{
+        const frame=document.querySelector('#esc-vb-frame');
+        return frame?.contentWindow?.innerWidth===target;
+      },targetWidth,{timeout:15000});
+      actualWidth=await current.locator('html').evaluate(()=>innerWidth);
+    }
+    if(actualWidth!==targetWidth)
+      throw Error('Cannot align exact Builder iframe innerWidth '+targetWidth+
         ', actual '+actualWidth);
+    await current.locator('html').evaluate(async()=>await document.fonts?.ready);
     const publicAtWidth=await browser.newPage({
       viewport:{width:targetWidth,height:900},deviceScaleFactor:1
     });
