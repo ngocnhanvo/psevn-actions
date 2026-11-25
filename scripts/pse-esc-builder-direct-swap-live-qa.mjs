@@ -775,6 +775,8 @@ try{
     // rather than accidentally treating the first ineligible source as a
     // missing feature. Never bypass either the source or Preview guard.
     let refusedPreview=0;
+    const livePreviewFrame=await (await page.locator('#esc-vb-frame').elementHandle())?.contentFrame();
+    if(!livePreviewFrame)throw Error('Missing real Preview Frame for insert/cancel QA');
     for(const [index,candidate] of insertionCheck.approved.entries()){
       const sourceTable=candidate.tableId;
       const targetTable=sectionCapability.items.find(item=>item.id===candidate.after)?.table_id;
@@ -783,7 +785,7 @@ try{
       // the public slider may legitimately autoplay while the Preview is
       // open. Cancel must retain every original section node, child and
       // sibling slot, and leave no extra physical section occurrence.
-      await frame.evaluate(()=>{
+      await livePreviewFrame.evaluate(()=>{
         const nodes=[...document.querySelectorAll('[data-tablepress-preview]')]
           .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'));
         window.__pseInsertQaBaseline=nodes.map(node=>({
@@ -822,7 +824,7 @@ try{
         // of the REAL section DOM, without falsely rejecting a separately
         // rotating hero slider's transient class/aria state.
         try{
-          await frame.waitForFunction(()=>{
+          await livePreviewFrame.waitForFunction(()=>{
             const baseline=window.__pseInsertQaBaseline;
             const current=[...document.querySelectorAll('[data-tablepress-preview]')]
               .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'));
@@ -836,7 +838,7 @@ try{
               });
           },null,{timeout:10000});
         }catch{
-          const diag=await frame.evaluate(()=>{
+          const diag=await livePreviewFrame.evaluate(()=>{
             const baseline=window.__pseInsertQaBaseline||[];
             const current=[...document.querySelectorAll('[data-tablepress-preview]')]
               .filter(node=>!node.parentElement?.closest('[data-tablepress-preview]'));
@@ -857,7 +859,7 @@ try{
           }));
           throw Error('Section insertion Cancel failed to restore exact physical section DOM');
         }finally{
-          await frame.evaluate(()=>{delete window.__pseInsertQaBaseline;});
+          await livePreviewFrame.evaluate(()=>{delete window.__pseInsertQaBaseline;});
         }
       }
       if(sectionInsertResult.result==='PASS')break;
