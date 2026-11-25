@@ -63,6 +63,52 @@ const send=async(type,tableId,from,to,count,requestId,providedItems=null)=>{
     items:providedItems||Array.from({length:count},()=>({}))});
 };
 
+// Keyboard destinations use the same authenticated cross-origin postMessage
+// bridge as mouse picking, and never trigger a WordPress Save. A read-only
+// probe must assert the target source identity and restore original tabindex.
+const previewPickMessage=async(payload,ackType=null)=>{
+  return page.evaluate(async({payload,ackType})=>{
+    const iframe=document.querySelector('#esc-vb-frame');
+    if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
+      throw Error('Missing real PSE Preview iframe');
+    const origin=new URL(iframe.src,location.href).origin;
+    if(!ackType){iframe.contentWindow.postMessage(payload,origin);return null;}
+    return new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{
+        window.removeEventListener('message',handler);
+        reject(Error('Keyboard Preview readiness missing: '+ackType));
+      },7000);
+      const handler=event=>{
+        if(event.source!==iframe.contentWindow||event.origin!==origin||
+          event.data?.type!==ackType||
+          event.data?.requestId!==payload.requestId)return;
+        clearTimeout(timer);window.removeEventListener('message',handler);
+        resolve(event.data);
+      };
+      window.addEventListener('message',handler);
+      iframe.contentWindow.postMessage(payload,origin);
+    });
+  },{payload,ackType});
+};
+const awaitPreviewPicked=(ackType,requestId)=>page.evaluate(({ackType,requestId})=>
+  new Promise((resolve,reject)=>{
+    const iframe=document.querySelector('#esc-vb-frame');
+    if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
+      throw Error('Missing Preview iframe during keyboard picking');
+    const origin=new URL(iframe.src,location.href).origin;
+    const timer=setTimeout(()=>{
+      window.removeEventListener('message',handler);
+      reject(Error('Keyboard Preview destination was not acknowledged: '+ackType));
+    },7000);
+    const handler=event=>{
+      if(event.source!==iframe.contentWindow||event.origin!==origin||
+        event.data?.type!==ackType||event.data?.requestId!==requestId)return;
+      clearTimeout(timer);window.removeEventListener('message',handler);
+      resolve(event.data);
+    };
+    window.addEventListener('message',handler);
+  }),{ackType,requestId});
+
 // A Page section clone must be previewed with a real WordPress occurrence
 // identity and must be fully rolled back without any REST write to the CMS.
 const previewSection=async(type,key,requestId)=>{
@@ -384,6 +430,35 @@ try{
     }
   }
   console.log('PSE_BUILDER_SECTION_SWAP_LIVE='+JSON.stringify(sectionSwapResults));
+  if(sectionPair){
+    const requestId=99671;
+    const targetId=sectionCapability.items.find(item=>item.id===sectionPair.to)?.table_id||
+      sectionPair.to;
+    const target=frame.locator('[data-tablepress-preview="'+targetId+'"]').first();
+    const priorTabindex=await target.getAttribute('tabindex');
+    try{
+      const ready=await previewPickMessage({
+        type:'esc-vb-section-pick-start',source:sectionPair.from,
+        allowed:[sectionPair.to],requestId
+      },'esc-vb-section-pick-ready');
+      if(ready?.matched!==true)throw Error('Keyboard section source rejected');
+      if(!(await target.evaluate(node=>node.tabIndex>=0)))
+        throw Error('Section Preview target is not keyboard focusable in pick mode');
+      const resultPromise=awaitPreviewPicked('esc-vb-section-target-picked',requestId);
+      await target.focus();
+      await target.press('Enter');
+      const picked=await resultPromise;
+      if(picked?.allowed!==true||picked.tableId!==sectionPair.to)
+        throw Error('Keyboard section target did not select exact Page occurrence');
+      if(!await target.evaluate(node=>node.hasAttribute('data-esc-vb-swap-target')))
+        throw Error('Keyboard section target missing green selection');
+    }finally{
+      await previewPickMessage({type:'esc-vb-section-pick-clear'},null);
+      if(await target.getAttribute('tabindex')!==priorTabindex)
+        throw Error('Keyboard section Cancel did not restore source tabindex');
+    }
+    console.log('PSE_BUILDER_SECTION_KEYBOARD_PICK_LIVE=PASS Enter=true restored_tabindex=true NO_CMS_WRITE=true');
+  }
   for(const config of (cloneDiagnosticOnly?[]:[
     {name:'PSE_PROMISE',component:'.pse-promise',
       item:'.pse-promise__highlight[data-esc-builder-row]',ready:false},
@@ -444,6 +519,31 @@ try{
     if(config.ready){
       const ready=await root.locator('[data-pse-slider]').first().getAttribute('data-ready');
       if(ready!=='true'){results.push(config.name+':NOT_TESTED_CONTROLLER_NOT_READY');continue}
+    }
+    if(config.name==='PSE_PROMISE'){
+      const target=cards.filter('[data-esc-builder-row="'+to+'"]').first();
+      const priorTabindex=await target.getAttribute('tabindex'),requestId=99672;
+      try{
+        const ready=await previewPickMessage({
+          type:'esc-vb-item-pick-start',tableId,sourceRow:from,count,requestId
+        },'esc-vb-item-pick-ready');
+        if(ready?.matched!==true)throw Error('Keyboard item physical source rejected');
+        if(!(await target.evaluate(node=>node.tabIndex>=0)))
+          throw Error('Physical item card is not keyboard focusable in pick mode');
+        const resultPromise=awaitPreviewPicked('esc-vb-item-target-picked',requestId);
+        await target.focus();
+        await target.press('Space');
+        const picked=await resultPromise;
+        if(picked?.tableId!==tableId||picked.row!==to)
+          throw Error('Keyboard item selection lost physical TablePress source row');
+        if(!await target.evaluate(node=>node.hasAttribute('data-esc-vb-item-target')))
+          throw Error('Keyboard item target missing green source-row selection');
+      }finally{
+        await previewPickMessage({type:'esc-vb-item-pick-clear'},null);
+        if(await target.getAttribute('tabindex')!==priorTabindex)
+          throw Error('Keyboard item Cancel did not restore original tabindex');
+      }
+      console.log('PSE_BUILDER_ITEM_KEYBOARD_PICK_LIVE=PASS Space=true physical_row=true restored_tabindex=true NO_CMS_WRITE=true');
     }
     await root.evaluate((el,{selector,from,to})=>{
       const cards=[...el.querySelectorAll(selector)];
