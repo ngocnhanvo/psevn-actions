@@ -236,3 +236,8 @@ At 2026-11-25 01:07 local, `psevn-php/master` independently advanced beyond the 
 - **Still missing / no false completion:** no approved published S1–S4 CMS Save→REST readback→Preview reload→public desktop/mobile→rollback acceptance. S2–S4 manual published reference fixture absent in verified inventory. S5 native-query metadata/fields absent. Independent section add/show/hide and clone into a new ESC Table source and nested table mutations require source contracts and protected writer. Do NOT modify production business data or use no-op Page saves to manufacture build signals.
 
 **Completion of bounded Escape release: PASS. Overall PSE Visual Builder: PARTIAL — chưa hoàn tất.**
+
+
+### 2026-11-25 11:38 VN — Postdeploy gallery closure
+
+The postdeploy gallery check previously pending in the section above completed **PASS**: [#45547443106](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45547443106), `PSE_FOUR_GALLERY_LIVE_PASS={"originalAlbums":4,"originalPhotos":464,"deferredSourceIds":[],"widths":2,"checks":8,"mediaGetPass":12,"archivePages":2,"wordpressOwned":true,"readOnly":true}`. All 390px and 1440px viewports have HTTP 200, correct original image counts, zero overflow, source order, and no admin-origin requests. Several image requests had high first-decode latency (up to 28.9s in #990), but all verified images eventually decoded; not a Visual Builder write or layout regression.
