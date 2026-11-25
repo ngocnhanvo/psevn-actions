@@ -817,6 +817,18 @@ qa_assert($deleteDuplicate!==false &&
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_AUTH_LOCALE_SOURCE_DENIAL=PASS\n";
 
 
+function qa_fresh_table_rows($id) {
+    // REST writers can create a new TablePress ID through a different model
+    // instance; a test-scoped model allocated before the REST call may cache
+    // the previous table mapping. Verify persistence with a fresh native
+    // source loader rather than that stale in-memory lookup.
+    $source=esc_vb_text_load_table((string)$id);
+    qa_assert(!is_wp_error($source) && is_array($source[1]['data']??null),
+        'fresh native TablePress source readback ID='.((string)$id).
+        ' error='.(is_wp_error($source)?$source->get_error_code():'none'));
+    return $source[1]['data'];
+}
+
 // Real source-independent S1 Page + native TablePress clone, on disposable
 // WordPress only. The new copy must be editable WITHOUT rewriting the source.
 $originalFaqRows=[
@@ -868,7 +880,7 @@ qa_assert($cloneMeta===[
     'escBuilderCloneOf'=>'pse_faq_vi',
     'builderComponent'=>'Pse_faq','api'=>''
 ], 'S1 cloned physical table owns the exact Astro source renderer alias');
-qa_assert(qa_table_rows($model,$newFaqId)===$originalFaqRows &&
+qa_assert(qa_fresh_table_rows($newFaqId)===$originalFaqRows &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
     'S1 independent source cloned with exact native TablePress rows');
 $clonedBody=get_post($page)->post_content;
@@ -884,7 +896,7 @@ $cloneCellSave=qa_request('save-text',[
     'original_hash'=>hash('sha256','QA FAQ Alpha')
 ]);
 qa_assert(($cloneCellSave['saved']??false)===true &&
-    qa_table_rows($model,$newFaqId)[2][0]==='QA FAQ Alpha independent' &&
+    qa_fresh_table_rows($newFaqId)[2][0]==='QA FAQ Alpha independent' &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
     'editing independent S1 native clone NEVER modifies original source');
 $cloneCellRestore=qa_request('save-text',[
@@ -894,7 +906,7 @@ $cloneCellRestore=qa_request('save-text',[
     'original_hash'=>hash('sha256','QA FAQ Alpha independent')
 ]);
 qa_assert(($cloneCellRestore['saved']??false)===true &&
-    qa_table_rows($model,$newFaqId)===$originalFaqRows,
+    qa_fresh_table_rows($newFaqId)===$originalFaqRows,
     'independent S1 field exact inverse native rows');
 $clonedOrder=qa_request('section-order',[]);
 qa_assert(($clonedOrder['version']??'')===$nativeClone['version'] &&
@@ -908,11 +920,11 @@ qa_assert(($detach['saved']??false)===true &&
     get_post($page)->post_content===$faqPageBody &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
     'section detach restores exact Page bytes without deleting original TablePress');
-qa_assert($model->table_exists($newFaqId)===true,
+qa_assert(TablePress::load_model('table')->table_exists($newFaqId)===true,
     'detach intentionally retains newly copied table for manual reuse');
 delete_option('tablepress_meta_'.$newFaqId);
-qa_assert($model->delete($newFaqId)===true &&
-    !$model->table_exists($newFaqId),
+qa_assert(TablePress::load_model('table')->delete($newFaqId)===true &&
+    !TablePress::load_model('table')->table_exists($newFaqId),
     'clean up only disposable detached source with verified ID');
 
 // Failure-injection: simulate a Page post_content filter suppressing the
