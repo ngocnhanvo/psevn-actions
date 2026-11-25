@@ -1,2 +1,2 @@
-6067dbc750232feae3ea5e233718f6434d2d6ad6
-2026-11-25 PSE Visual Builder Page section server-side readback guard. Source CI #45571708527 SUCCESS on PHP 6067dbc750232feae3ea5e233718f6434d2d6ad6; PHP/native mock test covers four Page save operations and false acknowledgement. Guarded PHP-only SHA256 FTPS release. No CMS content write; no Astro build.
+55cd4d1ae47c61c3c83543b189859d3f282ae309
+2026-11-25 PSE Visual Builder verified ESC Table read-after-write guard for all 7 item writers; validated CI #45572023065 SUCCESS, PHP native unit markers PSE_SECTION_SAVE_READBACK_GUARD/PSE_ITEM_SAVE_READBACK_GUARD PASS. Prior PHP source 6067dbc deployed #45571853168 SUCCESS. Deploy changed item-manager.php only with guarded FTPS SHA256 verification, no CMS writes, no Astro build.
