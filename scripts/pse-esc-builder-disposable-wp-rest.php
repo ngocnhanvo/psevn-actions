@@ -299,6 +299,75 @@ set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
     'page_id'=>(int)$page,'user_id'=>get_current_user_id()
 ],120);
 
+// S6: real WordPress Page HTML token writer, independent of ESC Table data.
+// The Builder must preserve all markup and the adjacent native shortcode.
+$s6Source='<section class="editor-copy"><h2>Tiêu đề gốc</h2>'
+    .'<p>Thông tin sản phẩm &amp; dịch vụ</p></section>'
+    .'<div>[table id='.$parent.' /]</div>';
+$s6Page=wp_insert_post([
+    'post_type'=>'page','post_status'=>'publish',
+    'post_title'=>'Disposable Page HTML S6',
+    'post_content'=>$s6Source
+],true);
+qa_assert(!is_wp_error($s6Page),'local real WordPress S6 Page');
+$GLOBALS['qa_page']=(int)$s6Page;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$s6Page,'user_id'=>get_current_user_id()
+],120);
+$nativeBefore=qa_table_rows($model,$parent);
+$s6Read=qa_request('editable-page-text',[]);
+qa_assert(($s6Read['source']??'')==='page_html' &&
+    ($s6Read['version']??'')===hash('sha256',$s6Source),
+    'S6 real REST Page HTML source/version');
+$targetRow=null;
+foreach ($s6Read['rows']??[] as $candidate) {
+    if (($candidate['title']??'')==='Tiêu đề gốc') {$targetRow=$candidate;break;}
+}
+qa_assert(is_array($targetRow),'S6 native Page HTML H2 physical text token');
+$s6Save=qa_request('save-page-text',[
+    'part'=>$targetRow['part'],'offset'=>$targetRow['offset'],
+    'expected_version'=>$s6Read['version'],
+    'original_hash'=>$targetRow['hash'],
+    'title'=>'Tiêu đề mới'
+]);
+$changedBody=(string)get_post($s6Page)->post_content;
+qa_assert(($s6Save['saved']??false)===true &&
+    $changedBody===str_replace('Tiêu đề gốc','Tiêu đề mới',$s6Source) &&
+    ($s6Save['version']??'')===hash('sha256',$changedBody) &&
+    qa_table_rows($model,$parent)===$nativeBefore,
+    'S6 real Save independent WordPress DB readback, ESC child unchanged');
+qa_request('save-page-text',[
+    'part'=>$targetRow['part'],'offset'=>$targetRow['offset'],
+    'expected_version'=>$s6Read['version'],
+    'original_hash'=>$targetRow['hash'],
+    'title'=>'Lệnh lỗi thời'
+],true);
+qa_assert((string)get_post($s6Page)->post_content===$changedBody,
+    'S6 stale Page version refuses second write');
+$s6Fresh=qa_request('editable-page-text',[]);
+$reverseRow=null;
+foreach ($s6Fresh['rows']??[] as $candidate) {
+    if (($candidate['title']??'')==='Tiêu đề mới') {$reverseRow=$candidate;break;}
+}
+qa_assert(is_array($reverseRow),'fresh S6 Page token readback');
+$s6Rollback=qa_request('save-page-text',[
+    'part'=>$reverseRow['part'],'offset'=>$reverseRow['offset'],
+    'expected_version'=>$s6Fresh['version'],
+    'original_hash'=>$reverseRow['hash'],
+    'title'=>'Tiêu đề gốc'
+]);
+qa_assert(($s6Rollback['saved']??false)===true &&
+    (string)get_post($s6Page)->post_content===$s6Source &&
+    qa_table_rows($model,$parent)===$nativeBefore,
+    'S6 native Page HTML exact rollback no shortcode/ESC table mutation');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S6_PAGE_TEXT_SAVE_READBACK_ROLLBACK=PASS\n";
+$GLOBALS['qa_page']=(int)$page;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$page,'user_id'=>get_current_user_id()
+],120);
+
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S1_S2_S3_S4_S5_SAVE_READBACK_ROLLBACK=PASS\n";
