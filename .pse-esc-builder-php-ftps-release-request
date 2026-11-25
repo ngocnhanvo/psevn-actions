@@ -1,5 +1,4 @@
-e4d3d835a36c18820d5573303e26a77f184809ee
-2026-11-25 PSE Visual Builder guarded Escape Cancel on active Preview picker only.
-Source-only CI #45546864579 SUCCESS at PHP master e4d3d835a36c18820d5573303e26a77f184809ee and Astro master 88abba46e9aa13543fd0c24af0f2d04d207feb6d.
-PHP includes/item-section-ui.php authenticates origin and iframe then checks exact source + requestId and only if active, not busy, routes Escape to the existing no-write Cancel handlers. The source/row/version-aware REST writers remain unchanged. PHP script and contract tests PASS, client JS parse PASS.
-Release only changed PHP plugin files through existing guarded FTPS, verify SHA256 activation/rollback and zero cleanup residue. No WordPress content write or Astro build in PHP workflow. Production Astro remains previous deployed SHA pending later signed WordPress Build Website.
+ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb
+2026-11-25 PSE Visual Builder WordPress Page section swap exact-source dry_run preflight.
+Source-only CI #45549580775 SUCCESS on pinned PHP master ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb. PHP section-order.php now predicts exact version and two-position swap without writes; Inspector uses no-write preflight and blocks stale/mismatched/no-op Save; PHP source and Inspector ticket contract tests PASS, Astro 26 suites/150 tests PASS.
+Deploy only changed Visual Builder PHP plugin files via existing guarded FTPS, verify SHA256 readback and rollback/cleanup. NO CMS CONTENT WRITE, NO ASTRO BUILD. Postrelease authenticated read-only Playwright follows in existing workflow.
