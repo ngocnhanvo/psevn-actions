@@ -918,13 +918,9 @@ qa_assert(!is_wp_error($copyPublic) && is_array($copyPublic) &&
     ($copyPublic['description']??'')==='Disposable local test' &&
     ($copyPublic['meta']['api']??'x')==='',
     'PSE theme pure-data exports the clone marker and original native name');
-$copyRest=rest_do_request(new WP_REST_Request('GET',
-    '/tablepress/v1/table/'.$newFaqId));
-$copyRestData=$copyRest->get_data();
-qa_assert(!$copyRest->is_error() &&
-    ($copyRestData['component']??'')==='esc_vb_s1:pse_faq_vi' &&
-    (string)($copyRestData['id']??'')===$newFaqId,
-    'actual PSE public TablePress REST detail exports namespaced clone');
+// The legacy per-table callback calls wp_send_json()/wp_die(), which
+// would terminate WP-CLI before the rollback checks. The paginated
+// all-tables REST callback below returns a real WP_REST_Response instead.
 $tableMapping=esc_vb_get_table_mapping();
 $allKeys=array_keys($tableMapping);
 $cloneIndex=array_search($newFaqId,array_map('strval',$allKeys),true);
