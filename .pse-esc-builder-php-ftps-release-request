@@ -1,2 +1,2 @@
-21064b45053bc13be97ec579ab2caa650b3aa3da
-2026-11-25 21:17 ICT: PSE Visual Builder guard unvetted S4 REST physical item swap/delete server-side and Inspector capability. Exact source-only CI #45631799304 SUCCESS, preserving approved native Product/Page/ProductCategory and same-origin WordPress Posts references. Release PHP plugin via existing guarded FTPS, source checksum/readback and rollback; NO CMS WRITE, NO ASTRO BUILD. Unrelated Page/ESC data unchanged.
+94ae3282a5f8b862c0795e3a383383dffccdd3ff
+2026-11-25 PSE nested ESC Table literal source graph: Page writer, Inspector, versioned state, no API projected child. CI #45635838704 success. FTP verified subset only (change-index.php, site-config.php, text-editor.php). No Astro build or CMS data mutation.
