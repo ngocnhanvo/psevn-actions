@@ -918,7 +918,12 @@ echo 'PSE_QA_S1_TABLE_MAPPING_KIND='.wp_json_encode([
     'mapping_value_type'=>gettype($rawMapped),
     'mapping_equals_post'=>(string)$rawMapped===(string)$copyNativePost,
 ])."\n";
-$copyPublic=vcs_get_tablepress_pure_data($newFaqId); // Public all-tables API uses physical shortcode ID, not WP post ID.
+// Each public HTTP request constructs its own static TablePress model.
+// This long-lived WP-CLI fixture keeps the model built at bootstrap (before
+// the copy); refresh it here to simulate the next public REST request.
+TablePress::$model_table=TablePress::load_model('table');
+$copyPublic=vcs_get_tablepress_pure_data($newFaqId);
+
 
 echo 'PSE_QA_S1_PUBLIC_SOURCE_DIAG='.wp_json_encode([
     'id'=>is_array($copyPublic)?($copyPublic['id']??null):'WP_ERROR',
