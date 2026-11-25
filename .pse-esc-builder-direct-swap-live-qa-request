@@ -1,3 +1,5 @@
 2026-11-25 PSE Visual Builder authenticated read-only production acceptance after PHP section-order preflight release.
-PHP source/deployed ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb (guarded FTPS #45549763498 PASS changed2 SHA256 readback). Astro source/deployed 88abba46e9aa13543fd0c24af0f2d04d207feb6d (unchanged). Actions script ad226dbba1b6fd4c4d9cf3bdcdec569a07ea11b4.
+PHP source/deployed ce7c5f8d0d547dd96c6c0bb6883e10a157625bfb (guarded FTPS #45549763498 PASS changed2 SHA256 readback). Astro source/deployed 88abba46e9aa13543fd0c24af0f2d04d207feb6d (unchanged). Actions script d5f04bd7e0d67a20a9da525adaa8a5df07b386ea (whole-file JS parse PASS).
 Run existing script to authenticate WP Inspector, verify new save-section-order dry_run:true preflight for actual WordPress Page section pair, two positions swapped and other items unchanged, before/after Page version identical, no live write. Retain six S1 direct item swaps, keyboard Enter/Space Escape cancel, Inspector parent cancel, safe/unsafe remove+clone preview, final NO_CMS_WRITE=true NO_SAVE=true. READ ONLY, do not click real Save or build.
+
+Retry after source QA script SyntaxError: missing quote in typeof function check, fixed without changing application source or acceptance assertions. First QA run #45549940428 failed at node --check before browser/WordPress access. All checks remain read-only.
