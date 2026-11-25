@@ -144,6 +144,41 @@ try {
   console.log('PSE_S4_LOCAL_POSTS_REST_SOURCE=PASS canonical_route=PASS published_schema=PASS'+
     ' sample_count='+s4PostProbe.sampleCount+' NO_CMS_WRITE=PASS');
 
+  // Confirm the production API really supports Post ID pinning, including
+  // older-than-first-page records if available. Only GET public published
+  // Post ID/status fields; never alter Post content or expose its title.
+  const pinnedPostProbe=await page.evaluate(async()=>{
+    const base='/wp-json/wp/v2/posts';
+    const initial=await fetch(base+'?per_page=1&_fields=id,status',{
+      credentials:'same-origin',cache:'no-store'
+    });
+    const initialRows=await initial.json().catch(()=>[]);
+    if(!initial.ok||!Array.isArray(initialRows)||!initialRows.length||
+      !Number.isSafeInteger(initialRows[0]?.id))
+      return {valid:false,reason:'no published reference Post'};
+    const older=await fetch(base+'?per_page=1&offset=11&_fields=id,status',{
+      credentials:'same-origin',cache:'no-store'
+    });
+    const olderRows=await older.json().catch(()=>[]);
+    const hasOlder=older.ok&&Array.isArray(olderRows)&&olderRows.length===1&&
+      olderRows[0]?.status==='publish'&&Number.isSafeInteger(olderRows[0]?.id);
+    const expected=hasOlder?olderRows[0].id:initialRows[0].id;
+    const pin=await fetch(base+'?include='+encodeURIComponent(String(expected))+
+      '&per_page=1&_fields=id,status',{
+      credentials:'same-origin',cache:'no-store'
+    });
+    const records=await pin.json().catch(()=>[]);
+    return {valid:pin.ok&&Array.isArray(records)&&records.length===1&&
+        records[0]?.id===expected&&records[0]?.status==='publish',
+      olderThanDefaultPage:hasOlder};
+  });
+  if(!pinnedPostProbe.valid)
+    throw Error('S4 source did not resolve an exact Post ID via include: '+
+      JSON.stringify(pinnedPostProbe));
+  console.log('PSE_S4_POST_ID_INCLUDE_LIVE=PASS older_than_default_page='+
+    (pinnedPostProbe.olderThanDefaultPage?'PASS':'NOT_TESTED')+
+    ' one_bounded_request=PASS NO_CMS_WRITE=PASS');
+
 
 
   // The old preview used to inject green/white ESC Table text chips over
