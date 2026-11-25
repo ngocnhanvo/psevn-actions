@@ -1,2 +1,2 @@
-86d811bc29ed6712d76d7fe00e75337ccd9546d6
-2026-11-25 Scoped PSE Visual Builder PHP section-order.php exact source Clone Remove rollback; source CI #45640601935 PASS, real disposable WordPress #45640809119 PASS S1-S5 and two native Page variants. Production PHP-plugin-only TLS FTP checksum+rollback, no CMS write, no Astro build.
+b32aa0ca2c3440205a9f7f8219594e109ebc247b
+2026-11-26 00:55 ICT: Owner auto-build Visual Builder independent S1 clone PHP guarded FTPS, after signed Astro production #45668569106 source f4f16f315b8902ced948d37f9ecea87335c3a0c6 SUCCESS. WordPress actual isolated REST #45659417142 SUCCESS, source-only CI #45659556764 SUCCESS, manifest includes section-independent.php and original entrypoint, TLS staged rollback SHA256. NO CMS writes and NO additional Astro build.
