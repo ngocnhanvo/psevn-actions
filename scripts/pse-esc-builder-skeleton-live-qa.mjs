@@ -517,6 +517,11 @@ try {
         })).catch(()=>{});
       };
       page.on('response',onSchemaResponse);
+      // The FAQ HTML may render before the deferred Astro module installs
+      // its shared Preview item-selection listener. A visible card alone is
+      // NOT proof that direct source selection has finished hydrating.
+      await part.locator('style[data-esc-vb-item-pick-style]')
+        .waitFor({state:'attached',timeout:45000});
       const faqSource=part.locator('.pse-faq__item[data-esc-builder-row]').first();
       await faqSource.click({force:true});
       let visibilityAvailable=false;
