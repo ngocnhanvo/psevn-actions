@@ -21,3 +21,5 @@ Astro production 5ec5a5427dedccce2cb508c06dbd51f2164f33aa, signed deploy #455691
 2026-11-25 18:25 VN: postrelease Astro 82a4f2d signed deploy #45600151501 SUCCESS; exact authenticated in-Preview section/item swap, keyboard and protected remove/clone Cancel; READ ONLY, NO_CMS_WRITE.
 
 2026-11-25 ~18:45 VN: Postdeploy direct-swap-cancel READ ONLY at exact Astro e345b24eec08def52be6620d64859432b72a7118 signed build #45603256811 SUCCESS and PHP 3a29d06263 unchanged. Verify actual authenticated production Preview, 1440/1024/390 responsive parity when applicable, section/item pick and Cancel; NO_CMS_WRITE; NO_BUILD.
+
+2026-11-25 18:59 ICT: Postrelease full real authenticated read-only Preview section/item swap, source version and visibility REST dry_run on published Page. Exact signed Astro #45608622865 c8a46ee17b5e239aab79e71587d8458b4b7f0b9d; PHP FTPS #45608877504 c4ec3b915d140f7dfc1978716162d55e6af57b66. No CMS write, no Save, Cancel all preview drafts, validate newly deployed Inspector toggle capability.
