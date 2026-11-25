@@ -533,11 +533,13 @@ try {
     let actualWidth=await current.locator('html').evaluate(()=>innerWidth);
     if(actualWidth!==targetWidth){
       await resizeIframe(targetWidth+(targetWidth-actualWidth));
-      await page.waitForFunction(target=>{
-        const frame=document.querySelector('#esc-vb-frame');
-        return frame?.contentWindow?.innerWidth===target;
-      },targetWidth,{timeout:15000});
-      actualWidth=await current.locator('html').evaluate(()=>innerWidth);
+      // WordPress admin and Astro iframe use different origins; measure
+      // viewport from INSIDE the iframe. Parent contentWindow.innerWidth
+      // throws SecurityError for cross-origin preview pages.
+      actualWidth=await current.locator('html').evaluate(async()=>{
+        await new Promise(resolve=>requestAnimationFrame(resolve));
+        return innerWidth;
+      });
     }
     if(actualWidth!==targetWidth)
       throw Error('Cannot align exact Builder iframe innerWidth '+targetWidth+
