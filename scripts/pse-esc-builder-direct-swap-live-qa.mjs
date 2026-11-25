@@ -1501,6 +1501,40 @@ try{
       throw Error('PSE independent S1 clone read-only REST source integrity mismatch');
     console.log('PSE_BUILDER_S1_INDEPENDENT_CLONE_LIVE=PASS '+
       'DRY_RUN=true NO_CMS_WRITE=true NO_TABLEPRESS_COPY=true '+JSON.stringify(independent));
+
+    if(qaRequest.includes('PSE_INDEPENDENT_CLONE_UI_LIVE=1')){
+      // An administrator must be able to DISCOVER this capability through
+      // the actual source-target click-to-disclose UI. Do NOT press Save,
+      // Confirm, Duplicate or any CMS-writing operation in live production.
+      const hotlineRow=frame.locator(
+        '[data-tablepress-preview="pse_hotline_vi"] [data-esc-builder-row]').first();
+      if(await hotlineRow.count()!==1)
+        throw Error('No visible physical Hotline row to select in real Preview');
+      await hotlineRow.click({position:{x:6,y:6}});
+      await page.waitForFunction(()=>{
+        const panel=document.getElementById('esc-vb-section-order-panel');
+        const button=document.getElementById('esc-vb-section-duplicate-independent');
+        return panel?.dataset.sectionCaps==='ready' &&
+          button instanceof HTMLButtonElement &&
+          !button.hidden && !button.disabled;
+      },null,{timeout:25000});
+      const ui=await page.evaluate(()=>{
+        const button=document.getElementById('esc-vb-section-duplicate-independent');
+        const panel=document.getElementById('esc-vb-section-order-panel');
+        return {nativeButton:button instanceof HTMLButtonElement,
+          visible:button instanceof HTMLButtonElement&&!button.hidden,
+          enabled:button instanceof HTMLButtonElement&&!button.disabled,
+          caps:panel?.dataset.sectionCaps,
+          source:panel?.dataset.sectionCapsKey};
+      });
+      if(!ui.nativeButton||!ui.visible||!ui.enabled||
+         ui.caps!=='ready'||ui.source!=='pse_hotline_vi')
+        throw Error('PSE independent S1 inspector did not reveal source-owned action');
+      console.log('PSE_BUILDER_S1_INDEPENDENT_CLONE_INSPECTOR_LIVE=PASS '+
+        'NATIVE_BUTTON_VISIBLE=true CLICK_TO_DISCLOSE=true NO_SAVE=true '+
+        'NO_CMS_WRITE=true '+JSON.stringify(ui));
+    }
+
   }
 
   // A real WordPress Page owns this shortcode. Verify the same backend
