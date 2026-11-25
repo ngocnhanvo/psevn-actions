@@ -450,6 +450,7 @@ try {
 
   // Compare independent published Page outputs for three native S1 cohorts.
   // The URL comes from the exact WordPress Page permalink; never guess a slug.
+  let historyPublicPath='';
   const subpageSources=[
     {pageId:'80930',name:'FAQ',selector:'.pse-faq__item'},
     {pageId:'80932',name:'HOTLINE',selector:'.pse-hotline__card'},
@@ -469,6 +470,7 @@ try {
       return {id:result.id,slug:result.slug,link:result.link};
     },target.pageId);
     const wpPermalink=new URL(wpPage.link);
+    if(target.name==='HISTORY')historyPublicPath=wpPermalink.pathname;
     if(wpPermalink.origin!==wp.origin||
        !wpPermalink.pathname.startsWith('/')||
        wpPermalink.pathname==='/'||
@@ -506,6 +508,66 @@ try {
       throw Error(target.name+' contains Preview-only repair labels');
     console.log('PSE_BUILDER_SUBPAGE_PUBLIC_PARITY=PASS page='+target.name+
       ' count='+publicRows.length+' markers=PASS NO_CMS_WRITE=PASS');
+  }
+
+  // Geometry parity at MATCHED public/iframe CSS viewport widths, not the
+  // different outer WordPress Admin browser widths. Keep runtime data and
+  // components identical; this test only resizes the iframe in QA memory.
+  if(!historyPublicPath)throw Error('Missing independent WP History permalink');
+  for(const targetWidth of [1024,390]){
+    await page.locator('#esc-vb-frame').evaluate((el,width)=>{
+      for(const name of ['width','min-width','max-width'])
+        el.style.setProperty(name,width+'px','important');
+      el.style.setProperty('flex','0 0 '+width+'px','important');
+    },targetWidth);
+    const current=page.frameLocator('#esc-vb-frame');
+    await current.locator('.pse-history__milestone').first()
+      .waitFor({state:'visible',timeout:30000});
+    const actualWidth=await current.locator('html').evaluate(async()=>{
+      await document.fonts?.ready;
+      return window.innerWidth;
+    });
+    if(Math.abs(actualWidth-targetWidth)>3)
+      throw Error('Cannot align Builder iframe responsive viewport '+targetWidth+
+        ', actual '+actualWidth);
+    const publicAtWidth=await browser.newPage({
+      viewport:{width:targetWidth,height:900},deviceScaleFactor:1
+    });
+    try{
+      const response=await publicAtWidth.goto(new URL(historyPublicPath,publicOrigin).href,
+        {waitUntil:'domcontentloaded',timeout:60000});
+      if(!response?.ok())throw Error('History responsive public route unavailable');
+      await publicAtWidth.locator('.pse-history__milestone').first()
+        .waitFor({state:'visible',timeout:30000});
+      await publicAtWidth.locator('html').evaluate(async()=>await document.fonts?.ready);
+      const measure=nodes=>nodes.map(node=>{
+        const rect=node.getBoundingClientRect();
+        const heading=node.querySelector('h2,h3,h4,strong');
+        const titleStyle=heading?getComputedStyle(heading):getComputedStyle(node);
+        return {
+          width:Math.round(rect.width*10)/10,
+          height:Math.round(rect.height*10)/10,
+          fontSize:titleStyle.fontSize,
+          text:(node.textContent||'').replace(/\\s+/g,' ').trim()
+        };
+      });
+      const a=await current.locator('.pse-history__milestone').evaluateAll(measure);
+      const b=await publicAtWidth.locator('.pse-history__milestone').evaluateAll(measure);
+      if(a.length!==b.length||a.length<1)
+        throw Error('Responsive History card count differs at '+targetWidth);
+      for(let index=0;index<a.length;index++){
+        if(a[index].text!==b[index].text||
+           Math.abs(a[index].width-b[index].width)>8||
+           Math.abs(a[index].height-b[index].height)>35||
+           a[index].fontSize!==b[index].fontSize){
+          throw Error('Responsive Preview geometry differs at width='+
+            targetWidth+' card='+index+' preview='+JSON.stringify(a[index])+
+            ' public='+JSON.stringify(b[index]));
+        }
+      }
+      console.log('PSE_BUILDER_RESPONSIVE_HISTORY_PARITY=PASS width='+
+        targetWidth+' cards='+a.length+' count_text_geometry_font=PASS NO_CMS_WRITE=PASS');
+    }finally{await publicAtWidth.close();}
   }
 } finally {
   await browser.close();
