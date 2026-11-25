@@ -13,3 +13,12 @@
 Chế độ code: auto-build
 Cổng ghi source: bypass
 Trạng thái: PARTIAL — chưa hoàn tất
+
+## Continuation
+
+- Subpage run #45566000163 completed FAIL: 7/8 passed; History desktop root and all six rows y offset 38.90625px only. Other three pages and History mobile pass.
+- QA diagnostic commit a8e757d8a2254d2596b30afc86bcd7e26e772820; exact retry #45566535693 job 139042603014 is IN_PROGRESS. Check `PSE_HISTORY_COVER_GEOMETRY` then `PSE_BUILDER_SUBPAGE_VIEWPORT_SUMMARY`; 2px unchanged. No application change, no CMS write. Latest checkpoint 6b16164dd365d99a30be1959e12ba571a475d122.
+
+Chế độ code: auto-build
+Cổng ghi source: bypass
+Trạng thái: PARTIAL — chưa hoàn tất
