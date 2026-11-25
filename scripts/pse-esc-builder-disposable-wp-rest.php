@@ -884,6 +884,11 @@ qa_assert($cloneMeta===array_merge($faqOriginalMeta,[
 ]), 'S1 cloned table keeps visual metadata AND exact Astro renderer alias');
 qa_assert(get_option('tablepress_meta_'.$faqSource,[])===$faqOriginalMeta,
     'native source metadata untouched by independent clone');
+$tableRoutes=array_keys(rest_get_server()->get_routes());
+$tableRoutes=array_values(array_filter($tableRoutes,
+    static fn($route)=>stripos($route,'tablepress')!==false));
+echo 'PSE_QA_TABLEPRESS_METADATA_ROUTES='.wp_json_encode($tableRoutes)."\n";
+
 qa_assert(qa_fresh_table_rows($newFaqId)===$originalFaqRows &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
     'S1 independent source cloned with exact native TablePress rows');
