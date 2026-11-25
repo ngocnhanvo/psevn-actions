@@ -266,7 +266,12 @@ qa_assert(($cloned['saved']??false)===true &&
     (string)get_post($clonePage)->post_content!==$rootBefore &&
     qa_table_rows($model,$parent)===$rootTableBefore,
     'shared-source clone creates one Page occurrence and leaves ESC Table untouched');
-$additional=array_values(array_diff($cloned['occurrences'],[$sourceKey]));
+// Duplicating a formerly unique table renumbers the ORIGINAL id to
+// id@0 and the new instance to id@1. Select only the newly inserted one.
+$additional=array_values(array_filter($cloned['occurrences'],
+    static function($key) use ($sourceKey){
+        return $key===$sourceKey.'@1';
+    }));
 qa_assert(count($additional)===1,'one unambiguous newly cloned section key');
 $removed=qa_request('remove-section',[
     'section_key'=>(string)$additional[0],
