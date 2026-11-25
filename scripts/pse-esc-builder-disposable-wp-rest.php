@@ -490,6 +490,159 @@ set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
     'page_id'=>(int)$page,'user_id'=>get_current_user_id()
 ],120);
 
+// S8 genuine WordPress Menu and ACF Info owner, not a mock of WordPress
+// records. The active PSE theme supplies the real locale/menu resolvers.
+qa_assert(function_exists('esc_pse_page_lang') &&
+    function_exists('esc_pse_find_menu_object') &&
+    function_exists('esc_pse_get_menu_meta') &&
+    function_exists('esc_pse_get_menu_item_link_mode') &&
+    function_exists('acf_add_local_field_group') &&
+    function_exists('update_field'),
+    'production PSE theme and real ACF active for S8 native tests');
+update_post_meta((int)$page,'product_lang','vi');
+qa_assert(esc_pse_page_lang((int)$page)==='vi',
+    'S8 source Page language uses real PSE theme resolver');
+$menuId=wp_create_nav_menu('Disposable PSE Header VI');
+qa_assert(!is_wp_error($menuId) && (int)$menuId>0,
+    'create genuine disposable WordPress Header');
+update_term_meta($menuId,'_esc_menu_code','Header');
+update_term_meta($menuId,'_esc_menu_lang','vi');
+update_term_meta($menuId,'_esc_menu_type','dropdown');
+$menuEntries=[];
+foreach (['QA Native A','QA Native B'] as $position=>$label) {
+    $item=wp_update_nav_menu_item($menuId,0,[
+        'menu-item-title'=>$label,
+        'menu-item-url'=>'https://example.org/'.$position,
+        'menu-item-type'=>'custom',
+        'menu-item-status'=>'publish',
+        'menu-item-position'=>$position+1,
+    ]);
+    qa_assert(!is_wp_error($item) && (int)$item>0,
+        'insert native WordPress Menu item '.$position);
+    update_post_meta((int)$item,'_esc_menu_label',$label);
+    update_post_meta((int)$item,'_esc_menu_link_type','custom');
+    $menuEntries[]=(int)$item;
+}
+$menuBefore=wp_get_nav_menu_items($menuId,['post_status'=>'publish']);
+qa_assert(is_array($menuBefore) && count($menuBefore)===2,
+    'native Header menu has two published owned items');
+$menuItem=$menuEntries[0];
+$menuRead=qa_request('menu-item',['item_id'=>$menuItem]);
+qa_assert(($menuRead['label']??'')==='QA Native A' &&
+    ($menuRead['version']??'')!=='' &&
+    ($menuRead['source_kind']??'')!== 'api-auto',
+    'PSE native Menu item authenticated REST reader');
+$menuUpdated=qa_request('save-menu-item',[
+    'item_id'=>$menuItem,'expected_version'=>$menuRead['version'],
+    'label'=>'QA Native A Updated',
+]);
+qa_assert(($menuUpdated['saved']??false)===true &&
+    get_post_field('post_title',$menuItem)==='QA Native A Updated' &&
+    get_post_meta($menuItem,'_esc_menu_label',true)==='QA Native A Updated',
+    'real PSE native Menu item REST Save with independent source readback');
+qa_request('save-menu-item',[
+    'item_id'=>$menuItem,'expected_version'=>$menuRead['version'],
+    'label'=>'Stale Unsafe',
+],true);
+$menuRefresh=qa_request('menu-item',['item_id'=>$menuItem]);
+qa_assert(($menuRefresh['label']??'')==='QA Native A Updated',
+    'fresh PSE menu read rejects stale version');
+$menuRestore=qa_request('save-menu-item',[
+    'item_id'=>$menuItem,'expected_version'=>$menuRefresh['version'],
+    'label'=>'QA Native A',
+]);
+qa_assert(($menuRestore['saved']??false)===true &&
+    get_post_field('post_title',$menuItem)==='QA Native A' &&
+    get_post_meta($menuItem,'_esc_menu_label',true)==='QA Native A',
+    'S8 real native Header Menu label inverse source rollback');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_MENU_LABEL_SAVE_READBACK_ROLLBACK=PASS\n";
+
+$orderReader=qa_request('menu-item',['item_id'=>$menuEntries[1]]);
+qa_assert(($orderReader['can_move_up']??false)===true,
+    'native second Menu item exposes upward direct sibling swap');
+$firstOrder=(int)get_post($menuEntries[0])->menu_order;
+$secondOrder=(int)get_post($menuEntries[1])->menu_order;
+$menuMoved=qa_request('move-menu-item',[
+    'item_id'=>$menuEntries[1],
+    'expected_version'=>$orderReader['version'],'direction'=>'up',
+]);
+qa_assert(($menuMoved['saved']??false)===true &&
+    (int)get_post($menuEntries[0])->menu_order===$secondOrder &&
+    (int)get_post($menuEntries[1])->menu_order===$firstOrder,
+    'S8 two native WordPress Menu item physical positions swapped');
+qa_request('move-menu-item',[
+    'item_id'=>$menuEntries[1],
+    'expected_version'=>$orderReader['version'],'direction'=>'down',
+],true);
+$orderFresh=qa_request('menu-item',['item_id'=>$menuEntries[1]]);
+$menuMoveBack=qa_request('move-menu-item',[
+    'item_id'=>$menuEntries[1],
+    'expected_version'=>$orderFresh['version'],'direction'=>'down',
+]);
+qa_assert(($menuMoveBack['saved']??false)===true &&
+    (int)get_post($menuEntries[0])->menu_order===$firstOrder &&
+    (int)get_post($menuEntries[1])->menu_order===$secondOrder,
+    'S8 direct Menu order inverse restores both WordPress source orders');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_MENU_ORDER_SAVE_READBACK_ROLLBACK=PASS\n";
+
+// WordPress Info belongs to a distinct published CPT with real ACF field
+// persistence. No production/real-business Info record may be written.
+if (!post_type_exists('thong-tin-chung')) {
+    register_post_type('thong-tin-chung',[
+        'public'=>true,'show_ui'=>false,'capability_type'=>'post',
+    ]);
+}
+acf_add_local_field_group([
+    'key'=>'group_disposable_pse_s8',
+    'title'=>'Disposable PSE S8 native Info',
+    'fields'=>[[
+        'key'=>'field_disposable_pse_s8_hotline','label'=>'Hotline',
+        'name'=>'hotline','type'=>'text',
+    ]],
+    'location'=>[[[
+        'param'=>'post_type','operator'=>'==','value'=>'thong-tin-chung',
+    ]]],
+]);
+$infoId=wp_insert_post([
+    'post_type'=>'thong-tin-chung','post_status'=>'publish',
+    'post_title'=>'Disposable Vietnamese Info',
+],true);
+qa_assert(!is_wp_error($infoId) && (int)$infoId>0,
+    'real disposable WordPress Info owner');
+update_post_meta((int)$infoId,'product_lang','vi');
+update_field('field_disposable_pse_s8_hotline','0123456789',(int)$infoId);
+qa_assert(get_field('hotline',(int)$infoId,false)==='0123456789',
+    'real ACF native hotline seed readback');
+$footerRead=qa_request('footer-info',['field'=>'hotline']);
+qa_assert(($footerRead['source_kind']??'')==='footer.info' &&
+    ($footerRead['info_id']??0)===(int)$infoId &&
+    ($footerRead['lang']??'')==='vi' &&
+    ($footerRead['value']??'')==='0123456789',
+    'S8 WordPress Info ACF source and locale ownership');
+$footerSaved=qa_request('save-footer-info',[
+    'field'=>'hotline','expected_version'=>$footerRead['version'],
+    'value'=>'0901234567',
+]);
+qa_assert(($footerSaved['saved']??false)===true &&
+    get_field('hotline',(int)$infoId,false)==='0901234567' &&
+    get_post_meta((int)$infoId,'hotline',true)==='0901234567',
+    'S8 native ACF footer Save with independent WordPress readback');
+qa_request('save-footer-info',[
+    'field'=>'hotline','expected_version'=>$footerRead['version'],
+    'value'=>'0000000000',
+],true);
+$footerFresh=qa_request('footer-info',['field'=>'hotline']);
+$footerRestore=qa_request('save-footer-info',[
+    'field'=>'hotline','expected_version'=>$footerFresh['version'],
+    'value'=>'0123456789',
+]);
+qa_assert(($footerRestore['saved']??false)===true &&
+    get_field('hotline',(int)$infoId,false)==='0123456789' &&
+    get_post_meta((int)$infoId,'hotline',true)==='0123456789',
+    'S8 native ACF Info exact source value rollback');
+qa_request('footer-info',['field'=>'not_allowed_field'],true);
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_FOOTER_ACF_SAVE_READBACK_ROLLBACK=PASS\n";
+
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S1_S2_S3_S4_S5_SAVE_READBACK_ROLLBACK=PASS\n";
