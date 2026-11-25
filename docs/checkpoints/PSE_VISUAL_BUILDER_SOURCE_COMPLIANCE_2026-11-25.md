@@ -294,3 +294,13 @@ The postdeploy gallery check previously pending in the section above completed *
 - **Other remaining BUILDER_GAP:** Page section hide/show preserving independent source state; independent ESC Table source clone transaction and rollback; nested TablePress table parent-child writer ownership; missing published manual S2–S4 and S5 query fixtures/schema; full browser Preview/public visual parity and mobile QA as applicable; legitimate scoped real CMS Save/readback/rollback. No synthetic production Page/row writes allowed just to satisfy tests.
 
 **SHARED-SOURCE SECTION INSERT: UI_PASS + SOURCE_ONLY_CI_PASS + PRODUCTION_READ_ONLY_PASS. Entire PSE Visual Builder: PARTIAL — chưa hoàn tất.**
+
+
+## 2026-11-25 ~14:04 VN — matching-viewport homepage parity QA
+
+- Continuing from accepted Inspector insert-after run #45562326752, PHP master 796b00dbad6c1f292601b7b54448dcc496eac1fc and Astro master b16a0bc9da447a76a23ca0abe3bae5602dd85e51 unchanged. No duplicate production release or CMS mutation.
+- Actions test commit [ea0f0f4](https://github.com/ngocnhanvo/psevn-actions/commit/ea0f0f4247556fa80c19a4e6c6959f1dd5a8361c) adds opt-in `PSE_HOME_VIEWPORT_PARITY_ONLY=1` to the existing authenticated read-only Playwright workflow. Directly measures actual iframe and independent public homepage at matching 1440×900 and 390×900 CSS viewports. Requires header + four real PSE section landmarks, geometry within 2px, matching news tabs/promise/useful links, no overflow, injected technical overlays or visible source-success banner. This is geometry/content QA, not full pixel comparison; carousel frames excluded. Original swap QA remains in the other mode.
+- Request commit [1c0316c](https://github.com/ngocnhanvo/psevn-actions/commit/1c0316c06abcb163fdd1bc06b5436d406bb718ab) triggered exact read-only run [#45565163442](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565163442), job 139038059091. Last observation: runner, checkout and Playwright install successful; browser step IN_PROGRESS. Do not declare parity PASS until logs and both widths are verified. If failure, inspect actual vs expected; do not weaken test to manufacture PASS. Follow up on this run before requesting another.
+- Overall gaps carried forward: legitimate source Save/readback/rollback, independently owned section hide/show and clone, nested tables and missing S2–S5 published source fixtures. No production business data writes or build in this QA wave.
+
+**Overall Visual Builder: PARTIAL — chưa hoàn tất.**
