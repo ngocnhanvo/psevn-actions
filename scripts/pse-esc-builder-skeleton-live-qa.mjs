@@ -528,11 +528,13 @@ try {
         document.getElementById('esc-vb-visibility-save')?.disabled===false,
       null,{timeout:10000});
       const availableRows=await page.locator('#esc-vb-visibility-row option').count();
+      const hiddenRows=await page.locator('#esc-vb-visibility-row option').filter({hasText:'Đang ẩn'}).count();
       await page.locator('#esc-vb-visibility-cancel').click();
       if(await visibilityDialog.evaluate(el=>el.open))
         throw Error('FAQ item visibility Cancel did not close contextual inspector');
-      console.log('PSE_BUILDER_S1_VISIBILITY_CONTEXT=PASS rows='+availableRows+
-        ' including_hidden_source=PASS noop_disabled=PASS valid_draft_enabled=PASS CANCEL_NO_WRITE=PASS');
+      console.log('PSE_BUILDER_S1_VISIBILITY_CONTEXT=PASS source_rows='+availableRows+
+        ' hidden_source_rows='+hiddenRows+
+        ' noop_disabled=PASS valid_draft_enabled=PASS CANCEL_NO_WRITE=PASS');
     }
     const visitor=await browser.newPage({viewport:{width:1440,height:900}});
     let publicRows;
