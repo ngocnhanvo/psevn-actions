@@ -558,7 +558,23 @@ try {
       const marker=part.locator('style[data-esc-vb-item-pick-style]');
       await marker.waitFor({state:'attached',timeout:45000});
       const source=part.locator(target.selector+'[data-esc-builder-row]').first();
+      // The WordPress Page itself determines which action is safe. Capturing
+      // the exact authenticated read-only preflights avoids brittle guesses
+      // based on Page names or a test's stale wrapper assumption.
+      const pageRead=page.waitForResponse(r=>
+        new URL(r.url()).pathname.endsWith('/esc-builder/v1/section-order') &&
+        r.request().method()==='POST',{timeout:25000});
+      const removeDry=page.waitForResponse(r=>
+        new URL(r.url()).pathname.endsWith('/esc-builder/v1/remove-section') &&
+        r.request().method()==='POST',{timeout:25000});
+      const cloneDry=page.waitForResponse(r=>
+        new URL(r.url()).pathname.endsWith('/esc-builder/v1/duplicate-section-shared') &&
+        r.request().method()==='POST',{timeout:25000});
       await source.click({force:true});
+      const [readResponse,removeResponse,cloneResponse]=await Promise.all([
+        pageRead,removeDry,cloneDry]);
+      const [read,removed,duplicated]=await Promise.all([
+        readResponse.json(),removeResponse.json(),cloneResponse.json()]);
       await page.waitForFunction(()=>{
         const panel=document.getElementById('esc-vb-section-order-panel');
         return panel && ['ready','unsupported','unavailable']
@@ -573,22 +589,43 @@ try {
           removeHidden:detach?.hidden,removeDisabled:detach?.disabled,
           cloneHidden:clone?.hidden,cloneDisabled:clone?.disabled};
       });
-      if(capability.state!=='ready')
-        throw Error('Section source dry-run did not finish for '+target.name+
+      if(capability.state!=='ready'||!readResponse.ok()||
+         !/^[a-f0-9]{64}$/.test(read?.version||''))
+        throw Error('Section Page source read did not verify for '+target.name+
           ': '+JSON.stringify(capability));
-      const canDuplicate=target.name==='HOTLINE';
-      if(canDuplicate?(capability.cloneHidden||capability.cloneDisabled):
-        (!capability.cloneHidden||!capability.cloneDisabled))
-        throw Error('Unverified shared-source section clone leaked on '+target.name+
-          ': '+JSON.stringify(capability));
-      if(target.name==='HOTLINE'&&
-        (capability.removeHidden||capability.removeDisabled))
-        throw Error('Known root-only Page section detach did not unlock: '+
-          JSON.stringify(capability));
+      const matches=Array.isArray(read.items)?read.items.filter(item=>
+        item.id===capability.key):[];
+      if(matches.length!==1)
+        throw Error('Missing unique section occurrence in real Page source: '+target.name);
+      const tableId=matches[0].table_id;
+      for(const response of [removeResponse,cloneResponse]){
+        const payload=JSON.parse(response.request().postData()||'{}');
+        if(payload.page_id!==Number(target.pageId)||
+           payload.section_key!==capability.key||
+           payload.expected_version!==read.version||
+           payload.dry_run!==true)
+          throw Error('Section dry-run was not scoped to exact Page/version: '+target.name);
+      }
+      const canRemove=removeResponse.ok()&&removed?.checked===true&&
+        removed?.saved===false&&removed?.no_write===true&&
+        removed?.source_preserved===true&&removed?.removed===capability.key&&
+        removed?.table_id===tableId&&removed?.version===read.version&&
+        ['wrapper','shortcode_only'].includes(removed?.remove_mode);
+      const canDuplicate=cloneResponse.ok()&&duplicated?.checked===true&&
+        duplicated?.saved===false&&duplicated?.no_write===true&&
+        duplicated?.source_shared===true&&duplicated?.duplicated===capability.key&&
+        duplicated?.table_id===tableId&&duplicated?.version===read.version&&
+        duplicated?.would_add_instances===1;
+      if(capability.removeHidden===canRemove||
+         capability.removeDisabled===canRemove||
+         capability.cloneHidden===canDuplicate||
+         capability.cloneDisabled===canDuplicate)
+        throw Error('Section controls disagree with exact WordPress dry-run: '+
+          JSON.stringify({page:target.name,capability,canRemove,canDuplicate}));
       console.log('PSE_BUILDER_SECTION_SOURCE_CAPABILITIES=PASS page='+target.name+
         ' dry_run_no_write=PASS shared_clone='+
-        (canDuplicate?'SUPPORTED':'REJECTED_UNSAFE_WRAPPER')+
-        ' remove='+(!capability.removeHidden?'SUPPORTED':'NOT_SUPPORTED')+
+        (canDuplicate?'SUPPORTED':'REJECTED_BY_SOURCE')+
+        ' remove='+(canRemove?'SUPPORTED':'REJECTED_BY_SOURCE')+
         ' NO_CMS_WRITE=PASS');
     }
     const previewRows=await part.locator(target.selector).evaluateAll(nodes=>
