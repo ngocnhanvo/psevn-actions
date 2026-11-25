@@ -1508,6 +1508,64 @@ try{
       await frame.locator('[data-esc-builder-html-part]').count()!==htmlParts)
       throw Error('Preview Cancel failed to restore exact section and original Page HTML');
   }
+  // The Page visibility writer is a new privileged capability. Exercise
+  // its EXACT no-write branch on a real published Page, never a business Save.
+  // Read the source again afterwards to prove no change to Page revision.
+  const sectionVisibilityReadOnly=await page.evaluate(async()=>{
+    const ui=[...document.scripts].map(s=>s.textContent||'')
+      .find(s=>s.includes('sectionVisibility:')&&s.includes('const nonce='));
+    const nonceLiteral=ui?.match(/const nonce=("(?:[^"\\]|\\.)*")/);
+    if(!nonceLiteral||typeof window.escVBGetTicket!=='function')
+      throw Error('Section visibility Inspector is not installed on WordPress');
+    const nonce=JSON.parse(nonceLiteral[1]);
+    const pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    if(!Number.isSafeInteger(pageId)||pageId<1)
+      throw Error('Unverified Page ownership for visibility preflight');
+    const call=async(route,params={})=>{
+      const ticket=await window.escVBGetTicket();
+      const res=await fetch('/wp-json/esc-builder/v1/'+route,{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+        body:JSON.stringify({page_id:pageId,ticket,...params})
+      });
+      const result=await res.json();
+      if(!res.ok||result?.code)
+        throw Error('Visibility no-write preflight refused: '+
+          String(result?.code||res.status));
+      return result;
+    };
+    const before=await call('section-order');
+    const candidates=Array.isArray(before.items)?before.items.filter(x=>
+      x.can_toggle===true && typeof x.hidden==='boolean'):[];
+    if(!candidates.length)
+      throw Error('No source-owned published Page section supports visibility');
+    const choice=candidates.find(x=>x.table_id==='pse_hotline_vi')||candidates[0];
+    const nextVisible=choice.hidden===true;
+    const prepared=await call('save-section-visibility',{
+      section_key:choice.id,expected_version:before.version,
+      visible:nextVisible,dry_run:true
+    });
+    const after=await call('section-order');
+    return {
+      checked:prepared?.checked===true,saved:prepared?.saved===false,
+      noWrite:prepared?.no_write===true,
+      sourcePreserved:prepared?.source_preserved===true,
+      exactSection:prepared?.section_key===choice.id&&
+        prepared?.table_id===choice.table_id,
+      nextHidden:prepared?.hidden===!nextVisible,
+      versionUnchanged:before.version===after.version&&
+        prepared.version===before.version,
+      orderUnchanged:JSON.stringify(before.items)===JSON.stringify(after.items),
+      eligible:candidates.length
+    };
+  });
+  if(!Object.entries(sectionVisibilityReadOnly).filter(([key])=>key!=='eligible')
+    .every(([,value])=>value===true))
+    throw Error('Live WordPress section visibility dry-run/source readback mismatch');
+  console.log('PSE_PAGE_SECTION_VISIBILITY_LIVE='+JSON.stringify({
+    result:'PASS',eligible:sectionVisibilityReadOnly.eligible,
+    dryRun:true,noCmsWrite:true,sourceVersionUnchanged:true
+  }));
   console.log('PSE_BUILDER_SECTION_REMOVAL_LIVE='+JSON.stringify({
     tableId:'pse_hotline_vi',result:'PASS',mode:deletion.mode,
     pageVersionUnchanged:true,serverDryRun:true,previewCancelled:true,noCmsWrite:true
