@@ -452,12 +452,17 @@ try{
         throw Error('Keyboard section target did not select exact Page occurrence');
       if(!await target.evaluate(node=>node.hasAttribute('data-esc-vb-swap-target')))
         throw Error('Keyboard section target missing green selection');
+       const escapeRequest=awaitPreviewPicked('esc-vb-section-pick-cancel-request',requestId);
+       await target.press('Escape');
+       const cancel=await escapeRequest;
+       if(cancel?.source!==sectionPair.from)
+         throw Error('Keyboard section Escape requested cancellation of wrong Page source');
     }finally{
       await previewPickMessage({type:'esc-vb-section-pick-clear'},null);
       if(await target.getAttribute('tabindex')!==priorTabindex)
         throw Error('Keyboard section Cancel did not restore source tabindex');
     }
-    console.log('PSE_BUILDER_SECTION_KEYBOARD_PICK_LIVE=PASS Enter=true restored_tabindex=true NO_CMS_WRITE=true');
+    console.log('PSE_BUILDER_SECTION_KEYBOARD_PICK_LIVE=PASS Enter=true Escape_request=true restored_tabindex=true NO_CMS_WRITE=true');
   }
   for(const config of (cloneDiagnosticOnly?[]:[
     {name:'PSE_PROMISE',component:'.pse-promise',
@@ -538,12 +543,17 @@ try{
           throw Error('Keyboard item selection lost physical TablePress source row');
         if(!await target.evaluate(node=>node.hasAttribute('data-esc-vb-item-target')))
           throw Error('Keyboard item target missing green source-row selection');
+         const escapeRequest=awaitPreviewPicked('esc-vb-item-pick-cancel-request',requestId);
+         await target.press('Escape');
+         const cancel=await escapeRequest;
+         if(cancel?.tableId!==tableId)
+           throw Error('Keyboard item Escape requested cancellation of wrong ESC source');
       }finally{
         await previewPickMessage({type:'esc-vb-item-pick-clear'},null);
         if(await target.getAttribute('tabindex')!==priorTabindex)
           throw Error('Keyboard item Cancel did not restore original tabindex');
       }
-      console.log('PSE_BUILDER_ITEM_KEYBOARD_PICK_LIVE=PASS Space=true physical_row=true restored_tabindex=true NO_CMS_WRITE=true');
+      console.log('PSE_BUILDER_ITEM_KEYBOARD_PICK_LIVE=PASS Space=true Escape_request=true physical_row=true restored_tabindex=true NO_CMS_WRITE=true');
     }
     await root.evaluate((el,{selector,from,to})=>{
       const cards=[...el.querySelectorAll(selector)];
