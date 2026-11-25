@@ -63,6 +63,23 @@ jobs:
           }
           console.log('PSE_DIRECT_PREVIEW_SWAP_ONLY=PASS');
           JS
+      - name: Validate guarded PHP release manifest (NO DEPLOY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import runpy
+          from pathlib import Path
+          config=runpy.run_path('scripts/pse-esc-builder-php-ftps-release.py')
+          files=config['FILES']
+          root=Path('php/wp-content/plugins/esc-visual-builder')
+          actual={'esc-visual-builder.php'} | {'includes/'+p.name for p in (root/'includes').glob('*.php')}
+          assert set(files)==actual, ('mismatch',actual-set(files),set(files)-actual)
+          assert files[-1]=='esc-visual-builder.php'
+          assert files.index('includes/section-independent.php') < len(files)-1
+          assert "'/includes/section-independent.php'" in (root/'esc-visual-builder.php').read_text()
+          print('PSE_S1_NATIVE_CLONE_RELEASE_MANIFEST=PASS')
+          PY
       - name: Checkout Astro master source (source only)
         uses: actions/checkout@v4
         with:
