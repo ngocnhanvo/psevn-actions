@@ -2,22 +2,12 @@
 
 - Ngày: 2026-11-25 (Asia/Ho_Chi_Minh)
 - PHP production: 796b00dbad6c1f292601b7b54448dcc496eac1fc
-- Astro source: b16a0bc9da447a76a23ca0abe3bae5602dd85e51; signed runtime 9a80fa78f6c893d0989761c083a42a0acbbd0141
-- Checkpoint: docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md
-- Homepage matching viewport [#45565364105](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565364105) SUCCESS: 1440×900 + 390×900, five regions, 2px tolerance, content equal, no overflow/overlays, no visible status, no CMS write/Save. Not pixel or all-page QA.
-- Added exact subpage parity QA for FAQ, Hotline, History, Vision in commit 4a794a24da4b04c852ef6f52cbea6b8a6504f098, request 71e7fbd848f2307f07a079b9a1599daa1af7e292.
-- [Run #45566000163](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45566000163), job 139040826433, IN_PROGRESS at last observation (browser step). Next read exact run result; no duplicate run while active. No Astro/PHP changes or deployment in this QA-only wave.
-- Other gaps: authorized true CMS Save/REST readback/public/rollback, section hide/show, independent source cloning, nested source ownership, S2–S5 real published fixtures. Do not mistake dry-run or source tests for live Save.
-- Checkpoint commit 2a820d35d63a5add4f34cc7ad1c822045a1c9a5b. Core/related Knowledge reviewed; not every stack file reread in full.
-
-Chế độ code: auto-build
-Cổng ghi source: bypass
-Trạng thái: PARTIAL — chưa hoàn tất
-
-## Continuation
-
-- Subpage run #45566000163 completed FAIL: 7/8 passed; History desktop root and all six rows y offset 38.90625px only. Other three pages and History mobile pass.
-- QA diagnostic commit a8e757d8a2254d2596b30afc86bcd7e26e772820; exact retry #45566535693 job 139042603014 is IN_PROGRESS. Check `PSE_HISTORY_COVER_GEOMETRY` then `PSE_BUILDER_SUBPAGE_VIEWPORT_SUMMARY`; 2px unchanged. No application change, no CMS write. Latest checkpoint 6b16164dd365d99a30be1959e12ba571a475d122.
+- Astro source: b16a0bc9da447a76a23ca0abe3bae5602dd85e51; signed runtime 9a80fa78f6c893d0989761c083a42a0acbbd0141.
+- Homepage [#45565364105](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565364105) PASS at 1440×900 and 390×900, 2px tolerance, content equal, no visible source status, no overflow/overlays. Geometry/content not pixel-level QA.
+- Subpage [#45566535693](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45566535693) FAIL 7/8: settled History desktop cover displayed 1024×359 Preview vs 1134×397.90625 public, exact 38.90625px downstream y-offset. Other three pages both widths and History mobile PASS. Not image readiness or timeline CSS.
+- QA-only commit ded64a7b5f635fedde87246f05c2b84a427d201c adds sanitized media path, currentSrc, srcset, sizing attributes and CSS diagnostic. Request 28f349ab30854c287db36f4da493aca5c1dac1a3 triggered [#45567096524](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45567096524), queued at last check. Resume this exact run; diagnose source identity and implement shared correction, preserve direct new/changed media, no per-page Preview CSS or tolerance changes.
+- Checkpoint: [PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md](../docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md), commit a30cba856aaf78e16be622e5ea184e73854c266f.
+- No Astro/PHP deployment or CMS write in this wave. Other gaps: authorized actual Save/REST readback/public/rollback, section hide/show, independent source clone, nested ownership, S2–S5 real published fixtures. Core and related rules reviewed; not every Knowledge stack file reread in full.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
