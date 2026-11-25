@@ -82,8 +82,10 @@ try {
 
   const referenceUi=await page.evaluate(()=>{
     const buttonIds=['esc-vb-reference-replace-open',
-      'esc-vb-reference-insert-open','esc-vb-reference-local-open'];
-    const dialogIds=['esc-vb-reference-dialog','esc-vb-local-dialog'];
+      'esc-vb-reference-insert-open','esc-vb-reference-local-open',
+      'esc-vb-item-visibility-open'];
+    const dialogIds=['esc-vb-reference-dialog','esc-vb-local-dialog',
+      'esc-vb-visibility-dialog'];
     const buttons=buttonIds.map(id=>{
       const button=document.getElementById(id);
       return {id,exists:!!button,hidden:button?.hidden,
@@ -100,7 +102,7 @@ try {
       b.display!=='none')||referenceUi.dialogs.some(d=>!d.exists||d.open))
     throw Error('Manual-reference controls leaked into unselected Preview: '+
       JSON.stringify(referenceUi));
-  console.log('PSE_BUILDER_REFERENCE_PICKER_DEFAULT=PASS hidden=PASS disabled=PASS controls=3 NO_CMS_WRITE=PASS');
+  console.log('PSE_BUILDER_REFERENCE_PICKER_DEFAULT=PASS hidden=PASS disabled=PASS controls=4 NO_CMS_WRITE=PASS');
 
   // Verify two new production REST routes exist and reject unauthenticated
   // malformed tickets BEFORE any writer can run. Only invalid requests are
@@ -496,6 +498,42 @@ try {
       nodes.map(x=>(x.textContent||'').replace(/\\s+/g,' ').trim()));
     const sourceRows=await part.locator(target.selector).evaluateAll(nodes=>
       nodes.map(x=>Number(x.getAttribute('data-esc-builder-row'))));
+    if(target.name==='FAQ'){
+      // Real source-scope only. No fake Preview-only items or status chips
+      // are inserted for the FAQ rows hidden by their physical visible=0.
+      // Selecting a rendered source item unlocks the same protected S1
+      // TablePress schema; the inspector must include even invisible rows.
+      const faqSource=part.locator('.pse-faq__item[data-esc-builder-row]').first();
+      await faqSource.click({force:true});
+      await page.waitForFunction(()=>{
+        const action=document.getElementById('esc-vb-item-visibility-open');
+        return action && !action.hidden && !action.disabled;
+      },null,{timeout:40000});
+      const toggle=page.locator('#esc-vb-item-visibility-open');
+      await toggle.click();
+      const visibilityDialog=page.locator('#esc-vb-visibility-dialog');
+      await visibilityDialog.waitFor({state:'visible',timeout:15000});
+      await page.waitForFunction(()=>{
+        const options=document.getElementById('esc-vb-visibility-row')?.options;
+        return options && options.length>=15 &&
+          !document.getElementById('esc-vb-visibility-row')?.disabled;
+      },null,{timeout:30000});
+      const original=await page.locator('#esc-vb-visibility-value').inputValue();
+      if(original!=='1'&&original!=='0')
+        throw Error('FAQ source returned invalid binary visibility');
+      const initialDisabled=await page.locator('#esc-vb-visibility-save').isDisabled();
+      if(!initialDisabled)throw Error('No-op FAQ visibility Save was enabled before a change');
+      await page.locator('#esc-vb-visibility-value').selectOption(original==='1'?'0':'1');
+      await page.waitForFunction(()=>
+        document.getElementById('esc-vb-visibility-save')?.disabled===false,
+      null,{timeout:10000});
+      const availableRows=await page.locator('#esc-vb-visibility-row option').count();
+      await page.locator('#esc-vb-visibility-cancel').click();
+      if(await visibilityDialog.evaluate(el=>el.open))
+        throw Error('FAQ item visibility Cancel did not close contextual inspector');
+      console.log('PSE_BUILDER_S1_VISIBILITY_CONTEXT=PASS rows='+availableRows+
+        ' including_hidden_source=PASS noop_disabled=PASS valid_draft_enabled=PASS CANCEL_NO_WRITE=PASS');
+    }
     const visitor=await browser.newPage({viewport:{width:1440,height:900}});
     let publicRows;
     try {
