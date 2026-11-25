@@ -1,2 +1,2 @@
-f803f6f9c23999a102e017d8ecbad87046f93abf
-2026-11-25 numeric ID preservation for nested ESC sources; source-only CI #45637059253 PASS; disposable WordPress REST Save/readback/rollback #45637060554 PASS. Upload PHP plugin files only using pinned TLS checksum rollback, no CMS write or Astro build.
+86d811bc29ed6712d76d7fe00e75337ccd9546d6
+2026-11-25 Scoped PSE Visual Builder PHP section-order.php exact source Clone Remove rollback; source CI #45640601935 PASS, real disposable WordPress #45640809119 PASS S1-S5 and two native Page variants. Production PHP-plugin-only TLS FTP checksum+rollback, no CMS write, no Astro build.
