@@ -312,3 +312,10 @@ The postdeploy gallery check previously pending in the section above completed *
 - Request commit `2982bffba9677d81b84dc5ec73bc7c5d51e4c60c` triggered [#45565364105](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565364105), job 139038727868. Last observed IN_PROGRESS (container initialization); resume by checking this exact run and log markers `PSE_BUILDER_HOME_VIEWPORT_PARITY` / `PSE_BUILDER_HOME_VIEWPORT_PARITY_PASS` or `PSE_BUILDER_VIEWPORT_SETUP_DIAG`. No additional runs while this one is active. No Astro/PHP source, deployment or CMS data changed.
 
 **Overall: PARTIAL — chưa hoàn tất.**
+
+
+### Matching-viewport QA result — 2026-11-25 14:08 VN
+
+- Exact retry [#45565364105](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45565364105), job 139038727868, completed SUCCESS. Logs `PSE_BUILDER_HOME_VIEWPORT_PARITY` at 1440×900 and 390×900: exact CSS viewport/clientWidth, differences=[], equalContent=true, previewOverflow=0, publicOverflow=0, overlays=0, statusVisible=false. Final `PSE_BUILDER_HOME_VIEWPORT_PARITY_PASS` confirms five landmarks, tolerance 2px, noCmsWrite=true, noSave=true.
+- Homepage geometry/content parity PASS at both tested widths; not pixel-level or all-page QA. No new Astro/PHP build, deployment or CMS change required for this test.
+- Remaining: legitimate Save/readback/rollback, hide/show section state, independent source clone, nested ESC Table ownership, S2–S5 live fixtures. Overall PARTIAL.
