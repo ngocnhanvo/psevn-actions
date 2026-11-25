@@ -108,7 +108,8 @@ try {
   // malformed tickets BEFORE any writer can run. Only invalid requests are
   // sent; this is not a Save smoke test and must not mutate CMS data.
   const guardedRoutes=await page.evaluate(async()=>{
-    const names=['insert-reference','save-local-item-field'];
+    const names=['reference-candidates','replace-reference',
+      'insert-reference','save-local-item-field'];
     const results=[];
     for(const name of names){
       const response=await fetch('/wp-json/esc-builder/v1/'+name,{
@@ -124,7 +125,24 @@ try {
   if(guardedRoutes.some(r=>r.status!==403||r.code!=='invalid_ticket'))
     throw Error('New reference route missing or bypassed ticket guard: '+
       JSON.stringify(guardedRoutes));
-  console.log('PSE_BUILDER_NEW_REFERENCE_ROUTES_AUTH=PASS denied=2 NO_CMS_WRITE=PASS');
+  console.log('PSE_BUILDER_NEW_REFERENCE_ROUTES_AUTH=PASS denied=4 NO_CMS_WRITE=PASS');
+
+  // Verify the precisely approved S4 WordPress-native Posts REST endpoint
+  // exists on this origin. Never query external sources or expose individual
+  // Post content; only log status and published type correctness.
+  const s4PostProbe=await page.evaluate(async()=>{
+    const r=await fetch('/wp-json/wp/v2/posts?per_page=1&_fields=id,status',{
+      credentials:'same-origin',cache:'no-store'
+    });
+    const data=await r.json().catch(()=>null);
+    return {status:r.status,valid:r.ok&&Array.isArray(data)&&
+      data.every(post=>Number.isSafeInteger(post?.id)&&post.id>0&&post.status==='publish'),
+      sampleCount:Array.isArray(data)?data.length:0};
+  });
+  if(!s4PostProbe.valid)throw Error('Approved site-local WP Posts REST source unavailable: '+
+    JSON.stringify(s4PostProbe));
+  console.log('PSE_S4_LOCAL_POSTS_REST_SOURCE=PASS canonical_route=PASS published_schema=PASS'+
+    ' sample_count='+s4PostProbe.sampleCount+' NO_CMS_WRITE=PASS');
 
 
 
