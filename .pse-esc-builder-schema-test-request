@@ -37,3 +37,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 18:xx ICT: PHP master ad5cdb55a4dd316c9f2f31bd9e5f6c0980054e4a test-only extends existing live ESC auto-discovery regression for Home_02 native button_link/image columns. PHP runtime content (includes/site-config.php) is byte-identical to deployed 3a29d06263. Rerun source-only CI, no FTP/Build/CMS writes. Astro production e345b24 deployed with readonly QA success #45603540957 #45603547124.
 
 2026-11-25 ICT: Source-only CI for reversible Page section visibility: PHP master bd7a39da0c0efad9d9ec7f94bd5d0b36dcc71a1b, Astro master 8c797c9a0e10b08d4d8a1729409ee6b3280bb24c. Verify native REST guards, rendered preview-only placeholder, Inspector inline JS, Vitest and compiler. NO CMS WRITE / NO BUILD / NO FTPS.
+
+2026-11-25 ICT: Final source-only regression after Inspector warning fix, exact PHP master c4ec3b915d140f7dfc1978716162d55e6af57b66; Astro master 8c797c9a0e10b08d4d8a1729409ee6b3280bb24c. Keep NO BUILD, NO FTPS, NO CMS writes.
