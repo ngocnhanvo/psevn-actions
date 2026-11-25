@@ -372,6 +372,14 @@ try{
         wrapperHasClass:Boolean(nearest?.hasAttribute('class')),
         wrapperHasControls:Boolean(nearest?.querySelector('button,input,script,style,form,iframe')),
         wrapperHasOtherElements:(nearest?.querySelectorAll('*').length||0)>1,
+        descendantTags:nearest?[...new Set([...nearest.querySelectorAll('*')]
+          .map(node=>node.tagName.toLowerCase()))].slice(0,16):[],
+        descendantCount:nearest?.querySelectorAll('*').length||0,
+        htmlCommentCount:nearest?(()=>{
+          const walker=parsed.createTreeWalker(nearest,NodeFilter.SHOW_COMMENT);
+          let count=0;while(walker.nextNode()&&count<100)count++;return count;
+        })():0,
+        wrapperAttributeNames:nearest?[...nearest.attributes].map(a=>a.name).slice(0,12):[],
         wrapperOnlyNativeShortcode:isolated,
         parentTag:outer?.tagName||null,
         parentHasId:Boolean(outer?.hasAttribute('id'))
