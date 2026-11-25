@@ -91,6 +91,29 @@ try {
       JSON.stringify(referenceUi));
   console.log('PSE_BUILDER_REFERENCE_PICKER_DEFAULT=PASS hidden=PASS disabled=PASS controls=3 NO_CMS_WRITE=PASS');
 
+  // Verify two new production REST routes exist and reject unauthenticated
+  // malformed tickets BEFORE any writer can run. Only invalid requests are
+  // sent; this is not a Save smoke test and must not mutate CMS data.
+  const guardedRoutes=await page.evaluate(async()=>{
+    const names=['insert-reference','save-local-item-field'];
+    const results=[];
+    for(const name of names){
+      const response=await fetch('/wp-json/esc-builder/v1/'+name,{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({table_id:'pse_03_vi',page_id:0,ticket:'invalid'})
+      });
+      const body=await response.json().catch(()=>({}));
+      results.push({name,status:response.status,code:body.code||''});
+    }
+    return results;
+  });
+  if(guardedRoutes.some(r=>r.status!==403||r.code!=='invalid_ticket'))
+    throw Error('New reference route missing or bypassed ticket guard: '+
+      JSON.stringify(guardedRoutes));
+  console.log('PSE_BUILDER_NEW_REFERENCE_ROUTES_AUTH=PASS denied=2 NO_CMS_WRITE=PASS');
+
+
 
   // The old preview used to inject green/white ESC Table text chips over
   // the hero. Production has no such content. Keep text/URL editing in the
