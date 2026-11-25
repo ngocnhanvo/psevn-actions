@@ -1,2 +1,2 @@
-94ae3282a5f8b862c0795e3a383383dffccdd3ff
-2026-11-25 PSE nested ESC Table literal source graph: Page writer, Inspector, versioned state, no API projected child. CI #45635838704 success. FTP verified subset only (change-index.php, site-config.php, text-editor.php). No Astro build or CMS data mutation.
+f803f6f9c23999a102e017d8ecbad87046f93abf
+2026-11-25 numeric ID preservation for nested ESC sources; source-only CI #45637059253 PASS; disposable WordPress REST Save/readback/rollback #45637060554 PASS. Upload PHP plugin files only using pinned TLS checksum rollback, no CMS write or Astro build.
