@@ -5,3 +5,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 PHP master 6067dbc750232feae3ea5e233718f6434d2d6ad6: validate WordPress Page section post-save readback for swap/reorder/remove/shared clone, including false-positive acknowledgement rejection. SOURCE-ONLY test; no CMS writes, FTP or Astro build.
 
 2026-11-25 PHP source 55cd4d1ae47c61c3c83543b189859d3f282ae309: additionally validate persisted native TablePress data rows after all 7 item Save writers (S1 insert/visibility, S2-S4 reference insert/replace, local field, swap/delete); falsely acknowledged saves must fail without change signal. PHP source only, no CMS writes or deploy.
+
+2026-11-25 PHP master 63bf0a04868624a2baa58e2cd306547e3b0675dc: test Page-independent ESC Table text/query/metadata and image Alt Save exact source readback; false TablePress save acknowledgements fail and do not emit change signals. Execute existing no-build PHP/Astro schema CI.
