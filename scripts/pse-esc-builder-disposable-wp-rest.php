@@ -1169,7 +1169,7 @@ qa_assert(($hotlineCopied['saved']??false)===true &&
     (bool)preg_match('/^escvb_[a-f0-9]{16}$/D',$hotlineNew) &&
     $hotlineSaved===$hotlineEditor.$hotlineMinimal &&
     substr_count($hotlineSaved,'tablepress-img-pse_hotline_vi')===1 &&
-    qa_table_rows($model,$hotlineNew)===$hotlineOriginalRows &&
+    qa_fresh_table_rows($hotlineNew)===$hotlineOriginalRows &&
     qa_table_rows($model,'pse_hotline_vi')===$hotlineRows,
     'two separate normalizable Editor wrappers and physically isolated native rows');
 $hotlineAfter=qa_request('section-order',[]);
@@ -1185,12 +1185,12 @@ qa_assert(($hotlineRemove['saved']??false)===true &&
     get_post($hotlinePage)->post_content===$hotlineEditor &&
     qa_table_rows($model,'pse_hotline_vi')===$hotlineOriginalRows,
     'TinyMCE independent Clone -> Remove native exact original Page bytes');
-qa_assert($model->table_exists($hotlineNew)===true,
+qa_assert(TablePress::load_model('table')->table_exists($hotlineNew)===true,
     'Page source detach never deletes independent TablePress data');
 delete_option('tablepress_meta_'.$hotlineNew);
-qa_assert($model->delete($hotlineNew)===true &&
-    !$model->table_exists($hotlineNew) &&
-    $model->delete('pse_hotline_vi')===true,
+qa_assert(TablePress::load_model('table')->delete($hotlineNew)===true &&
+    !TablePress::load_model('table')->table_exists($hotlineNew) &&
+    TablePress::load_model('table')->delete('pse_hotline_vi')===true,
     'cleanup only disposable hotlines and detached source');
 delete_option('tablepress_meta_pse_hotline_vi');
 $GLOBALS['qa_page']=(int)$page;
