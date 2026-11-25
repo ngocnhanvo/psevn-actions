@@ -12,6 +12,10 @@ function qa_assert($condition,$message) {
 }
 qa_assert(class_exists('TablePress') && function_exists('esc_vb_item_read'),
     'real ESC Table/Visual Builder runtime');
+$pseTableExporter=WP_CONTENT_DIR.'/themes/vibe-code-theme/inc/tablepress/endpoint.php';
+qa_assert(is_file($pseTableExporter),'PSE theme real TablePress exporter exists');
+require_once $pseTableExporter; // Exact production API functions, without unrelated theme hooks.
+
 $admins=get_users(['role'=>'administrator','number'=>2,'fields'=>'ID']);
 qa_assert(count($admins)===1,'single disposable administrator');
 wp_set_current_user((int)$admins[0]);
@@ -882,16 +886,17 @@ $newFaqId=$nativeClone['new_table_id']??'';
 qa_assert(($nativeClone['saved']??false)===true &&
     ($nativeClone['source_shared']??true)===false &&
     is_string($newFaqId) &&
-    preg_match('/^[1-9][0-9]{0,18}$/D',$newFaqId) &&
+    preg_match('/^escvb_[a-f0-9]{16}$/D',$newFaqId) &&
     ($nativeClone['renderer']??'')==='Pse_faq' &&
     $newFaqId!==$faqSource &&
     count(esc_vb_get_table_mapping())===$readOnlyTables+1,
-    'S1 native copy has a new physical numeric TablePress ID');
+    'S1 native copy has a new physical namespaced TablePress ID');
 $cloneMeta=get_option('tablepress_meta_'.$newFaqId,[]);
 qa_assert($cloneMeta===array_merge($faqOriginalMeta,[
     'escBuilderCloneVersion'=>'1',
     'escBuilderCloneOf'=>'pse_faq_vi',
-    'builderComponent'=>'Pse_faq','api'=>''
+    'builderComponent'=>'Pse_faq',
+    'component'=>'esc_vb_s1:pse_faq_vi','api'=>''
 ]), 'S1 cloned table keeps visual metadata AND exact Astro renderer alias');
 qa_assert(get_option('tablepress_meta_'.$faqSource,[])===$faqOriginalMeta,
     'native source metadata untouched by independent clone');
@@ -908,10 +913,33 @@ qa_assert($copyNativePost>0 &&
 $copyPublic=vcs_get_tablepress_pure_data($copyNativePost);
 qa_assert(!is_wp_error($copyPublic) && is_array($copyPublic) &&
     (string)($copyPublic['id']??'')===$newFaqId &&
-    ($copyPublic['meta']['builderComponent']??'')==='Pse_faq' &&
-    ($copyPublic['meta']['escBuilderCloneOf']??'')==='pse_faq_vi' &&
-    ($copyPublic['meta']['title']??'')===$faqOriginalMeta['title'],
-    'Astro GitHub Trigger pure-data includes both source metadata and alias');
+    ($copyPublic['component']??'')==='esc_vb_s1:pse_faq_vi' &&
+    ($copyPublic['title']??'')==='Disposable S1 FAQ' &&
+    ($copyPublic['description']??'')==='Disposable local test' &&
+    ($copyPublic['meta']['api']??'x')==='',
+    'PSE theme pure-data exports the clone marker and original native name');
+$copyRest=rest_do_request(new WP_REST_Request('GET',
+    '/tablepress/v1/table/'.$newFaqId));
+$copyRestData=$copyRest->get_data();
+qa_assert(!$copyRest->is_error() &&
+    ($copyRestData['component']??'')==='esc_vb_s1:pse_faq_vi' &&
+    (string)($copyRestData['id']??'')===$newFaqId,
+    'actual PSE public TablePress REST detail exports namespaced clone');
+$tableMapping=esc_vb_get_table_mapping();
+$allKeys=array_keys($tableMapping);
+$cloneIndex=array_search($newFaqId,array_map('strval',$allKeys),true);
+qa_assert(is_int($cloneIndex),'clone appears in canonical native TablePress source mapping');
+$allRequest=new WP_REST_Request('GET','/tablepress/v1/tables/prefix/all');
+$allRequest->set_param('per_page',30);
+$allRequest->set_param('page',intdiv($cloneIndex,30)+1);
+$allRest=rest_do_request($allRequest);
+$allRows=$allRest->get_data();
+$fromAll=is_array($allRows)?array_values(array_filter($allRows,
+    static fn($entry)=>is_array($entry) && (string)($entry['id']??'')===$newFaqId)):[];
+qa_assert(!$allRest->is_error() && count($fromAll)===1 &&
+    ($fromAll[0]['component']??'')==='esc_vb_s1:pse_faq_vi' &&
+    $fromAll[0]['title']==='Disposable S1 FAQ',
+    'Astro production paginated all-tables REST includes native cloned source');
 echo "PSE_DISPOSABLE_NATIVE_S1_ASTRO_TABLEPRESS_SOURCE_ALIAS=PASS\n";
 
 
