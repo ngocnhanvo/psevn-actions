@@ -1,45 +1,29 @@
-# PSE Visual Builder — Kết quả tiếp tục công việc 25/11/2026
+# PSE Visual Builder — Kết quả tiếp tục 25/11/2026
 
-- **Project:** `pse.vn`
-- **Repo lưu phản hồi:** `ngocnhanvo/psevn-actions`, branch `main`
-- **Thời gian:** 2026-11-25 10:59 (+07, Asia/Ho_Chi_Minh)
-- **Kết quả lưu:** SAVED (GitHub xác minh sau cập nhật SHA)
+- Project: `pse.vn`
+- Repo lưu phản hồi: `ngocnhanvo/psevn-actions`, branch `main`
+- Thời điểm: 2026-11-25 11:18 (+07, Asia/Ho_Chi_Minh)
+- Đối chiếu checkpoint: `docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md` commit `013cbc178c6c4e05a22186d76e2260529e38b8c9`
+- Trạng thái ghi: SAVED sau khi GitHub xác minh commit
 
-## 1. Khôi phục commit, workflow, checkpoint
+## 1. Đã khôi phục trạng thái dự án PSE
 
-Đã đọc quy tắc `ngocnhanvo/knowledge/main` cùng checkpoint `docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md`, kiểm tra commit/log của `psevn-astro/master`, `psevn-php/master`, `psevn-actions/main`. Lúc bắt đầu: Knowledge `34310f05`, Astro `0263a1eb`, PHP `767ef442`, Actions `b986f8f8`. Source CI [#45540701099](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45540701099) PASS. Các SHA sau đó đã được cập nhật lên bản production mới nêu dưới đây.
+Đã đọc `knowledge/main` (quy tắc S1–S9 và CORE), checkpoint ngày 25/11, `chatgpt/latest-response.md` trước lượt này; đối chiếu repo Astro/PHP/Actions và các run production trước đó. Lúc khôi phục Knowledge `34310f05`, Astro production `f7465f33`, PHP production `09b60096`, Actions `e40da605`. Previous signed Astro [#45542620028](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542620028) PASS, PHP guarded FTPS [#45542344078](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542344078) PASS, direct Preview Playwright no-write [#45543276751](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45543276751) PASS.
 
-## 2. PHP release và source-only QA
+## 2. Đã bổ sung thao tác bàn phím cho Visual Builder
 
-- Đã phát hành bản source-gated ban đầu PHP `a676e28...` qua [#45541030111](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45541030111): 1 file changed, checked 20, SHA256=PASS, cleanup0, không Astro build/không CMS write. Run cùng SHA [#45541051125](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45541051125) cũng PASS.
-- G1 production [#45541394836](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45541394836) phát hiện FAQ clone bị mở khi kiểm tra Page thôi; logic test cũ định trước FAQ phải khóa. Đã sửa QA để so WordPress REST dry-run thật và UI; [#45541919720](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45541919720) PASS read-only, tuy nhiên vẫn chưa đủ vì còn phải kiểm tra cấu trúc Astro Preview.
-- Source nâng cấp có **hai phê duyệt độc lập**: PHP Page/version/occurrence writer dry-run và Astro iframe pure DOM eligibility, chỉ mở nút gỡ/nhân bản khi cả hai cùng chấp thuận. CI [#45541960413](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45541960413) PASS, Astro **26/26 suites, 146/146 tests**.
-- **PHP production hiện tại**: `09b60096b76d6eb6c0ef4ff8f06aeeb78f6c9fe8` qua FTPS [#45542344078](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542344078) SUCCESS, `includes/item-section-ui.php` SHA256 PASS, changed1/checked20, no content write.
+Astro `master@2936ecb0a2ee62ac46f94d0a1f42290cf47ab75b`: Tab+Enter/Space chọn item/section đích trực tiếp trên DOM Preview khi bật chế độ đỏ nguồn/xanh đích; không có danh sách sắp xếp/modal/chip giả, không thay layout public. Giữ physical source-row và không nhận hàng của ESC Table con không cùng nguồn, khôi phục `tabindex` ban đầu khi Hủy/dispose. Các commit `eb71e2f`, `71b20e7`, `2936ecb`. Source-only CI [#45544472680](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544472680) **SUCCESS 26/26 suites, 148/148 tests**, PHP lint/JS parse/Tailwind/Astro parser PASS.
 
-## 3. Astro signed production
+## 3. Production và QA thật
 
-- **Astro production hiện tại**: `f7465f330cff9cd6232a5e0674c17b4576bbd3ba`.
-- WordPress Build Website [#45542542872](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542542872) SUCCESS; signed deploy [#45542620028](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542620028) SUCCESS, `PSE_DEPLOY_COMMIT` exact SHA, `SIGNED_UNZIP_SUCCESS`, signed hosting activation, không thay đổi nội dung CMS.
+- WordPress Build Website [#45544654021](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544654021) **SUCCESS**, signed Astro production [#45544725561](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544725561) **SUCCESS**, exact `PSE_DEPLOY_COMMIT=2936ecb0a2ee62ac46f94d0a1f42290cf47ab75b`, `SIGNED_UNZIP_SUCCESS`, activation 0, protected `.env` unchanged. Không thay source PHP, không ghi nội dung WordPress.
+- Authenticated read-only Playwright [#45544969354](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544969354) **SUCCESS**: section Enter/Cancel/tabindex PASS, Promise physical item Space/Cancel/tabindex PASS; 6 nhóm S1 hoán đổi trực tiếp + Cancel và swap hai section `pse_00_vi ↔ pse_01_vi` PASS, Hotline shared clone/remove Preview+Cancel PASS, FAQ/Vision unsafe clone bị chặn, `NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true`.
+- Postdeploy SSR [#45544940471](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940471), homepage/search [#45544940372](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940372), bảy bài Joomla [#45544940321](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940321) **SUCCESS**. Gallery 4 album/464 ảnh [#45544940418](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940418) attempt #1 FAIL vì ảnh #980 index134 chờ pixel decode; rerun đúng job attempt #2 **SUCCESS 8/8 viewport rows** (390px/1440px), 4/4 gallery, 464 ảnh được kiểm kê, 5 pixel decode/album/viewport, zero admin-origin leakage. Ghi lại cảnh báo latency ảnh 15.9s ở album #975; không suy ra lỗi Visual Builder.
+- Checkpoint đã cập nhật và xác minh commit [`013cbc17`](https://github.com/ngocnhanvo/psevn-actions/commit/013cbc178c6c4e05a22186d76e2260529e38b8c9).
 
-## 4. Authenticated live production QA
+## 4. Phạm vi chưa đủ nghiệm thu toàn dự án
 
-- G1 chỉ đọc [#45542876458](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542876458) **SUCCESS**, G1 xác nhận lại [#45542891435](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542891435) cũng SUCCESS.
-- FAQ: Page clone dry-run có thể PASS nhưng Astro Preview wrapper không an toàn, nên shared clone **ẩn/khóa**; việc gỡ Page section theo vùng an toàn được phép. Hotline: shared clone và remove đều hỗ trợ sau khi Page + Astro duyệt. Vision: unsafe shared clone bị từ chối.
-- Production-first Preview không mở controls trước click; nguồn Post S4 (`include=ID`) ngoài trang đầu PASS; 4 endpoint forged ticket denied; liên kết hữu ích đủ 6; FAQ 15, Hotline 3, History 6 khớp public; mobile 390px và desktop 1024px đúng text/geometry/font; S1 visible draft + Cancel và Footer rapid-click PASS. Không ghi WordPress.
-
-## 5. Direct Preview swap, remove/clone + Cancel
-
-- Read-only postrelease [#45543276751](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45543276751) **SUCCESS**: hoán đổi đỏ/xanh trực tiếp đúng source row cho 6 nhóm S1 Promise/Hero/Hotline/FAQ/History/Vision; section `pse_00_vi` ↔ `pse_01_vi` đúng 2 section (`swappedTwoOnly=true`).
-- Hotline `shortcode_only` remove Preview PASS + Cancel phục hồi, Page version không đổi. Clone shared Hotline PASS, FAQ/Vision `REJECTED_UNSAFE_WRAPPER`. `PSE_BUILDER_SWAP_READ_ONLY=PASS NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true`.
-- Checkpoint đã cập nhật: [PSE Visual Builder Source Compliance 25/11](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md) tại commit `cf13ab9e`.
-
-## 6. Giới hạn chưa thể gọi là hoàn tất toàn dự án
-
-- **Actual CMS Save → REST → reload Preview → public cùng rollback** cho nhóm S1–S4 chưa có thử nghiệm được phép trên published fixture; QA read-only không thay thế kiểm thử ghi dữ liệu.
-- Chưa có Page published dùng manual S2–S4 reference để nghiệm thu Save. S4 REST ngoài WordPress Posts chuẩn cần schema adapter; S5 query thiếu các cột nguồn được xác minh.
-- Thêm/ẩn/hiện section có chủ sở hữu lưu bền, nhân bản thành nguồn TablePress độc lập và ESC Table con lồng nhau chưa đủ hợp đồng nguồn để triển khai an toàn. Không được tạo fixture giả hoặc ghi đè dữ liệu production chỉ để đạt PASS.
-
-**Kết luận:** Phần source-gated Visual Builder, Preview trực tiếp, signed production và các QA không ghi dữ liệu đã triển khai và PASS; dự án tổng thể vẫn còn các phạm vi chưa đủ điều kiện nghiệm thu Save.
+Chưa có `SAVE_INTEGRITY_PASS` thực sự (CMS Save có quyền → REST readback → reload Preview → public desktop/mobile → rollback) cho các nguồn S1–S4 trên published fixture được phép. Inventory đã kiểm không có Page S2–S4 manual reference được publish; không tự tạo bản ghi production để ép test. S5 native query columns không hiện hữu ở nguồn PSE đã kiểm. Section add/show/hide độc lập, clone thành bảng nguồn mới và nested ESC Table mutations còn thiếu hợp đồng lưu đúng dữ liệu. Bắt đầu bước tiếp theo bằng việc tìm một source/Page có quyền test và cấu trúc write/rollback rõ ràng, nếu chưa có thì phát triển adapter source-only an toàn trước; không bỏ các guard CMS/build.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
