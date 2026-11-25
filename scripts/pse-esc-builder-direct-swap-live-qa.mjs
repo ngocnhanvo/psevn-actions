@@ -335,6 +335,59 @@ try{
       .map(to=>({from:item.id,to}))
   ).find(pair=>pair.from!==pair.to);
   const sectionSwapResults={source:'WordPress Page',mode:'read_only_preview'};
+  if(sectionPair){
+    // Same authenticated REST endpoint used by the Inspector: verify the
+    // exact Page transform without invoking its real Save or mutating CMS.
+    const sourceCheck=await page.evaluate(async pair=>{
+      const script=[...document.scripts].map(el=>el.textContent||'')
+        .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
+      const quoted=script?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
+      if(!quoted||typeof window.escVBGetTicket!=='function)
+        throw Error('Authenticated Page source preflight is unavailable');
+      const nonce=JSON.parse(quoted[1]);
+      const pageId=Number(document.querySelector('#esc-vb-page')?.value);
+      const read=async(route,more={})=>{
+        const ticket=await window.escVBGetTicket();
+        const response=await fetch('/wp-json/esc-builder/v1/'+route,{
+          method:'POST',credentials:'same-origin',cache:'no-store',
+          headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+          body:JSON.stringify({page_id:pageId,ticket,...more})
+        });
+        const result=await response.json();
+        if(!response.ok||result?.code)
+          throw Error('Page section preflight rejected '+String(result?.code||response.status));
+        return result;
+      };
+      const before=await read('section-order');
+      const ids=(before.items||[]).map(item=>item.id);
+      const from=ids.indexOf(pair.from),to=ids.indexOf(pair.to);
+      if(from<0||to<0||from===to)throw Error('Section source occurrence mismatch');
+      const order=[...ids];[order[from],order[to]]=[order[to],order[from]];
+      const prepared=await read('save-section-order',{
+        expected_version:before.version,swap:[pair.from,pair.to],dry_run:true
+      });
+      const after=await read('section-order');
+      return {
+        checked:prepared.checked===true,
+        noWrite:prepared.no_write===true&&prepared.saved===false,
+        wouldSave:prepared.would_save===true,
+        exactOrder:Array.isArray(prepared.order)&&
+          prepared.order.length===order.length&&
+          prepared.order.every((v,i)=>v===order[i]),
+        exactPair:Array.isArray(prepared.swapped)&&
+          prepared.swapped[0]===pair.from&&prepared.swapped[1]===pair.to,
+        sourceUnchanged:prepared.version===before.version&&
+          after.version===before.version&&
+          (after.items||[]).map(item=>item.id).join('|')===ids.join('|'),
+        predictedVersion:/^[a-f0-9]{64}$/.test(prepared.next_version||'')&&
+          prepared.next_version!==before.version,
+        sourcePreserved:prepared.source_preserved===true
+      };
+    },sectionPair);
+    if(!Object.values(sourceCheck).every(Boolean))
+      throw Error('Page section two-position preflight failed: '+JSON.stringify(sourceCheck));
+    console.log('PSE_BUILDER_SECTION_SOURCE_SWAP_DRY_RUN_LIVE=PASS NO_CMS_WRITE=true exact_two_positions=true');
+  }
   if(!sectionPair){
     sectionSwapResults.result='NOT_TESTED_NO_WORDPRESS_APPROVED_PAIR';
   }else{
