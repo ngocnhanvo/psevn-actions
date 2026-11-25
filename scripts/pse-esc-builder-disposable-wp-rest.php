@@ -231,71 +231,67 @@ qa_request('save-section-order',[
 qa_assert((string)get_post($page)->post_content===$pageBefore,
     'inverse Page section two-point swap restores exact original HTML bytes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_PAGE_SECTION_SWAP_ROLLBACK=PASS\n";
-// Shared-source clone must use one demonstrably isolated native shortcode.
-// The multi-<div> Page above intentionally exercises an independent swap;
-// a separate bare shortcode Page provides the supported cloning fixture.
-$clonePage=wp_insert_post([
-    'post_type'=>'page','post_status'=>'publish',
-    'post_title'=>'Disposable shared-source clone',
-    'post_content'=>'[table id='.$parent.' /]'
-],true);
-qa_assert(!is_wp_error($clonePage),'isolated Page for shared source clone');
-$GLOBALS['qa_page']=(int)$clonePage;
-$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
-set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
-    'page_id'=>(int)$clonePage,'user_id'=>get_current_user_id()
-],120);
-$cloneRead=qa_request('section-order',[]);
-$sourceKey=(string)$cloneRead['items'][0]['id'];
-$rootBefore=(string)get_post($clonePage)->post_content;
-$rootTableBefore=qa_table_rows($model,$parent);
-$preflight=qa_request('duplicate-section-shared',[
-    'section_key'=>$sourceKey,'expected_version'=>$cloneRead['version'],
-    'share_source'=>true,'dry_run'=>true
-]);
-qa_assert(($preflight['checked']??false)===true &&
-    ($preflight['source_shared']??false)===true &&
-    (string)get_post($clonePage)->post_content===$rootBefore,
-    'shared-source Page clone preflight cannot write');
-$cloned=qa_request('duplicate-section-shared',[
-    'section_key'=>$sourceKey,'expected_version'=>$cloneRead['version'],
-    'share_source'=>true
-]);
-qa_assert(($cloned['saved']??false)===true &&
-    count($cloned['occurrences']??[])===2 &&
-    (string)get_post($clonePage)->post_content!==$rootBefore &&
-    qa_table_rows($model,$parent)===$rootTableBefore,
-    'shared-source clone creates one Page occurrence and leaves ESC Table untouched');
-// Duplicating a formerly unique table renumbers the ORIGINAL id to
-// id@0 and the new instance to id@1. Select only the newly inserted one.
-$additional=array_values(array_filter($cloned['occurrences'],
-    static function($key) use ($sourceKey){
-        return $key===$sourceKey.'@1';
-    }));
-qa_assert(count($additional)===1,'one unambiguous newly cloned section key');
-$removed=qa_request('remove-section',[
-    'section_key'=>(string)$additional[0],
-    'expected_version'=>$cloned['version']
-]);
-qa_assert(($removed['saved']??false)===true &&
-    qa_table_rows($model,$parent)===$rootTableBefore,
-    'native Page-only section remove never writes its source ESC Table');
-$removedBody=(string)get_post($clonePage)->post_content;
-$beforeKeys=array_column($cloneRead['items'],'table_id');
-$afterRemoveKeys=array_column(qa_request('section-order',[])['items'],'table_id');
-qa_assert($beforeKeys===$afterRemoveKeys,
-    'clone+remove restores original section source sequence');
-// Native shortcode removal deliberately preserves the Page's surrounding
-// whitespace. The disposable harness restores any remaining single newline
-// via an exact owner-controlled Page update, then checks all bytes.
-if ($removedBody!==$rootBefore) {
-    $manual=wp_update_post(['ID'=>$clonePage,'post_content'=>$rootBefore],true);
-    qa_assert(!is_wp_error($manual),'disposable Page byte cleanup');
+// Validate literal Page source, and one verified inert HTML sibling wrapper.
+// Both must clone/remove one Page occurrence without any incidental whitespace
+// change; never allow a QA-only wp_update_post repair to hide a source defect.
+$cloneCases=[
+    'bare'=>'[table id='.$parent.' /]',
+    'wrapped'=>'<div class="page"><section>[table id='.$parent.' /]</section>'
+        .'<section>[table id='.$query.' /]</section></div>'
+];
+foreach ($cloneCases as $kind=>$original) {
+    $clonePage=wp_insert_post([
+        'post_type'=>'page','post_status'=>'publish',
+        'post_title'=>'Disposable shared-source clone '.$kind,
+        'post_content'=>$original
+    ],true);
+    qa_assert(!is_wp_error($clonePage),'isolated Page for shared-source clone '.$kind);
+    $GLOBALS['qa_page']=(int)$clonePage;
+    $GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+    set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+        'page_id'=>(int)$clonePage,'user_id'=>get_current_user_id()
+    ],120);
+    $sourceRead=qa_request('section-order',[]);
+    $sourceKey=(string)$sourceRead['items'][0]['id'];
+    $bytesBefore=(string)get_post($clonePage)->post_content;
+    qa_assert($bytesBefore===$original,'local source bytes unchanged before clone '.$kind);
+    $tableBefore=qa_table_rows($model,$parent);
+    $preflight=qa_request('duplicate-section-shared',[
+        'section_key'=>$sourceKey,
+        'expected_version'=>$sourceRead['version'],
+        'share_source'=>true,'dry_run'=>true
+    ]);
+    qa_assert(($preflight['checked']??false)===true &&
+        ($preflight['no_write']??false)===true &&
+        (string)get_post($clonePage)->post_content===$bytesBefore,
+        'native Page clone preflight must not write '.$kind);
+    $cloned=qa_request('duplicate-section-shared',[
+        'section_key'=>$sourceKey,
+        'expected_version'=>$sourceRead['version'],
+        'share_source'=>true
+    ]);
+    qa_assert(($cloned['saved']??false)===true &&
+        count($cloned['occurrences']??[])===2 &&
+        qa_table_rows($model,$parent)===$tableBefore,
+        'one shared-source clone without ESC data mutation '.$kind);
+    $newKey=$sourceKey.'@1';
+    qa_assert(in_array($newKey,$cloned['occurrences'],true),
+        'post-duplicate occurrence key is unambiguous '.$kind);
+    $removed=qa_request('remove-section',[
+        'section_key'=>$newKey,
+        'expected_version'=>$cloned['version']
+    ]);
+    qa_assert(($removed['saved']??false)===true &&
+        qa_table_rows($model,$parent)===$tableBefore,
+        'native Page-only section Remove preserves ESC Table '.$kind);
+    qa_assert((string)get_post($clonePage)->post_content===$bytesBefore,
+        'native Clone -> Remove exactly restores initial Page bytes, without repair '.$kind);
+    $afterRemove=qa_request('section-order',[]);
+    qa_assert(array_column($afterRemove['items'],'table_id')===
+        array_column($sourceRead['items'],'table_id'),
+        'native Clone -> Remove recovers original section sequence '.$kind);
 }
-qa_assert((string)get_post($clonePage)->post_content===$rootBefore,
-    'disposable Page restored to exact initial content after clone/remove');
-echo "PSE_DISPOSABLE_SHARED_SOURCE_SECTION_CLONE_REMOVE=PASS CLEANUP_EXACT=PASS\n";
-
+echo "PSE_DISPOSABLE_SHARED_SOURCE_SECTION_CLONE_REMOVE=PASS NATIVE_EXACT_BYTES=PASS\n";
 
 $GLOBALS['qa_page']=(int)$page;
 $GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
