@@ -29,3 +29,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 18:15 VN: rerun native source CI pinned Astro master 82a4f2d286b04c7561b79b90cff5ea3aab0a728d after correcting test-only CTA regex. Earlier #45599696378/#45599717844 failed solely on regex assertion (159/160 tests PASS). No CMS or build.
 
 2026-11-25 18:20 ICT: Astro master b25049a287dd7e8782c60e756bcff229743fc719 — Home_09 S1 image markers remain editable only when previewMode and ESC source local; API-owned media background/icon readonly. Re-run source-only PHP/Astro schema CI; no build/FTP/CMS write.
+
+2026-11-25 18:30 ICT: Final Astro master 75ee2e9193c0a1f922a47cfcb295987f95972327 guards API-owned media markers in Home_09/Home_11/Home_13; source regression tests included. Run source-only schema CI at this pin; NO_BUILD NO_FTP NO_CMS_WRITE.
