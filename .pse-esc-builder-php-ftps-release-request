@@ -1,2 +1,2 @@
-21a1f83bd571632e36fdb661356e4f30cfaeeab1
-2026-11-25 PSE ESC Visual Builder exact TablePress readback for native text, href, S5 query cells and image/Alt. PHP/Astro source-only CI #45572961909 SUCCESS, markers PSE_ESC_TEXT_IMAGE_SAVE_READBACK_GUARD=PASS. Existing Page/Item readback guards already deployed and verified. Release 2 modified PHP includes only by TLS FTPS SHA256 guarded readback and rollback. NO CMS content writes, no Astro build.
+fb890606d37525a6c2a02c24bdfb5b0741957481
+2026-11-25 PSE ESC Visual Builder Inspector Page section + item swap post-Save readback and unknown-persistence fail-closed UI; committed PHP fb890606d37525a6c2a02c24bdfb5b0741957481, full source-only schema CI #45573846554 SUCCESS. Deploy ONLY item-section-ui.php by existing TLS guarded FTPS with SHA256 readback and rollback. Existing text/media and Page/item writers already released. No CMS data write or Astro build.
