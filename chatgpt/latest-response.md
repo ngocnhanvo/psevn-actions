@@ -1,30 +1,47 @@
-# PSE Visual Builder — Kết quả tiếp tục 25/11/2026
+# PSE Visual Builder — Khôi phục và tiếp tục nghiệm thu 25/11/2026
 
-- Project: `pse.vn`
-- Repo lưu phản hồi: `ngocnhanvo/psevn-actions`, branch `main`
-- Thời điểm: 2026-11-25 11:18 (+07, Asia/Ho_Chi_Minh)
-- Đối chiếu checkpoint: `docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md` commit `013cbc178c6c4e05a22186d76e2260529e38b8c9`
-- Trạng thái ghi: SAVED sau khi GitHub xác minh commit
+- Project: `pse.vn`.
+- Đích lưu: `ngocnhanvo/psevn-actions@main`, `chatgpt/latest-response.md`.
+- Thời điểm: 2026-11-25 khoảng 11:40 (+07, Asia/Ho_Chi_Minh).
+- Căn cứ: `docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md` mới nhất, commit Actions `ed68c658a1cee086f634f3e025f93f3ca9e53498`.
+- Trạng thái lưu: lưu qua GitHub commit trực tiếp, đối chiếu SHA sau ghi; cổng bypass được khai báo.
 
-## 1. Đã khôi phục trạng thái dự án PSE
+## Đã khôi phục trạng thái mới nhất của PSE
 
-Đã đọc `knowledge/main` (quy tắc S1–S9 và CORE), checkpoint ngày 25/11, `chatgpt/latest-response.md` trước lượt này; đối chiếu repo Astro/PHP/Actions và các run production trước đó. Lúc khôi phục Knowledge `34310f05`, Astro production `f7465f33`, PHP production `09b60096`, Actions `e40da605`. Previous signed Astro [#45542620028](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542620028) PASS, PHP guarded FTPS [#45542344078](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45542344078) PASS, direct Preview Playwright no-write [#45543276751](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45543276751) PASS.
+Đối chiếu GitHub và checkpoint ngày 25/11/2026, các bản production trước lượt này đã có bằng chứng triển khai thành công:
 
-## 2. Đã bổ sung thao tác bàn phím cho Visual Builder
+| Thành phần | Commit | Kết quả |
+|---|---|---|
+| Knowledge `main` | `34310f05` | Đã cập nhật quy định Visual Builder |
+| Astro `master` | `2936ecb0` | Deploy PASS trước lượt này |
+| PHP `master` | `09b60096` | FTPS PASS trước lượt này |
+| Playwright production | [Run #45544969354](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544969354) | QA PASS trước lượt này |
 
-Astro `master@2936ecb0a2ee62ac46f94d0a1f42290cf47ab75b`: Tab+Enter/Space chọn item/section đích trực tiếp trên DOM Preview khi bật chế độ đỏ nguồn/xanh đích; không có danh sách sắp xếp/modal/chip giả, không thay layout public. Giữ physical source-row và không nhận hàng của ESC Table con không cùng nguồn, khôi phục `tabindex` ban đầu khi Hủy/dispose. Các commit `eb71e2f`, `71b20e7`, `2936ecb`. Source-only CI [#45544472680](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544472680) **SUCCESS 26/26 suites, 148/148 tests**, PHP lint/JS parse/Tailwind/Astro parser PASS.
+Các chức năng đã nghiệm thu ở chế độ không ghi CMS gồm hoán đổi section/item trên Preview, chọn bằng Enter/Space, khôi phục khi Hủy và ngăn thao tác nhân bản section không an toàn.
 
-## 3. Production và QA thật
+**Dự án chưa hoàn tất toàn bộ:** nghiệm thu Save/REST thực tế, một số thao tác section độc lập và nguồn dữ liệu động S2–S5 vẫn còn thiếu. Tiếp tục các phần có thể kiểm chứng an toàn, không tự sửa dữ liệu WordPress production để tạo kết quả kiểm thử.
 
-- WordPress Build Website [#45544654021](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544654021) **SUCCESS**, signed Astro production [#45544725561](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544725561) **SUCCESS**, exact `PSE_DEPLOY_COMMIT=2936ecb0a2ee62ac46f94d0a1f42290cf47ab75b`, `SIGNED_UNZIP_SUCCESS`, activation 0, protected `.env` unchanged. Không thay source PHP, không ghi nội dung WordPress.
-- Authenticated read-only Playwright [#45544969354](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544969354) **SUCCESS**: section Enter/Cancel/tabindex PASS, Promise physical item Space/Cancel/tabindex PASS; 6 nhóm S1 hoán đổi trực tiếp + Cancel và swap hai section `pse_00_vi ↔ pse_01_vi` PASS, Hotline shared clone/remove Preview+Cancel PASS, FAQ/Vision unsafe clone bị chặn, `NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true`.
-- Postdeploy SSR [#45544940471](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940471), homepage/search [#45544940372](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940372), bảy bài Joomla [#45544940321](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940321) **SUCCESS**. Gallery 4 album/464 ảnh [#45544940418](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45544940418) attempt #1 FAIL vì ảnh #980 index134 chờ pixel decode; rerun đúng job attempt #2 **SUCCESS 8/8 viewport rows** (390px/1440px), 4/4 gallery, 464 ảnh được kiểm kê, 5 pixel decode/album/viewport, zero admin-origin leakage. Ghi lại cảnh báo latency ảnh 15.9s ở album #975; không suy ra lỗi Visual Builder.
-- Checkpoint đã cập nhật và xác minh commit [`013cbc17`](https://github.com/ngocnhanvo/psevn-actions/commit/013cbc178c6c4e05a22186d76e2260529e38b8c9).
+## Phần nâng cấp đã triển khai trong lượt này
 
-## 4. Phạm vi chưa đủ nghiệm thu toàn dự án
+Đã bổ sung **nhấn Escape để Hủy chọn đích hoán đổi** trong Visual Builder. WordPress Inspector kiểm tra đúng iframe, nguồn dữ liệu và phiên thao tác trước khi thực hiện Hủy; không phát sinh API ghi dữ liệu mới.
 
-Chưa có `SAVE_INTEGRITY_PASS` thực sự (CMS Save có quyền → REST readback → reload Preview → public desktop/mobile → rollback) cho các nguồn S1–S4 trên published fixture được phép. Inventory đã kiểm không có Page S2–S4 manual reference được publish; không tự tạo bản ghi production để ép test. S5 native query columns không hiện hữu ở nguồn PSE đã kiểm. Section add/show/hide độc lập, clone thành bảng nguồn mới và nested ESC Table mutations còn thiếu hợp đồng lưu đúng dữ liệu. Bắt đầu bước tiếp theo bằng việc tìm một source/Page có quyền test và cấu trúc write/rollback rõ ràng, nếu chưa có thì phát triển adapter source-only an toàn trước; không bỏ các guard CMS/build.
+- [Source CI #45546864579](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45546864579): **PASS**.
+- [PHP FTPS #45547029397](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45547029397): **PASS**, đúng SHA `e4d3d835`, chỉ 1 file thay đổi.
+- [Astro production #45547221745](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45547221745): **PASS**, đúng SHA `88abba46`, ZIP đã ký kích hoạt thành công.
+- Checkpoint mới đã lưu tại commit Actions `c0ef0228` ở giai đoạn giữa lượt và đã được cập nhật tiếp sau nghiệm thu.
 
-Chế độ code: auto-build
-Cổng ghi source: bypass
+Bài kiểm thử trình duyệt xác nhận đường Hủy thực tế từ Inspector từng đang chạy; kết quả cuối dưới đây thay thế trạng thái chờ đó.
+
+### Nghiệm thu browser đã hoàn tất
+
+[Playwright production #45547663816](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45547663816) **PASS**: section và item đều Hủy bằng Escape qua Inspector thật; 6/6 nhóm hoán đổi trực tiếp PASS; Hotline clone/remove không ghi CMS PASS; FAQ/Vision bị chặn nhân bản không an toàn đúng quy tắc. Log xác nhận `NO_CMS_WRITE=true`, `NO_SAVE=true`, `PREVIEW_CANCELLED=true`. Lượt kiểm thử đầu [#45547472119](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45547472119) thất bại do assertion diễn ra trước khi iframe dọn marker; đã sửa kiểm thử chờ trạng thái DOM ổn định, không bỏ assertion, và rerun PASS.
+
+Kiểm thử [4 album/464 ảnh #45547443106](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45547443106) **PASS** ở cả 390px và 1440px; SSR, homepage, bảy bài Joomla và build-speed postdeploy cũng PASS. Checkpoint được lưu đầy đủ tại [commit `ed68c658`](https://github.com/ngocnhanvo/psevn-actions/commit/ed68c658a1cee086f634f3e025f93f3ca9e53498).
+
+**Trạng thái tổng thể:** đợt nâng cấp Escape đã hoàn tất, nhưng toàn bộ Visual Builder vẫn PARTIAL vì chưa nghiệm thu Save→REST readback→Preview reload→public→rollback trên fixture production được phép cho S1–S4; thiếu published manual reference fixture S2–S4, metadata query tự động S5 và các thao tác section add/show/hide độc lập. Không tạo dữ liệu giả, không thực hiện no-op CMS Save chỉ để làm test xanh.
+
+Phản hồi cuối cùng đã được lưu tại `chatgpt/latest-response.md` trên Actions main.
+
+Chế độ code: auto-build  
+Cổng ghi source: bypass  
 Trạng thái: PARTIAL — chưa hoàn tất
