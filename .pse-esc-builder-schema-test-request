@@ -15,3 +15,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 PHP master 80414dd34f931f2c5f94b42def151575216dee74: scope insertion preflight-before-write assertion inside commitSectionInsert to avoid matching separate SectionSwap writeRequested flag. Rerun full native source CI with real Inspector generated JS, no CMS writes/FTP/build.
 
 2026-11-25 PHP master fb890606d37525a6c2a02c24bdfb5b0741957481: protect real item swap Save with native TablePress row-hash readback before committing Preview; if POST result uncertain, cancel Preview only and invalidate source coordinates, require reload rather than pretending WP unchanged. Test generated Inspector JS and all source checks, no build/deploy/CMS write.
+
+2026-11-25 PHP master ae1591df0809a6e91b260b2ad51e14ac1d662459: after attempted Save, inspector quarantines original item sourceRow for insert/clone, delete, native reference add/replace, local-cell edit and visibility, and displays mandatory source refresh on ambiguous WordPress result. Reuse existing source-only full PHP+Astro generated JS contract CI. NO CMS writes, FTP or Astro build.
