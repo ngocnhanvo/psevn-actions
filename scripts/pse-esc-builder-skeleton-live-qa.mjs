@@ -181,6 +181,115 @@ try {
 
 
 
+
+  // Rendered parity is separate from content parity. Align the actual
+  // cross-origin iframe *inner viewport* to public CSS pixels, including its
+  // native border; do not compare Admin outer-browser width to public width.
+  // No screenshot, CMS mutation, source write or production navigation occurs.
+  const homepageVisualParity=async targetWidth=>{
+    const iframe=page.locator('#esc-vb-frame');
+    const originalStyle=await iframe.getAttribute('style');
+    const resize=async cssWidth=>{
+      await iframe.evaluate((el,width)=>{
+        for(const property of ['width','min-width','max-width'])
+          el.style.setProperty(property,width+'px','important');
+        el.style.setProperty('flex','0 0 '+width+'px','important');
+      },cssWidth);
+    };
+    const current=page.frameLocator('#esc-vb-frame');
+    const origin=await current.locator('body').evaluate(()=>location.origin);
+    const visitor=await browser.newPage({
+      viewport:{width:targetWidth,height:900},deviceScaleFactor:1
+    });
+    try{
+      await resize(targetWidth);
+      let inner=await current.locator('html').evaluate(()=>window.innerWidth);
+      if(inner!==targetWidth){
+        await resize(targetWidth+(targetWidth-inner));
+        inner=await current.locator('html').evaluate(async()=>{
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          return window.innerWidth;
+        });
+      }
+      if(inner!==targetWidth)throw Error('Builder visual viewport mismatch expected='+
+        targetWidth+' actual='+inner);
+      const response=await visitor.goto(origin+'/',{
+        waitUntil:'domcontentloaded',timeout:60000
+      });
+      if(!response?.ok())throw Error('Homepage public visual parity route HTTP error');
+      await current.locator('.pse-hero').waitFor({state:'visible',timeout:30000});
+      await visitor.locator('.pse-hero').waitFor({state:'visible',timeout:30000});
+      // Wait for fonts/resize while keeping the same scroll state. The hero
+      // carousel may advance independently; compare stable section boxes,
+      // never the momentary active slide image or animated slide transform.
+      await current.locator('html').evaluate(async()=>{
+        window.scrollTo(0,0);
+        await document.fonts?.ready;
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      });
+      await visitor.locator('html').evaluate(async()=>{
+        window.scrollTo(0,0);
+        await document.fonts?.ready;
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      });
+      const sample=()=>{
+        const landmarks=['#main-header','.pse-hero','.pse-hero__slides',
+          '.pse-tools__links','.pse-promise'];
+        const result={width:window.innerWidth,marks:{}};
+        for(const selector of landmarks){
+          const el=document.querySelector(selector);
+          if(!el){result.marks[selector]=null;continue;}
+          const rect=el.getBoundingClientRect();
+          const style=getComputedStyle(el);
+          result.marks[selector]={
+            x:Math.round(rect.x*10)/10,
+            y:Math.round(rect.y*10)/10,
+            w:Math.round(rect.width*10)/10,
+            h:Math.round(rect.height*10)/10,
+            display:style.display,
+            font:style.fontFamily,
+            size:style.fontSize,
+            padding:style.padding,
+            background:style.backgroundColor
+          };
+        }
+        return result;
+      };
+      const preview=await current.locator('html').evaluate(sample);
+      const publicResult=await visitor.locator('html').evaluate(sample);
+      if(preview.width!==targetWidth||publicResult.width!==targetWidth)
+        throw Error('Visual parity test sampled unequal CSS viewports');
+      const differences=[];
+      for(const selector of Object.keys(preview.marks)){
+        const a=preview.marks[selector],b=publicResult.marks[selector];
+        if(!a||!b){
+          if(a||b||selector==='#main-header'||selector==='.pse-hero')
+            differences.push({selector,reason:'missing region'});
+          continue;
+        }
+        const delta={};
+        for(const dimension of ['x','y','w','h']){
+          if(Math.abs(a[dimension]-b[dimension])>5)
+            delta[dimension]=[a[dimension],b[dimension]];
+        }
+        for(const property of ['display','font','size','padding','background']){
+          if(a[property]!==b[property])delta[property]=[a[property],b[property]];
+        }
+        if(Object.keys(delta).length)differences.push({selector,delta});
+      }
+      if(differences.length)throw Error('Production vs Builder unselected homepage visual '+
+        'parity mismatch width='+targetWidth+' '+JSON.stringify(differences));
+      console.log('PSE_BUILDER_HOMEPAGE_RESPONSIVE_VISUAL_PARITY=PASS width='+
+        targetWidth+' regions='+Object.values(preview.marks).filter(Boolean).length+
+        ' layout_typography_surface=PASS NO_CMS_WRITE=PASS');
+    }finally{
+      if(originalStyle===null)await iframe.evaluate(el=>el.removeAttribute('style'));
+      else await iframe.evaluate((el,style)=>el.setAttribute('style',style),originalStyle);
+      await visitor.close();
+    }
+  };
+  for(const width of [1440,1024,390])await homepageVisualParity(width);
+
   // The old preview used to inject green/white ESC Table text chips over
   // the hero. Production has no such content. Keep text/URL editing in the
   // contextual inspector opened AFTER selecting its real image source.
