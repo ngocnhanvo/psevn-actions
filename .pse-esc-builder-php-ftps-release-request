@@ -1,2 +1,2 @@
-9d111532f7175294bbc305f7616d1f55e8724bce
-2026-11-25 PSE Visual Builder source verified exact PHP no-op item swap: server rejects identical rows before TablePress Save, Inspector cancels local Preview before POST without stale quarantine. Source-only CI #45593769163 SUCCESS. Guarded FTPS SHA256 readback with rollback for item-section-ui.php; item-manager.php deployed #45593602994. NO ASTRO BUILD, NO CMS WRITE.
+3a29d06263182d14119a150778fd60cd1076b185
+2026-11-25 PSE Visual Builder scoped PHP-only section removal source-context guard. CI #45596926724 SUCCESS pinned exact PHP master; deploy only changed includes/section-order.php with existing guarded FTPS SHA256 readback and automatic rollback. No Astro build or CMS business writes.
