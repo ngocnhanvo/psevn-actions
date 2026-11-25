@@ -405,6 +405,85 @@ qa_assert(($altRevert['saved']??false)===true &&
     qa_table_rows($model,$parent)===$nativeBefore,
     'S6 native Page image ALT rollback exact Page source bytes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S6_PAGE_IMAGE_ALT_SAVE_READBACK_ROLLBACK=PASS\n";
+// Verify actual WordPress Media attachment replacement, not arbitrary URLs.
+// Two disposable 1x1 PNG records are created only in the isolated runner.
+$png=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL7TQAAAABJRU5ErkJggg==',true);
+qa_assert(is_string($png) && strlen($png)>40,'bundled disposable PNG bytes');
+$mediaIds=[];
+foreach (['source','target'] as $name) {
+    $uploaded=wp_upload_bits('pse-s6-disposable-'.$name.'.png',null,$png);
+    qa_assert(empty($uploaded['error']) && is_file($uploaded['file']),
+        'local disposable WordPress Media file '.$name);
+    $id=wp_insert_attachment([
+        'post_mime_type'=>'image/png',
+        'post_title'=>'Disposable S6 '.$name,
+        'post_status'=>'inherit'
+    ],$uploaded['file'],0,true);
+    qa_assert(!is_wp_error($id) && (int)$id>0 &&
+        wp_attachment_is_image((int)$id),
+        'real native WP Media attachment '.$name);
+    $mediaIds[$name]=(int)$id;
+}
+$originalMediaUrl=wp_get_attachment_url($mediaIds['source']);
+$targetMediaUrl=wp_get_attachment_url($mediaIds['target']);
+qa_assert(is_string($originalMediaUrl) && is_string($targetMediaUrl) &&
+    $originalMediaUrl!==$targetMediaUrl &&
+    str_starts_with($originalMediaUrl,'https://127.0.0.1:8099/') &&
+    str_starts_with($targetMediaUrl,'https://127.0.0.1:8099/'),
+    'both Media URLs belong only to disposable WordPress HTTPS loopback');
+$mediaBefore='<section><img src="'.esc_attr($originalMediaUrl).
+    '" alt="Media A" width="48"><p>Giữ nguyên</p></section>'.
+    '<div>[table id='.$parent.' /]</div>';
+$mediaPage=wp_insert_post([
+    'post_type'=>'page','post_status'=>'publish',
+    'post_title'=>'Disposable Page Media replacement',
+    'post_content'=>$mediaBefore
+],true);
+qa_assert(!is_wp_error($mediaPage),'disposable Media owner Page');
+$GLOBALS['qa_page']=(int)$mediaPage;
+$GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
+set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
+    'page_id'=>(int)$mediaPage,'user_id'=>get_current_user_id()
+],120);
+$mediaRead=qa_request('editable-page-images',[]);
+$mediaImage=$mediaRead['images'][0]??[];
+qa_assert(count($mediaRead['images']??[])===1 &&
+    $mediaImage['url']===$originalMediaUrl,
+    'original media link read from real WordPress Page');
+$mediaSaved=qa_request('save-page-image',[
+    'part'=>$mediaImage['part'],'index'=>$mediaImage['row'],
+    'expected_version'=>$mediaRead['version'],
+    'original_hash'=>$mediaImage['hash'],
+    'attachment_id'=>$mediaIds['target']
+]);
+$mediaAfter=(string)get_post($mediaPage)->post_content;
+qa_assert(($mediaSaved['saved']??false)===true &&
+    $mediaAfter===str_replace($originalMediaUrl,$targetMediaUrl,$mediaBefore) &&
+    qa_table_rows($model,$parent)===$nativeBefore &&
+    $mediaSaved['url']===$targetMediaUrl,
+    'S6 Page Media Save/readback changed exactly source IMG URL');
+qa_request('save-page-image',[
+    'part'=>$mediaImage['part'],'index'=>$mediaImage['row'],
+    'expected_version'=>$mediaRead['version'],
+    'original_hash'=>$mediaImage['hash'],
+    'attachment_id'=>$mediaIds['source']
+],true);
+$mediaFresh=qa_request('editable-page-images',[]);
+$mediaCurrent=$mediaFresh['images'][0]??[];
+qa_assert($mediaCurrent['url']===$targetMediaUrl &&
+    $mediaCurrent['hash']!==$mediaImage['hash'],
+    'S6 Media source stale rejection and fresh REST hash');
+$mediaRestored=qa_request('save-page-image',[
+    'part'=>$mediaCurrent['part'],'index'=>$mediaCurrent['row'],
+    'expected_version'=>$mediaFresh['version'],
+    'original_hash'=>$mediaCurrent['hash'],
+    'attachment_id'=>$mediaIds['source']
+]);
+qa_assert(($mediaRestored['saved']??false)===true &&
+    (string)get_post($mediaPage)->post_content===$mediaBefore &&
+    qa_table_rows($model,$parent)===$nativeBefore,
+    'S6 Page WordPress Media source exact rollback, no ESC mutation');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S6_PAGE_MEDIA_SAVE_READBACK_ROLLBACK=PASS\n";
 $GLOBALS['qa_page']=(int)$page;
 $GLOBALS['qa_ticket']=bin2hex(random_bytes(32));
 set_transient('esc_vb_'.hash('sha256',$GLOBALS['qa_ticket']),[
