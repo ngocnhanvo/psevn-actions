@@ -9,3 +9,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 PHP master 63bf0a04868624a2baa58e2cd306547e3b0675dc: test Page-independent ESC Table text/query/metadata and image Alt Save exact source readback; false TablePress save acknowledgements fail and do not emit change signals. Execute existing no-build PHP/Astro schema CI.
 
 2026-11-25 PHP master 21a1f83bd571632e36fdb661356e4f30cfaeeab1 fixes fixture WP_REST_Request::has_param required by existing image-editor.php; previous source CI #45572710277 failed only PHP fixture missing this method; rerun full source-only schema test without changing runtime behavior.
+
+2026-11-25 PHP master bb7f45d3600f636d164e4a583fc297265516c154 guards Inspector Page section swap/clone/remove after POST Save: independent REST section-order readback, fail closed on unknown persistence, never claim WordPress unchanged or re-arm stale source coordinates. Source CI: PHP generated JS regression and parse; NO BUILD/FTP/CMS writes.
