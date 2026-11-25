@@ -338,6 +338,48 @@ try{
         sectionCapability.items.some(other=>other.id===to && homeSections.includes(other.table_id||other.id)))
       .map(to=>({from:item.id,to}))
   ).find(pair=>pair.from!==pair.to);
+  // Structural read-only diagnosis: classify existing Page wrappers only.
+  // Do not log WordPress Editor HTML/text, nonce, ticket, or untrusted attrs.
+  const physicalSourceShapes=await page.evaluate(async()=>{
+    const scripts=[...document.scripts].map(el=>el.textContent||'');
+    const source=scripts.find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
+    const quoted=source?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
+    if(!quoted)throw Error('Cannot inspect source wrapper shape');
+    const nonce=JSON.parse(quoted[1]);
+    const pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    const response=await fetch('/wp-json/wp/v2/pages/'+pageId+
+      '?context=edit&_fields=content',{
+      credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':nonce}
+    });
+    if(!response.ok)throw Error('WordPress Page source read refused');
+    const record=await response.json();
+    const raw=record?.content?.raw;
+    if(typeof raw!=='string')throw Error('No raw Page source in authenticated readback');
+    const ids=['pse_00_vi','pse_01_vi','pse_02_vi','pse_03_vi'];
+    const regex=/\[table\s+id\s*=\s*["']?([a-zA-Z0-9_-]{1,80})(?:["'])?\s*\/\]/gi;
+    const withMarkers=raw.replace(regex,(full,id)=>ids.includes(id)
+      ?'<mark data-pse-read-only-source="'+id+'"></mark>':full);
+    const parsed=new DOMParser().parseFromString(withMarkers,'text/html');
+    return ids.map(id=>{
+      const mark=parsed.querySelector('mark[data-pse-read-only-source="'+id+'"]');
+      const nearest=mark?.closest('div,section,article,li');
+      const outer=nearest?.parentElement;
+      const isolated=Boolean(nearest&&
+        nearest.textContent?.trim()===''&&
+        nearest.querySelectorAll('[data-pse-read-only-source]').length===1);
+      return {id,found:Boolean(mark),wrapperTag:nearest?.tagName||null,
+        wrapperHasId:Boolean(nearest?.hasAttribute('id')),
+        wrapperHasClass:Boolean(nearest?.hasAttribute('class')),
+        wrapperHasControls:Boolean(nearest?.querySelector('button,input,script,style,form,iframe')),
+        wrapperHasOtherElements:(nearest?.querySelectorAll('*').length||0)>1,
+        wrapperOnlyNativeShortcode:isolated,
+        parentTag:outer?.tagName||null,
+        parentHasId:Boolean(outer?.hasAttribute('id'))
+      };
+    });
+  });
+  console.log('PSE_SECTION_INSERT_PHYSICAL_SOURCE_SHAPES_READ_ONLY='+
+    JSON.stringify(physicalSourceShapes));
   // Source-owned add-section contract: only exact Page occurrences in one
   // sibling group, with explicit shared ESC Table. This is a READ-ONLY
   // rehearsal: WordPress only receives dry_run:true and Page version is
