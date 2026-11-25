@@ -193,6 +193,45 @@ qa_request('save-text',[
 qa_assert(qa_table_rows($model,$query)===$queryBefore,
     'exact S5 query restoration after REST roundtrip');
 foreach ($ref_ids as $id) qa_ref_swap_roundtrip($model,$id);
+// Real Page section two-point swap: separate Page writer and WordPress
+// revision, independent from the TablePress row mutations accepted above.
+// Only two physical sibling sections may exchange their source positions.
+$section=qa_request('section-order',[]);
+$pair=null;
+foreach (($section['swappable']??[]) as $from=>$targets) {
+    if (!is_array($targets)) continue;
+    foreach ($targets as $to) {
+        if ($from!==$to) {$pair=[(string)$from,(string)$to];break 2;}
+    }
+}
+qa_assert(is_array($pair) && count($pair)===2,
+    'two independent Page section source occurrences have a safe swap');
+$pageBefore=(string)get_post($page)->post_content;
+$dry=qa_request('save-section-order',[
+    'swap'=>$pair,'expected_version'=>$section['version'],'dry_run'=>true
+]);
+qa_assert(($dry['checked']??false)===true &&
+    ($dry['no_write']??false)===true &&
+    (string)get_post($page)->post_content===$pageBefore,
+    'Page section swap dry-run never writes WordPress');
+$swappedSection=qa_request('save-section-order',[
+    'swap'=>$pair,'expected_version'=>$section['version']
+]);
+$pageAfter=(string)get_post($page)->post_content;
+qa_assert(($swappedSection['saved']??false)===true &&
+    $pageAfter!==$pageBefore &&
+    hash('sha256',$pageAfter)===$swappedSection['version'],
+    'real Page section swap Save/readback and revision');
+$restPage=qa_request('section-order',[]);
+qa_assert($restPage['version']===$swappedSection['version'],
+    'new Page REST state verifies same version after refresh');
+qa_request('save-section-order',[
+    'swap'=>$pair,'expected_version'=>$restPage['version']
+]);
+qa_assert((string)get_post($page)->post_content===$pageBefore,
+    'inverse Page section two-point swap restores exact original HTML bytes');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_PAGE_SECTION_SWAP_ROLLBACK=PASS\n";
+
 qa_assert(get_post($page)->post_content===$qa_page_body,
     'Page content unchanged after S1/S2/S3/S4/S5 table-only writes');
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S1_S2_S3_S4_S5_SAVE_READBACK_ROLLBACK=PASS\n";
