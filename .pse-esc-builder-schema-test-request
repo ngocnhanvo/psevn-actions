@@ -19,3 +19,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 PHP master ae1591df0809a6e91b260b2ad51e14ac1d662459: after attempted Save, inspector quarantines original item sourceRow for insert/clone, delete, native reference add/replace, local-cell edit and visibility, and displays mandatory source refresh on ambiguous WordPress result. Reuse existing source-only full PHP+Astro generated JS contract CI. NO CMS writes, FTP or Astro build.
 
 2026-11-25 PHP master 57f16d6c398d42e950c63c67d9a9072b45421de9: reject no-op swap of byte-identical S1/S2-S4 physical source rows before TablePress Save/change signal. Verify native PHP test PSE_ITEM_IDENTICAL_SWAP_NOOP_GUARD=PASS and all source-only regression; no CMS write, FTP or Astro build.
+
+2026-11-25 PHP master 9d111532f7175294bbc305f7616d1f55e8724bce: client-side skip identical physical item row swaps before any WordPress Save POST; cancel Preview draft without stale-source quarantine. New generated-Inspector JS source contract ensures no-op guard precedes the writer. Run PHP unit and exact Astro source-only CI; no CMS/FTP/website build.
