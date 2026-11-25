@@ -1,2 +1,2 @@
-55cd4d1ae47c61c3c83543b189859d3f282ae309
-2026-11-25 PSE Visual Builder verified ESC Table read-after-write guard for all 7 item writers; validated CI #45572023065 SUCCESS, PHP native unit markers PSE_SECTION_SAVE_READBACK_GUARD/PSE_ITEM_SAVE_READBACK_GUARD PASS. Prior PHP source 6067dbc deployed #45571853168 SUCCESS. Deploy changed item-manager.php only with guarded FTPS SHA256 verification, no CMS writes, no Astro build.
+21a1f83bd571632e36fdb661356e4f30cfaeeab1
+2026-11-25 PSE ESC Visual Builder exact TablePress readback for native text, href, S5 query cells and image/Alt. PHP/Astro source-only CI #45572961909 SUCCESS, markers PSE_ESC_TEXT_IMAGE_SAVE_READBACK_GUARD=PASS. Existing Page/Item readback guards already deployed and verified. Release 2 modified PHP includes only by TLS FTPS SHA256 guarded readback and rollback. NO CMS content writes, no Astro build.
