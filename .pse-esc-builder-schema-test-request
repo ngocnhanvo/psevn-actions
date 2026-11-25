@@ -1,3 +1,3 @@
-2026-11-25 PSE insert shared section selected directly in Preview, full source CI retry.
-PHP master a478c83cb96c1795b13a4c6fe15794338259611f; Astro master fb830df9dab3b4a7c9feff4d2b8a87ed601cd907.
-Prior CI #45553661127 correctly found an existing comment-fake-section clone error code regression. New source retains exact legacy root_source_context rejection while validating source before a write. Test original clone/remove, source-only section insert after sibling with dry_run/readback, invalid cross-group targets, Inspector same-Page optimistic version, Astro clone Preview cancel and keyboard swap. No live CMS writes, FTP, production build.
+2026-11-25 PSE complete source-only section insertion regression after Preview legacy duplicate fix.
+PHP master a478c83cb96c1795b13a4c6fe15794338259611f; Astro master 9a80fa78f6c893d0989761c083a42a0acbbd0141.
+Prior CI #45553762723 PHP lint, items-and-sections and JS Inspector contracts PASS, 149/152 Astro tests PASS; three existing in-place clone cases failed due new target containment guard wrongly comparing node with itself. Corrected only foreign-target containment, preserving existing same-source clone plus new after-target insertion, cancel, unsafe cross-group tests. Run source-only full PHP+Astro 26 suites, parser/Tailwind, no FTP/CMS write/website build.
