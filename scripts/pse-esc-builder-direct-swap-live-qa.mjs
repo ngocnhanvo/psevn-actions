@@ -433,7 +433,27 @@ try{
           ancestors.push({node:rect(n),preceding});
         }
         const cover=[...document.querySelectorAll('.pse-history-cover,.pse-history-cover img')]
-          .map(n=>({...rect(n),complete:n.complete,naturalWidth:n.naturalWidth,naturalHeight:n.naturalHeight}));
+          .map(n=>{
+            const css=getComputedStyle(n);
+            // Only expose public media pathnames (never query, fragment, auth or tickets).
+            const mediaPath=value=>{
+              if(!value)return null;
+              try{
+                const u=new URL(value,location.href);
+                return /^\/(?:wp-content\/uploads\/|api\/images\/|images\/pages\/)/.test(u.pathname)
+                  ? {origin:u.origin,path:u.pathname}:null;
+              }catch{return null;}
+            };
+            return {...rect(n),complete:n.complete,naturalWidth:n.naturalWidth,naturalHeight:n.naturalHeight,
+              src:mediaPath(n.getAttribute('src')),currentSrc:mediaPath(n.currentSrc),
+              srcset:(n.getAttribute('srcset')||'').split(',').map(x=>{
+                const [url,descriptor]=x.trim().split(/\s+/);
+                return {media:mediaPath(url),descriptor:descriptor||null};
+              }).filter(x=>x.media),
+              sizes:n.getAttribute('sizes'),widthAttr:n.getAttribute('width'),heightAttr:n.getAttribute('height'),
+              cssWidth:css.width,cssMaxWidth:css.maxWidth,cssAspectRatio:css.aspectRatio,
+              inlineWidth:n.style.width,inlineMaxWidth:n.style.maxWidth};
+          });
         return {ancestors,cover,fonts:document.fonts.status,
           sourceReady:!!document.querySelector('[data-source-ready="true"]')};
       },target);
