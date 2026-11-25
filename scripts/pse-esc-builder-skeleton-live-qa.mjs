@@ -295,8 +295,39 @@ try {
         }
         if(Object.keys(delta).length)differences.push({selector,delta});
       }
-      if(differences.length)throw Error('Production vs Builder unselected homepage visual '+
-        'parity mismatch width='+targetWidth+' '+JSON.stringify(differences));
+      if(differences.length){
+        // Keep the same strict parity failure. Report only geometry and
+        // trusted ESC Table source IDs to distinguish a real layout error
+        // from a late-loading section; never log auth/session/CMS content.
+        const sourceGeometry=()=>({
+          scrollY:window.scrollY,
+          docHeight:document.documentElement.scrollHeight,
+          tables:[...document.querySelectorAll('[data-tablepress-preview]')]
+            .filter(el=>!el.parentElement?.closest('[data-tablepress-preview]'))
+            .slice(0,25).map(el=>{
+              const r=el.getBoundingClientRect(),s=getComputedStyle(el);
+              return {source:el.getAttribute('data-tablepress-preview'),
+                y:Math.round(r.y),height:Math.round(r.height),
+                display:s.display,visibility:s.visibility};
+            }),
+          siblings:[...document.querySelectorAll('main > *, main > section > *, main > section > div > *')]
+            .filter(el=>el.getBoundingClientRect().height>20)
+            .slice(0,35).map(el=>{
+              const r=el.getBoundingClientRect();
+              return {tag:el.tagName,cls:typeof el.className==='string'?el.className.slice(0,55):'',
+                y:Math.round(r.y),height:Math.round(r.height)};
+            })
+        });
+        const [builderGeometry,publicGeometry]=await Promise.all([
+          current.locator('html').evaluate(sourceGeometry),
+          visitor.locator('html').evaluate(sourceGeometry)
+        ]);
+        console.log('PSE_BUILDER_PARITY_GEOMETRY_DIAG='+JSON.stringify({
+          viewport:targetWidth,builder:builderGeometry,public:publicGeometry
+        }));
+        throw Error('Production vs Builder unselected homepage visual '+
+          'parity mismatch width='+targetWidth+' '+JSON.stringify(differences));
+      }
       console.log('PSE_BUILDER_HOMEPAGE_RESPONSIVE_VISUAL_PARITY=PASS width='+
         targetWidth+' regions='+Object.values(preview.marks).filter(Boolean).length+
         ' layout_typography_surface=PASS NO_CMS_WRITE=PASS');
