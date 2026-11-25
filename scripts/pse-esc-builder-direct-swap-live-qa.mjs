@@ -288,6 +288,74 @@ try{
   };
   const results=[];
   await waitForSource(home);
+  if(qaRequest.includes('PSE_HOME_VIEWPORT_PARITY_ONLY=1')){
+    // Same CSS viewport on the real authenticated iframe and public page.
+    // Do not click a field, Save, or edit the CMS. Dynamic carousel pixels
+    // are intentionally excluded; compare real public section geometry.
+    const origin=await frame.locator('body').evaluate(()=>location.origin);
+    if(origin!=='https://pse.webnvn.com')throw Error('Unexpected public origin');
+    await frame.locator('[data-esc-builder-refresh-status][data-source-ready="true"]')
+      .waitFor({state:'attached',timeout:40000});
+    const frameEl=await page.locator('#esc-vb-frame').elementHandle();
+    const live=await frameEl?.contentFrame();
+    if(!live)throw Error('Missing authenticated iframe');
+    const selectors=['#main-header','[data-pse-section="hero"]',
+      '[data-pse-section="news"]','[data-pse-section="promise"]',
+      '[data-pse-section="utilities"]'];
+    const snapshot=async(scope)=>{
+      await scope.locator(selectors[4]).waitFor({state:'visible',timeout:35000});
+      return scope.evaluate(async selectors=>{
+        await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,8000))]);
+        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+        const rows=selectors.map(selector=>{
+          const matches=document.querySelectorAll(selector);
+          if(matches.length!==1)throw Error('Missing or ambiguous section '+selector);
+          const e=matches[0],b=e.getBoundingClientRect();
+          return {selector,x:b.x,y:b.y+scrollY,width:b.width,height:b.height};
+        });
+        const textList=s=>[...document.querySelectorAll(s)].map(e=>e.textContent.trim().replace(/\s+/g,' '));
+        return {viewport:{width:innerWidth,height:innerHeight,clientWidth:document.documentElement.clientWidth},
+          overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+          rows,news:textList('.pse-news__tab'),promise:textList('.pse-promise__highlight'),
+          links:[...document.querySelectorAll('.pse-tools__links a')].map(e=>({text:e.textContent.trim(),href:e.getAttribute('href')})),
+          overlays:document.querySelectorAll('.pse-hero__builder-fields,.pse-tools__url,.pse-news__builder-query').length,
+          statusVisible:[...document.querySelectorAll('[data-esc-builder-refresh-status]')].some(e=>getComputedStyle(e).display!=='none')};
+      },selectors);
+    };
+    const results=[];
+    for(const width of [1440,390]){
+      const height=900;
+      await page.setViewportSize({width:Math.max(1800,width+400),height:1100});
+      await page.locator('#esc-vb-frame').evaluate((el,{width,height})=>{
+        for(const [k,v] of Object.entries({width:width+'px','min-width':width+'px','max-width':width+'px',height:height+'px','min-height':height+'px','max-height':height+'px'}))
+          el.style.setProperty(k,v,'important');
+      },{width,height});
+      await live.waitForFunction(({width,height})=>innerWidth===width&&innerHeight===height,{width,height},{timeout:10000});
+      const publicPage=await browser.newPage({viewport:{width,height}});
+      try{
+        const response=await publicPage.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:60000});
+        if(!response?.ok())throw Error('Public homepage returned '+response?.status());
+        const [actual,expected]=await Promise.all([snapshot(live),snapshot(publicPage)]);
+        const differences=[];
+        for(let i=0;i<selectors.length;i++){
+          for(const field of ['x','y','width','height']){
+            const delta=Math.abs(actual.rows[i][field]-expected.rows[i][field]);
+            if(delta>2)differences.push({selector:selectors[i],field,preview:actual.rows[i][field],public:expected.rows[i][field],delta});
+          }
+        }
+        const equalContent=['news','promise','links'].every(k=>JSON.stringify(actual[k])===JSON.stringify(expected[k]));
+        const report={width,height,actualViewport:actual.viewport,expectedViewport:expected.viewport,
+          differences,equalContent,previewOverflow:actual.overflow,publicOverflow:expected.overflow,
+          overlays:actual.overlays,statusVisible:actual.statusVisible,noCmsWrite:true};
+        console.log('PSE_BUILDER_HOME_VIEWPORT_PARITY='+JSON.stringify(report));
+        if(differences.length||!equalContent||actual.overflow>2||expected.overflow>2||
+            actual.overlays||actual.statusVisible||actual.viewport.clientWidth!==expected.viewport.clientWidth)
+          throw Error('Preview/public homepage parity mismatch at '+width+'px');
+        results.push(width);
+      }finally{await publicPage.close();}
+    }
+    console.log('PSE_BUILDER_HOME_VIEWPORT_PARITY_PASS='+JSON.stringify({widths:results,sections:selectors.length,geometryTolerancePx:2,noCmsWrite:true,noSave:true}));
+  }else{
   // Source-mode audit is observational only. The homepage might not contain
   // any S2-S5 collection, so absence is NOT a passing manual-reference test.
   await frame.locator('#esc-vb-editability-hint').waitFor({state:'attached',timeout:15000});
@@ -1242,4 +1310,5 @@ try{
   console.log('PSE_BUILDER_SWAP_READ_ONLY='+
     (cloneDiagnosticOnly?'NOT_TESTED_DIAGNOSTIC_ONLY':'PASS')+
     ' NO_CMS_WRITE=true NO_SAVE=true PREVIEW_CANCELLED=true');
+  }
 }finally{await browser.close()}
