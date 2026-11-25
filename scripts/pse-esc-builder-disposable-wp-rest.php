@@ -604,6 +604,9 @@ acf_add_local_field_group([
     'fields'=>[[
         'key'=>'field_disposable_pse_s8_hotline','label'=>'Hotline',
         'name'=>'hotline','type'=>'text',
+    ],[
+        'key'=>'field_disposable_pse_s8_bct','label'=>'BCT',
+        'name'=>'bocongthuong','type'=>'image','return_format'=>'id',
     ]],
     'location'=>[[[
         'param'=>'post_type','operator'=>'==','value'=>'thong-tin-chung',
@@ -648,6 +651,56 @@ qa_assert(($footerRestore['saved']??false)===true &&
     'S8 native ACF Info exact source value rollback');
 qa_request('footer-info',['field'=>'not_allowed_field'],true);
 echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_FOOTER_ACF_SAVE_READBACK_ROLLBACK=PASS\n";
+
+$uploads=wp_get_upload_dir();
+foreach ($mediaIds as $mediaId) {
+    $file=get_attached_file((int)$mediaId);
+    qa_assert(is_string($file) && is_file($file) &&
+        str_starts_with($file,trailingslashit($uploads['basedir'])),
+        'disposable WordPress attachment file only');
+    wp_update_attachment_metadata((int)$mediaId,[
+        'width'=>1,'height'=>1,
+        'file'=>substr($file,strlen(trailingslashit($uploads['basedir']))),
+        'sizes'=>[]
+    ]);
+    qa_assert(is_array(wp_get_attachment_image_src((int)$mediaId,'full')),
+        'real WP attachment image URL');
+}
+$initialMedia=(int)$mediaIds['source'];
+$nextMedia=(int)$mediaIds['target'];
+update_field('field_disposable_pse_s8_bct',$initialMedia,(int)$infoId);
+$originalBct=qa_request('footer-bct-image',[]);
+qa_assert($originalBct['media_id']===$initialMedia &&
+    $originalBct['info_id']===(int)$infoId,
+    'genuine ACF Footer image ID source');
+$changedBct=qa_request('save-footer-bct-image',[
+    'expected_version'=>$originalBct['version'],
+    'media_id'=>$nextMedia
+]);
+qa_assert(($changedBct['saved']??false)===true &&
+    (int)get_field('bocongthuong',(int)$infoId,false)===$nextMedia,
+    'S8 ACF Footer image native Save/readback');
+qa_request('save-footer-bct-image',[
+    'expected_version'=>$originalBct['version'],
+    'media_id'=>$initialMedia
+],true);
+qa_request('save-footer-bct-image',[
+    'expected_version'=>$changedBct['version'],
+    'media_id'=>(int)$page
+],true);
+$freshBct=qa_request('footer-bct-image',[]);
+qa_assert($freshBct['media_id']===$nextMedia,
+    'S8 Footer image refresh after stale and invalid Media ID rejected');
+$restoredBct=qa_request('save-footer-bct-image',[
+    'expected_version'=>$freshBct['version'],
+    'media_id'=>$initialMedia
+]);
+qa_assert(($restoredBct['saved']??false)===true &&
+    (int)get_field('bocongthuong',(int)$infoId,false)===$initialMedia &&
+    get_post_meta((int)$infoId,'hotline',true)==='0123456789',
+    'S8 native Info Media ID inverse; Hotline unchanged');
+echo "PSE_DISPOSABLE_REAL_WORDPRESS_S8_FOOTER_MEDIA_SAVE_READBACK_ROLLBACK=PASS\n";
+
 // All source and locale protections use the actual production Menu/Info
 // adapters, not a client-provided guessed capability.
 $fakeTicket=qa_request('save-footer-info',[
