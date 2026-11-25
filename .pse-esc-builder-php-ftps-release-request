@@ -1,2 +1,2 @@
-ae1591df0809a6e91b260b2ad51e14ac1d662459
-2026-11-25 PSE Visual Builder protected uncertain-POST response and stale coordinate quarantine for existing ESC item insert/duplicate, deletion, manual references, local presentation cell, and visibility Save handlers. Exact source CI #45575123249 SUCCESS. Deploy only updated includes/item-section-ui.php via established guarded FTPS (SHA256 activated readback). No Astro build or CMS content write.
+57f16d6c398d42e950c63c67d9a9072b45421de9
+2026-11-25 PSE Visual Builder PHP-only no-op item swap guard. Test PSE_ITEM_IDENTICAL_SWAP_NOOP_GUARD=PASS and full source-only CI #45593430111 SUCCESS. Pinned plugin source; only item-manager.php expected to change. Existing guarded FTPS SHA256 verification and rollback; NO ASTRO BUILD, NO CMS WRITE.
