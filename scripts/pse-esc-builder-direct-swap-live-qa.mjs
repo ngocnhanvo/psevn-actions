@@ -327,10 +327,26 @@ try{
       const height=900;
       await page.setViewportSize({width:Math.max(1800,width+400),height:1100});
       await page.locator('#esc-vb-frame').evaluate((el,{width,height})=>{
-        for(const [k,v] of Object.entries({width:width+'px','min-width':width+'px','max-width':width+'px',height:height+'px','min-height':height+'px','max-height':height+'px'}))
+        // Pin the QA iframe's *content* viewport, not its CSS border box.
+        // The real Inspector can apply borders, flex and sizing constraints.
+        for(const [k,v] of Object.entries({position:'fixed',top:'0',left:'0',display:'block',
+          flex:'none','box-sizing':'content-box',border:'0',padding:'0',margin:'0',
+          width:width+'px','min-width':width+'px','max-width':width+'px',
+          height:height+'px','min-height':height+'px','max-height':height+'px'}))
           el.style.setProperty(k,v,'important');
       },{width,height});
-      await live.waitForFunction(({width,height})=>innerWidth===width&&innerHeight===height,{width,height},{timeout:10000});
+      try{
+        await live.waitForFunction(({width,height})=>innerWidth===width&&innerHeight===height,{width,height},{timeout:10000});
+      }catch(error){
+        const actual=await live.evaluate(()=>({width:innerWidth,height:innerHeight}));
+        const box=await page.locator('#esc-vb-frame').evaluate(el=>{
+          const b=el.getBoundingClientRect(),s=getComputedStyle(el);
+          return {width:b.width,height:b.height,clientWidth:el.clientWidth,clientHeight:el.clientHeight,
+            cssWidth:s.width,cssHeight:s.height,boxSizing:s.boxSizing,border:s.borderWidth,padding:s.padding,position:s.position};
+        });
+        console.log('PSE_BUILDER_VIEWPORT_SETUP_DIAG='+JSON.stringify({expected:{width,height},actual,box}));
+        throw error;
+      }
       const publicPage=await browser.newPage({viewport:{width,height}});
       try{
         const response=await publicPage.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:60000});
