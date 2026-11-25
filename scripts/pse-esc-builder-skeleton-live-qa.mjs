@@ -553,6 +553,24 @@ try {
       });
       const a=await current.locator('.pse-history__milestone').evaluateAll(measure);
       const b=await publicAtWidth.locator('.pse-history__milestone').evaluateAll(measure);
+      const diagnostic=()=>{
+        const root=document.querySelector('.pse-history');
+        let node=root;
+        const ancestors=[];
+        for(let i=0;node&&i<6;i++,node=node.parentElement){
+          const css=getComputedStyle(node),rect=node.getBoundingClientRect();
+          ancestors.push({tag:node.tagName,classes:String(node.className||'').slice(0,120),
+            rectWidth:Math.round(rect.width*10)/10,clientWidth:node.clientWidth,
+            padding:css.padding,maxWidth:css.maxWidth,margin:css.margin});
+        }
+        return {innerWidth:window.innerWidth,docClientWidth:document.documentElement.clientWidth,
+          bodyClientWidth:document.body.clientWidth,ancestors};
+      };
+      const previewGeometry=await current.locator('html').evaluate(diagnostic);
+      const publicGeometry=await publicAtWidth.locator('html').evaluate(diagnostic);
+      console.log('PSE_HISTORY_RESPONSIVE_GEOMETRY_DIAG='+JSON.stringify({
+        targetWidth,previewGeometry,publicGeometry
+      }));
       if(a.length!==b.length||a.length<1)
         throw Error('Responsive History card count differs at '+targetWidth);
       for(let index=0;index<a.length;index++){
