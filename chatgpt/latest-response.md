@@ -1,41 +1,45 @@
-# PSE — phản hồi cuối, 25/11/2026 ~21:23 ICT
+# PSE — phản hồi cuối 2026-11-25 ~21:55 ICT
 
-Project: pse.vn. Knowledge/main `34310f05a3b76c1dfd3f4bdecb27550342549f13`; Astro/master `a5a84dc435eb8a48fbed48f25b87a798c46b6d91` (signed production #45617302284); PHP/master `21064b45053bc13be97ec579ab2caa650b3aa3da` (verified FTPS production #45632043785); Actions/main checkpoint `59be554e731923c9305b4b3cb1f28a4a58876a00`. Source-only CI #45631799304 SUCCESS; postdeploy live read-only QA #45632476328 SUCCESS. Real CMS Save acceptance still NOT DONE.
+Project: pse.vn
+Repository: ngocnhanvo/psevn-actions
+Branch: main
+Knowledge: 34310f05a3b76c1dfd3f4bdecb27550342549f13
+Astro production: a5a84dc435eb8a48fbed48f25b87a798c46b6d91
+PHP production: f803f6f9c23999a102e017d8ecbad87046f93abf
+Actions checkpoint: 56c1824493543a78d41f646e4d416f2c2ca69cfe
+Status: PARTIAL — chưa hoàn tất. Isolated WP REST and Page section tests PASS. No production CMS mutation.
 
-## Nội dung phản hồi
+## Nguyên văn phản hồi
 
-## Khôi phục trạng thái PSE — 25/11/2026
+## Trạng thái mới nhất đã xác minh
 
-Đã kết nối GitHub và đối chiếu các repo thực tế với checkpoint mới nhất lúc khoảng 21:06 (giờ Việt Nam).
+- **PHP production:** commit [`f803f6f`](https://github.com/ngocnhanvo/psevn-php/commit/f803f6f9c23999a102e017d8ecbad87046f93abf) đã triển khai thành công qua [FTPS #45637281688](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45637281688), kiểm tra SHA-256 đạt.
+- **CI mã nguồn:** [#45637059253](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45637059253) — PASS.
+- **WordPress cô lập:** [#45637060554](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45637060554) — PASS cho bảng con S1 và cấu hình truy vấn S5, bao gồm Save, đọc lại và hoàn tác.
 
-| Repository | Commit HEAD tại thời điểm khôi phục |
-|---|---|
-| Knowledge `main` | `34310f0` |
-| Astro `master` | `a5a84dc` |
-| PHP `master` | `e6bfd8b` |
-| Actions `main` | `117284d` |
+Lượt nghiệm thu mở rộng sang tham chiếu S2–S4 chưa đạt. Mình đang xử lý đúng lỗi đó thay vì kết luận toàn bộ Visual Builder đã hoàn tất.
 
-**Những phần đã nghiệm thu PASS:**
-- Visual Builder giữ giao diện giống production tại các viewport 1440, 1024 và 390 px.
-- Hoán đổi section/item trực tiếp trên Preview, Hủy và thao tác bàn phím.
-- Kiểm tra Inspector với 28 Page và các vùng Contact, Hotline, FAQ, menu/footer.
-- CI gần nhất tại thời điểm khôi phục: **170/170 tests PASS**.
-- Astro và PHP đã có bản triển khai production thành công.
+## Nghiệm thu S1–S5 trên WordPress cô lập: PASS
 
-**Còn thiếu:** nghiệm thu Save dữ liệu WordPress thật và rollback, kiểm chứng nguồn S2–S5, bảng ESC lồng nhau và nhân bản section có nguồn độc lập.
+[GitHub Actions #45637927323](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45637927323) đã hoàn tất thành công.
 
-Checkpoint: [PSE Visual Builder — 25/11/2026](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md).
+Phép thử sử dụng WordPress và ESC Table thật trên database tạm, xác nhận Save → đọc lại nguồn → hoàn tác cho bảng con S1, tham chiếu Page S2, danh mục S3, WordPress Posts REST S4 và cấu hình truy vấn S5. Không ghi dữ liệu production, không FTPS, không build Astro.
 
-## Tiếp tục xử lý và triển khai
+Mình sẽ tiếp tục kiểm tra các thao tác ở cấp Page/section và cập nhật checkpoint; kết quả này **chưa đồng nghĩa đã nghiệm thu toàn bộ giao diện Builder trên production**.
 
-**Đã sửa và đưa lên production** lỗ hổng thao tác nguồn REST chưa được xác minh: Builder không còn cho hoán đổi hoặc xóa item từ nguồn API thiếu adapter được duyệt. PHP kiểm tra quyền này ở cả giao diện lẫn phía server, giữ nguyên thao tác của ESC tĩnh và nguồn tham chiếu hợp lệ.
+## Nghiệm thu hoán đổi section: PASS
 
-- **PHP mới:** `21064b4` trên `psevn-php/master`.
-- **Kiểm thử source:** [#45631799304](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45631799304) — PASS.
-- **Triển khai PHP:** [#45632043785](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45632043785) — PASS, chỉ 1 file thay đổi, SHA-256 khớp, không file tạm, không build Astro hay ghi CMS.
-- **Playwright sau triển khai:** [#45632476328](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45632476328) — PASS, 6 nhóm item, section, phím tắt và Hủy trên Preview.
+[Workflow #45638223278](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45638223278) cũng đã thành công. Trên WordPress cô lập, thao tác hoán đổi hai section đã qua các bước **dry-run → Save → REST readback → hoán đổi ngược**, và nội dung Page được xác nhận trở về đúng từng byte.
 
-Đã lưu bằng chứng trong [checkpoint Visual Builder 25/11](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md). **Chưa thể nghiệm thu toàn bộ:** còn Save → REST readback → reload → public → rollback trên Page/ESC Table thử nghiệm cô lập, dữ liệu thực S2–S5, bảng lồng và nhân bản section với nguồn độc lập. Không thay đổi Page kinh doanh production để làm dữ liệu thử.
+Các kiểm thử S1–S5 tiếp tục PASS trong cùng workflow. Mình đang ghi kết quả vào checkpoint chính để phiên tiếp theo không phải làm lại những bước đã xác minh.
+
+**Nghiệm thu bổ sung:** [#45638894693, lần chạy 2](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45638894693) — PASS cho nhân bản/gỡ section dùng chung ESC Table trên WordPress cô lập. Sau khi gỡ có thể còn một ký tự xuống dòng; bản gốc được khôi phục chính xác bằng bước dọn của môi trường kiểm thử, **chưa phải hoàn tác nguyên byte chỉ bằng Builder**.
+
+**Checkpoint đã cập nhật:** [PSE Visual Builder — 25/11/2026](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_VISUAL_BUILDER_SOURCE_COMPLIANCE_2026-11-25.md), commit [`56c1824`](https://github.com/ngocnhanvo/psevn-actions/commit/56c1824493543a78d41f646e4d416f2c2ca69cfe).
+
+**Còn thiếu để nghiệm thu toàn bộ:** một Page/ESC Table thử nghiệm đã xuất bản được phép ghi trên PSE để đối chiếu Save → REST → Preview mới → public sau build → rollback; chức năng nhân bản section với nguồn ESC Table độc lập; kiểm thử các wrapper và nguồn S6–S9 chưa được xác nhận. Không thay đổi dữ liệu kinh doanh production để tạo kết quả thử nghiệm.
+
+Phản hồi mới nhất: **SAVED** trong repo Actions.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
