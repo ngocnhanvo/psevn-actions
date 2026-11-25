@@ -342,7 +342,7 @@ try{
       const script=[...document.scripts].map(el=>el.textContent||'')
         .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
       const quoted=script?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
-      if(!quoted||typeof window.escVBGetTicket!=='function)
+      if(!quoted||typeof window.escVBGetTicket!=='function')
         throw Error('Authenticated Page source preflight is unavailable');
       const nonce=JSON.parse(quoted[1]);
       const pageId=Number(document.querySelector('#esc-vb-page')?.value);
