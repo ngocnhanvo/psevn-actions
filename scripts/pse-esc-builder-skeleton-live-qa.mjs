@@ -68,6 +68,24 @@ try {
   if(!hover.verified||!hover.hintHidden||hover.readonlyCursor==='crosshair')
     throw Error('Readonly region advertises editing on hover');
   console.log('PSE_BUILDER_PRODUCTION_FIRST_INITIAL=PASS controls_hidden=PASS readonly_hover_silent=PASS');
+  // Recovery from an all-hidden Page lives in the actual WordPress Page
+  // toolbar, outside the selection-gated Inspector. It stays truly invisible
+  // unless the source Page has an eligible hidden instance, even if WordPress
+  // .button rules normally override the native hidden attribute.
+  const hiddenRecovery=await page.evaluate(()=>{
+    const button=document.getElementById('esc-vb-section-hidden-reveal');
+    if(!button)return {exists:false};
+    const parent=button.closest('#esc-vb-app .esc-vb-page-form');
+    return {exists:true,toolbar:!!parent,hidden:button.hidden,
+      computed:getComputedStyle(button).display,
+      selected:document.getElementById('esc-vb-app')?.classList.contains('esc-vb-has-selection')===true};
+  });
+  if(!hiddenRecovery.exists||!hiddenRecovery.toolbar||hiddenRecovery.selected||
+     (hiddenRecovery.hidden&&hiddenRecovery.computed!=='none'))
+    throw Error('Unselected Page hidden-section recovery must not pollute the Preview: '+
+      JSON.stringify(hiddenRecovery));
+  console.log('PSE_BUILDER_HIDDEN_SECTION_RECOVERY_TOOLBAR=PASS '+
+    'toolbar=true unselected_preview_clean=true NO_CMS_WRITE=true');
   // A successful live WordPress source refresh must not create a phantom
   // 14px blue info strip that shifts the Page relative to public production.
   // Real synchronization errors stay visible and fail the source-ready QA.
