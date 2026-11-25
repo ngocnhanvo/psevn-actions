@@ -1,0 +1,62 @@
+name: PSE Builder disposable WP REST acceptance (NO PROD)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pse-esc-builder-disposable-wp-rest.yml
+      - scripts/pse-esc-builder-disposable-wp-rest.php
+      - .pse-esc-builder-disposable-wp-rest-request
+permissions:
+  contents: read
+jobs:
+  isolated-rest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      db:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: qa-local-only
+          MARIADB_DATABASE: pse_builder_qa
+          MARIADB_USER: pseqa
+          MARIADB_PASSWORD: qa-local-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: php
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, mbstring, curl, zip, gd
+          tools: wp-cli
+          coverage: none
+      - name: Install loopback-only WordPress
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f php/wp-settings.php
+          php -l scripts/pse-esc-builder-disposable-wp-rest.php
+          wp config create --path=php --dbname=pse_builder_qa --dbuser=pseqa --dbpass=qa-local-only --dbhost=127.0.0.1 --skip-check --quiet
+          wp core install --path=php --url=http://127.0.0.1:8099 --title="PSE disposable" --admin_user=pse_qa --admin_password=qa-only --admin_email=qa@example.invalid --skip-email --quiet
+          wp plugin activate esc-table esc-visual-builder --path=php --quiet
+      - name: Authenticated source Save readback and rollback
+        shell: bash
+        env:
+          PSE_DISPOSABLE_WP: '1'
+        run: |
+          set -euo pipefail
+          export PSE_QA_SCRIPT="$PWD/scripts/pse-esc-builder-disposable-wp-rest.php"
+          wp eval 'require getenv("PSE_QA_SCRIPT");' --path=php --quiet
+          echo 'PSE_DISPOSABLE_WORDPRESS_QA=PASS; NO_PRODUCTION_CMS_WRITE=PASS; NO_ASTRO_BUILD=PASS'
