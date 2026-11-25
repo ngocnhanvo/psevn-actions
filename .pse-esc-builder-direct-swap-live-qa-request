@@ -3,3 +3,5 @@ request=2026-11-25-image-parity-after-signed-release-no-save
 Astro production 5ec5a5427dedccce2cb508c06dbd51f2164f33aa, signed deploy #45569129797 SUCCESS. Subpage 8/8 parity #45569393515 SUCCESS. Check direct physical item red/green swap, Page section swap, shared-source insert preview and Cancel without any CMS Save. Do not alter content or trigger build.
 
 2026-11-25 full authenticated post-FTPS Preview regression after verified Page and ESC item source readback guards. PHP 55cd4d1ae47c61c3c83543b189859d3f282ae309; FTPS #45572182955 SUCCESS source pin, SHA256 readback; test physical red/green direct swaps, Inspector insert-after with Cancel, keyboard Escape and safe removal/clone. READ ONLY; no CMS writes or Astro build.
+
+2026-11-25 retry authenticated Preview cancellation after QA-only message-delivery wait c9792ee746f5108165587886b25b32a7248a7d9c. Previous run #45572429416 checked DOM immediately after cancel postMessage and observed transient clone; preserve exact DOM equality, wait for iframe event completion, no CMS writes.
