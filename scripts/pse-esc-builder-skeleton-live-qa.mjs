@@ -499,42 +499,96 @@ try {
     const sourceRows=await part.locator(target.selector).evaluateAll(nodes=>
       nodes.map(x=>Number(x.getAttribute('data-esc-builder-row'))));
     if(target.name==='FAQ'){
-      // Real source-scope only. No fake Preview-only items or status chips
-      // are inserted for the FAQ rows hidden by their physical visible=0.
-      // Selecting a rendered source item unlocks the same protected S1
-      // TablePress schema; the inspector must include even invisible rows.
+      // A component that supports an optional visible field does NOT prove
+      // WordPress has configured that column on the published ESC Table.
+      // Observe the real authenticated source REST response before labeling
+      // the inspector PASS or NOT_SUPPORTED. No content/SAVE requests.
+      const schemaAudit=[];
+      const onSchemaResponse=response=>{
+        if(!response.url().includes('/esc-builder/v1/item-schema'))return;
+        let table='';
+        try{table=JSON.parse(response.request().postData()||'{}').table_id||'';}
+        catch{}
+        void response.json().then(data=>schemaAudit.push({
+          table,status:response.status(),code:data?.code||'',
+          collection:data?.collection_mode||'',can:data?.can_toggle_visibility===true,
+          count:Number.isSafeInteger(data?.count)?data.count:null,
+          hasVisible:!!data?.fields?.some(field=>field.name==='visible')
+        })).catch(()=>{});
+      };
+      page.on('response',onSchemaResponse);
       const faqSource=part.locator('.pse-faq__item[data-esc-builder-row]').first();
       await faqSource.click({force:true});
-      await page.waitForFunction(()=>{
-        const action=document.getElementById('esc-vb-item-visibility-open');
-        return action && !action.hidden && !action.disabled;
-      },null,{timeout:40000});
-      const toggle=page.locator('#esc-vb-item-visibility-open');
-      await toggle.click();
-      const visibilityDialog=page.locator('#esc-vb-visibility-dialog');
-      await visibilityDialog.waitFor({state:'visible',timeout:15000});
-      await page.waitForFunction(()=>{
-        const options=document.getElementById('esc-vb-visibility-row')?.options;
-        return options && options.length>=15 &&
-          !document.getElementById('esc-vb-visibility-row')?.disabled;
-      },null,{timeout:30000});
-      const original=await page.locator('#esc-vb-visibility-value').inputValue();
-      if(original!=='1'&&original!=='0')
-        throw Error('FAQ source returned invalid binary visibility');
-      const initialDisabled=await page.locator('#esc-vb-visibility-save').isDisabled();
-      if(!initialDisabled)throw Error('No-op FAQ visibility Save was enabled before a change');
-      await page.locator('#esc-vb-visibility-value').selectOption(original==='1'?'0':'1');
-      await page.waitForFunction(()=>
-        document.getElementById('esc-vb-visibility-save')?.disabled===false,
-      null,{timeout:10000});
-      const availableRows=await page.locator('#esc-vb-visibility-row option').count();
-      const hiddenRows=await page.locator('#esc-vb-visibility-row option').filter({hasText:'Đang ẩn'}).count();
-      await page.locator('#esc-vb-visibility-cancel').click();
-      if(await visibilityDialog.evaluate(el=>el.open))
-        throw Error('FAQ item visibility Cancel did not close contextual inspector');
-      console.log('PSE_BUILDER_S1_VISIBILITY_CONTEXT=PASS source_rows='+availableRows+
-        ' hidden_source_rows='+hiddenRows+
-        ' noop_disabled=PASS valid_draft_enabled=PASS CANCEL_NO_WRITE=PASS');
+      let visibilityAvailable=false;
+      try{
+        await page.waitForFunction(()=>{
+          const action=document.getElementById('esc-vb-item-visibility-open');
+          return action && !action.hidden && !action.disabled;
+        },null,{timeout:14000});
+        visibilityAvailable=true;
+      }catch{
+        await delay(500);
+      }
+      page.off('response',onSchemaResponse);
+      const diag=await page.evaluate(()=>({
+        context:document.getElementById('esc-vb-item-context')?.textContent||'',
+        panelHidden:document.getElementById('esc-vb-item-panel')?.hidden,
+        buttonHidden:document.getElementById('esc-vb-item-visibility-open')?.hidden,
+        buttonDisabled:document.getElementById('esc-vb-item-visibility-open')?.disabled
+      }));
+      const root=await faqSource.evaluate(el=>{
+        const wrapper=el.closest('[data-tablepress-preview]');
+        return {tableId:wrapper?.getAttribute('data-tablepress-preview')||'',
+          dynamic:wrapper?.getAttribute('data-esc-builder-dynamic')||'',
+          row:el.getAttribute('data-esc-builder-row')||''};
+      });
+      console.log('PSE_BUILDER_S1_VISIBILITY_SOURCE_AUDIT='+
+        JSON.stringify({root,diag,schemaAudit}));
+      const real=schemaAudit.find(item=>item.table===root.tableId);
+      if(!visibilityAvailable){
+        // A source lacking the column must remain READONLY with no fake
+        // action advertised; other S1 sources may still provide it.
+        if(real?.status===200&&real.collection==='static'&&real.can===false){
+          if(!diag.buttonHidden||!diag.buttonDisabled)
+            throw Error('Visibility action advertised on unsupported static source');
+          console.log('PSE_BUILDER_S1_VISIBILITY_CONTEXT=NOT_SUPPORTED source='+
+            root.tableId+' reason=no_verified_binary_visible_source NO_CMS_WRITE=PASS');
+        }else{
+          throw Error('Real S1 visibility inspector did not unlock despite source: '+
+            JSON.stringify({root,diag,schemaAudit}));
+        }
+      }else{
+        if(!real?.can||real.collection!=='static'||real.status!==200)
+          throw Error('Visibility button exposed without a verified source: '+
+            JSON.stringify({root,diag,schemaAudit}));
+        const toggle=page.locator('#esc-vb-item-visibility-open');
+        await toggle.click();
+        const visibilityDialog=page.locator('#esc-vb-visibility-dialog');
+        await visibilityDialog.waitFor({state:'visible',timeout:15000});
+        await page.waitForFunction(()=>{
+          const options=document.getElementById('esc-vb-visibility-row')?.options;
+          return options && options.length>=15 &&
+            !document.getElementById('esc-vb-visibility-row')?.disabled;
+        },null,{timeout:30000});
+        const original=await page.locator('#esc-vb-visibility-value').inputValue();
+        if(original!=='1'&&original!=='0')
+          throw Error('FAQ source returned invalid binary visibility');
+        if(!await page.locator('#esc-vb-visibility-save').isDisabled())
+          throw Error('No-op FAQ visibility Save was enabled before a change');
+        await page.locator('#esc-vb-visibility-value').selectOption(original==='1'?'0':'1');
+        await page.waitForFunction(()=>
+          document.getElementById('esc-vb-visibility-save')?.disabled===false,
+        null,{timeout:10000});
+        const availableRows=await page.locator('#esc-vb-visibility-row option').count();
+        const hiddenRows=await page.locator('#esc-vb-visibility-row option')
+          .filter({hasText:'Đang ẩn'}).count();
+        await page.locator('#esc-vb-visibility-cancel').click();
+        if(await visibilityDialog.evaluate(el=>el.open))
+          throw Error('FAQ item visibility Cancel did not close contextual inspector');
+        console.log('PSE_BUILDER_S1_VISIBILITY_CONTEXT=PASS source_rows='+availableRows+
+          ' hidden_source_rows='+hiddenRows+
+          ' noop_disabled=PASS valid_draft_enabled=PASS CANCEL_NO_WRITE=PASS');
+      }
     }
     const visitor=await browser.newPage({viewport:{width:1440,height:900}});
     let publicRows;
