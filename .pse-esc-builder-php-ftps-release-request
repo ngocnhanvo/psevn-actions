@@ -1,2 +1,2 @@
-3a29d06263182d14119a150778fd60cd1076b185
-2026-11-25 PSE Visual Builder scoped PHP-only section removal source-context guard. CI #45596926724 SUCCESS pinned exact PHP master; deploy only changed includes/section-order.php with existing guarded FTPS SHA256 readback and automatic rollback. No Astro build or CMS business writes.
+c4ec3b915d140f7dfc1978716162d55e6af57b66
+2026-11-25: Release source-owned Page section visibility REST/Inspector only after signed Astro renderer production #45608622865 success exact c8a46ee17b5e239aab79e71587d8458b4b7f0b9d. PHP source-only CI #45608364159 success, 28/28 files, 163/163 tests including reversible Page source hide/show, no-op, stale and no-write guards. Existing guarded FTPS TLS/hash/rollback, only changed plugin PHP files. No CMS content writes, no Astro build.
