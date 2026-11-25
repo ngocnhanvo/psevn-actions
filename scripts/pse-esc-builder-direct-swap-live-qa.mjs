@@ -112,8 +112,8 @@ const awaitPreviewPicked=(ackType,requestId)=>page.evaluate(({ackType,requestId}
 
 // A Page section clone must be previewed with a real WordPress occurrence
 // identity and must be fully rolled back without any REST write to the CMS.
-const previewSection=async(type,key,requestId)=>{
-  return await page.evaluate(({type,key,requestId})=>{
+const previewSection=async(type,key,requestId,afterKey=key)=>{
+  return await page.evaluate(({type,key,requestId,afterKey})=>{
     const iframe=document.querySelector('#esc-vb-frame');
     if(!(iframe instanceof HTMLIFrameElement)||!iframe.contentWindow)
       throw Error('No authenticated section preview iframe');
@@ -135,9 +135,9 @@ const previewSection=async(type,key,requestId)=>{
         resolve({matched:event.data.matched===true});
       };
       window.addEventListener('message',handle);
-      iframe.contentWindow.postMessage({type,key,requestId},target);
+      iframe.contentWindow.postMessage({type,key,afterKey,requestId},target);
     });
-  },{type,key,requestId});
+  },{type,key,afterKey,requestId});
 };
 
 // This invokes the production writer's dry-run branch only, then verifies
@@ -323,7 +323,11 @@ try{
     });
     const data=await response.json();
     if(!response.ok||data?.code)throw Error('Section-order preflight refused '+String(data?.code||response.status));
-    return {items:data.items||[],swappable:data.swappable||{},canReorder:data.can_reorder===true};
+    if(!data.insertable_after||typeof data.insertable_after!=='object')
+      throw Error('Production WordPress Page section insert source registry is missing');
+    return {items:data.items||[],swappable:data.swappable||{},
+      insertableAfter:data.insertable_after,
+      canReorder:data.can_reorder===true};
   });
   const homeSections=await frame.locator('[data-tablepress-preview]').evaluateAll(nodes=>
     nodes.filter(n=>!n.parentElement?.closest('[data-tablepress-preview]'))
@@ -334,6 +338,90 @@ try{
         sectionCapability.items.some(other=>other.id===to && homeSections.includes(other.table_id||other.id)))
       .map(to=>({from:item.id,to}))
   ).find(pair=>pair.from!==pair.to);
+  // Source-owned add-section contract: only exact Page occurrences in one
+  // sibling group, with explicit shared ESC Table. This is a READ-ONLY
+  // rehearsal: WordPress only receives dry_run:true and Page version is
+  // checked before/after. No fake Page or TablePress record is created.
+  const insertionCandidates=sectionCapability.items.flatMap(source=>
+    (sectionCapability.insertableAfter[source.id]||[])
+      .filter(after=>after!==source.id&&
+        sectionCapability.items.some(item=>item.id===after))
+      .map(after=>({source:source.id,after,tableId:source.table_id||source.id}))
+  );
+  const insertionCheck=await page.evaluate(async candidates=>{
+    const script=[...document.scripts].map(el=>el.textContent||'')
+      .find(src=>src.includes('duplicateSection:')&&src.includes('const nonce='));
+    const quoted=script?.match(/\bconst nonce=("(?:[^"\\]|\\.)*")/);
+    if(!quoted||typeof window.escVBGetTicket!=='function')
+      throw Error('Authenticated Page section insert preflight is unavailable');
+    const nonce=JSON.parse(quoted[1]),pageId=Number(document.querySelector('#esc-vb-page')?.value);
+    const request=async(route,params={})=>{
+      const ticket=await window.escVBGetTicket();
+      const response=await fetch('/wp-json/esc-builder/v1/'+route,{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+        body:JSON.stringify({page_id:pageId,ticket,...params})
+      });
+      const data=await response.json();
+      return {ok:response.ok&&!data?.code,data};
+    };
+    const before=await request('section-order');
+    if(!before.ok)throw Error('Cannot read Page before section insert test');
+    let approved=null;
+    for(const candidate of candidates.slice(0,20)){
+      const attempt=await request('duplicate-section-shared',{
+        section_key:candidate.source,insert_after_key:candidate.after,
+        expected_version:before.data.version,share_source:true,dry_run:true
+      });
+      if(!attempt.ok)continue; // A structurally unsafe source stays readonly.
+      const data=attempt.data;
+      if(data.checked!==true||data.no_write!==true||data.saved!==false||
+        data.source_shared!==true||data.duplicated!==candidate.source||
+        data.insert_after_key!==candidate.after||data.version!==before.data.version||
+        data.would_add_instances!==1||
+        !Array.isArray(data.next_order)||
+        data.next_order.length!==(before.data.items||[]).length+1||
+        !/^[a-f0-9]{64}$/.test(data.next_version||''))
+        throw Error('Unsafe or inconsistent section insert preflight contract');
+      approved=candidate;break;
+    }
+    const after=await request('section-order');
+    if(!after.ok||after.data.version!==before.data.version||
+      JSON.stringify(after.data.items)!==JSON.stringify(before.data.items))
+      throw Error('Read-only section insert altered live Page state');
+    return {approved,eligibleCandidates:candidates.length,readOnly:true};
+  },insertionCandidates);
+  const sectionInsertResult={
+    source:'WordPress Page',mode:'dry_run',eligibleCandidates:insertionCheck.eligibleCandidates,
+    result:'NOT_TESTED_NO_SAFE_SOURCE',noCmsWrite:true
+  };
+  if(insertionCheck.approved){
+    const candidate=insertionCheck.approved;
+    const sourceTable=candidate.tableId;
+    const countBefore=await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count();
+    const htmlBefore=await frame.locator('body').evaluate(el=>el.innerHTML);
+    const preview=await previewSection('esc-vb-section-duplicate-preview',
+      candidate.source,99227,candidate.after);
+    if(preview.matched){
+      try{
+        const countAfter=await frame.locator('[data-tablepress-preview="'+sourceTable+'"]').count();
+        if(countAfter!==countBefore+1)
+          throw Error('Preview inserted shared source into wrong TablePress collection');
+        sectionInsertResult.result='PASS';
+        sectionInsertResult.source=candidate.source;
+        sectionInsertResult.target=candidate.after;
+      }finally{
+        await previewSection('esc-vb-section-duplicate-cancel',
+          candidate.source,99227,candidate.after);
+        const htmlAfterCancel=await frame.locator('body').evaluate(el=>el.innerHTML);
+        if(htmlAfterCancel!==htmlBefore)
+          throw Error('Section insertion Cancel failed to restore exact Preview DOM');
+      }
+    }else{
+      sectionInsertResult.result='NOT_TESTED_UNSAFE_PREVIEW_SOURCE';
+    }
+  }
+  console.log('PSE_BUILDER_SECTION_INSERT_SHARED_DRY_RUN_LIVE='+JSON.stringify(sectionInsertResult));
   const sectionSwapResults={source:'WordPress Page',mode:'read_only_preview'};
   if(sectionPair){
     // Same authenticated REST endpoint used by the Inspector: verify the
