@@ -1,2 +1,2 @@
-57f16d6c398d42e950c63c67d9a9072b45421de9
-2026-11-25 PSE Visual Builder PHP-only no-op item swap guard. Test PSE_ITEM_IDENTICAL_SWAP_NOOP_GUARD=PASS and full source-only CI #45593430111 SUCCESS. Pinned plugin source; only item-manager.php expected to change. Existing guarded FTPS SHA256 verification and rollback; NO ASTRO BUILD, NO CMS WRITE.
+9d111532f7175294bbc305f7616d1f55e8724bce
+2026-11-25 PSE Visual Builder source verified exact PHP no-op item swap: server rejects identical rows before TablePress Save, Inspector cancels local Preview before POST without stale quarantine. Source-only CI #45593769163 SUCCESS. Guarded FTPS SHA256 readback with rollback for item-section-ui.php; item-manager.php deployed #45593602994. NO ASTRO BUILD, NO CMS WRITE.
