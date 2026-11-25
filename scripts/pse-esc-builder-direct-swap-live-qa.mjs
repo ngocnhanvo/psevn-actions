@@ -371,6 +371,93 @@ try{
       }finally{await publicPage.close();}
     }
     console.log('PSE_BUILDER_HOME_VIEWPORT_PARITY_PASS='+JSON.stringify({widths:results,sections:selectors.length,geometryTolerancePx:2,noCmsWrite:true,noSave:true}));
+  }else if(qaRequest.includes('PSE_SUBPAGE_VIEWPORT_PARITY_ONLY=1')){
+    // Independent canonical WordPress permalinks, exact iframe content
+    // viewport, no Inspector clicks or CMS writes.
+    const targets=[
+      {id:'80930',root:'.pse-faq',item:'.pse-faq__item'},
+      {id:'80932',root:'.pse-hotline',item:'.pse-hotline__card'},
+      {id:'79301',root:'.pse-history',item:'.pse-history__milestone'},
+      {id:'79303',root:'.pse-vision',item:'.pse-vision__card'}
+    ];
+    const origin=await frame.locator('body').evaluate(()=>location.origin);
+    if(origin!=='https://pse.webnvn.com')throw Error('Unexpected public origin');
+    const summaries=[];
+    for(const target of targets){
+      const record=await page.evaluate(async id=>{
+        const res=await fetch('/wp-json/wp/v2/pages/'+id+'?_fields=id,link,status',
+          {credentials:'same-origin',cache:'no-store'});
+        if(!res.ok)throw Error('Cannot read published Page '+id);
+        return res.json();
+      },target.id);
+      const permalink=new URL(record.link);
+      if(record.id!==Number(target.id)||record.status!=='publish'||permalink.origin!==wp.origin||
+         permalink.pathname==='/'||permalink.search||permalink.hash)
+        throw Error('Invalid canonical Page source '+target.id);
+      await page.locator('#esc-vb-page').selectOption(target.id);
+      await page.getByRole('button',{name:'Mở trang'}).click();
+      await waitForSource(target.id);
+      await frame.locator(target.item).first().waitFor({state:'visible',timeout:40000});
+      const live=await (await page.locator('#esc-vb-frame').elementHandle())?.contentFrame();
+      if(!live)throw Error('Missing authenticated iframe');
+      const snapshot=async scope=>{
+        await scope.locator(target.item).first().waitFor({state:'visible',timeout:35000});
+        return scope.evaluate(async({root,item})=>{
+          await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,8000))]);
+          await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+          const roots=document.querySelectorAll(root);
+          if(roots.length!==1)throw Error('Ambiguous section '+root);
+          const nodes=[roots[0],...roots[0].querySelectorAll(item)];
+          if(nodes.length<2)throw Error('No published items '+item);
+          return {viewport:[innerWidth,innerHeight,document.documentElement.clientWidth],
+            overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,
+            rows:nodes.map(e=>{
+              const b=e.getBoundingClientRect(),style=getComputedStyle(e);
+              return {rect:[b.x,b.y+scrollY,b.width,b.height],font:style.fontSize,
+                text:e.innerText.trim().replace(/\s+/g,' ')};
+            })};
+        },target);
+      };
+      for(const width of [1440,390]){
+        const height=900;
+        await page.setViewportSize({width:1800,height:1100});
+        await page.locator('#esc-vb-frame').evaluate((el,{width,height})=>{
+          for(const [k,v] of Object.entries({position:'fixed',top:'0',left:'0',display:'block',
+            flex:'none','box-sizing':'content-box',border:'0',padding:'0',margin:'0',
+            width:width+'px','min-width':width+'px','max-width':width+'px',
+            height:height+'px','min-height':height+'px','max-height':height+'px'}))
+            el.style.setProperty(k,v,'important');
+        },{width,height});
+        await live.waitForFunction(({width,height})=>innerWidth===width&&innerHeight===height,{width,height},{timeout:10000});
+        const publicPage=await browser.newPage({viewport:{width,height}});
+        try{
+          const res=await publicPage.goto(new URL(permalink.pathname,origin).href,
+            {waitUntil:'domcontentloaded',timeout:60000});
+          if(!res?.ok())throw Error('Public Page unavailable '+target.id);
+          const [a,b]=await Promise.all([snapshot(live),snapshot(publicPage)]);
+          const differences=[];
+          if(a.rows.length!==b.rows.length)differences.push({kind:'count',preview:a.rows.length,public:b.rows.length});
+          for(let i=0;i<Math.min(a.rows.length,b.rows.length);i++){
+            if(a.rows[i].text!==b.rows[i].text)differences.push({kind:'text',row:i});
+            if(a.rows[i].font!==b.rows[i].font)differences.push({kind:'font',row:i});
+            for(let k=0;k<4;k++){
+              const delta=Math.abs(a.rows[i].rect[k]-b.rows[i].rect[k]);
+              if(delta>2)differences.push({kind:'geometry',row:i,axis:['x','y','width','height'][k],delta,
+                preview:a.rows[i].rect[k],public:b.rows[i].rect[k]});
+            }
+          }
+          const pass=differences.length===0&&JSON.stringify(a.viewport)===JSON.stringify(b.viewport)&&
+            a.overflow<=2&&b.overflow<=2;
+          const report={pageId:target.id,width,items:b.rows.length-1,viewportPreview:a.viewport,
+            viewportPublic:b.viewport,previewOverflow:a.overflow,publicOverflow:b.overflow,
+            differences,pass,noCmsWrite:true};
+          console.log('PSE_BUILDER_SUBPAGE_VIEWPORT_PARITY='+JSON.stringify(report));
+          summaries.push({pageId:target.id,width,pass});
+        }finally{await publicPage.close();}
+      }
+    }
+    console.log('PSE_BUILDER_SUBPAGE_VIEWPORT_SUMMARY='+JSON.stringify(summaries));
+    if(summaries.length!==8||summaries.some(x=>!x.pass))throw Error('Subpage viewport parity mismatch');
   }else{
   // Source-mode audit is observational only. The homepage might not contain
   // any S2-S5 collection, so absence is NOT a passing manual-reference test.
