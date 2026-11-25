@@ -39,3 +39,5 @@ New source code evaluates separate native Page insertion dry_run with exact dest
 2026-11-25 ICT: Source-only CI for reversible Page section visibility: PHP master bd7a39da0c0efad9d9ec7f94bd5d0b36dcc71a1b, Astro master 8c797c9a0e10b08d4d8a1729409ee6b3280bb24c. Verify native REST guards, rendered preview-only placeholder, Inspector inline JS, Vitest and compiler. NO CMS WRITE / NO BUILD / NO FTPS.
 
 2026-11-25 ICT: Final source-only regression after Inspector warning fix, exact PHP master c4ec3b915d140f7dfc1978716162d55e6af57b66; Astro master 8c797c9a0e10b08d4d8a1729409ee6b3280bb24c. Keep NO BUILD, NO FTPS, NO CMS writes.
+
+2026-11-25 19:07 ICT: Source-only hidden section reveal regression after CTA fail-closed and correct PHP inline ticket harness. Astro master bf9aebabce63aabbdf9d7d2c5fb35746d1056962; PHP master a52e66c423d6cb20dadd3d7d0fc849d4d53fca07. Added actual ExtractHTML Vitest to workflow. Previous #45610378999 FAILED because test harness executed unrelated DOM listeners and threw hiddenRevealButton ReferenceError, PHP lint/section tests PASS. Re-run isolated PHP JS, Astro JSX compiler & Vitest; NO BUILD/FTP/CMS WRITE.
