@@ -899,6 +899,21 @@ $tableRoutes=array_keys(rest_get_server()->get_routes());
 $tableRoutes=array_values(array_filter($tableRoutes,
     static fn($route)=>stripos($route,'tablepress')!==false));
 echo 'PSE_QA_TABLEPRESS_METADATA_ROUTES='.wp_json_encode($tableRoutes)."\n";
+qa_assert(function_exists('vcs_get_tablepress_pure_data'),
+    'actual PSE GitHub Trigger TablePress pure-data provider available');
+$copyNativePost=(int)(esc_vb_get_table_mapping()[$newFaqId]??0);
+qa_assert($copyNativePost>0 &&
+    get_post_type($copyNativePost)==='tablepress_table',
+    'new physical TablePress post resolved for GitHub Trigger source');
+$copyPublic=vcs_get_tablepress_pure_data($copyNativePost);
+qa_assert(!is_wp_error($copyPublic) && is_array($copyPublic) &&
+    (string)($copyPublic['id']??'')===$newFaqId &&
+    ($copyPublic['meta']['builderComponent']??'')==='Pse_faq' &&
+    ($copyPublic['meta']['escBuilderCloneOf']??'')==='pse_faq_vi' &&
+    ($copyPublic['meta']['title']??'')===$faqOriginalMeta['title'],
+    'Astro GitHub Trigger pure-data includes both source metadata and alias');
+echo "PSE_DISPOSABLE_NATIVE_S1_ASTRO_TABLEPRESS_SOURCE_ALIAS=PASS\n";
+
 
 qa_assert(qa_fresh_table_rows($newFaqId)===$originalFaqRows &&
     qa_table_rows($model,$faqSource)===$originalFaqRows,
