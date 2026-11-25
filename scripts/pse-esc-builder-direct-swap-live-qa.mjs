@@ -418,6 +418,25 @@ try{
             })};
         },target);
       };
+      // On a geometry failure collect the preceding block and media state.
+      // No raw content, credentials, tickets or URLs in diagnostics.
+      const diagnostic=scope=>scope.evaluate(({root})=>{
+        const e=document.querySelector(root);
+        const rect=n=>{const r=n.getBoundingClientRect(),c=getComputedStyle(n);
+          return {tag:n.tagName,classes:String(n.className||'').slice(0,120),y:r.y+scrollY,
+            width:r.width,height:r.height,display:c.display,margin:c.margin,padding:c.padding};};
+        const ancestors=[];
+        for(let n=e;n&&ancestors.length<8;n=n.parentElement){
+          const preceding=[];
+          for(let p=n.previousElementSibling;p&&preceding.length<8;p=p.previousElementSibling)
+            preceding.push(rect(p));
+          ancestors.push({node:rect(n),preceding});
+        }
+        const cover=[...document.querySelectorAll('.pse-history-cover,.pse-history-cover img')]
+          .map(n=>({...rect(n),complete:n.complete,naturalWidth:n.naturalWidth,naturalHeight:n.naturalHeight}));
+        return {ancestors,cover,fonts:document.fonts.status,
+          sourceReady:!!document.querySelector('[data-source-ready="true"]')};
+      },target);
       for(const width of [1440,390]){
         const height=900;
         await page.setViewportSize({width:1800,height:1100});
@@ -434,6 +453,25 @@ try{
           const res=await publicPage.goto(new URL(permalink.pathname,origin).href,
             {waitUntil:'domcontentloaded',timeout:60000});
           if(!res?.ok())throw Error('Public Page unavailable '+target.id);
+          // Geometry must describe the settled page, not a transient image
+          // reflow. Wait for the actual preceding History cover to decode,
+          // and retain a before/after diagnostic to distinguish a real defect.
+          if(target.id==='79301'){
+            const before=await Promise.all([diagnostic(live),diagnostic(publicPage)]);
+            const settle=scope=>scope.evaluate(async()=>{
+              const imgs=[...document.querySelectorAll('.pse-history-cover img')];
+              if(!imgs.length)throw Error('Missing History editorial cover');
+              for(const img of imgs){
+                if(img.loading==='lazy')img.scrollIntoView({block:'center'});
+                await Promise.race([img.decode(),new Promise((_,reject)=>setTimeout(()=>reject(Error('History image decode timeout')),15000))]);
+              }
+              scrollTo(0,0);
+              await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+            });
+            await Promise.all([settle(live),settle(publicPage)]);
+            const after=await Promise.all([diagnostic(live),diagnostic(publicPage)]);
+            console.log('PSE_HISTORY_COVER_GEOMETRY='+JSON.stringify({width,before,after}));
+          }
           const [a,b]=await Promise.all([snapshot(live),snapshot(publicPage)]);
           const differences=[];
           if(a.rows.length!==b.rows.length)differences.push({kind:'count',preview:a.rows.length,public:b.rows.length});
