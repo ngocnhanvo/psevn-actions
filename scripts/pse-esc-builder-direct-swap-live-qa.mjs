@@ -375,6 +375,16 @@ try{
         descendantTags:nearest?[...new Set([...nearest.querySelectorAll('*')]
           .map(node=>node.tagName.toLowerCase()))].slice(0,16):[],
         descendantCount:nearest?.querySelectorAll('*').length||0,
+        descendantAttributes:nearest?[...nearest.querySelectorAll('*')]
+          .slice(0,10).map(node=>({
+            tag:node.tagName.toLowerCase(),
+            attributes:[...node.attributes].map(attr=>attr.name).slice(0,14),
+            containsEventAttribute:[...node.attributes].some(attr=>/^on[a-z]+$/i.test(attr.name)),
+            hasGlobalId:node.hasAttribute('id'),
+            hasName:node.hasAttribute('name'),
+            hasFor:node.hasAttribute('for'),
+            hasAriaControls:node.hasAttribute('aria-controls')||node.hasAttribute('aria-owns')
+          })):[],
         htmlCommentCount:nearest?(()=>{
           const walker=parsed.createTreeWalker(nearest,NodeFilter.SHOW_COMMENT);
           let count=0;while(walker.nextNode()&&count<100)count++;return count;
