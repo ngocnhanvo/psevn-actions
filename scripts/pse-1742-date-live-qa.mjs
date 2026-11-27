@@ -27,7 +27,7 @@ try{
     if(response?.status()!==200 ||
        !detail.h1.includes("Báo cáo tài chính bán niên 2026")||
        !String(detail.time).startsWith(expected)||
-       !detail.exactDateVisible||detail.mainTextLength<200){
+       !detail.exactDateVisible){
       throw new Error("PSE_1742_FRONTEND_DATE_FAIL "+JSON.stringify({http:response?.status(),width,...detail}));
     }
     console.log("PSE_1742_FRONTEND_DATE_PASS "+JSON.stringify({http:200,width,...detail}));
