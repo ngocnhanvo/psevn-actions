@@ -112,6 +112,13 @@ try{
   return{joomlaId:id,slug,sourceTitle:n.text,wordpressId:matched?.id||null,status:matched?"FOUND":"MISSING_FROM_DIRECT_37"};
  });
  report.comparisons={sourceIdentifiers:comparison.length,missing:comparison.filter(x=>x.status!=="FOUND"),items:comparison};
+ const s1=report.sourcePages[0]||{};
+ console.log("PSE_COMPANY_JOOMLA_PAGE1_STRUCTURE="+JSON.stringify({headings:s1.headings,counts:s1.counts,mainHtmlSample:s1.topLevelMainHtmlSample,pageTitle:s1.pageTitle,rawLength:s1.bodyHtmlLength}).slice(0,9000));
+ try{const st=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
+  console.log("PSE_COMPANY_RECENT_SOURCE_DB_STATE="+JSON.stringify({schema:st.schema,
+   sourceCount:Object.keys(st.articles||{}).length,ids:Object.keys(st.articles||{}).filter(k=>Number(k)>=1700).slice(-80),
+   article1739:st.articles?.["1739"]||null,article1740:st.articles?.["1740"]||null}).slice(0,6500));}
+ catch(e){console.log("PSE_COMPANY_RECENT_SOURCE_DB_STATE_UNAVAILABLE="+String(e?.message||e).slice(0,130));}
  console.log("PSE_COMPANY_JOOMLA_SOURCE_PARITY="+JSON.stringify({
   wordpressTotal:report.wordpress.total,sourcePages:pages.map(p=>({page:p.index,status:p.status,headlines:p.links?.length||0,reason:p.reason||""})),
   extractedSourceIds:comparison.length,missing:report.comparisons.missing,
