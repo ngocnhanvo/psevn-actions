@@ -1,0 +1,30 @@
+name: PSE four latest Joomla Tin tong hop original Posts live parity (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-tin-tong-hop-four-live-qa-request
+permissions:
+  contents: read
+jobs:
+  qa:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'test(pse): verify four original Tin tong hop articles live'
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-tin-tong-hop-four-live-qa.mjs && node scripts/pse-tin-tong-hop-four-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-tin-tong-hop-4-live-parity
+          path: artifacts/pse-tth-four/live-qa.json
+          retention-days: 14
+          if-no-files-found: warn
