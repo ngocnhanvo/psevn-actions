@@ -74,12 +74,29 @@ async function findCaptchaInput() {
   return null;
 }
 
+async function gotoAdminWithRetry(url, label) {
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    } catch (error) {
+      lastError = error;
+      const text = String(error?.message || error);
+      const transient = /Timeout|ERR_TIMED_OUT|ECONNRESET|ECONNREFUSED|ENETUNREACH/i.test(text);
+      if (!transient || attempt === 3) throw error;
+      console.log(`PSE_WP_ADMIN_NAV_RETRY label=${label} attempt=${attempt} reason=transient`);
+      await page.waitForTimeout(attempt * 1800);
+    }
+  }
+  throw lastError;
+}
+
 async function loginAndOpenBuildPage() {
   const started = Date.now();
   // Retain the proven WordPress dashboard login and arithmetic CAPTCHA flow.
   // After authentication, verify directly on the protected Build Website page;
   // only use the legacy Post admin page if that verification fails.
-  await page.goto(`${origin}/wp-admin/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await gotoAdminWithRetry(`${origin}/wp-admin/`, 'dashboard');
   const userInput = page.locator('#user_login');
   if (await visible(userInput)) {
     await userInput.fill(USERNAME);
@@ -95,17 +112,14 @@ async function loginAndOpenBuildPage() {
 
   // Always visit the exact secured page after login: URL/redirect_to alone
   // does not establish a valid WP session, as verified by read-only QA.
-  await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await gotoAdminWithRetry(BUILD_URL, 'build-page');
   if (!(await visible(page.locator('#adminmenu')))) {
     console.log('PSE_WP_AUTH_FALLBACK=PROTECTED_POST_GET');
-    await page.goto(`${origin}/wp-admin/post.php?post=248&action=edit`, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000,
-    });
+    await gotoAdminWithRetry(`${origin}/wp-admin/post.php?post=248&action=edit`, 'protected-post');
     if (!(await visible(page.locator('#adminmenu')))) {
       throw new Error('WordPress admin session is not authenticated');
     }
-    await page.goto(BUILD_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await gotoAdminWithRetry(BUILD_URL, 'build-page-fallback');
   }
   if (!(await visible(page.locator('#adminmenu')))) {
     throw new Error('WordPress Build Website menu/permissions are not available');
