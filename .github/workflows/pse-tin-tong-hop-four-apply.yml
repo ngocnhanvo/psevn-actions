@@ -34,11 +34,11 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/pse-tin-tong-hop-four-apply.mjs
-          node --check scripts/pse-template-updraft-backup.mjs
+          node --check scripts/pse-tth-updraft-backup-retry.mjs
           printf 'APPLY=OWNER_APPROVED;SOURCE=JOOMLA_RSS_101;POSTS=1746,1745,1744,1743\n' | cmp - .pse-tin-tong-hop-four-apply-request
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
       - name: Fresh UpdraftPlus WordPress DB-only rollback before any WordPress Media or Post write
-        run: node scripts/pse-template-updraft-backup.mjs
+        run: node scripts/pse-tth-updraft-backup-retry.mjs
       - name: Import only four source-proven original Posts, validate all 13 JPEG and exact-second dates
         shell: bash
         run: |
