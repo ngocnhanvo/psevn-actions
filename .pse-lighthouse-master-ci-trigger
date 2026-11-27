@@ -15,3 +15,4 @@
 2026-11-27: source-only Astro master 852facb6b1904519334482abfa175a2cc2ce83d2; PSE original Joomla site-local exact-second date in SSR Article datetime, UTC kept solely for relative age; 5 dedicated Vitest assertions. No WordPress write / no deploy.
 
 2026-11-28: source-only Astro master 9fd43908ded090eea9657e9cf879aefbd3c97399; keep PSE news category registry lightweight and fetch selected term SEO separately. No CMS writes or deploy.
+2026-11-28: rerun full source CI for Astro master 010b221272e6b2176c194cd40d10945cfcfbc056 after updating stale media taxonomy regression to the lightweight selected-category SEO lookup. No CMS writes or deploy.
