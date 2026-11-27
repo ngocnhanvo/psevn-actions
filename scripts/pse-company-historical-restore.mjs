@@ -258,13 +258,41 @@ try{
      throw Error("Original image file signature invalid "+file.filename);
     const digest=createHash("sha256").update(bytes).digest("hex");
     if(file.existing){
-     const url=String(file.existing.source_url||"");
-     // Retry transient media GET connection resets, still require original byte SHA-256.
-     const old=await retryGet(new URL(url,wp).href);
-     if(old.status()!==200||createHash("sha256").update(await old.body()).digest("hex")!==digest)
-      throw Error("Existing same-filename Media has DIFFERENT bytes; abort "+file.filename);
-     file.id=Number(file.existing.id);
-    }else{
+     const old=await retryGet(new URL(String(file.existing.source_url||""),wp).href);
+     const oldDigest=createHash("sha256").update(await old.body()).digest("hex");
+     if(oldDigest===digest){
+      file.id=Number(file.existing.id);
+     }else{
+      // Different image, identical basename: do not overwrite existing Media.
+      // Choose a source-URL-derived deterministic filename for this Joomla JPEG.
+      const originalName=file.filename;
+      const stem=originalName.replace(/\.[^.]+$/,"").replace(/[^A-Za-z0-9_-]/g,"-").slice(0,35)||"source";
+      const suffix=createHash("sha256").update(file.sourceUrl).digest("hex").slice(0,12);
+      const alternative="pse-company-"+stem+"-"+suffix+"."+file.ext;
+      if(memoName.has(alternative)&&memoName.get(alternative)!==file.sourceUrl)
+       throw Error("Source media fallback filename conflicts: "+alternative);
+      memoName.set(alternative,file.sourceUrl);
+      const probe=await api("/wp-json/wp/v2/media?context=edit&search="+
+       encodeURIComponent(alternative.replace(/\.[^.]+$/,""))+
+       "&per_page=100&_fields=id,source_url,mime_type,media_details");
+      if(probe.status!==200||!Array.isArray(probe.data))
+       throw Error("WordPress alternative media lookup failed "+alternative);
+      const found=probe.data.filter(m=>String(m.media_details?.file||"").split("/").at(-1)===alternative);
+      if(found.length>1||found[0]&&found[0].mime_type!==file.mime)
+       throw Error("WordPress alternative media name ambiguous "+alternative);
+      file.filename=alternative;
+      file.existing=found[0]||null;
+      if(file.existing){
+       const verified=await retryGet(new URL(String(file.existing.source_url||""),wp).href);
+       if(createHash("sha256").update(await verified.body()).digest("hex")!==digest)
+        throw Error("Alternative Media bytes differ; no overwrite "+alternative);
+       file.id=Number(file.existing.id);
+      }
+      console.log("PSE_HISTORICAL_COMPANY_MEDIA_NAME_COLLISION_SAFE="+JSON.stringify({
+       originalName,storedAs:alternative,reused:!!file.id}));
+     }
+    }
+    if(!file.id){
      let post;
      try{
       post=await wpHttp.post(wp+"/wp-json/wp/v2/media",{
