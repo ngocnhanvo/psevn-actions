@@ -4,7 +4,7 @@
   "sourceJoomlaCategoryUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html",
   "wpCategoryId": 1742,
   "wpCategorySlug": "tin-cong-ty",
-  "status": "INCOMPLETE_SOURCE_PARITY",
+  "status": "PARTIAL_15_HISTORICAL_PENDING",
   "originalPages": 10,
   "originalDistinctTitles": 55,
   "wpPostsAllGlobalAtAudit": 771,
@@ -25,7 +25,10 @@
       "title": "Phú Mỹ Đông Nam Bộ tổ chức Lễ công bố và trao quyết định về công tác cán bộ",
       "createdDate": "2026-11-16",
       "imageCount": 4,
-      "sourceStatus": "VERIFIED_UNIMPORTED"
+      "sourceStatus": "PUBLISHED_NATIVE_WORDPRESS",
+      "wpPostId": 83696,
+      "nativeCategoryId": 1742,
+      "nativeFeaturedMediaId": 83687
     },
     {
       "joomlaId": 1739,
@@ -33,7 +36,10 @@
       "title": "PHÚ MỸ ĐÔNG NAM BỘ: MỘT NGÀY THỨ BẢY ĐẦY Ý NGHĨA",
       "createdDate": "2026-11-10",
       "imageCount": 5,
-      "sourceStatus": "VERIFIED_UNIMPORTED"
+      "sourceStatus": "PUBLISHED_NATIVE_WORDPRESS",
+      "wpPostId": 83698,
+      "nativeCategoryId": 1742,
+      "nativeFeaturedMediaId": 83691
     }
   ],
   "pendingHistorical": [
@@ -45,8 +51,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 2,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 5
     },
     {
       "joomlaId": 1644,
@@ -56,8 +63,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 3,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 6
     },
     {
       "joomlaId": 1643,
@@ -67,8 +75,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 3,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 8
     },
     {
       "joomlaId": 1633,
@@ -78,8 +87,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 4,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 3
     },
     {
       "joomlaId": 1632,
@@ -89,8 +99,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 4,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 11
     },
     {
       "joomlaId": 1607,
@@ -100,8 +111,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 5,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 2
     },
     {
       "joomlaId": 1605,
@@ -111,8 +123,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 5,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 2
     },
     {
       "joomlaId": 1589,
@@ -122,8 +135,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 6,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 6
     },
     {
       "joomlaId": 1588,
@@ -133,8 +147,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 6,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 12
     },
     {
       "joomlaId": 1569,
@@ -144,8 +159,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 7,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 8
     },
     {
       "joomlaId": 1557,
@@ -155,8 +171,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 7,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 4
     },
     {
       "joomlaId": 1538,
@@ -166,8 +183,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 8,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 2
     },
     {
       "joomlaId": 1530,
@@ -177,8 +195,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 8,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 17
     },
     {
       "joomlaId": 1517,
@@ -188,8 +207,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 9,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 2
     },
     {
       "joomlaId": 1494,
@@ -199,8 +219,9 @@
       "category": "tin-cong-ty",
       "categoryId": 1742,
       "sourcePage": 9,
-      "checkpointStatus": "NOT_IMPORTED",
-      "mediaStatus": "TO_AUDIT"
+      "checkpointStatus": "PENDING_NATIVE_WORDPRESS_POST_AND_MEDIA_IMPORT",
+      "mediaStatus": "ALL_ORIGINAL_SOURCE_IMAGES_HTTP_200",
+      "imageCount": 5
     }
   ],
   "evidence": {
@@ -210,6 +231,17 @@
     "globalWpPosts": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951534765",
     "novemberDateMedia": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951419764",
     "provenance": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951948522",
-    "latestCmsWriter": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45952078135"
+    "latestCmsWriter": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45952078135",
+    "latestSignedProductionBuild": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45952637392",
+    "historicalOriginalImages": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45952542164"
+  },
+  "historicalOriginalImageInventory": {
+    "articleCount": 15,
+    "totalImageReferences": 93,
+    "distinctImages": 93,
+    "sourceHTTP200": 93,
+    "unavailable": 0,
+    "unsupportedEmbeddedMedia": 0,
+    "sourceArticlesVerified": 15
   }
 }
