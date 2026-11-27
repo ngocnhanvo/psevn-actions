@@ -111,6 +111,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile actions-hub/scripts/pse-remote-unzip.py
+          python3 actions-hub/tests/pse-remote-unzip-manifest.test.py
           python3 actions-hub/scripts/pse-remote-unzip.py verify
       - name: Read saved sitemap revision and signed image inventory concurrently (READ ONLY)
         shell: bash
