@@ -9,7 +9,8 @@ if(!["MODE=READONLY","MODE=READONLY\nRETRY=STRIP_RELATED_ONLY"].includes(marker)
  manifest.joomlaCategoryId!==101||manifest.wpCategoryId!==1746||
  manifest.parentWpCategoryId!==1742||manifest.records?.length!==4||
  manifest.records.map(x=>x.joomlaId).join(",")!=="1746,1745,1744,1743"||
- manifest.records.reduce((n,x)=>n+x.images,0)!==13)
+ manifest.records.reduce((n,x)=>n+x.images,0)!==13||
+ manifest.records.some(x=>!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$/.test(x.publishUp)))
  throw Error("PSE original four-post audit identity guard denied");
 const report={status:"STARTED",scope:"READ_ONLY",date:new Date().toISOString(),posts:[],media:[],wp:[]};
 const browser=await chromium.launch({headless:true});
@@ -88,7 +89,7 @@ try{
    report.media.push({joomlaId:d.joomlaId,source:img,bytes:bytes.length,
     sha256:createHash("sha256").update(bytes).digest("hex")});
   }
-  report.posts.push({id:d.joomlaId,date:d.created,title:d.title,slug:d.slug,
+  report.posts.push({id:d.joomlaId,created:d.created,publishUp:d.publishUp,title:d.title,slug:d.slug,
    media:article.images.length,bodyChars:article.textLen,sourceUrl:d.sourceUrl});
   console.log("PSE_TTH_FOUR_SOURCE_VALIDATED="+JSON.stringify(report.posts.at(-1)));
  }
