@@ -35,3 +35,5 @@ OWNER auto-build authorization: trigger existing authenticated WordPress Build W
 2026-11-27 PSE Post #82508 owner date correction 2026-11-17; WordPress REST readback and live SSR already PASS; normal pending-change WordPress Build Website, existing signed Astro release only, no force/no new pipeline.
 
 2026-11-27 Joomla Market #93 source-authentic created publish times: CMS #45961682321 PASS (13 changed, 1 already correct, 14/14 order). Owner auto-build: normal authenticated WP Build Website -> signed Astro production. Verify original market home tab 5/5 via Actions Playwright; no PHP/other CMS edits.
+
+2026-11-27 PSE Tin Cong Ty 15 missing Joomla native posts now restored at original created timestamps to exact second, 93/93 original JPEGs; successful guarded CMS import Actions #45967914746. Owner auto-build: trigger normal existing authenticated WordPress Build Website to signed Astro master production deploy. Then require read-only 15-post/93-image original-title/date-seconds SSR QA. No secondary pipeline, no unrelated data writes.
