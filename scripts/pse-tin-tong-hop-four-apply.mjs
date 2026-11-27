@@ -130,20 +130,29 @@ async function originalBody(def,raw){
  }finally{await pg.close()}
 }
 try{
- await admin.goto(wp+"/wp-admin/",{waitUntil:"domcontentloaded",timeout:65000});
+ const openAdmin=async path=>{
+  let last;
+  for(let attempt=1;attempt<=3;attempt++){
+   try{return await admin.goto(wp+path,{waitUntil:"domcontentloaded",timeout:55000})}
+   catch(e){last=e;if(attempt<3)await admin.waitForTimeout(attempt*1800)}
+  }
+  throw last;
+ };
+ await openAdmin("/wp-login.php");
  if(await admin.locator("#user_login").count()){
   await admin.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME);
   await admin.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD);
   const t=(await admin.locator("#loginform").innerText()).slice(0,800);
-  const match=t.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/);
+  const match=t.match(/(\\d+)\\s*([+\\-x×*])\\s*(\\d+)\\s*(?:=|\\?)/)||
+   t.match(/(\\d+)\\s*([+\\-x×*])\\s*(\\d+)/);
   if(match){
    const a=Number(match[1]),b=Number(match[3]),v=match[2]==="+"?a+b:match[2]==="-"?a-b:a*b;
    const field=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
-   if(!await field.count())throw Error("WP_MATH_CAPTCHA_FIELD_MISSING");await field.fill(String(v));
+   if(await field.count())await field.fill(String(v));
   }
-  // WordPress login POST can be slow on this host; keep a bounded 90s limit as proven by the backup preflight.\n   await admin.locator("#wp-submit").click({timeout:90000});
+  await admin.locator("#wp-submit").click({timeout:90000});
  }
- await admin.goto(wp+"/wp-admin/options-general.php",{waitUntil:"domcontentloaded",timeout:65000});
+ await openAdmin("/wp-admin/options-general.php");
  if(admin.url().includes("wp-login")||!await admin.locator("#adminmenu").count())
   throw Error("WP_CMS_EDITOR_AUTHENTICATION_FAILED");
  const zone=await admin.locator('select#timezone_string,select[name="timezone_string"]').first().inputValue();
