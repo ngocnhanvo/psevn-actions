@@ -1,0 +1,133 @@
+{
+  "schema": "pse-company-joomla-created-second-v1",
+  "source": {
+    "kind": "owner-uploaded-Joomla-SQL-gz",
+    "sha256": "ec85436b4e7a475b13c2955e8e0adcbbae11c87e8502669b3ae77e51f2bc4f2c",
+    "table": "ckiv4_content",
+    "joomlaCategoryId": 21
+  },
+  "wordpressCategoryId": 1742,
+  "timezone": "UTC+7",
+  "records": [
+    {
+      "joomlaId": 1657,
+      "slug": "phu-my-dong-nam-bo-to-chuc-thanh-cong-dai-hoi-dai-bieu-cong-doan-lan-thu-vi-nhiem-ky-2025-2030",
+      "created": "2025-10-21T06:50:40",
+      "publishUp": "2025-10-21T06:50:40",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1644,
+      "slug": "trong-rung-giu-nuoc-mua-mua",
+      "created": "2025-06-04T09:16:25",
+      "publishUp": "2025-06-04T09:16:25",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1643,
+      "slug": "chao-mung-ngay-quoc-te-thieu-nhi-01-06-2025",
+      "created": "2025-06-04T09:02:01",
+      "publishUp": "2025-06-04T09:02:01",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1633,
+      "slug": "truong-thanh-luong-nguoi-gieo-niem-tin-tren-vung-dat-do-tay-nguyen",
+      "created": "2025-04-21T08:17:05",
+      "publishUp": "2025-04-21T08:17:05",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1632,
+      "slug": "gap-mat-khach-hang-kinh-doanh-phan-bon-phu-my-tieu-bieu-khu-vuc-lam-dong-nam-2025",
+      "created": "2025-04-21T08:04:37",
+      "publishUp": "2025-04-21T08:04:37",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1607,
+      "slug": "chuong-trinh-xuan-yeu-thuong-tet-se-chia-tai-dak-mil",
+      "created": "2025-01-16T12:44:44",
+      "publishUp": "2025-01-16T12:44:44",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1605,
+      "slug": "di-linh-trao-tang-150-phan-qua-tet-cho-nguoi-dan-xa-son-dien",
+      "created": "2025-01-14T08:35:35",
+      "publishUp": "2025-01-14T08:35:35",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1589,
+      "slug": "pvfcco-pse-to-chuc-chuong-trinh-bua-com-cong-doan",
+      "created": "2024-08-22T09:15:52",
+      "publishUp": "2024-08-22T09:15:52",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1588,
+      "slug": "pvfcco-pse-chuoi-hoat-dong-y-nghia-ky-niem-16-nam-thanh-lap-cong-ty-18-08-2008-18-08-2024",
+      "created": "2024-08-20T09:22:42",
+      "publishUp": "2024-08-20T09:22:42",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1569,
+      "slug": "pvfcco-pse-to-chuc-cac-hoat-dong-ky-niem-ngay-phu-nu-viet-nam-20-10",
+      "created": "2023-12-26T01:36:20",
+      "publishUp": "2023-12-26T01:36:20",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1557,
+      "slug": "pvfcco-pse-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2023",
+      "created": "2023-04-27T04:39:44",
+      "publishUp": "2023-04-27T04:39:44",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1538,
+      "slug": "phan-bon-phu-my-ra-mat-dong-san-pham-chuyen-dung-cho-nong-nghiep-do-thi",
+      "created": "2022-11-21T09:18:27",
+      "publishUp": "2022-11-21T09:18:27",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1530,
+      "slug": "pvfcco-se-nhieu-hoat-dong-y-nghia-ky-niem-14-nam-thanh-lap-cong-ty-18-8-2008-18-8-2022",
+      "created": "2022-08-24T08:16:40",
+      "publishUp": "2022-08-24T08:16:40",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1517,
+      "slug": "pvfcco-se-to-chuc-hoi-nghi-gap-mat-khach-hang-kinh-doanh-phan-bon-phu-my-nam-2022",
+      "created": "2022-05-24T06:17:36",
+      "publishUp": "2022-05-24T06:17:36",
+      "catid": 21,
+      "state": 1
+    },
+    {
+      "joomlaId": 1494,
+      "slug": "pvfcco-se-to-chuc-hoi-nghi-tong-ket-cong-tac-dang-hoat-dong-kinh-doanh-nam-2021-trien-khai-ke-hoach-cong-tac-nam-2022-va-hoi-nghi-nguoi-lao-dong-nam-2022",
+      "created": "2021-12-06T10:32:15",
+      "publishUp": "2021-12-06T10:32:15",
+      "catid": 21,
+      "state": 1
+    }
+  ]
+}

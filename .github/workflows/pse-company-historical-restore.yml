@@ -24,8 +24,18 @@ jobs:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
       - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
-      - name: Read original 15 articles; check native WP ownership; verify or import original JPGs; publish verified Posts
-        run: node --check scripts/pse-company-historical-restore.mjs && node scripts/pse-company-historical-restore.mjs
+      - name: Validate exact-second source manifest and import script
+        run: |
+          node --check scripts/pse-company-historical-restore.mjs
+          node --check scripts/pse-company-historical-live-qa.mjs
+          node --check scripts/pse-template-updraft-backup.mjs
+      - name: Fresh native WordPress DB-only rollback backup before import
+        if: github.event.head_commit.message == 'cms(pse): restore fifteen missing original company articles and images'
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Read 15 original articles; import 93 JPGs; publish Posts with Joomla timestamps to second
+        env:
+          PSE_COMPANY_FRESH_DB_BACKUP: ${{ github.event.head_commit.message == 'cms(pse): restore fifteen missing original company articles and images' && 'yes' || 'no' }}
+        run: node scripts/pse-company-historical-restore.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

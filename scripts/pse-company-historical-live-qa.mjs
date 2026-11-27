@@ -8,6 +8,11 @@ if(marker!=="MODE=READONLY"||String(ev.head_commit?.message||"").split("\n")[0]!
  throw Error("Unauthorized PSE public article parity run");
 const source=JSON.parse(await readFile("docs/checkpoints/pse-company-missing-source-articles-2026-11-27.json","utf8"));
 const items=source.pendingHistorical;
+const original=JSON.parse(await readFile("docs/source/pse-company-15-joomla-created-seconds.json","utf8"));
+if(original.schema!=="pse-company-joomla-created-second-v1"||
+ original.source?.sha256!=="ec85436b4e7a475b13c2955e8e0adcbbae11c87e8502669b3ae77e51f2bc4f2c"||original.records?.length!==15)
+ throw Error("Missing precise source Joomla dates");
+const byJoomlaId=new Map(original.records.map(r=>[r.joomlaId,r.created]));
 if(source.schema!=="pse-company-missing-source-articles-v1"||items.length!==15||
  items.reduce((n,d)=>n+d.imageCount,0)!==93)throw Error("PSE exact source original checkpoint drift");
 const base="https://pse.webnvn.com";
@@ -47,9 +52,9 @@ try{
      };
     });
     if(norm(data.title)!==norm(d.title)||data.contentLength<100||
-     data.images.length!==d.imageCount||!data.date.startsWith(d.createdDate))
+     data.images.length!==d.imageCount||data.date!==byJoomlaId.get(d.joomlaId))
      throw Error("Published original source title/date/body/media parity mismatch id="+d.joomlaId+" expected="+JSON.stringify({
-      images:d.imageCount,date:d.createdDate,title:d.title})+" got="+JSON.stringify({
+      images:d.imageCount,date:byJoomlaId.get(d.joomlaId),title:d.title})+" got="+JSON.stringify({
       images:data.images.length,date:data.date,title:data.title,body:data.contentLength}));
     const images=await Promise.all(data.images.map(async x=>{
      const asset=new URL(x.src,url);
@@ -60,14 +65,14 @@ try{
       throw Error("Original optimized article image asset not HTTP200 source="+d.joomlaId+" src="+x.src+" status="+result.status());
      return{path:asset.pathname,status:result.status(),type:result.headers()["content-type"]};
     }));
-    return{sourceId:d.joomlaId,url,http:200,images:images.length,sourceDay:data.date.slice(0,10),
+    return{sourceId:d.joomlaId,url,http:200,images:images.length,sourceDateTime:data.date,
      textLength:data.contentLength,assets:images};
    }finally{await page.close()}
   }));
   for(const r of results){
    report.articles.push({...r,assets:undefined});
    report.assets.push(...r.assets.map(x=>({...x,sourceId:r.sourceId})));
-   console.log("PSE_COMPANY_HISTORICAL_LIVE_ARTICLE_PASS="+JSON.stringify({id:r.sourceId,images:r.images,day:r.sourceDay,url:r.url}));
+   console.log("PSE_COMPANY_HISTORICAL_LIVE_ARTICLE_PASS="+JSON.stringify({id:r.sourceId,images:r.images,created:r.sourceDateTime,url:r.url}));
   }
  }
  if(report.articles.length!==15||report.assets.length!==93)

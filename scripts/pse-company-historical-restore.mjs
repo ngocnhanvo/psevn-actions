@@ -10,7 +10,7 @@ import {readFile,mkdir,writeFile} from "node:fs/promises";
 const marker=(await readFile(".pse-company-historical-restore-request","utf8")).trim();
 const ev=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const msg=String(ev.head_commit?.message||"").split("\n")[0];
-const apply=marker==="MODE=APPLY"&&msg==="cms(pse): restore fifteen missing original company articles and images";
+const apply=marker==="MODE=APPLY;SOURCE_SQL_SHA256=ec85436b4e7a475b13c2955e8e0adcbbae11c87e8502669b3ae77e51f2bc4f2c"&&msg==="cms(pse): restore fifteen missing original company articles and images";
 if(!((marker==="MODE=AUDIT"&&msg==="audit(pse): preflight fifteen original company news Posts")||apply))
  throw Error("Invalid owner-approved native CMS restoration request");
 if(process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||process.env.GITHUB_REF!=="refs/heads/main")
@@ -24,6 +24,23 @@ if(checkpoint.schema!=="pse-company-missing-source-articles-v1"||defs.length!==1
  throw Error("PSE immutable original source checkpoint missing/inconsistent");
 const expectedImageCount=defs.reduce((n,x)=>n+x.imageCount,0);
 if(expectedImageCount!==93)throw Error("Historical source image inventory drift");
+const manifest=JSON.parse(await readFile("docs/source/pse-company-15-joomla-created-seconds.json","utf8"));
+const sourceRows=manifest.records;
+if(manifest.schema!=="pse-company-joomla-created-second-v1"||
+ manifest.source?.sha256!=="ec85436b4e7a475b13c2955e8e0adcbbae11c87e8502669b3ae77e51f2bc4f2c"||manifest.source?.table!=="ckiv4_content"||
+ manifest.source?.joomlaCategoryId!==21||manifest.wordpressCategoryId!==1742||
+ manifest.timezone!=="UTC+7"||sourceRows?.length!==15||
+ new Set(sourceRows.map(r=>r.joomlaId)).size!==15||
+ sourceRows.some((r,i)=>r.joomlaId!==defs[i].joomlaId||
+  r.slug!==new URL(defs[i].sourceUrl).pathname.match(/\/[0-9]+-([a-z0-9-]+)\.html$/)?.[1]||
+  r.created.slice(0,10)!==defs[i].createdDate||
+  r.created!==r.publishUp||r.catid!==21||r.state!==1||
+  !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(r.created)))
+ throw Error("Exact Joomla SQL created/publish_up source manifest mismatch");
+if(apply&&process.env.PSE_COMPANY_FRESH_DB_BACKUP!=="yes")
+ throw Error("Fresh verified WordPress DB backup is required before write");
+const createdByJoomlaId=new Map(sourceRows.map(r=>[r.joomlaId,r.created]));
+console.log("PSE_COMPANY_SOURCE_SQL_CREATED=PASS; rows=15; seconds=15");
 const lines=String(process.env.ENV_FILE||"").split(/\r?\n/).map(s=>s.trim().replace(/^export\s+/,""));
 const origin=name=>{const rows=lines.filter(s=>s.startsWith(name+"="));
  if(rows.length!==1)throw Error("Missing CMS origin "+name);
@@ -75,6 +92,14 @@ try{
   await Promise.all([admin.waitForLoadState("domcontentloaded"),admin.locator("#wp-submit").click()]);
  }
  if(admin.url().includes("wp-login"))throw Error("CMS authentication refused");
+ if(apply){
+  await admin.goto(wp+"/wp-admin/options-general.php",{waitUntil:"domcontentloaded",timeout:60000});
+  if(!await admin.locator("#adminmenu").count())throw Error("WordPress timezone settings inaccessible");
+  const zone=await admin.locator('select#timezone_string,select[name="timezone_string"]').first().inputValue();
+  if(!["UTC+7","Asia/Ho_Chi_Minh","Asia/Saigon","Asia/Bangkok","Etc/GMT-7"].includes(zone))
+   throw Error("WordPress timezone differs from original Joomla UTC+7 mapping: "+zone);
+  console.log("PSE_COMPANY_WORDPRESS_TIMEZONE=PASS "+zone);
+ }
  report.nonce=await admin.evaluate(async()=>{if(window.wpApiSettings?.nonce)return window.wpApiSettings.nonce;
   const r=await fetch("/wp-admin/admin-ajax.php?action=rest-nonce",{credentials:"same-origin"});
   if(!r.ok)throw Error("No WordPress nonce");return(await r.text()).trim();});
@@ -154,7 +179,7 @@ try{
    if(prior&&(String(prior.acf?.origin_page_id||"")!==String(d.joomlaId)||
     !prior.categories?.includes(1742)))
     throw Error("Native WP Post slug belongs to another Joomla identity "+d.joomlaId);
-   return{sourceId:d.joomlaId,sourceUrl:d.sourceUrl,slug,title:d.title,date:d.createdDate,
+   return{sourceId:d.joomlaId,sourceUrl:d.sourceUrl,slug,title:d.title,date:createdByJoomlaId.get(d.joomlaId),
     images:article.images,html:article.html,text:article.text,tableCount:article.tableCount,prior};
   }));
   prepared.push(...batch);
@@ -330,7 +355,7 @@ try{
    let wpId=Number(a.prior?.id||0);
    if(!wpId){
     const created=await api("/wp-json/wp/v2/posts","POST",{
-     title:a.title,slug:a.slug,date:a.date+"T00:00:00",categories:[1742],
+     title:a.title,slug:a.slug,date:a.date,categories:[1742],
      content:article.html,excerpt,status:"draft",featured_media:featured,
      pse_seo_description:excerpt,
      acf:{action:"PostDetails",key:"ssr-post",origin_page_id:String(a.sourceId)}
@@ -346,7 +371,7 @@ try{
    if(check.status!==200||Number(post?.id)!==wpId||post.slug!==a.slug||
      post.acf?.action!=="PostDetails"||post.acf?.key!=="ssr-post"||
      String(post.acf?.origin_page_id||"")!==String(a.sourceId)||
-     post.date?.slice(0,10)!==a.date||post.categories?.length!==1||
+     post.date!==a.date||post.categories?.length!==1||
      Number(post.categories[0])!==1742||Number(post.featured_media)!==featured||
      !article.images.every(url=>String(post.content?.raw||"").includes(url)))
     throw Error("Native original WP Post source/date/content/Media integrity failed "+a.sourceId);
@@ -356,7 +381,7 @@ try{
    }
    const published=await api("/wp-json/wp/v2/posts/"+wpId+"?_fields=id,slug,status,date,categories");
    if(published.status!==200||published.data?.status!=="publish"||published.data.slug!==a.slug||
-      published.data.date?.slice(0,10)!==a.date||!published.data.categories?.includes(1742))
+      published.data.date!==a.date||!published.data.categories?.includes(1742))
     throw Error("Public native WP Post verify failed "+a.sourceId);
    report.posts.push({sourceId:a.sourceId,wpId,date:a.date,slug:a.slug,media:a.images.length});
    console.log("PSE_HISTORICAL_COMPANY_POST_PUBLISHED="+JSON.stringify(report.posts.at(-1)));
@@ -367,7 +392,7 @@ try{
   report.phase="native_posts_published_verified";
   if(report.posts.length!==15||report.posts.reduce((n,p)=>n+p.media,0)!==93)
    throw Error("Historical 15-Post/93-Media publication incomplete");
-  console.log("PSE_HISTORICAL_COMPANY_RESTORE_PASS=15_POSTS_93_IMAGES_2025_UNCHANGED");
+  console.log("PSE_HISTORICAL_COMPANY_RESTORE_PASS=15_POSTS_93_IMAGES_SECOND_PRECISION_2025_UNCHANGED");
  }
 }finally{
  delete report.nonce;
