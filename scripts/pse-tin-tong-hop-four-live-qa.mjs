@@ -113,10 +113,11 @@ try{
  // before consuming origin capacity on heavier media checks.
  for(const d of [...manifest.records].sort((a,b)=>a.images-b.images)){
   const r=await getWithTransientRetry(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
-   encodeURIComponent(d.slug)+"&_fields=id,slug,title,date,categories,status",
+   encodeURIComponent(d.slug)+"&_fields=id,slug,title,pse_joomla_source_title,date,categories,status",
    {timeout:55000},"wp-post-"+d.joomlaId);
   const arr=await r.json().catch(()=>null);
   if(r.status()!==200||!Array.isArray(arr)||arr.length!==1||arr[0].date!==d.publishUp||
+     arr[0].pse_joomla_source_title!==d.title||
      !arr[0].categories?.includes(1746)||!arr[0].categories?.includes(1742))
    throw Error("WORDPRESS_EXACT_LOCAL_SECOND_OR_CATEGORY_FAIL "+d.joomlaId);
   const page=await ctx.newPage();
