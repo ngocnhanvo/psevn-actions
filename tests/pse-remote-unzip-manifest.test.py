@@ -121,5 +121,34 @@ class PseSignedStaticJsonManifestTests(unittest.TestCase):
             check_manifest({"data/catalog.json": {"size": 13, "sha256": "wrong"}})
 
 
+class PseSignedUnzipRetryTests(unittest.TestCase):
+    def test_retries_only_transport_timeouts_then_returns(self):
+        call = mock.Mock(side_effect=[
+            RuntimeError("Cannot reach unzip endpoint: timed out"),
+            RuntimeError("Cannot reach unzip endpoint: handshake operation timed out"),
+            "PASS",
+        ])
+        with mock.patch.object(unzip.time, "sleep") as sleep:
+            self.assertEqual(unzip.retry_transient_timeout(call), "PASS")
+        self.assertEqual(call.call_count, 3)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [3, 6])
+
+    def test_does_not_retry_protocol_or_auth_failures(self):
+        call = mock.Mock(side_effect=RuntimeError("Unpack server returned HTTP 403: denied"))
+        with mock.patch.object(unzip.time, "sleep") as sleep:
+            with self.assertRaisesRegex(RuntimeError, "HTTP 403"):
+                unzip.retry_transient_timeout(call)
+        self.assertEqual(call.call_count, 1)
+        sleep.assert_not_called()
+
+    def test_stops_after_bounded_timeout_attempts(self):
+        call = mock.Mock(side_effect=RuntimeError("Cannot reach unzip endpoint: timed out"))
+        with mock.patch.object(unzip.time, "sleep") as sleep:
+            with self.assertRaisesRegex(RuntimeError, "timed out"):
+                unzip.retry_transient_timeout(call, attempts=3)
+        self.assertEqual(call.call_count, 3)
+        self.assertEqual(sleep.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
