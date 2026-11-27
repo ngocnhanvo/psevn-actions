@@ -30,11 +30,12 @@ jobs:
           node --check scripts/pse-company-historical-live-qa.mjs
           node --check scripts/pse-template-updraft-backup.mjs
       - name: Fresh native WordPress DB-only rollback backup before import
-        if: github.event.head_commit.message == 'cms(pse): restore fifteen missing original company articles and images'
+        if: >-
+          github.event.head_commit.message == 'cms(pse): restore fifteen missing original company articles and images'
         run: node scripts/pse-template-updraft-backup.mjs
       - name: Read 15 original articles; import 93 JPGs; publish Posts with Joomla timestamps to second
         env:
-          PSE_COMPANY_FRESH_DB_BACKUP: ${{ github.event.head_commit.message == 'cms(pse): restore fifteen missing original company articles and images' && 'yes' || 'no' }}
+          PSE_COMPANY_FRESH_DB_BACKUP: "${{ github.event.head_commit.message == 'cms(pse): restore fifteen missing original company articles and images' && 'yes' || 'no' }}"
         run: node scripts/pse-company-historical-restore.mjs
       - uses: actions/upload-artifact@v4
         if: always()
