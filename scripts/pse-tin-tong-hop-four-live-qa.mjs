@@ -61,7 +61,9 @@ try{
  if(response?.status()!==200||count!==total)throw Error("ASTRO_CATEGORY_SSR_COUNT_MISMATCH "+JSON.stringify({http:response?.status(),count:Number.isFinite(count)?count:null,wp:total,url:archive.url(),attempts:archiveAttempts}));
  report.archive={http:200,total:count,url:archive.url(),postsGrid:await archive.locator("#posts-grid").count()>0,attempts:archiveAttempts.length};
  await archive.close();
- for(const d of manifest.records){
+ // Verify articles with fewer images first to fail quickly on content mismatches
+ // before consuming origin capacity on heavier media checks.
+ for(const d of [...manifest.records].sort((a,b)=>a.images-b.images)){
   const r=await getWithTransientRetry(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
    encodeURIComponent(d.slug)+"&_fields=id,slug,title,date,categories,status",
    {timeout:55000},"wp-post-"+d.joomlaId);
