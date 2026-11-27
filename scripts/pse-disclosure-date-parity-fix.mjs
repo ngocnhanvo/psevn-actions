@@ -1,10 +1,10 @@
-/** Correct source-verified PSE disclosure #1742 chronology, one WordPress date only.
+/** Owner-authorized PSE disclosure #1742 publication date; historical title day stays 2026-08-13.
  * Source archive sorts 2026.11.12 before 2026.08.13. Requires fresh DB backup
  * in the calling workflow; checks original source, WP identity, and readback.
  */
 import {chromium} from "playwright";
 const SOURCE="https://www.pse.vn/quan-he-nha-dau-tu/tin-tuc-co-dong/ban-cong-bo-thong-tin.html";
-const EXPECTED_DATE="2026-08-13T12:00:00"; // Joomla title has only a day, noon is a stable day-only normalization
+const EXPECTED_DATE="2026-11-17T12:00:00"; // Owner-approved publication date; retain 2026.08.13 in historical disclosure title
 const POST_ID=82508, CATEGORY_ID=1753;
 const EXPECTED_SLUG="20260813-cbtt-bao-cao-tai-chinh-ban-nien-2026";
 const entries=String(process.env.ENV_FILE||"").split(/\r?\n/).map(v=>v.trim().replace(/^export\s+/,"")).filter(x=>x.startsWith("WC_URL="));
@@ -61,22 +61,22 @@ try {
     p.status!=="publish"||!p.categories?.includes(CATEGORY_ID)||
     !String(p.title?.raw||p.title?.rendered||"").includes("2026.08.13"))
   throw Error("Original disclosure post identity changed; refusing write");
- if(String(p.date||"").startsWith("2026-08-13")){
+ if(String(p.date||"").startsWith("2026-11-17")){
   console.log("PSE_DISCLOSURE_DATE=ALREADY_CORRECT; wp_id="+POST_ID+"; date="+p.date);
  }else{
-  if(!/^2026-11-\d\dT/.test(p.date||""))
+  if(!/^2026-08-13T/.test(p.date||""))
    throw Error("Unexpected current WP publication date: "+p.date);
   const updated=await api(path,"POST",{date:EXPECTED_DATE});
   if(updated.http!==200||updated.data?.id!==POST_ID)
    throw Error("Date update refused HTTP "+updated.http);
   const after=await api(path+fields);
   if(after.http!==200||after.data?.id!==POST_ID||
-      !String(after.data.date||"").startsWith("2026-08-13")||
+      !String(after.data.date||"").startsWith("2026-11-17")||
       after.data.content?.raw!==p.content?.raw||
       after.data.slug!==p.slug||after.data.status!=="publish"||
       JSON.stringify(after.data.categories)!==JSON.stringify(p.categories))
    throw Error("Date readback/content preservation check failed");
-  console.log("PSE_DISCLOSURE_DATE=PASS; wp_id="+POST_ID+"; source_day=2026-08-13; before="+p.date+"; after="+after.data.date+"; content_unchanged=true");
+  console.log("PSE_DISCLOSURE_DATE=PASS; wp_id="+POST_ID+"; owner_publication_day=2026-11-17; before="+p.date+"; after="+after.data.date+"; content_unchanged=true");
  }
  const frontend=await ctx.newPage();
  const target="https://pse.webnvn.com/tin-tuc-su-kien/ban-cong-bo-thong-tin";

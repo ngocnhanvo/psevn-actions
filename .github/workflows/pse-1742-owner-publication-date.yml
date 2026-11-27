@@ -1,0 +1,55 @@
+name: PSE disclosure 1742 owner publication date 2026-11-17 (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-cbtt-1742-date-20261117-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  edit-post-date:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): set disclosure 1742 publication date to 2026-11-17'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Verify exact source and one-time request
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-1742-owner-publication-date.mjs
+          node --check scripts/pse-template-updraft-backup.mjs
+          printf 'PSE_1742_PUBLICATION_DATE=2026-11-17\nPOST_ID=82508\n' | cmp - .pse-cbtt-1742-date-20261117-request
+      - name: Install Playwright driver for preinstalled browser
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh verified UpdraftPlus DB-only rollback before date change
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Change only publication date of WP Post 82508 and verify readback
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PSE_1742_FRESH_DB_BACKUP_VERIFIED=yes
+          node scripts/pse-1742-owner-publication-date.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-1742-publication-date-20261117
+          path: artifacts/pse-1742-publish-date/report.json
+          retention-days: 14
+          if-no-files-found: warn
