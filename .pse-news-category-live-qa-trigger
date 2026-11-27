@@ -2,3 +2,5 @@
 
 2026-10-25: rerun same READ ONLY 390/768/1440 QA after #40173629015 showed HTTP200/canonical correct, but QA assumed WordPress category display H1 must equal menu label Tin Công ty; actual WP category name Tin PVFCCo-PSE. Compare heading to actual selected category dropdown text; no Astro source edits, build or WordPress writes.
 2026-10-27 verify PSE official WordPress-built Astro e43ba66 post thumbnail fallback release; news categories and post details public SSR smoke, READ ONLY.
+
+2026-11-27: Post-deploy company parent-only Tin Cong Ty, native first Tất cả, Astro master efe7af2, signed ZIP activation #45950334325 SUCCESS. Read-only News SSR active menu/mobile/desktop article parity smoke.
