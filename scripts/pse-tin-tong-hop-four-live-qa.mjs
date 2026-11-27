@@ -5,6 +5,7 @@ const marker=(await readFile(".pse-tin-tong-hop-four-live-qa-request","utf8")).t
 const manifest=JSON.parse(await readFile("docs/source/pse-tin-tong-hop-four-20261127.json","utf8"));
 const ev=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 if(marker!=="MODE=READONLY"||manifest.records?.length!==4||
+ manifest.records.some(d=>!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$/.test(d.publishUp))||
  ev.head_commit?.message!=="test(pse): verify four original Tin tong hop articles live"||
  process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions")
  throw Error("Unauthorized production article QA");
@@ -32,7 +33,7 @@ try{
    encodeURIComponent(d.slug)+"&_fields=id,slug,title,date,categories,status",
    {timeout:55000,failOnStatusCode:false});
   const arr=await r.json().catch(()=>null);
-  if(r.status()!==200||!Array.isArray(arr)||arr.length!==1||arr[0].date!==d.created||
+  if(r.status()!==200||!Array.isArray(arr)||arr.length!==1||arr[0].date!==d.publishUp||
      !arr[0].categories?.includes(1746)||!arr[0].categories?.includes(1742))
    throw Error("WORDPRESS_EXACT_LOCAL_SECOND_OR_CATEGORY_FAIL "+d.joomlaId);
   const page=await ctx.newPage();
@@ -47,7 +48,7 @@ try{
      images:[...(body?.querySelectorAll("img[src]")||[])].map(x=>x.getAttribute("src")||""),
      headings:[...(body?.querySelectorAll("h1,h2,h3,h4,h5,h6")||[])].map(x=>(x.textContent||"").replace(/\s+/g," ").trim())};
    });
-   if(pageResult?.status()!==200||data.title!==d.title||data.date!==d.created||
+   if(pageResult?.status()!==200||data.title!==d.title||data.date!==d.publishUp||
     data.text.length<110||data.images.length!==d.images||
     data.headings.some(x=>/^(?:các bài viết khác|other posts)$/i.test(x))||
     /các\s+bài\s+viết\s+khác/i.test(data.text))
@@ -62,7 +63,7 @@ try{
      throw Error("SOURCE_MEDIA_HTTP_FAILED "+d.joomlaId+" "+image.status());
     report.assets.push({joomlaId:d.joomlaId,path:u.pathname,http:200});
    }
-   report.articles.push({joomlaId:d.joomlaId,wordpressPostId:arr[0].id,url,date:d.created,
+   report.articles.push({joomlaId:d.joomlaId,wordpressPostId:arr[0].id,url,date:d.publishUp,originalCreated:d.created,
     imageCount:data.images.length,contentLength:data.text.length,relatedPostsSection:false,http:200});
    console.log("PSE_TTH_FOUR_LIVE_POST_PASS="+JSON.stringify(report.articles.at(-1)));
   }finally{await page.close()}
