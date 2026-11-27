@@ -1,0 +1,125 @@
+{
+  "schema": "pse-market-joomla-created-date-v1",
+  "source": {
+    "kind": "owner-uploaded-original-Joomla-MySQL-gzip",
+    "sha256": "ec85436b4e7a475b13c2955e8e0adcbbae11c87e8502669b3ae77e51f2bc4f2c",
+    "contentTable": "ckiv4_content",
+    "sourceCatId": 93,
+    "sourceModuleId": 148,
+    "moduleOrdering": "created_dsc",
+    "moduleDateType": "created",
+    "moduleSourceCategories": [
+      22,
+      93,
+      73,
+      74
+    ],
+    "topCount": 1,
+    "regularCount": 4
+  },
+  "target": {
+    "wordpressCategoryId": 1743,
+    "site": "https://pse.webnvn.com",
+    "cms": "https://admin-pse.webnvn.com"
+  },
+  "records": [
+    {
+      "joomlaId": 369,
+      "slug": "diem-tin-nganh-nong-nghiep-tren-cac-bao-ra-ngay-1462013",
+      "created": "2013-06-17T08:12:14",
+      "publishUp": "2013-06-17T08:12:14",
+      "title": "Điểm tin ngành Nông nghiệp trên các báo ra ngày 14/6/2013"
+    },
+    {
+      "joomlaId": 360,
+      "slug": "se-loai-hon-mot-nua-co-so-san-xuat-phan-bon",
+      "created": "2013-05-03T02:49:10",
+      "publishUp": "2013-05-03T02:49:10",
+      "title": "Sẽ loại hơn một nửa cơ sở sản xuất phân bón"
+    },
+    {
+      "joomlaId": 352,
+      "slug": "nong-dan-dong-kho-trung-vu-bap",
+      "created": "2013-03-25T02:13:55",
+      "publishUp": "2013-03-25T02:13:55",
+      "title": "Nông dân Đồng Kho trúng vụ bắp"
+    },
+    {
+      "joomlaId": 351,
+      "slug": "ca-phe-mua-chua-nhieu-gia-da-xieu",
+      "created": "2013-03-25T02:09:41",
+      "publishUp": "2013-03-25T02:09:41",
+      "title": "Cà phê: Mưa chưa nhiều, giá đã xiêu!"
+    },
+    {
+      "joomlaId": 347,
+      "slug": "suc-mua-phan-bon-tang",
+      "created": "2013-03-18T03:10:37",
+      "publishUp": "2013-03-18T03:10:37",
+      "title": "Sức mua phân bón tăng"
+    },
+    {
+      "joomlaId": 346,
+      "slug": "ngong-mua-tung-ngay",
+      "created": "2013-03-18T03:08:16",
+      "publishUp": "2013-03-18T03:08:16",
+      "title": "Ngóng mưa từng ngày"
+    },
+    {
+      "joomlaId": 345,
+      "slug": "thi-truong-phan-bon-trong-nuoc-tuan-den-ngay-05032013",
+      "created": "2013-03-14T03:40:37",
+      "publishUp": "2013-03-14T03:40:37",
+      "title": "Thị trường phân bón trong nước tuần đến ngày 05/03/2013"
+    },
+    {
+      "joomlaId": 343,
+      "slug": "thanh-long-trung-gia",
+      "created": "2013-03-14T01:25:46",
+      "publishUp": "2013-03-14T01:25:46",
+      "title": "Thanh long trúng giá"
+    },
+    {
+      "joomlaId": 342,
+      "slug": "gia-tang-thi-truong-ca-phe-lai-vui-nhu-tet",
+      "created": "2013-03-13T10:10:19",
+      "publishUp": "2013-03-13T10:10:19",
+      "title": "Giá tăng, thị trường cà phê lại vui như Tết"
+    },
+    {
+      "joomlaId": 341,
+      "slug": "du-nuoc-tuoi-cho-633000-ha-lua-xuan-2013",
+      "created": "2013-03-13T09:42:44",
+      "publishUp": "2013-03-13T09:42:44",
+      "title": "Đủ nước tưới cho 633.000 ha lúa Xuân 2013"
+    },
+    {
+      "joomlaId": 218,
+      "slug": "gia-phan-bon-tang-dot-bien-trong-nua-thang-qua",
+      "created": "2011-09-07T01:08:08",
+      "publishUp": "2011-09-07T01:08:08",
+      "title": "Giá phân bón tăng đột biến trong nửa tháng qua"
+    },
+    {
+      "joomlaId": 217,
+      "slug": "du-bao-sau-benh-tuan-tu-5-119",
+      "created": "2011-09-07T01:06:01",
+      "publishUp": "2011-09-07T01:06:01",
+      "title": "DỰ BÁO SÂU BỆNH TUẦN TỪ 5-11/9"
+    },
+    {
+      "joomlaId": 215,
+      "slug": "du-bao-sau-benh-tuan-tu-298-49",
+      "created": "2011-08-29T06:22:02",
+      "publishUp": "2011-08-29T06:22:02",
+      "title": "DỰ BÁO SÂU BỆNH TUẦN TỪ 29/8-4/9"
+    },
+    {
+      "joomlaId": 110,
+      "slug": "du-bao-sau-benh-tuan-tu-276-372011",
+      "created": "2011-07-06T07:18:58",
+      "publishUp": "2011-07-06T07:18:58",
+      "title": "Dự báo sâu bệnh tuần từ 27/6 – 3/7/2011"
+    }
+  ]
+}
