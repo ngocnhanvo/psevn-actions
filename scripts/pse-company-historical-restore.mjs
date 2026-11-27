@@ -259,7 +259,8 @@ try{
     const digest=createHash("sha256").update(bytes).digest("hex");
     if(file.existing){
      const url=String(file.existing.source_url||"");
-     const old=await http.get(new URL(url,wp).href,{timeout:50000});
+     // Retry transient media GET connection resets, still require original byte SHA-256.
+     const old=await retryGet(new URL(url,wp).href);
      if(old.status()!==200||createHash("sha256").update(await old.body()).digest("hex")!==digest)
       throw Error("Existing same-filename Media has DIFFERENT bytes; abort "+file.filename);
      file.id=Number(file.existing.id);
