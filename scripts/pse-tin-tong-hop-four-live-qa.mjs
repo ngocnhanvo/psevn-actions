@@ -21,13 +21,20 @@ try{
  if(res.status()!==200||total<328)throw Error("WP_CATEGORY_COUNT_OLD_OR_UNREACHABLE "+total);
  report.wpPublishedTotal=total;
  const archive=await ctx.newPage();
- const response=await archive.goto(web+"/tin-tuc-su-kien/tin-tong-hop",
-  {waitUntil:"domcontentloaded",timeout:65000});
- const archiveMain=archive.locator("main").first();
- const archiveText=(await archiveMain.innerText({timeout:45000})).replace(/\s+/g," ");
- const count=Number(archiveText.match(/Tổng\s+(\d+)\s+bài viết/)?.[1]);
- if(response?.status()!==200||count!==total)throw Error("ASTRO_CATEGORY_SSR_COUNT_MISMATCH "+JSON.stringify({http:response?.status(),count,wp:total,url:archive.url()}));
- report.archive={http:200,total:count,url:archive.url(),postsGrid:await archive.locator("#posts-grid").count()>0};
+ let response=null,archiveText="",count=NaN;
+ const archiveAttempts=[];
+ for(let attempt=1;attempt<=3;attempt++){
+  response=await archive.goto(web+"/tin-tuc-su-kien/tin-tong-hop",{waitUntil:"domcontentloaded",timeout:65000});
+  const http=response?.status()||0;
+  archiveText=(await archive.locator("main").first().innerText({timeout:45000}).catch(()=>"" )).replace(/\s+/g," ");
+  count=Number(archiveText.match(/Tổng\s+(\d+)\s+bài viết/)?.[1]);
+  archiveAttempts.push({attempt,http,count:Number.isFinite(count)?count:null,url:archive.url()});
+  if(http===200&&count===total)break;
+  if(attempt<3&&http>=500){await archive.waitForTimeout(2200);continue}
+  break;
+ }
+ if(response?.status()!==200||count!==total)throw Error("ASTRO_CATEGORY_SSR_COUNT_MISMATCH "+JSON.stringify({http:response?.status(),count:Number.isFinite(count)?count:null,wp:total,url:archive.url(),attempts:archiveAttempts}));
+ report.archive={http:200,total:count,url:archive.url(),postsGrid:await archive.locator("#posts-grid").count()>0,attempts:archiveAttempts.length};
  await archive.close();
  for(const d of manifest.records){
   const r=await ctx.request.get(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
