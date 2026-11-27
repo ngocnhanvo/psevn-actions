@@ -143,8 +143,8 @@ try{
   await admin.locator("#user_login").fill(process.env.WP_ADMIN_USERNAME);
   await admin.locator("#user_pass").fill(process.env.WP_ADMIN_PASSWORD);
   const t=(await admin.locator("#loginform").innerText()).slice(0,800);
-  const match=t.match(/(\\d+)\\s*([+\\-x×*])\\s*(\\d+)\\s*(?:=|\\?)/)||
-   t.match(/(\\d+)\\s*([+\\-x×*])\\s*(\\d+)/);
+  const match=t.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/)||
+   t.match(/(\d+)\s*([+\-x×*])\s*(\d+)/);
   if(match){
    const a=Number(match[1]),b=Number(match[3]),v=match[2]==="+"?a+b:match[2]==="-"?a-b:a*b;
    const field=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
