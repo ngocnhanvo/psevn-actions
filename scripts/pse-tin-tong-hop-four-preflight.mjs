@@ -53,6 +53,21 @@ try{
     const title=(document.querySelector(".item-page h1,.item-page h2")?.textContent||"").replace(/\s+/g," ").trim();
     const root=original.cloneNode(true);
     root.querySelectorAll(".itemRelated,.related,.page-header,.article-info,.pager,.readmore,script,style,form,button,nav,iframe,embed,object,svg").forEach(x=>x.remove());
+
+    // Original source may append an unclassed Joomla "Các bài viết khác" list.
+    for(const heading of [...root.querySelectorAll("h2,h3,h4,h5,h6,p,strong,b")]){
+      const clean=x=>(x||"").replace(/\s+/g," ").trim().toLocaleLowerCase("vi");
+      if(!["các bài viết khác","other posts"].includes(clean(heading.textContent)))continue;
+      let current=heading;
+      while(current.parentElement&&["P","DIV"].includes(current.parentElement.tagName)&&
+       clean(current.parentElement.textContent)===clean(heading.textContent))current=current.parentElement;
+      let next=current.nextElementSibling;
+      while(next&&["UL","OL","P","DIV","SECTION","TABLE","A"].includes(next.tagName)&&
+       next.querySelector("a[href]")&&!next.querySelector("img,video,iframe")){
+        const following=next.nextElementSibling;next.remove();next=following;
+      }
+      current.remove();
+    }
     const html=root.innerHTML,text=(root.textContent||"").replace(/\s+/g," ").trim();
     const images=[...root.querySelectorAll("img[src]")].map(x=>new URL(x.getAttribute("src"),document.baseURI).href);
     return{title,textLen:text.length,htmlLen:html.length,images,hasRelated:/các\s+bài\s+viết\s+khác/i.test(text)};
