@@ -1,0 +1,32 @@
+name: PSE latest two original Joomla company news content and native Media preflight
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-latest-preflight-request]
+permissions:
+  contents: read
+jobs:
+  preflight:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Check latest Joomla article IDs, created dates, all images, native WP media
+        run: node --check scripts/pse-company-latest-preflight.mjs && node scripts/pse-company-latest-preflight.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-news-latest-preflight
+          path: artifacts/pse-company-news/latest-preflight.json
+          retention-days: 7
+          if-no-files-found: warn
