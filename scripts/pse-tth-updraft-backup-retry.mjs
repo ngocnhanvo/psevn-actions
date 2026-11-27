@@ -38,18 +38,24 @@ try {
   await page.locator('#user_login').fill(username);
   await page.locator('#user_pass').fill(password);
   const loginText = (await page.locator('#loginform').innerText()).slice(0,500);
-  const challenge = loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/);
+  const challenge = loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)\s*(?:=|\?)/) || loginText.match(/(\d+)\s*([+\-x×*])\s*(\d+)/);
   if (challenge) {
     const a=Number(challenge[1]), b=Number(challenge[3]);
     const answer = challenge[2] === '+' ? a+b : challenge[2] === '-' ? a-b : a*b;
     const input = page.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
     if (await input.count()) await input.fill(String(answer));
   }
-  // Do not wait for Playwright's implicit navigation after the login submit;
-  // the next authenticated admin GET explicitly verifies success.
-  await page.locator('#wp-submit').click({noWaitAfter:true,timeout:25000});
+  // A WordPress session cookie arrives with the login POST response.
+  // Await the completed login navigation before issuing an admin GET;
+  // navigating early can cancel the POST and discard the session cookie.
+  await page.locator('#wp-submit').click({timeout:90000});
   await open('/wp-admin/plugins.php');
-  if (!(await page.locator('#adminmenu').count())) throw new Error('WP admin login unavailable');
+  if (!(await page.locator('#adminmenu').count())) {
+    const path=new URL(page.url()).pathname;
+    const loginError=await page.locator('#login_error').count();
+    log('ADMIN_AUTH_DIAG',JSON.stringify({path,loginErrorPresent:!!loginError}));
+    throw new Error('WP admin authentication unavailable; no backup or CMS write');
+  }
   const updraft = page.locator('#the-list tr[data-slug="updraftplus"]').first();
   if (!(await updraft.count())) throw new Error('UpdraftPlus not installed');
   const className = await updraft.getAttribute('class');
