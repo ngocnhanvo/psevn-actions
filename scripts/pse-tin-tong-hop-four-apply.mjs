@@ -13,7 +13,9 @@ const marker=(await readFile(".pse-tin-tong-hop-four-apply-request","utf8")).tri
 const event=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
 const msg=String(event.head_commit?.message||"").split("\n")[0];
 const ids=[1746,1745,1744,1743];
-if(marker!=="APPLY=OWNER_APPROVED;SOURCE=JOOMLA_RSS_101;POSTS=1746,1745,1744,1743"||
+const originalMarker="APPLY=OWNER_APPROVED;SOURCE=JOOMLA_RSS_101;POSTS=1746,1745,1744,1743";
+const publicationMarker=originalMarker+";DATE=JOOMLA_PUBLISH_UP";
+if(![originalMarker,publicationMarker].includes(marker)||
  msg!=="cms(pse): publish exact four newest Joomla Tin tong hop native Posts"||
  process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||
  process.env.GITHUB_REF!=="refs/heads/main"||
@@ -22,7 +24,9 @@ if(marker!=="APPLY=OWNER_APPROVED;SOURCE=JOOMLA_RSS_101;POSTS=1746,1745,1744,174
  m.joomlaCategoryId!==101||m.wpCategoryId!==1746||m.parentWpCategoryId!==1742||
  m.timezone!=="Asia/Ho_Chi_Minh"||
  m.records?.length!==4||m.records.map(x=>x.joomlaId).join(",")!==ids.join(",")||
- m.records.reduce((n,r)=>n+r.images,0)!==13)
+ m.records.reduce((n,r)=>n+r.images,0)!==13||
+ m.records.some(r=>!/^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d$/.test(r.publishUp))||
+ m.records.find(r=>r.joomlaId===1745)?.publishUp!=="2026-11-26T08:50:00")
  throw Error("Unauthorized or unverified 4-Post Joomla source/CMS apply");
 const env=Object.fromEntries(String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""))
  .filter(x=>/^(WC_URL|WC_URL_CLIENT)=/.test(x)).map(x=>{const i=x.indexOf("=");return[x.slice(0,i),x.slice(i+1).trim().replace(/^['"]|['"]$/g,"")]}));
@@ -197,7 +201,7 @@ try{
     allMedia.set(url,{url,bytes,sha256:sha(bytes),filename:mediaName(url,row.joomlaId),id:0,wpUrl:""});
    }
   }
-  report.prepared.push({id:row.joomlaId,originalCreated:row.created,media:body.images.length,
+  report.prepared.push({id:row.joomlaId,originalCreated:row.created,originalPublishUp:row.publishUp,media:body.images.length,
    bodyChars:body.text.length,alreadyPublished:prior?.status==="publish"});
   console.log("PSE_TTH_FOUR_SOURCE_PREFLIGHT="+JSON.stringify(report.prepared.at(-1)));
  }
@@ -283,7 +287,7 @@ try{
   let id=Number(row.prior?.id||0);
   if(!id){
    const created=await api("/wp-json/wp/v2/posts","POST",{
-    title:row.title,slug:row.slug,date:row.created,categories:[1742,1746],
+    title:row.title,slug:row.slug,date:row.publishUp,categories:[1742,1746],
     content:converted.html,excerpt,status:"draft",featured_media:featured,
     pse_seo_description:excerpt,
     acf:{action:"PostDetails",key:"ssr-post",origin_page_id:String(row.joomlaId)}
@@ -295,7 +299,7 @@ try{
   const read=id=>api("/wp-json/wp/v2/posts/"+id+
    "?context=edit&_fields=id,status,slug,date,title,categories,acf,content,featured_media");
   const before=await read(id),post=before.data;
-  if(before.status!==200||post.id!==id||post.slug!==row.slug||post.date!==row.created||
+  if(before.status!==200||post.id!==id||post.slug!==row.slug||![row.created,row.publishUp].includes(post.date)||
    !sameTitle(post.title?.raw||post.title?.rendered,row.title)||
    post.acf?.action!=="PostDetails"||post.acf?.key!=="ssr-post"||
    String(post.acf?.origin_page_id||"")!==String(row.joomlaId)||
@@ -303,6 +307,17 @@ try{
    Number(post.featured_media||0)!==featured||
    expected.some(url=>!String(post.content?.raw||"").includes(url)))
    throw Error("WP_POST_DRAFT_READBACK_MISMATCH "+row.joomlaId);
+  // On safe resume, update the sole prior Joomla-created date when
+  // it differs from Joomla publish_up; never mutate an unrelated identity.
+  let dateCorrected=false;
+  if(post.date!==row.publishUp){
+   if(!row.prior||post.date!==row.created)
+    throw Error("WP_PUBLICATION_DATE_UNEXPECTED "+row.joomlaId);
+   const corrected=await api("/wp-json/wp/v2/posts/"+id,"POST",{date:row.publishUp});
+   if(corrected.status!==200||corrected.data?.date!==row.publishUp)
+    throw Error("WP_PUBLICATION_DATE_CORRECTION_FAILED "+row.joomlaId);
+   dateCorrected=true;
+  }
   if(post.status!=="publish"){
    if(post.status!=="draft")throw Error("WP_POST_UNEXPECTED_STATE "+row.joomlaId);
    const published=await api("/wp-json/wp/v2/posts/"+id,"POST",{status:"publish"});
@@ -310,9 +325,9 @@ try{
     throw Error("WP_POST_PUBLISH_REFUSED "+row.joomlaId);
   }
   const after=await read(id);
-  if(after.status!==200||after.data?.status!=="publish"||after.data.date!==row.created)
+  if(after.status!==200||after.data?.status!=="publish"||after.data.date!==row.publishUp)
    throw Error("WP_PUBLISHED_LOCAL_SECOND_READBACK_FAILED "+row.joomlaId);
-  report.posts.push({joomlaId:row.joomlaId,wpId:id,created:row.created,images:expected.length,
+  report.posts.push({joomlaId:row.joomlaId,wpId:id,created:row.created,publishUp:row.publishUp,dateCorrected,images:expected.length,
    slug:row.slug,status:"publish"});
   console.log("PSE_TTH_FOUR_POST_PUBLISHED="+JSON.stringify(report.posts.at(-1)));
  }
