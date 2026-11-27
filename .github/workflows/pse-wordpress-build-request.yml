@@ -203,6 +203,8 @@ jobs:
           PY
           )"
           export ASTRO_FTP_TARGET
+          python3 -m py_compile scripts/pse-remote-unzip.py
+          python3 tests/pse-remote-unzip-manifest.test.py
           python3 scripts/pse-remote-unzip.py verify
           echo "PSE_SIGNED_WP_UNZIP_PREFLIGHT=PASS"
       - name: Install Playwright driver for preinstalled GitHub Chrome
