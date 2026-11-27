@@ -3,14 +3,15 @@ import {chromium} from "playwright";
 import {readFile,mkdir,writeFile} from "node:fs/promises";
 const marker=(await readFile(".pse-company-live-posts-qa-request","utf8")).trim();
 const ev=JSON.parse(await readFile(process.env.GITHUB_EVENT_PATH,"utf8"));
-if(marker!=="MODE=READONLY"||String(ev.head_commit?.message||"").split("\n")[0]!=="test(pse): check live company all menu and two November posts")
+const markerMatch=marker.match(/^MODE=READONLY(?:\r?\nEXPECTED_ASTRO_SHA=([a-f0-9]{40}))?$/);
+if(!markerMatch||String(ev.head_commit?.message||"").split("\n")[0]!=="test(pse): check live company all menu and two November posts")
  throw Error("Missing PSE read-only live QA authorization");
 const site="https://pse.webnvn.com";
 const detail=[
  {id:1741,wpId:83696,slug:"phu-my-dong-nam-bo-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo-2026",media:["PSE-2026-11-010.jpg","PSE-2026-11-011.jpg","PSE-2026-11-012.jpg","PSE-2026-11-013.jpg"]},
  {id:1739,wpId:83698,slug:"phu-my-dong-nam-bo-mot-ngay-thu-bay-day-y-nghia",media:["PSE-2026-11-001.jpg","PSE-2026-11-002.jpg","PSE-2026-11-003.jpg","PSE-2026-11-004.jpg","PSE-2026-11-005.jpg"]}
 ];
-const report={source:"pse-live-2026-company-news",time:new Date().toISOString(),posts:[],archive:[],media:[],readonly:true};
+const report={source:"pse-live-2026-company-news",time:new Date().toISOString(),posts:[],archive:[],media:[],readonly:true,expectedAstroSHA:markerMatch[1]||null};
 const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1440,height:900}});
 try{
