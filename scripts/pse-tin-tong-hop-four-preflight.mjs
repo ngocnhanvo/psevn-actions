@@ -4,7 +4,7 @@ import {createHash} from "node:crypto";
 import {readFile,mkdir,writeFile} from "node:fs/promises";
 const manifest=JSON.parse(await readFile("docs/source/pse-tin-tong-hop-four-20261127.json","utf8"));
 const marker=(await readFile(".pse-tin-tong-hop-four-preflight-request","utf8")).trim();
-if(marker!=="MODE=READONLY"||process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||
+if(!["MODE=READONLY","MODE=READONLY\nRETRY=STRIP_RELATED_ONLY"].includes(marker)||process.env.GITHUB_REPOSITORY!=="ngocnhanvo/psevn-actions"||
  manifest.schema!=="pse-tin-tong-hop-4-source-rss-20261127-v1"||
  manifest.joomlaCategoryId!==101||manifest.wpCategoryId!==1746||
  manifest.parentWpCategoryId!==1742||manifest.records?.length!==4||
