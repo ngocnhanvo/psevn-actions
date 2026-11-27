@@ -31,19 +31,67 @@ try{
  });
  out.sourcePosts=raw.headings;
  console.log("PSE_TONG_HOP_CURRENT_FIRST_PAGE="+JSON.stringify(raw));
- const api=async(path)=>{
-  const r=await ctx.request.get(wp+path,{timeout:40000,failOnStatusCode:false});
-  return {status:r.status(),total:Number(r.headers()["x-wp-total"]||0),json:await r.json().catch(()=>null)};
- };
- const list=await api("/wp-json/wp/v2/posts?categories=1746&status=publish&per_page=30&orderby=date&order=desc&_fields=id,slug,title,date,status,categories");
- if(list.status!==200||!Array.isArray(list.json))throw Error("WP Tin tong hop REST failed HTTP "+list.status);
- out.wpTop=list.json.map(p=>({id:p.id,slug:p.slug,title:p.title?.rendered?.replace(/<[^>]*>/g,""),date:p.date,categories:p.categories}));
- out.wpTotal=list.total;
- console.log("PSE_TONG_HOP_WP_TOP="+JSON.stringify({total:out.wpTotal,posts:out.wpTop.slice(0,20)}));
- for(const t of raw.headings.slice(0,7)){
-  const phrase=t.title.slice(0,50);
-  const r=await api("/wp-json/wp/v2/posts?search="+encodeURIComponent(phrase)+"&status=publish&per_page=20&_fields=id,slug,title,date,categories,status");
-  out.wpSearch.push({title:t.title,query:phrase,results:r.status===200&&Array.isArray(r.json)?r.json.map(x=>({id:x.id,date:x.date,title:x.title?.rendered?.replace(/<[^>]*>/g,""),categories:x.categories})):[],http:r.status});
+
+ const interesting=raw.headings.filter(h=>(/2026|thủ tướng lê minh hưng/i).test(h.title)&&h.containerClass==="item column-1").slice(0,4);
+ out.legacyNew=interesting.map(x=>({title:x.title,imageCount:x.images.length}));
+ const probes=[
+  old.replace(/\.html$/, ".feed?type=rss"),
+  old.replace(/\.html$/, ".feed?type=atom"),
+  "https://www.pse.vn/index.php?option=com_content&view=category&id=101&format=feed&type=rss",
+  "https://www.pse.vn/index.php?option=com_content&view=category&id=101&format=feed&type=atom"
+ ];
+ out.sourceFeeds=[];
+ for(const url of probes){
+  const f={url,status:0,items:[],preview:""};
+  try{
+   const r=await ctx.request.get(url,{timeout:32000,failOnStatusCode:false});
+   f.status=r.status();f.contentType=r.headers()["content-type"];
+   const body=(await r.text()).slice(0,220000);
+   if(/<rss|<feed/i.test(body)){
+    const blocks=[...body.matchAll(/<(item|entry)\b[^>]*>([\s\S]*?)<\/\1>/gi)].slice(0,12);
+    const tag=(t,key)=>t.match(new RegExp("<"+key+"(?:\\s[^>]*)?>([\\s\\S]*?)<\\/"+key+">","i"))?.[1]?.replace(/<[^>]*>/g," ").trim()||"";
+    f.items=blocks.map(m=>({title:tag(m[2],"title").slice(0,140),pubDate:tag(m[2],"pubDate")||tag(m[2],"published"),guid:tag(m[2],"guid")||tag(m[2],"id"),link:tag(m[2],"link")}));
+   }else f.preview=body.replace(/\s+/g," ").slice(0,140);
+  }catch(e){f.error=String(e).slice(0,150)}
+  out.sourceFeeds.push(f);
+ }
+ console.log("PSE_TONG_HOP_JOOMLA_FEEDS="+JSON.stringify(out.sourceFeeds));
+ out.searchResults=[];
+ const searchCtx=await browser.newContext({viewport:{width:1200,height:900}});
+ await searchCtx.route(/\.(?:png|jpe?g|webp|svg|gif|woff2?|ttf)(?:[?#]|$)/i,route=>route.abort());
+ for(const headline of interesting){
+  const words=headline.title.split(/\s+/).slice(0,9).join(" ");
+  const url="https://www.pse.vn/component/search/?searchword="+encodeURIComponent(words)+"&ordering=newest&searchphrase=all";
+  const item={title:headline.title,query:words,matches:[],http:null};
+  const p=await searchCtx.newPage();
+  try{
+   const r=await p.goto(url,{waitUntil:"domcontentloaded",timeout:45000});
+   item.http=r?.status();
+   item.matches=await p.evaluate(()=>[...document.querySelectorAll("dl.search-results dt.result-title a[href],.search-results a[href],.result-title a[href]")].map(a=>{
+     const dt=a.closest("dt");let dates=[];
+     let s=dt?.nextElementSibling;while(s&&s.tagName!=="DT"){if(/created|date/i.test(s.className))dates.push(s.textContent.trim());s=s.nextElementSibling}
+     return {title:(a.textContent||"").replace(/\s+/g," ").trim(),href:a.href,dates};
+   }).slice(0,16));
+  }catch(e){item.error=String(e).slice(0,150)}finally{await p.close()}
+  out.searchResults.push(item);
+ }
+ await searchCtx.close();
+ console.log("PSE_TONG_HOP_JOOMLA_LATEST_SEARCH="+JSON.stringify(out.searchResults));
+ // Public REST is secondary verification. A transient 5xx/network outage must
+ // not erase the independent Joomla source discovery results.
+ out.wpSearch=[];
+ for(const headline of interesting){
+  let result={title:headline.title,http:null,results:[]};
+  for(let attempt=1;attempt<=2;attempt++){
+   try{
+    const r=await ctx.request.get(wp+"/wp-json/wp/v2/posts?search="+encodeURIComponent(headline.title.slice(0,55))+
+     "&status=publish&per_page=20&_fields=id,slug,title,date,categories,status",{timeout:45000,failOnStatusCode:false});
+    result.http=r.status();const rows=await r.json().catch(()=>null);
+    result.results=Array.isArray(rows)?rows.map(p=>({id:p.id,date:p.date,title:p.title?.rendered?.replace(/<[^>]*>/g,""),categories:p.categories})):[];
+    break;
+   }catch(e){result.error=String(e).slice(0,145);if(attempt<2)await new Promise(done=>setTimeout(done,1200))}
+  }
+  out.wpSearch.push(result);
  }
  console.log("PSE_TONG_HOP_LATEST_TITLE_REST_MATCH="+JSON.stringify(out.wpSearch));
  out.status="PASS";
