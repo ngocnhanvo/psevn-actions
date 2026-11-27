@@ -97,7 +97,7 @@ try{
  let response=null,archiveText="",count=NaN;
  const archiveAttempts=[];
  for(let attempt=1;attempt<=3;attempt++){
-  response=await archive.goto(web+"/tin-tuc-su-kien/tin-tong-hop",{waitUntil:"domcontentloaded",timeout:65000});
+  response=await gotoWithTransientRetry(archive,web+"/tin-tuc-su-kien/tin-tong-hop","news-archive",65000);
   const http=response?.status()||0;
   archiveText=(await archive.locator("main").first().innerText({timeout:45000}).catch(()=>"" )).replace(/\s+/g," ");
   count=Number(archiveText.match(/Tổng\s+(\d+)\s+bài viết/)?.[1]);
@@ -109,17 +109,30 @@ try{
  if(response?.status()!==200||count!==total)throw Error("ASTRO_CATEGORY_SSR_COUNT_MISMATCH "+JSON.stringify({http:response?.status(),count:Number.isFinite(count)?count:null,wp:total,url:archive.url(),attempts:archiveAttempts}));
  report.archive={http:200,total:count,url:archive.url(),postsGrid:await archive.locator("#posts-grid").count()>0,attempts:archiveAttempts.length};
  await archive.close();
+ // The exact target WP IDs were confirmed by guarded native restore #46034879038.
+ // Fetch all four in ONE read-only REST call, then assert both ID and original
+ // slug/source-title identity. This avoids four expensive WordPress REST boots.
+ const wpIdsByJoomla=new Map([[1746,83843],[1745,83845],[1744,83847],[1743,83849]]);
+ const expectedWpIds=manifest.records.map(d=>wpIdsByJoomla.get(d.joomlaId));
+ if(expectedWpIds.some(id=>!Number.isSafeInteger(id))||new Set(expectedWpIds).size!==4)
+  throw Error("UNVERIFIED_FOUR_TARGET_IDS");
+ const batch=await getWithTransientRetry(
+  wp+"/wp-json/wp/v2/posts?status=publish&include="+expectedWpIds.join(",")+
+   "&per_page=4&orderby=include&_fields=id,slug,title,pse_joomla_source_title,date,categories,status",
+  {timeout:55000},"wp-four-original-posts");
+ const wpPosts=await batch.json().catch(()=>null);
+ if(batch.status()!==200||!Array.isArray(wpPosts)||wpPosts.length!==4||
+    new Set(wpPosts.map(p=>Number(p.id))).size!==4)
+  throw Error("WP_FOUR_ORIGINAL_POSTS_UNAVAILABLE_OR_DUPLICATE "+batch.status());
+ const postsById=new Map(wpPosts.map(post=>[Number(post.id),post]));
  // Verify articles with fewer images first to fail quickly on content mismatches
  // before consuming origin capacity on heavier media checks.
  for(const d of [...manifest.records].sort((a,b)=>a.images-b.images)){
-  const r=await getWithTransientRetry(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
-   encodeURIComponent(d.slug)+"&_fields=id,slug,title,pse_joomla_source_title,date,categories,status",
-   {timeout:55000},"wp-post-"+d.joomlaId);
-  const arr=await r.json().catch(()=>null);
-  if(r.status()!==200||!Array.isArray(arr)||arr.length!==1||arr[0].date!==d.publishUp||
-     arr[0].pse_joomla_source_title!==d.title||
-     !arr[0].categories?.includes(1746)||!arr[0].categories?.includes(1742))
-   throw Error("WORDPRESS_EXACT_LOCAL_SECOND_OR_CATEGORY_FAIL "+d.joomlaId);
+  const wpPost=postsById.get(wpIdsByJoomla.get(d.joomlaId));
+  if(!wpPost||wpPost.slug!==d.slug||wpPost.date!==d.publishUp||
+     wpPost.pse_joomla_source_title!==d.title||
+     !wpPost.categories?.includes(1746)||!wpPost.categories?.includes(1742))
+   throw Error("WORDPRESS_EXACT_ID_TITLE_SECOND_OR_CATEGORY_FAIL "+d.joomlaId);
   const page=await ctx.newPage();
   const url=web+"/"+d.slug;
   try{
@@ -150,7 +163,7 @@ try{
      throw Error("SOURCE_MEDIA_HTTP_FAILED "+d.joomlaId+" "+image.status());
     report.assets.push({joomlaId:d.joomlaId,path:u.pathname,http:200});
    }
-   report.articles.push({joomlaId:d.joomlaId,wordpressPostId:arr[0].id,url,date:d.publishUp,originalCreated:d.created,
+   report.articles.push({joomlaId:d.joomlaId,wordpressPostId:wpPost.id,url,date:d.publishUp,originalCreated:d.created,
     imageCount:data.images.length,contentLength:data.text.length,relatedPostsSection:false,http:200});
    console.log("PSE_TTH_FOUR_LIVE_POST_PASS="+JSON.stringify(report.articles.at(-1)));
   }finally{await page.close()}
