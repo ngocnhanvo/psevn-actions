@@ -1,0 +1,54 @@
+name: PSE four new Joomla Tin tong hop Posts with original JPEG (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-tin-tong-hop-four-apply-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  import:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): publish exact four newest Joomla Tin tong hop native Posts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Validate bounded four-Post original source code and owner scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-tin-tong-hop-four-apply.mjs
+          node --check scripts/pse-template-updraft-backup.mjs
+          printf 'APPLY=OWNER_APPROVED;SOURCE=JOOMLA_RSS_101;POSTS=1746,1745,1744,1743\n' | cmp - .pse-tin-tong-hop-four-apply-request
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh UpdraftPlus WordPress DB-only rollback before any WordPress Media or Post write
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Import only four source-proven original Posts, validate all 13 JPEG and exact-second dates
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PSE_TTH_VERIFIED_DB_BACKUP=yes
+          node scripts/pse-tin-tong-hop-four-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-tin-tong-hop-four-native-import
+          path: artifacts/pse-tth-four/apply.json
+          retention-days: 21
+          if-no-files-found: warn
