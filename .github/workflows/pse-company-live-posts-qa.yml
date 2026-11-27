@@ -1,0 +1,28 @@
+name: PSE company first All menu and two original November Posts live Astro QA
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-live-posts-qa-request]
+permissions:
+  contents: read
+jobs:
+  qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Check live desktop-mobile submenu, SSR archive and two full original articles
+        run: node --check scripts/pse-company-live-posts-qa.mjs && node scripts/pse-company-live-posts-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-live-news-qa
+          path: artifacts/pse-company-news/live-company-news-qa.json
+          retention-days: 7
+          if-no-files-found: warn
