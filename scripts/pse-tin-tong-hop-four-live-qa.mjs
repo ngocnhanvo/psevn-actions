@@ -40,6 +40,32 @@ async function getWithTransientRetry(url, options, label){
  throw lastError||Error("Transient read-only request exhausted: "+label);
 }
 try{
+ // Diagnose the source-owned, public HTML before any WordPress REST request.
+ // This keeps a slow admin REST server from hiding a real article mismatch.
+ const first=manifest.records.find(d=>d.joomlaId===1744);
+ if(first){
+  const probePage=await ctx.newPage();
+  try{
+   const probeResp=await probePage.goto(web+"/"+first.slug,{waitUntil:"domcontentloaded",timeout:45000});
+   const probe=await probePage.evaluate(()=>{
+    const main=document.querySelector("main"),body=main?.querySelector("#article-content");
+    const text=(body?.textContent||"").replace(/\\s+/g," ").trim();
+    return {
+     title:(main?.querySelector("h1")?.textContent||"").replace(/\\s+/g," ").trim(),
+     date:main?.querySelector("time[datetime]")?.getAttribute("datetime")||"",
+     images:body?.querySelectorAll("img[src]").length||0,
+     textLen:text.length,
+     relatedHeadings:[...(body?.querySelectorAll("h2,h3,h4,h5,h6")||[])].map(h=>(h.textContent||"").replace(/\\s+/g," ").trim()).filter(h=>h.toLowerCase().includes("các bài viết khác")),
+     hasRelatedText:text.toLowerCase().includes("các bài viết khác")
+    };
+   });
+   const diagnostic={joomlaId:first.joomlaId,http:probeResp?.status(),expectedTitle:first.title,expectedDate:first.publishUp,...probe};
+   console.log("PSE_TTH_PUBLIC_1744_DIAGNOSTIC="+JSON.stringify(diagnostic));
+   if(probeResp?.status()!==200||probe.title!==first.title||probe.date!==first.publishUp||
+      probe.images!==first.images||probe.textLen<110||probe.relatedHeadings.length||probe.hasRelatedText)
+    throw Error("PSE_TTH_PUBLIC_1744_MISMATCH "+JSON.stringify(diagnostic));
+  }finally{await probePage.close()}
+ }
  const res=await getWithTransientRetry(wp+"/wp-json/wp/v2/posts?categories=1746&status=publish&per_page=1"+
   "&_fields=id,slug,date,status",{timeout:55000},"wp-category-count");
  const total=Number(res.headers()["x-wp-total"]||0);
