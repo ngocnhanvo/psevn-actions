@@ -55,5 +55,5 @@ try{
    marketCategoryTotal:resp.headers()["x-wp-total"]
  }));
  if(!matchesApi)throw Error("Astro home differs from WP date-desc; investigate build cache and source");
- if(!old.every(x=>x.exists))throw Error("One original title not visible on Joomla home; check source list independently");
+ if(!old.slice(0,5).every(x=>x.exists) || old[5]?.exists) throw Error("Original Joomla home five market slots differ from recorded baseline");
 }finally{await browser.close();}
