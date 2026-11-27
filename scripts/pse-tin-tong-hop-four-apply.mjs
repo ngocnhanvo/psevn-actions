@@ -141,7 +141,7 @@ try{
    const field=admin.locator('#loginform input[name*="captcha" i],#loginform input[name*="math" i],#loginform input[type="number"]').first();
    if(!await field.count())throw Error("WP_MATH_CAPTCHA_FIELD_MISSING");await field.fill(String(v));
   }
-  await admin.locator("#wp-submit").click();
+  // WordPress login POST can be slow on this host; keep a bounded 90s limit as proven by the backup preflight.\n   await admin.locator("#wp-submit").click({timeout:90000});
  }
  await admin.goto(wp+"/wp-admin/options-general.php",{waitUntil:"domcontentloaded",timeout:65000});
  if(admin.url().includes("wp-login")||!await admin.locator("#adminmenu").count())
