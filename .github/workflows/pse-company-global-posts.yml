@@ -1,0 +1,39 @@
+name: PSE company source unmatched vs all native published WordPress Posts audit
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-global-posts-request]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  comparison:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-company-news-source-parity
+          run-id: 45951216521
+          github-token: ${{ github.token }}
+          path: artifacts/source
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Compare immutable Joomla original against ALL published WP Posts
+        run: node --check scripts/pse-company-global-posts.mjs && node scripts/pse-company-global-posts.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-global-posts-parity
+          path: artifacts/pse-company-news/global-posts-parity.json
+          retention-days: 7
+          if-no-files-found: warn
