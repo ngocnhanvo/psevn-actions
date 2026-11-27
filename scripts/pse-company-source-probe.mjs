@@ -38,6 +38,14 @@ async function parse(url,html){
    const selector=".items-leading h2 a,.items-row h2 a,.blog h2 a,.item h2 a,article h2 a";
    const links=[...document.querySelectorAll(selector)].map(anchor)
     .filter(x=>/\/21-tin-tuc-su-kien\/tin-cong-ty\/\d{3,5}-/.test(x.href));
+   const listRows=[...document.querySelectorAll(".blog .items-row")].map((row,i)=>{
+    const heading=row.querySelector("h2");
+    const title=(heading?.textContent||"").replace(/\s+/g," ").trim();
+    const possible=[...row.querySelectorAll("a[href]")].map(anchor).filter(x=>/\/\d{3,5}[-/]/.test(x.href));
+    const topAnchor=heading?.querySelector("a[href]")?.href||possible[0]?.href||"";
+    const rowHtml=row.outerHTML.slice(0,2300);
+    return {i,title,href:topAnchor,rowHtml};
+   }).filter(x=>x.title);
    const anyLinks=[...document.querySelectorAll("h2 a")].map(anchor)
     .filter(x=>/\/21-tin-tuc-su-kien\/tin-cong-ty\/\d{3,5}-/.test(x.href));
    const root=document.querySelector(".item-page [itemprop=articleBody],.item-page,article")||document.body;
@@ -52,7 +60,7 @@ async function parse(url,html){
     main:document.querySelectorAll(".blog").length};
    const mainHtml=root.outerHTML.slice(0,40000);
    const mainText=(root.textContent||"").replace(/\s+/g," ").trim();
-   return{links:links.length?links:anyLinks,allHeadlineAnchors:anyLinks.length,
+   return{links:links.length?links:anyLinks,rows:listRows,allHeadlineAnchors:anyLinks.length,
     pageTitle:document.title,images,canonical,times,headings,counts,
     bodyHtmlLength:root.innerHTML.length,bodyTextLength:mainText.length,
     topLevelMainHtmlSample:mainHtml.slice(0,5000),
@@ -100,27 +108,30 @@ try{
  catch(e){detail={url:firstNew,status:"FAILED",reason:String(e?.message||e).slice(0,220)}}
  report.known2026Joomla1739=detail;
  const source=new Map();
- for(const page of pages){for(const n of(page.links||[])){
-  const id=Number((new URL(n.href).pathname.match(/\/(\d{3,5})-/)||[])[1]);
-  if(Number.isSafeInteger(id)&&!source.has(id))source.set(id,n);
- }}
+ for(const page of pages){
+  for(const n of(page.rows||[])){
+   const link=n.href||"",match=link.match(/\/(\d{3,5})-/),id=Number(match?.[1]||0);
+   const key=Number.isSafeInteger(id)&&id>0?String(id):"title:"+norm(n.title);
+   if(!source.has(key))source.set(key,{text:n.title,href:link,joomlaId:id||null});
+  }
+ }
  const byName=new Map(posts.map(p=>[norm(p.title?.rendered),p]));
  const bySlug=new Set(posts.map(p=>p.slug));
- const comparison=[...source.entries()].map(([id,n])=>{
-  const slug=new URL(n.href).pathname.split("/").pop().replace(/^\d+-/,"").replace(/\.html$/,"");
-  const matched=bySlug.has(slug)?posts.find(p=>p.slug===slug):byName.get(norm(n.text));
-  return{joomlaId:id,slug,sourceTitle:n.text,wordpressId:matched?.id||null,status:matched?"FOUND":"MISSING_FROM_DIRECT_37"};
+ const comparison=[...source.entries()].map(([key,n])=>{
+  const slug=n.href?(new URL(n.href).pathname.split("/").pop().replace(/^\d+-/,"").replace(/\.html$/,"")):"";
+  const matched=(slug&&bySlug.has(slug))?posts.find(p=>p.slug===slug):byName.get(norm(n.text));
+  return{joomlaId:n.joomlaId||null,key,slug,sourceTitle:n.text,wordpressId:matched?.id||null,status:matched?"FOUND":"MISSING_FROM_DIRECT_37"};
  });
  report.comparisons={sourceIdentifiers:comparison.length,missing:comparison.filter(x=>x.status!=="FOUND"),items:comparison};
  const s1=report.sourcePages[0]||{};
- console.log("PSE_COMPANY_JOOMLA_PAGE1_STRUCTURE="+JSON.stringify({headings:s1.headings,counts:s1.counts,mainHtmlSample:s1.topLevelMainHtmlSample,pageTitle:s1.pageTitle,rawLength:s1.bodyHtmlLength}).slice(0,9000));
+ console.log("PSE_COMPANY_JOOMLA_PAGE1_STRUCTURE="+JSON.stringify({headings:s1.headings,counts:s1.counts,rows:s1.rows,mainHtmlSample:s1.topLevelMainHtmlSample,pageTitle:s1.pageTitle,rawLength:s1.bodyHtmlLength}).slice(0,15500));
  try{const st=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
   console.log("PSE_COMPANY_RECENT_SOURCE_DB_STATE="+JSON.stringify({schema:st.schema,
    sourceCount:Object.keys(st.articles||{}).length,ids:Object.keys(st.articles||{}).filter(k=>Number(k)>=1700).slice(-80),
    article1739:st.articles?.["1739"]||null,article1740:st.articles?.["1740"]||null}).slice(0,6500));}
  catch(e){console.log("PSE_COMPANY_RECENT_SOURCE_DB_STATE_UNAVAILABLE="+String(e?.message||e).slice(0,130));}
  console.log("PSE_COMPANY_JOOMLA_SOURCE_PARITY="+JSON.stringify({
-  wordpressTotal:report.wordpress.total,sourcePages:pages.map(p=>({page:p.index,status:p.status,headlines:p.links?.length||0,reason:p.reason||""})),
+  wordpressTotal:report.wordpress.total,sourcePages:pages.map(p=>({page:p.index,status:p.status,headlines:p.rows?.length||0,reason:p.reason||""})),
   extractedSourceIds:comparison.length,missing:report.comparisons.missing,
   native1739:report.wordpress.known2026Joomla1739NativeSlugCheck,
   original1739:detail.status==="PASS"?{headers:detail.headings,images:detail.images,bodyLength:detail.bodyHtmlLength,canonical:detail.canonical,times:detail.times}:detail
