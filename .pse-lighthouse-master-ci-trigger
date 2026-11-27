@@ -7,3 +7,5 @@
 2026-11-27: read-only Astro master CI for PostDetails removal of 'Các bài viết khác' and regression test, source 87b374f2e4e45fcad2c93f0af105fb861f34d11e. No WordPress writes or deployment.
 
 2026-11-27: source-only Vitest PSE article legacy Joomla other-links removal, Astro master bd99736c42de829fea59b9417df5880bdf6974c9. No FTP, WP writes or build.
+
+2026-11-27: source-only CI for Astro master c427facd1ce6a9a46c33f2f6b0b48da51abb6960; Joomla embedded related links suppressed; original article image contract kept unchanged.
