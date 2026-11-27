@@ -38,7 +38,11 @@ try{
    const res=await p.goto(url,{waitUntil:"domcontentloaded",timeout:60000});
    if(res?.status()!==200)throw Error("Public article HTTP "+res?.status()+" source="+d.id);
    const otherPostsHeadings=await p.getByRole("heading",{name:"Các bài viết khác",exact:true}).count();
-   if(otherPostsHeadings!==0)throw Error("PSE_RELATED_OTHER_POSTS_REMOVED=FAIL source="+d.id+" count="+otherPostsHeadings);
+   if(otherPostsHeadings!==0){
+    const relatedDom=await p.getByRole("heading",{name:"Các bài viết khác",exact:true}).first().evaluate(el=>({tag:el.tagName,html:el.outerHTML,parent:el.parentElement?.outerHTML.slice(0,5000),grand:el.parentElement?.parentElement?.outerHTML.slice(0,7000)}));
+    console.log("PSE_RELATED_SECTION_DOM source="+d.id+" "+JSON.stringify(relatedDom));
+    throw Error("PSE_RELATED_OTHER_POSTS_REMOVED=FAIL source="+d.id+" count="+otherPostsHeadings);
+   }
    console.log("PSE_RELATED_OTHER_POSTS_REMOVED=PASS source="+d.id);
    const dom=await p.content();
    const debug=await p.evaluate(()=>({title:document.title,
