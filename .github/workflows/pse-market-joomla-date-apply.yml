@@ -1,0 +1,58 @@
+name: PSE restore 14 market news Joomla created dates (GUARDED CMS WRITE)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-market-joomla-date-apply-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  restore:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore Joomla created dates for market news'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Validate verified owner DB manifest and reviewed writer syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-market-joomla-date-preflight.mjs
+          node --check scripts/pse-market-joomla-date-apply.mjs
+          node --check scripts/pse-template-updraft-backup.mjs
+          printf 'SCOPE=JOOMLA_MARKET_CAT_93_TO_WORDPRESS_1743\nSOURCE_SHA256=ec85436b4e7a475b13c2955e8e0adcbbae11c87e8502669b3ae77e51f2bc4f2c\nAPPLY=OWNER_APPROVED\n' | cmp - .pse-market-joomla-date-apply-request
+      - name: Validate original Joomla 14 IDs against published native WordPress IDs (READ ONLY)
+        run: node scripts/pse-market-joomla-date-preflight.mjs
+      - name: Install Playwright driver for preinstalled Chromium
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh UpdraftPlus DB-only local rollback backup
+        run: node scripts/pse-template-updraft-backup.mjs
+      - name: Update only 13 proven WordPress post dates with full readback
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PSE_MARKET_DB_BACKUP_VERIFIED=yes
+          node scripts/pse-market-joomla-date-apply.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-market-joomla-14-authentic-dates
+          path: artifacts/pse-market-joomla-date/report.json
+          retention-days: 30
+          if-no-files-found: warn
