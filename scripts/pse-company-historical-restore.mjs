@@ -171,24 +171,45 @@ try{
  console.log("PSE_HISTORICAL_COMPANY_PREFLIGHT=PASS all15 original articles/93 distinct images");
  const allImages=unique(prepared.flatMap(a=>a.images)),media=new Map();
  const memoName=new Map();
- // Native WordPress media registry check BEFORE any new uploads to avoid
- // WP filename rename collisions. The original source filenames are stored.
- for(const sourceUrl of allImages){
-  const u=new URL(sourceUrl),filename=u.pathname.split("/").at(-1),stem=filename.replace(/\.[^.]+$/,"");
-  if(!/^[A-Za-z0-9._\-]+$/.test(filename)||!/\.jpe?g$/i.test(filename))
-   throw Error("Unsupported Joomla media filename/type: "+filename);
+ const mimeByExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",gif:"image/gif",webp:"image/webp"};
+ // Joomla original images may use Unicode filenames (percent-encoded URLs).
+ // Keep exact original bytes and order, but choose deterministic safe WordPress
+ // filenames with a content-origin identity hash when needed. All WP files
+ // remain native Media records and can be re-used after a partial retry.
+ const metadata=allImages.map(sourceUrl=>{
+  const u=new URL(sourceUrl),decoded=decodeURIComponent(u.pathname.split("/").at(-1));
+  const ext=(decoded.match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase();
+  const mime=mimeByExt[ext];
+  if(!mime)throw Error("Unsupported original image type "+decoded+" source="+sourceUrl);
+  const rawBase=decoded.slice(0,-(ext.length+1));
+  const safeBase=rawBase.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[Đđ]/g,"d")
+   .replace(/[^A-Za-z0-9_-]+/g,"-").replace(/^-+|-+$/g,"").slice(0,45)||"source";
+  const suffix=createHash("sha256").update(sourceUrl).digest("hex").slice(0,12);
+  const filename=/^[A-Za-z0-9._-]+$/.test(decoded)&&!memoName.has(decoded)
+   ?decoded:"pse-company-"+safeBase+"-"+suffix+"."+ext;
   if(memoName.has(filename)&&memoName.get(filename)!==sourceUrl)
-   throw Error("Two different original URLs share filename "+filename);
+   throw Error("Two different Joomla photos share normalized filename "+filename);
   memoName.set(filename,sourceUrl);
-  const response=await api("/wp-json/wp/v2/media?context=edit&search="+encodeURIComponent(stem)+
-   "&per_page=100&_fields=id,slug,source_url,media_details,mime_type");
-  if(response.status!==200||!Array.isArray(response.data))throw Error("Native WP Media registry unavailable "+filename);
-  const found=response.data.filter(m=>String(m.media_details?.file||"").split("/").at(-1)===filename);
-  if(found.length>1)throw Error("Duplicate WP Media exact source filenames "+filename);
-  const existing=found[0]||null;
-  if(existing&&existing.mime_type!=="image/jpeg")throw Error("Existing WP Media type differs "+filename);
-  media.set(sourceUrl,{sourceUrl,filename,existing});
+  return{sourceUrl,filename,ext,mime};
+ });
+ // Media registry lookups are READ ONLY and capped to five concurrent calls.
+ // This preserves exact WP identities while reducing 93 sequential round-trips.
+ for(let i=0;i<metadata.length;i+=5){
+  await Promise.all(metadata.slice(i,i+5).map(async file=>{
+   const stem=file.filename.replace(/\.[^.]+$/,"");
+   const response=await api("/wp-json/wp/v2/media?context=edit&search="+encodeURIComponent(stem)+
+    "&per_page=100&_fields=id,slug,source_url,media_details,mime_type");
+   if(response.status!==200||!Array.isArray(response.data))
+    throw Error("Native WP Media registry unavailable "+file.filename);
+   const found=response.data.filter(m=>String(m.media_details?.file||"").split("/").at(-1)===file.filename);
+   if(found.length>1)throw Error("Duplicate WP Media exact source filenames "+file.filename);
+   const existing=found[0]||null;
+   if(existing&&existing.mime_type!==file.mime)throw Error("Existing WP Media type differs "+file.filename);
+   media.set(file.sourceUrl,{...file,existing});
+  }));
  }
+ console.log("PSE_HISTORICAL_COMPANY_IMAGE_FORMATS="+JSON.stringify(Object.fromEntries(
+  [...new Set(metadata.map(x=>x.ext))].map(ext=>[ext,metadata.filter(x=>x.ext===ext).length]))));
  if(media.size!==93)throw Error("Media identity mapping incomplete");
  report.phase="native_media_registry_verified";
  if(!apply){
@@ -201,11 +222,15 @@ try{
   for(let n=0;n<entries.length;n+=3){
    await Promise.all(entries.slice(n,n+3).map(async file=>{
     const res=await retryGet(file.sourceUrl);
-    if(!String(res.headers()["content-type"]||"").startsWith("image/jpeg"))
-     throw Error("Original source image HTTP content-type changed "+file.filename);
+    if(!String(res.headers()["content-type"]||"").toLowerCase().startsWith(file.mime))
+     throw Error("Original source image HTTP content-type changed "+file.filename+" expected "+file.mime);
     const bytes=await res.body();
-    if(bytes.length<900||bytes.length>9000000||bytes[0]!==255||bytes[1]!==216||bytes[2]!==255)
-     throw Error("Original image JPEG bytes invalid "+file.filename);
+    const matchesMagic=file.mime==="image/jpeg"?(bytes[0]===255&&bytes[1]===216&&bytes[2]===255):
+     file.mime==="image/png"?(bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71):
+     file.mime==="image/gif"?(bytes.toString("ascii",0,3)==="GIF"):
+     file.mime==="image/webp"?(bytes.toString("ascii",0,4)==="RIFF"&&bytes.toString("ascii",8,12)==="WEBP"):false;
+    if(bytes.length<200||bytes.length>9000000||!matchesMagic)
+     throw Error("Original image file signature invalid "+file.filename);
     const digest=createHash("sha256").update(bytes).digest("hex");
     if(file.existing){
      const url=String(file.existing.source_url||"");
@@ -215,7 +240,7 @@ try{
      file.id=Number(file.existing.id);
     }else{
      const post=await wpHttp.post(wp+"/wp-json/wp/v2/media",{
-      data:bytes,headers:{"X-WP-Nonce":report.nonce,Accept:"application/json","Content-Type":"image/jpeg",
+      data:bytes,headers:{"X-WP-Nonce":report.nonce,Accept:"application/json","Content-Type":file.mime,
        "Content-Disposition":'attachment; filename="'+file.filename+'"',"Origin":wp,
        Referer:wp+"/wp-admin/"},timeout:75000
      });
@@ -239,14 +264,14 @@ try{
     const record=response.data,mfile=String(record?.media_details?.file||"").replace(/^\/+/,"");
     const url=new URL(String(record?.source_url||""),wp);
     if(response.status!==200||Number(record?.id)!==file.id||
-       record?.mime_type!=="image/jpeg"||mfile.split("/").at(-1)!==file.filename||
+       record?.mime_type!==file.mime||mfile.split("/").at(-1)!==file.filename||
        url.origin!==wp||url.pathname!=="/wp-content/uploads/"+mfile)
       throw Error("Native Media readback failed "+file.filename+" id="+file.id);
     file.publicUrl=url.href;
    }));
   }
   report.phase="media_verified";
-  console.log("PSE_HISTORICAL_COMPANY_MEDIA=PASS verified 93/93 original photos");
+  console.log("PSE_HISTORICAL_COMPANY_MEDIA=PASS verified 93/93 original image assets");
   for(const a of prepared){
    const photoMap=new Map(a.images.map(u=>[u,media.get(u).publicUrl]));
    const p=await sourceCtx.newPage();let article;
@@ -311,7 +336,7 @@ try{
   report.phase="native_posts_published_verified";
   if(report.posts.length!==15||report.posts.reduce((n,p)=>n+p.media,0)!==93)
    throw Error("Historical 15-Post/93-Media publication incomplete");
-  console.log("PSE_HISTORICAL_COMPANY_RESTORE_PASS=15_POSTS_93_JPEG_2025_UNCHANGED");
+  console.log("PSE_HISTORICAL_COMPANY_RESTORE_PASS=15_POSTS_93_IMAGES_2025_UNCHANGED");
  }
 }finally{
  delete report.nonce;
