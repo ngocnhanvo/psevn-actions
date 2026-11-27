@@ -1,0 +1,35 @@
+name: PSE exact two missing November 2026 original Joomla company Posts and nine photos GUARDED
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-november-2026-restore-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-joomla-original-cms-write
+  cancel-in-progress: false
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Validate exact 2026 original dates, nine verified photos and native CMS post ownership before any write
+        run: node --check scripts/pse-company-november-2026-restore.mjs && node scripts/pse-company-november-2026-restore.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-november-2026-restore
+          path: artifacts/pse-company-news/november-2026-restore.json
+          retention-days: 7
+          if-no-files-found: warn
