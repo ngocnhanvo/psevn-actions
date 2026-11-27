@@ -113,24 +113,45 @@ async function loginAndOpenBuildPage() {
     await page.locator('#wp-submit').click({ timeout: 90000 });
   }
 
-  // Always visit the exact secured page after login: URL/redirect_to alone
-  // does not establish a valid WP session, as verified by read-only QA.
-  await gotoAdminWithRetry(BUILD_URL, 'build-page');
+  // Verify the authenticated admin session first. The plugin localizes
+  // vcsBuild on every wp-admin page for edit_pages users via the admin bar, so
+  // the heavy Build Website screen is not required to obtain a server nonce.
   if (!(await visible(page.locator('#adminmenu')))) {
     console.log('PSE_WP_AUTH_FALLBACK=PROTECTED_POST_GET');
     await gotoAdminWithRetry(`${origin}/wp-admin/post.php?post=248&action=edit`, 'protected-post');
-    if (!(await visible(page.locator('#adminmenu')))) {
-      throw new Error('WordPress admin session is not authenticated');
-    }
-    await gotoAdminWithRetry(BUILD_URL, 'build-page-fallback');
   }
   if (!(await visible(page.locator('#adminmenu')))) {
-    throw new Error('WordPress Build Website menu/permissions are not available');
+    throw new Error('WordPress admin session is not authenticated');
   }
-  // A server-issued nonce tied to this protected page remains mandatory.
-  await page.waitForFunction(() => Boolean(globalThis.vcsBuild?.ajax_url && globalThis.vcsBuild?.nonce), null, {
-    timeout: 30000,
-  });
+
+  let nonceReady = false;
+  try {
+    await page.waitForFunction(() => {
+      const cfg = globalThis.vcsBuild;
+      if (!cfg?.ajax_url || !cfg?.nonce) return false;
+      try {
+        return new URL(cfg.ajax_url, location.origin).origin === location.origin;
+      } catch {
+        return false;
+      }
+    }, null, { timeout: 30000 });
+    nonceReady = true;
+    console.log('PSE_WP_BUILD_NONCE_SOURCE=ADMIN_TOOLBAR');
+  } catch {
+    console.log('PSE_WP_BUILD_NONCE_FALLBACK=BUILD_PAGE');
+  }
+
+  // Keep the existing Build Website page only as a compatibility fallback.
+  // AJAX still enforces the same server nonce, edit_pages capability and build lock.
+  if (!nonceReady) {
+    await gotoAdminWithRetry(BUILD_URL, 'build-page-fallback');
+    if (!(await visible(page.locator('#adminmenu')))) {
+      throw new Error('WordPress Build Website menu/permissions are not available');
+    }
+    await page.waitForFunction(() => Boolean(globalThis.vcsBuild?.ajax_url && globalThis.vcsBuild?.nonce), null, {
+      timeout: 30000,
+    });
+  }
   console.log('PSE_WP_TRIGGER_TIMING phase=login_admin elapsed_ms=' + (Date.now() - started));
 }
 
