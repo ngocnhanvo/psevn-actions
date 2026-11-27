@@ -23,10 +23,11 @@ try{
  const archive=await ctx.newPage();
  const response=await archive.goto(web+"/tin-tuc-su-kien/tin-tong-hop",
   {waitUntil:"domcontentloaded",timeout:65000});
- const archiveText=(await archive.locator("#posts-grid").innerText()).replace(/\s+/g," ");
+ const archiveMain=archive.locator("main").first();
+ const archiveText=(await archiveMain.innerText({timeout:45000})).replace(/\s+/g," ");
  const count=Number(archiveText.match(/Tổng\s+(\d+)\s+bài viết/)?.[1]);
- if(response?.status()!==200||count!==total)throw Error("ASTRO_CATEGORY_SSR_COUNT_MISMATCH "+count+" WP "+total);
- report.archive={http:200,total:count};
+ if(response?.status()!==200||count!==total)throw Error("ASTRO_CATEGORY_SSR_COUNT_MISMATCH "+JSON.stringify({http:response?.status(),count,wp:total,url:archive.url()}));
+ report.archive={http:200,total:count,url:archive.url(),postsGrid:await archive.locator("#posts-grid").count()>0};
  await archive.close();
  for(const d of manifest.records){
   const r=await ctx.request.get(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
