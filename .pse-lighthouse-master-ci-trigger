@@ -5,3 +5,5 @@
 2026-11-27: verify Astro master efe7af2, parent-only company category WordPress REST exclusions; source CI only.
 
 2026-11-27: read-only Astro master CI for PostDetails removal of 'Các bài viết khác' and regression test, source 87b374f2e4e45fcad2c93f0af105fb861f34d11e. No WordPress writes or deployment.
+
+2026-11-27: source-only Vitest PSE article legacy Joomla other-links removal, Astro master bd99736c42de829fea59b9417df5880bdf6974c9. No FTP, WP writes or build.
