@@ -1,0 +1,35 @@
+name: PSE WordPress post and banner admin access (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-wp-post-banner-access-readonly.mjs
+      - .github/workflows/pse-wp-post-banner-access-readonly.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capability-readonly:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright client only
+        run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify current authenticated PSE posting and homepage banner capabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-wp-post-banner-access-readonly.mjs
+          node scripts/pse-wp-post-banner-access-readonly.mjs
+          echo 'PSE_ADMIN_CAPABILITY_AUDIT=COMPLETE; NO_CMS_WRITES=true; NO_POST_DRAFT=true; NO_BANNER_CHANGE=true'
