@@ -19,3 +19,5 @@
 
 2026-11-28: rerun full Astro master CI for 010b221272e6b2176c194cd40d10945cfcfbc056 after stale media taxonomy assertion alignment. No deploy.
 2026-11-28: rerun full source CI for Astro master 2a170b6781484ba56029d83e72fe7eb585b29770 after fixing only media taxonomy assertion syntax. No CMS writes or deploy.
+
+2026-11-28: full Astro master CI for 086cdf36c9ca9cd5074d734b588cd68eacb472d6 after assertion syntax cleanup. No deploy.
