@@ -14,9 +14,34 @@ const browser=await chromium.launch({headless:true});
 const ctx=await browser.newContext({viewport:{width:1366,height:900}});
 const report={schema:"pse-tth-4-production-live-parity-v1",noWrites:true,
   sourceCategory:101,wpCategory:1746,articles:[],assets:[],status:"STARTED"};
+
+const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+// Only retry read-only HTTP requests on transient connection/5xx failures.
+// Persistent 404, incorrect content, dates, image count or identity still FAIL.
+async function getWithTransientRetry(url, options, label){
+ let lastError;
+ for(let attempt=1;attempt<=3;attempt++){
+  try{
+   const response=await ctx.request.get(url,{...options,failOnStatusCode:false});
+   if([408,429,500,502,503,504].includes(response.status())&&attempt<3){
+    console.log("PSE_TTH_TRANSIENT_HTTP_RETRY="+JSON.stringify({label,attempt,status:response.status()}));
+    await sleep(1200*attempt);
+    continue;
+   }
+   return response;
+  }catch(error){
+   lastError=error;
+   const message=String(error?.message||error);
+   if(!/ECONNRESET|socket hang up|ERR_TIMED_OUT|TimeoutError|Timeout .*exceeded|ECONNREFUSED|ETIMEDOUT/i.test(message)||attempt===3)throw error;
+   console.log("PSE_TTH_TRANSIENT_NETWORK_RETRY="+JSON.stringify({label,attempt,reason:message.slice(0,110)}));
+   await sleep(1200*attempt);
+  }
+ }
+ throw lastError||Error("Transient read-only request exhausted: "+label);
+}
 try{
- const res=await ctx.request.get(wp+"/wp-json/wp/v2/posts?categories=1746&status=publish&per_page=1"+
-  "&_fields=id,slug,date,status",{timeout:55000,failOnStatusCode:false});
+ const res=await getWithTransientRetry(wp+"/wp-json/wp/v2/posts?categories=1746&status=publish&per_page=1"+
+  "&_fields=id,slug,date,status",{timeout:55000},"wp-category-count");
  const total=Number(res.headers()["x-wp-total"]||0);
  if(res.status()!==200||total<328)throw Error("WP_CATEGORY_COUNT_OLD_OR_UNREACHABLE "+total);
  report.wpPublishedTotal=total;
@@ -37,9 +62,9 @@ try{
  report.archive={http:200,total:count,url:archive.url(),postsGrid:await archive.locator("#posts-grid").count()>0,attempts:archiveAttempts.length};
  await archive.close();
  for(const d of manifest.records){
-  const r=await ctx.request.get(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
+  const r=await getWithTransientRetry(wp+"/wp-json/wp/v2/posts?status=publish&slug="+
    encodeURIComponent(d.slug)+"&_fields=id,slug,title,date,categories,status",
-   {timeout:55000,failOnStatusCode:false});
+   {timeout:55000},"wp-post-"+d.joomlaId);
   const arr=await r.json().catch(()=>null);
   if(r.status()!==200||!Array.isArray(arr)||arr.length!==1||arr[0].date!==d.publishUp||
      !arr[0].categories?.includes(1746)||!arr[0].categories?.includes(1742))
@@ -66,7 +91,7 @@ try{
     const u=new URL(src,url);
     if(u.origin!==web||!u.pathname.startsWith("/api/images/"))
      throw Error("SOURCE_MEDIA_NOT_OPTIMIZED_LOCAL_PROXY "+d.joomlaId);
-    const image=await ctx.request.get(u.href,{timeout:55000,failOnStatusCode:false});
+    const image=await getWithTransientRetry(u.href,{timeout:35000},"image-"+d.joomlaId);
     if(image.status()!==200||!String(image.headers()["content-type"]||"").startsWith("image/"))
      throw Error("SOURCE_MEDIA_HTTP_FAILED "+d.joomlaId+" "+image.status());
     report.assets.push({joomlaId:d.joomlaId,path:u.pathname,http:200});
