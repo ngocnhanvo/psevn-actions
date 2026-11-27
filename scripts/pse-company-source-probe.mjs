@@ -96,6 +96,20 @@ try{
  }
  report.wordpress.directPosts=posts.map(p=>({id:p.id,slug:p.slug,title:p.title?.rendered,date:p.date,categories:p.categories}));
  if(posts.length!==37||report.wordpress.total!==37)throw Error("Native WordPress direct category changed from audited 37");
+  // Read *all* native WordPress records in this taxonomy, including descendants.
+  // "Missing from parent-only listing" is NOT equivalent to "missing from CMS".
+  const allTree=[];for(let p=1;p<=5;p++){
+   const r=await api("/wp-json/wp/v2/posts?status=publish&per_page=100&page="+p+
+    "&categories=1742&_fields=id,slug,title,categories,date,link");
+   if(r.http!==200||!Array.isArray(r.data))throw Error("WP 409 category tree page "+p+" HTTP "+r.http);
+   allTree.push(...r.data);
+   if(r.total!==409)throw Error("WP taxonomy count changed during audit "+r.total);
+  }
+  if(allTree.length!==409||new Set(allTree.map(x=>x.id)).size!==409)throw Error("All-category WordPress pagination incomplete");
+  report.wordpress.allDescendantPosts=409;
+  const byTreeName=new Map();
+  for(const p of allTree){const key=norm(p.title?.rendered);if(!byTreeName.has(key))byTreeName.set(key,[]);byTreeName.get(key).push(p)}
+
  const exists=await api("/wp-json/wp/v2/posts?status=publish&slug=phu-my-dong-nam-bo-mot-ngay-thu-bay-day-y-nghia&_fields=id,slug,title,categories");
  report.wordpress.known2026Joomla1739NativeSlugCheck={http:exists.http,found:Array.isArray(exists.data)?exists.data:[]};
  const urls=Array.from({length:10},(_,i)=>i===0?old:old+"?start="+(i*6));
@@ -112,7 +126,7 @@ try{
   for(const n of(page.rows||[])){
    const link=n.href||"",match=link.match(/\/(\d{3,5})-/),id=Number(match?.[1]||0);
    const key=Number.isSafeInteger(id)&&id>0?String(id):"title:"+norm(n.title);
-   if(!source.has(key))source.set(key,{text:n.title,href:link,joomlaId:id||null});
+   if(!source.has(key))source.set(key,{text:n.title,href:link,joomlaId:id||null,sourcePage:page.index});
   }
  }
  const byName=new Map(posts.map(p=>[norm(p.title?.rendered),p]));
@@ -120,9 +134,22 @@ try{
  const comparison=[...source.entries()].map(([key,n])=>{
   const slug=n.href?(new URL(n.href).pathname.split("/").pop().replace(/^\d+-/,"").replace(/\.html$/,"")):"";
   const matched=(slug&&bySlug.has(slug))?posts.find(p=>p.slug===slug):byName.get(norm(n.text));
-  return{joomlaId:n.joomlaId||null,key,slug,sourceTitle:n.text,wordpressId:matched?.id||null,status:matched?"FOUND":"MISSING_FROM_DIRECT_37"};
+  const treeMatches=byTreeName.get(norm(n.text))||[];
+  const best=matched||treeMatches[0]||null;
+  const collision=n.sourcePage===1&&/phú mỹ đông nam bộ tổ chức lễ công bố/i.test(norm(n.text))&&
+   (best?.date||"").startsWith("2025")&&!(treeMatches.some(p=>p.date?.startsWith("2026")));
+  const status=collision?"COLLISION_2026_DIFFERENT_EVENT":
+    matched?"DIRECT_PARENT":
+    best?"ALREADY_IN_WORDPRESS_CHILD_CATEGORY":"NO_MATCH_IN_WORDPRESS_CATEGORY_TREE";
+  return{joomlaId:n.joomlaId||null,key,slug,sourcePage:n.sourcePage,sourceTitle:n.text,
+   wordpressId:best?.id||null,wordpressDate:best?.date||null,wordpressCategories:best?.categories||[],
+   titleMatches:treeMatches.length,status};
  });
- report.comparisons={sourceIdentifiers:comparison.length,missing:comparison.filter(x=>x.status!=="FOUND"),items:comparison};
+ report.comparisons={sourceIdentifiers:comparison.length,
+  statuses:Object.fromEntries([...new Set(comparison.map(x=>x.status))].map(k=>[k,comparison.filter(x=>x.status===k).length])),
+  missing:comparison.filter(x=>x.status==="NO_MATCH_IN_WORDPRESS_CATEGORY_TREE"||x.status==="COLLISION_2026_DIFFERENT_EVENT"),
+  categoryMoved:comparison.filter(x=>x.status==="ALREADY_IN_WORDPRESS_CHILD_CATEGORY"),
+  items:comparison};
  const s1=report.sourcePages[0]||{};
  console.log("PSE_COMPANY_JOOMLA_PAGE1_STRUCTURE="+JSON.stringify({headings:s1.headings,counts:s1.counts,rows:s1.rows,mainHtmlSample:s1.topLevelMainHtmlSample,pageTitle:s1.pageTitle,rawLength:s1.bodyHtmlLength}).slice(0,15500));
  try{const st=JSON.parse(await readFile("docs/pse-legacy-migration-state.json","utf8"));
@@ -132,7 +159,8 @@ try{
  catch(e){console.log("PSE_COMPANY_RECENT_SOURCE_DB_STATE_UNAVAILABLE="+String(e?.message||e).slice(0,130));}
  console.log("PSE_COMPANY_JOOMLA_SOURCE_PARITY="+JSON.stringify({
   wordpressTotal:report.wordpress.total,sourcePages:pages.map(p=>({page:p.index,status:p.status,headlines:p.rows?.length||0,reason:p.reason||""})),
-  extractedSourceIds:comparison.length,missing:report.comparisons.missing,
+  extractedSourceIds:comparison.length,statuses:report.comparisons.statuses,
+   trueGaps:report.comparisons.missing,alreadyInChildren:report.comparisons.categoryMoved,
   native1739:report.wordpress.known2026Joomla1739NativeSlugCheck,
   original1739:detail.status==="PASS"?{headers:detail.headings,images:detail.images,bodyLength:detail.bodyHtmlLength,canonical:detail.canonical,times:detail.times}:detail
  }).slice(0,28000));
