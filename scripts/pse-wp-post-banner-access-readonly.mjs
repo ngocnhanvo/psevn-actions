@@ -82,6 +82,26 @@ try {
   } catch {}
   console.log('PSE_POST_PUBLISH_CAPABILITY='+publishCapability);
 
+  const menu = await page.evaluate(() => ({
+    escTable:[...document.querySelectorAll('#adminmenu a[href]')].some(a=>a.href.includes('page=tablepress')),
+    visualBuilder:[...document.querySelectorAll('#adminmenu a[href]')].some(a=>a.href.includes('esc-visual-builder'))
+  }));
+  console.log('PSE_ADMIN_MENU='+JSON.stringify(menu));
+  const tableList = await visit('/wp-admin/admin.php?page=tablepress');
+  const tableListWpDenied = denied.test(tableList.text);
+  console.log('PSE_TABLEPRESS_LIST='+JSON.stringify({
+    http:tableList.status,wp_permission_denied:tableListWpDenied,
+    wp_admin_shell:await page.locator('#wpadminbar,#adminmenu').count()>0,
+    url_is_tablepress:tableList.url.includes('page=tablepress')
+  }));
+  const builder = await visit('/wp-admin/edit.php?post_type=page&page=esc-visual-builder');
+  const builderBody=builder.text;
+  console.log('PSE_VISUAL_BUILDER_ADMIN='+JSON.stringify({
+    http:builder.status,wp_permission_denied:denied.test(builderBody),
+    has_select_page:/esc-vb-page|Visual Builder|Chọn trang/i.test(builderBody),
+    wp_admin_shell:await page.locator('#wpadminbar,#adminmenu').count()>0
+  }));
+
   const table = await visit('/wp-admin/admin.php?page=tablepress_edit&table_id=pse_00_vi');
   const bannerUI=await page.evaluate(() => {
     const body=document.querySelector('#wpbody-content');
@@ -97,6 +117,10 @@ try {
       visibleActionCount:visibleButtons.length
     };
   });
+  console.log('PSE_BANNER_ROUTE_DENIAL='+JSON.stringify({
+    wp_permission_denied:denied.test(table.text),wp_admin_shell:await page.locator('#wpadminbar,#adminmenu').count()>0,
+    likely_firewall:/cloudflare|forbidden|access denied|403 forbidden/i.test(table.text)&&!denied.test(table.text)
+  }));
   const bannerAccessible=table.status===200 && !denied.test(table.text) && !table.url.includes('wp-login') &&
     table.url.includes('tablepress_edit');
   const bannerEditor=bannerAccessible && bannerUI.hasTableEditor && bannerUI.hasSave;
