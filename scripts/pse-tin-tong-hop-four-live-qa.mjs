@@ -90,8 +90,8 @@ try{
     throw Error("ASTRO_DETAIL_SOURCE_DATE_CONTENT_OR_RELATED_FAIL "+d.joomlaId+" "+JSON.stringify({
      status:pageResult?.status(),date:data.date,images:data.images.length,textLen:data.text.length,
      expectedTitle:d.title,actualTitle:data.title,
-     relatedHeadings:data.headings.filter(x=>/các\\s+bài\\s+viết\\s+khác|other posts/i.test(x)).slice(0,5),
-     hasRelatedText:/các\\s+bài\\s+viết\\s+khác/i.test(data.text)}));
+     relatedHeadings:data.headings.filter(x=>x.toLowerCase().includes("các bài viết khác")||x.toLowerCase().includes("other posts")).slice(0,5),
+     hasRelatedText:data.text.toLowerCase().includes("các bài viết khác")}));
    for(const src of data.images){
     const u=new URL(src,url);
     if(u.origin!==web||!u.pathname.startsWith("/api/images/"))
