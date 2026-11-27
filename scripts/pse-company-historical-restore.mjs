@@ -305,8 +305,8 @@ try{
       // Never print/rethrow the exception. Verify whether the missing HTTP
       // response nonetheless committed the exact native WP Media image.
       let confirmed=0;
-      for(let attempt=0;attempt<3&&!confirmed;attempt++){
-       await new Promise(done=>setTimeout(done,1500*(attempt+1)));
+      for(let attempt=0;attempt<8&&!confirmed;attempt++){
+       await new Promise(done=>setTimeout(done,2500*(attempt+1)));
        try{
         const probe=await api("/wp-json/wp/v2/media?context=edit&search="+
          encodeURIComponent(file.filename.replace(/\.[^.]+$/,""))+
@@ -320,9 +320,12 @@ try{
          confirmed=Number(matches[0].id);
        }catch{ /* Never expose protected network errors in logs. */ }
       }
-      if(!Number.isSafeInteger(confirmed)||confirmed<1)
+      if(!Number.isSafeInteger(confirmed)||confirmed<1){
+       console.error("PSE_HISTORICAL_COMPANY_MEDIA_UNVERIFIED="+JSON.stringify({
+        filename:file.filename,sourceBytes:bytes.length,verificationWaitSeconds:90}));
        throw Error("Native Media connection interrupted; file "+
         file.filename+" not verified. The importer can safely resume after WP recovers.");
+      }
       file.id=confirmed;
       console.log("PSE_HISTORICAL_COMPANY_MEDIA_LOST_RESPONSE_RECOVERED="+JSON.stringify({filename:file.filename,id:confirmed}));
      }
@@ -336,6 +339,8 @@ try{
     }
     file.sha256=digest;
     report.media.push({source:file.sourceUrl,name:file.filename,id:file.id,reused:!!file.existing,sha256:digest});
+    // Pace native WordPress Media workers to prevent connection resets.
+    if(!file.existing)await new Promise(done=>setTimeout(done,1800));
    }));
    console.log("PSE_HISTORICAL_COMPANY_MEDIA_PROGRESS="+report.media.length+"/93");
   }
