@@ -71,6 +71,28 @@ def request(url, body=None, headers=None, timeout=20):
         raise RuntimeError("Cannot reach unzip endpoint: %s" % exc.reason) from exc
 
 
+def retry_transient_timeout(call, attempts=3):
+    """Retry only bounded transport timeouts; never retry protocol/auth/target failures."""
+    if attempts < 1:
+        raise ValueError("attempts must be positive")
+    for attempt in range(attempts):
+        try:
+            return call()
+        except RuntimeError as error:
+            detail = str(error).lower()
+            retryable = (
+                "timed out" in detail
+                and (
+                    "cannot reach unzip endpoint" in detail
+                    or "handshake operation timed out" in detail
+                )
+            )
+            if not retryable or attempt == attempts - 1:
+                raise
+            time.sleep(3 * (attempt + 1))
+    raise RuntimeError("unreachable retry state")
+
+
 def signed_post(endpoint, token, data, timeout):
     raw = json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
     timestamp = str(int(time.time()))
@@ -124,19 +146,19 @@ def main():
     }
 
     if mode == "verify":
-        # TLS handshake on the verified WordPress endpoint can occasionally stall.
-        # Retry only this transport timeout; never ignore the signed target check.
-        for attempt in range(3):
-            try:
-                marker = request(backend + "/pse-unzip-v2.ready", timeout=30).strip()
-                break
-            except RuntimeError as error:
-                if attempt == 2 or "handshake operation timed out" not in str(error):
-                    raise
-                time.sleep(3 * (attempt + 1))
+        # The verified WordPress endpoint can occasionally stall at TLS/read time.
+        # Retry only bounded transport timeouts; never ignore readiness, signature,
+        # tenant, target, HTTP, protocol or authentication failures.
+        marker = retry_transient_timeout(
+            lambda: request(backend + "/pse-unzip-v2.ready", timeout=30).strip()
+        )
         if marker != READY:
             raise RuntimeError("unzip-v2.ready is missing or incorrect; deploy the PHP endpoint first")
-        result = signed_post(backend + "/pse-unzip.php", token, {"action": "check", **common}, 30)
+        result = retry_transient_timeout(
+            lambda: signed_post(
+                backend + "/pse-unzip.php", token, {"action": "check", **common}, 30
+            )
+        )
         if result.get("host") != client_host or result.get("target") != ftp_target:
             raise RuntimeError("Remote WordPress unzip target does not match the verified FTP target")
         print("SIGNED_UNZIP_PREFLIGHT_OK: %s" % ftp_target)
