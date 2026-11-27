@@ -1,0 +1,25 @@
+name: PSE article 1742 owner date public readback (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-1742-date-live-qa-request
+permissions:
+  contents: read
+jobs:
+  qa:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.event.head_commit.message == 'test(pse): verify public 1742 publication date'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify published Post date and SSR rendered date, desktop and mobile
+        run: node --check scripts/pse-1742-date-live-qa.mjs && node scripts/pse-1742-date-live-qa.mjs
