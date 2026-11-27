@@ -44,12 +44,22 @@ try{
     htmlLength:document.documentElement.outerHTML.length
    }));
    console.log("PSE_COMPANY_LIVE_DETAIL_DEBUG source="+d.id+" "+JSON.stringify(debug).slice(0,11000));
-   const found=d.media.filter(m=>dom.includes(m));
-   if(found.length!==d.media.length)throw Error("Missing original Media refs in production article "+d.id+" count="+found.length);
+   const renderedImages=await p.locator('#article-content img[src]').evaluateAll(nodes=>nodes.map(x=>({src:x.getAttribute("src"),alt:x.alt})));
+   // PSE Astro intentionally optimizes original JPG uploads into local image-proxy
+   // .webp paths, so assert the source-owned filename stem, rather than requiring
+   // literal original .jpg in the transformed HTML.
+   const found=d.media.filter(filename=>renderedImages.some(img=>String(img.src||"").includes(filename.replace(/\.jpe?g$/i,""))));
+   if(found.length!==d.media.length)throw Error("Missing optimized original Media in production article "+d.id+
+    " count="+found.length+" imagePaths="+JSON.stringify(renderedImages.slice(0,12)));
+   const missingRequests=await Promise.all(renderedImages.filter(x=>d.media.some(m=>String(x.src||"").includes(m.replace(/\.jpe?g$/i,""))))
+    .map(async x=>{const res=await p.request.get(new URL(x.src,site).href,{timeout:40000,failOnStatusCode:false});
+      return{src:x.src,status:res.status(),type:res.headers()["content-type"]||""}}));
+   if(missingRequests.length!==d.media.length||missingRequests.some(x=>x.status!==200||!x.type.startsWith("image/")))
+    throw Error("Transformed source photos failed HTTP200 native proxy checks "+d.id+": "+JSON.stringify(missingRequests));
    const body=(await p.locator("body").innerText()).replace(/\s+/g," ").trim();
    if(!body.includes(d.id===1741?"Hoàng Tuấn Vinh":"Bán hàng dựa vào nội lực"))
     throw Error("Wrong original Joomla body on live article "+d.id);
-   report.posts.push({originalId:d.id,wpId:d.wpId,http:200,url,mediaCount:found.length,bodyLength:body.length});
+   report.posts.push({originalId:d.id,wpId:d.wpId,http:200,url,mediaCount:found.length,optimizedPhotoHttpPass:missingRequests.length,bodyLength:body.length});
    console.log("PSE_COMPANY_LIVE_POST_PASS "+JSON.stringify(report.posts.at(-1)));
   }finally{await p.close()}
  }
