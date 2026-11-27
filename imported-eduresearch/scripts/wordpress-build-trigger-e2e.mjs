@@ -107,7 +107,10 @@ async function loginAndOpenBuildPage() {
       if (!captchaInput) throw new Error('Arithmetic CAPTCHA detected but input was not found.');
       await captchaInput.fill(String(answer));
     }
-    await page.locator('#wp-submit').click();
+    // PSE WordPress login response can exceed Playwright's 30s action default.
+    // Keep navigation semantics intact, but use the same bounded 90s login limit
+    // already proven by the guarded CMS importer and backup workflows.
+    await page.locator('#wp-submit').click({ timeout: 90000 });
   }
 
   // Always visit the exact secured page after login: URL/redirect_to alone
