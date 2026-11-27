@@ -217,6 +217,31 @@ jobs:
         if: "${{ github.event.head_commit.message == 'build(pse): approved one-time WordPress exception for build performance optimization' }}"
         shell: bash
         run: echo "PSE_FORCE_BUILD_ONCE=true" >> "$GITHUB_ENV"
+      - name: Authorize one-time PSE original company timestamp HTML parity release
+        if: >-
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          github.event.head_commit.message == 'build(pse): one-time exact Joomla company date SSR correction'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, urllib.request
+          expected='852facb6b1904519334482abfa175a2cc2ce83d2'
+          token=os.environ.get('SOURCE_REPO_PAT','')
+          if not token:
+              raise SystemExit('PSE_JOOMLA_TIMESTAMP_RELEASE=FAIL_MISSING_SOURCE_READ_PERMISSION')
+          req=urllib.request.Request(
+              'https://api.github.com/repos/ngocnhanvo/psevn-astro/commits/master',
+              headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          )
+          with urllib.request.urlopen(req,timeout=25) as response:
+              head=json.load(response).get('sha')
+          if head != expected:
+              raise SystemExit('PSE_JOOMLA_TIMESTAMP_RELEASE=REJECT_SOURCE_HEAD_DRIFT')
+          print('PSE_JOOMLA_TIMESTAMP_RELEASE=PASS_EXACT_ASTRO_COMMIT; one_time=true')
+          PY
+          echo "PSE_FORCE_BUILD_ONCE=true" >> "$GITHUB_ENV"
       - name: Verify exact verified CMS job success before signed WordPress build
         if: github.event_name == 'workflow_run'
         env:
