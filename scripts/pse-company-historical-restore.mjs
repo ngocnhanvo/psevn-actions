@@ -217,10 +217,10 @@ try{
  }else{
   wpHttp=await request.newContext({storageState:await adminCtx.storageState(),timeout:75000});
   const entries=[...media.values()];
-  // Limit media imports to 3 concurrent HTTP requests to avoid stressing WP.
-  // No blind retry of non-idempotent POST (can succeed before transport failure).
-  for(let n=0;n<entries.length;n+=3){
-   await Promise.all(entries.slice(n,n+3).map(async file=>{
+  // Limit to one native Media POST at a time to protect the WordPress backend.
+  // Sanitize all HTTP failures so protected session headers never enter public CI logs.
+  for(let n=0;n<entries.length;n+=1){
+   await Promise.all(entries.slice(n,n+1).map(async file=>{
     const res=await retryGet(file.sourceUrl);
     if(!String(res.headers()["content-type"]||"").toLowerCase().startsWith(file.mime))
      throw Error("Original source image HTTP content-type changed "+file.filename+" expected "+file.mime);
@@ -239,15 +239,46 @@ try{
       throw Error("Existing same-filename Media has DIFFERENT bytes; abort "+file.filename);
      file.id=Number(file.existing.id);
     }else{
-     const post=await wpHttp.post(wp+"/wp-json/wp/v2/media",{
-      data:bytes,headers:{"X-WP-Nonce":report.nonce,Accept:"application/json","Content-Type":file.mime,
-       "Content-Disposition":'attachment; filename="'+file.filename+'"',"Origin":wp,
-       Referer:wp+"/wp-admin/"},timeout:75000
-     });
-     const result=await post.json().catch(()=>({}));
-     if(post.status()!==201||!Number.isSafeInteger(Number(result.id))||Number(result.id)<1)
-      throw Error("Native Media upload rejected "+file.filename+" HTTP "+post.status()+" code "+String(result.code||""));
-     file.id=Number(result.id);
+     let post;
+     try{
+      post=await wpHttp.post(wp+"/wp-json/wp/v2/media",{
+       data:bytes,headers:{"X-WP-Nonce":report.nonce,Accept:"application/json","Content-Type":file.mime,
+        "Content-Disposition":'attachment; filename="'+file.filename+'"',"Origin":wp,
+        Referer:wp+"/wp-admin/"},timeout:75000
+      });
+     }catch(_transportFailure){
+      // Playwright may embed WordPress cookies in raw network exceptions.
+      // Never print/rethrow the exception. Verify whether the missing HTTP
+      // response nonetheless committed the exact native WP Media image.
+      let confirmed=0;
+      for(let attempt=0;attempt<3&&!confirmed;attempt++){
+       await new Promise(done=>setTimeout(done,1500*(attempt+1)));
+       try{
+        const probe=await api("/wp-json/wp/v2/media?context=edit&search="+
+         encodeURIComponent(file.filename.replace(/\.[^.]+$/,""))+
+         "&per_page=100&_fields=id,source_url,mime_type,media_details");
+        if(probe.status!==200||!Array.isArray(probe.data))continue;
+        const matches=probe.data.filter(m=>
+         String(m.media_details?.file||"").split("/").at(-1)===file.filename&&m.mime_type===file.mime);
+        if(matches.length!==1)continue;
+        const remote=await retryGet(new URL(matches[0].source_url,wp).href);
+        if(createHash("sha256").update(await remote.body()).digest("hex")===digest)
+         confirmed=Number(matches[0].id);
+       }catch{ /* Never expose protected network errors in logs. */ }
+      }
+      if(!Number.isSafeInteger(confirmed)||confirmed<1)
+       throw Error("Native Media connection interrupted; file "+
+        file.filename+" not verified. The importer can safely resume after WP recovers.");
+      file.id=confirmed;
+      console.log("PSE_HISTORICAL_COMPANY_MEDIA_LOST_RESPONSE_RECOVERED="+JSON.stringify({filename:file.filename,id:confirmed}));
+     }
+     if(post){
+      const result=await post.json().catch(()=>({}));
+      if(post.status()!==201||!Number.isSafeInteger(Number(result.id))||Number(result.id)<1)
+       throw Error("Native WP Media refused "+file.filename+" HTTP "+post.status()+" code "+
+        String(result.code||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,36));
+      file.id=Number(result.id);
+     }
     }
     file.sha256=digest;
     report.media.push({source:file.sourceUrl,name:file.filename,id:file.id,reused:!!file.existing,sha256:digest});
