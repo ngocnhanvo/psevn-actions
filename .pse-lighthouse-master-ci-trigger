@@ -3,3 +3,5 @@
 2026-11-25 PSE Builder editorial image responsive parity full source CI against Astro master 5ec5a5427dedccce2cb508c06dbd51f2164f33aa. Previous source CI #45568526887 verified new image tests but reported 2 stale hotline source assertions; master now aligns tests. No build, FTP or CMS mutation in this CI.
 
 2026-11-27: verify Astro master efe7af2, parent-only company category WordPress REST exclusions; source CI only.
+
+2026-11-27: read-only Astro master CI for PostDetails removal of 'Các bài viết khác' and regression test, source 87b374f2e4e45fcad2c93f0af105fb861f34d11e. No WordPress writes or deployment.
