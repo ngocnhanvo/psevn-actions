@@ -1,0 +1,35 @@
+name: PSE company direct posts and native menu audit
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-all-menu-request]
+permissions:
+  contents: read
+concurrency:
+  group: pse-native-menu-items
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Read native categories, posts and menu without writes
+        run: node --check scripts/pse-company-all-menu-audit.mjs && node scripts/pse-company-all-menu-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-news-audit
+          path: artifacts/pse-company-news/audit.json
+          retention-days: 7
+          if-no-files-found: warn
