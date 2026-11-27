@@ -25,7 +25,7 @@ if(![originalMarker,publicationMarker].includes(marker)||
  m.timezone!=="Asia/Ho_Chi_Minh"||
  m.records?.length!==4||m.records.map(x=>x.joomlaId).join(",")!==ids.join(",")||
  m.records.reduce((n,r)=>n+r.images,0)!==13||
- m.records.some(r=>!/^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d$/.test(r.publishUp))||
+ m.records.some(r=>!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$/.test(r.publishUp))||
  m.records.find(r=>r.joomlaId===1745)?.publishUp!=="2026-11-26T08:50:00")
  throw Error("Unauthorized or unverified 4-Post Joomla source/CMS apply");
 const env=Object.fromEntries(String(process.env.ENV_FILE||"").split(/\r?\n/).map(x=>x.trim().replace(/^export\s+/,""))
