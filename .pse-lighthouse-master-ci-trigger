@@ -9,3 +9,5 @@
 2026-11-27: source-only Vitest PSE article legacy Joomla other-links removal, Astro master bd99736c42de829fea59b9417df5880bdf6974c9. No FTP, WP writes or build.
 
 2026-11-27: source-only CI for Astro master c427facd1ce6a9a46c33f2f6b0b48da51abb6960; Joomla embedded related links suppressed; original article image contract kept unchanged.
+
+2026-11-27: full no-deploy Astro master tests 4f285c42c57497e65abd9eaccbb41fd6e99066cf; exact live Joomla nested <h2><strong> title then <div><ul> fixture must disappear without mutating article body.
