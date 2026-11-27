@@ -94,6 +94,25 @@ try{
   out.wpSearch.push(result);
  }
  console.log("PSE_TONG_HOP_LATEST_TITLE_REST_MATCH="+JSON.stringify(out.wpSearch));
+ // Diagnose the live SSR archive without mutating CMS or application state.
+ // Compare the exact upstream calls used by Astro with the public archive.
+ out.timingProbes=[];
+ const probesTiming=[
+  ["wp_categories",wp+"/wp-json/wp/v2/categories?per_page=100&page=1&hide_empty=false&_fields=id,name,slug,parent,description,yoast_head_json"],
+  ["wp_posts_embedded",wp+"/wp-json/wp/v2/posts?_embed=true&status=publish&orderby=date&order=desc&per_page=12&page=1&categories=1746"],
+  ["wp_posts_fields",wp+"/wp-json/wp/v2/posts?status=publish&orderby=date&order=desc&per_page=12&page=1&categories=1746&_fields=id,slug,title,date,date_gmt,categories,featured_media"],
+  ["astro_archive","https://pse.webnvn.com/tin-tuc-su-kien/tin-tong-hop"]
+ ];
+ for(const [name,url] of probesTiming){
+  const item={name,url,http:null,ms:null,bytes:null};
+  const started=Date.now();
+  try{
+   const pr=await ctx.request.get(url,{timeout:90000,failOnStatusCode:false});
+   item.http=pr.status();const body=await pr.body();item.bytes=body.length;item.ms=Date.now()-started;
+  }catch(e){item.ms=Date.now()-started;item.error=String(e).slice(0,220)}
+  out.timingProbes.push(item);
+  console.log("PSE_TONG_HOP_TIMING="+JSON.stringify(item));
+ }
  out.status="PASS";
 }catch(e){out.status="FAILED";out.error=String(e).slice(0,500);console.error("PSE_TONG_HOP_LATEST_SOURCE_ERROR="+out.error);process.exitCode=1}
 finally{await mkdir("artifacts/pse-tin-tong-hop-latest",{recursive:true});
