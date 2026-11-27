@@ -1,0 +1,215 @@
+{
+  "schema": "pse-company-missing-source-articles-v1",
+  "date": "2026-11-27",
+  "sourceJoomlaCategoryUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty.html",
+  "wpCategoryId": 1742,
+  "wpCategorySlug": "tin-cong-ty",
+  "status": "INCOMPLETE_SOURCE_PARITY",
+  "originalPages": 10,
+  "originalDistinctTitles": 55,
+  "wpPostsAllGlobalAtAudit": 771,
+  "wordpressDirectCategoryAtAudit": 37,
+  "wordpressWithDescendantsAtAudit": 409,
+  "unmatchedWithAllPublishedPosts": 18,
+  "knownExistingReworded": {
+    "joomlaId": 1658,
+    "wpId": 77291,
+    "sourceDate": "2025-10-21",
+    "action": "DO_NOT_DUPLICATE"
+  },
+  "alreadyInChildCategories": 2,
+  "verifiedLatest2026": [
+    {
+      "joomlaId": 1741,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1741-phu-my-dong-nam-bo-to-chuc-le-cong-bo-va-trao-quyet-dinh-ve-cong-tac-can-bo.html",
+      "title": "Phú Mỹ Đông Nam Bộ tổ chức Lễ công bố và trao quyết định về công tác cán bộ",
+      "createdDate": "2026-11-16",
+      "imageCount": 4,
+      "sourceStatus": "VERIFIED_UNIMPORTED"
+    },
+    {
+      "joomlaId": 1739,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1739-phu-my-dong-nam-bo-mot-ngay-thu-bay-day-y-nghia.html",
+      "title": "PHÚ MỸ ĐÔNG NAM BỘ: MỘT NGÀY THỨ BẢY ĐẦY Ý NGHĨA",
+      "createdDate": "2026-11-10",
+      "imageCount": 5,
+      "sourceStatus": "VERIFIED_UNIMPORTED"
+    }
+  ],
+  "pendingHistorical": [
+    {
+      "joomlaId": 1657,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1657-phu-my-dong-nam-bo-to-chuc-thanh-cong-dai-hoi-dai-bieu-cong-doan-lan-thu-vi-nhiem-ky-2025-2030.html",
+      "title": "Phú Mỹ Đông Nam Bộ tổ chức thành công Đại hội Đại biểu Công đoàn lần thứ VI, nhiệm kỳ 2025 – 2030",
+      "createdDate": "2025-10-21",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 2,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1644,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1644-trong-rung-giu-nuoc-mua-mua.html",
+      "title": "Trồng rừng giữ nước mùa mưa",
+      "createdDate": "2025-06-04",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 3,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1643,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1643-chao-mung-ngay-quoc-te-thieu-nhi-01-06-2025.html",
+      "title": "Chào mừng Ngày Quốc tế Thiếu nhi 01/06/2025",
+      "createdDate": "2025-06-04",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 3,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1633,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1633-truong-thanh-luong-nguoi-gieo-niem-tin-tren-vung-dat-do-tay-nguyen.html",
+      "title": "Trương Thanh Lương: Người “gieo” niềm tin trên vùng đất đỏ Tây Nguyên",
+      "createdDate": "2025-04-21",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 4,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1632,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1632-gap-mat-khach-hang-kinh-doanh-phan-bon-phu-my-tieu-bieu-khu-vuc-lam-dong-nam-2025.html",
+      "title": "Gặp mặt khách hàng kinh doanh Phân bón Phú Mỹ tiêu biểu khu vực Lâm Đồng năm 2025",
+      "createdDate": "2025-04-21",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 4,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1607,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1607-chuong-trinh-xuan-yeu-thuong-tet-se-chia-tai-dak-mil.html",
+      "title": "Chương trình “Xuân yêu thương-Tết sẻ chia” tại Đắk Mil",
+      "createdDate": "2025-01-16",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 5,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1605,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1605-di-linh-trao-tang-150-phan-qua-tet-cho-nguoi-dan-xa-son-dien.html",
+      "title": "Di Linh :Trao tặng 150 phần quà Tết cho người dân xã Sơn Điền",
+      "createdDate": "2025-01-14",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 5,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1589,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1589-pvfcco-pse-to-chuc-chuong-trinh-bua-com-cong-doan.html",
+      "title": "PVFCCo-PSE tổ chức chương trình “Bữa cơm Công đoàn”",
+      "createdDate": "2024-08-22",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 6,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1588,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1588-pvfcco-pse-chuoi-hoat-dong-y-nghia-ky-niem-16-nam-thanh-lap-cong-ty-18-08-2008-18-08-2024.html",
+      "title": "PVFCCo-PSE: Chuỗi hoạt động ý nghĩa kỷ niệm 16 năm thành lập Công ty (18/08/2008 – 18/08/2024)",
+      "createdDate": "2024-08-20",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 6,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1569,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1569-pvfcco-pse-to-chuc-cac-hoat-dong-ky-niem-ngay-phu-nu-viet-nam-20-10.html",
+      "title": "PVFCCo-PSE tổ chức các hoạt động kỷ niệm Ngày Phụ nữ Việt Nam 20/10",
+      "createdDate": "2023-12-26",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 7,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1557,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1557-pvfcco-pse-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2023.html",
+      "title": "PVFCCo-PSE tổ chức thành công phiên họp Đại hội đồng cổ đông thường niên năm 2023",
+      "createdDate": "2023-04-27",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 7,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1538,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1538-phan-bon-phu-my-ra-mat-dong-san-pham-chuyen-dung-cho-nong-nghiep-do-thi.html",
+      "title": "Phân bón Phú Mỹ ra mắt dòng sản phẩm chuyên dùng cho nông nghiệp đô thị",
+      "createdDate": "2022-11-21",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 8,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1530,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1530-pvfcco-se-nhieu-hoat-dong-y-nghia-ky-niem-14-nam-thanh-lap-cong-ty-18-8-2008-18-8-2022.html",
+      "title": "PVFCCo SE: Nhiều hoạt động ý nghĩa kỷ niệm 14 năm thành lập Công ty (18/8/2008 – 18/8/2022)",
+      "createdDate": "2022-08-24",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 8,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1517,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1517-pvfcco-se-to-chuc-hoi-nghi-gap-mat-khach-hang-kinh-doanh-phan-bon-phu-my-nam-2022.html",
+      "title": "PVFCCo SE tổ chức Hội nghị Gặp mặt khách hàng kinh doanh phân bón Phú Mỹ năm 2022.",
+      "createdDate": "2022-05-24",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 9,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    },
+    {
+      "joomlaId": 1494,
+      "sourceUrl": "https://www.pse.vn/21-tin-tuc-su-kien/tin-cong-ty/1494-pvfcco-se-to-chuc-hoi-nghi-tong-ket-cong-tac-dang-hoat-dong-kinh-doanh-nam-2021-trien-khai-ke-hoach-cong-tac-nam-2022-va-hoi-nghi-nguoi-lao-dong-nam-2022.html",
+      "title": "PVFCCo SE tổ chức Hội nghị tổng kết công tác Đảng, hoạt động kinh doanh năm 2021, triển khai kế hoạch công tác năm 2022 và Hội nghị người lao động năm 2022",
+      "createdDate": "2021-12-06",
+      "category": "tin-cong-ty",
+      "categoryId": 1742,
+      "sourcePage": 9,
+      "checkpointStatus": "NOT_IMPORTED",
+      "mediaStatus": "TO_AUDIT"
+    }
+  ],
+  "evidence": {
+    "menuCms": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45950040371",
+    "astroDeploy": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45950334325",
+    "original10pages": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951216521",
+    "globalWpPosts": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951534765",
+    "novemberDateMedia": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951419764",
+    "provenance": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45951948522",
+    "latestCmsWriter": "https://github.com/ngocnhanvo/psevn-actions/actions/runs/45952078135"
+  }
+}
