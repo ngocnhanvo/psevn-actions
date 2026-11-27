@@ -37,6 +37,13 @@ try{
    const res=await p.goto(url,{waitUntil:"domcontentloaded",timeout:60000});
    if(res?.status()!==200)throw Error("Public article HTTP "+res?.status()+" source="+d.id);
    const dom=await p.content();
+   const debug=await p.evaluate(()=>({title:document.title,
+    h1:[...document.querySelectorAll('h1')].map(x=>(x.textContent||"").trim()),
+    imgs:[...document.querySelectorAll('img[src]')].map(x=>({src:x.getAttribute("src"),alt:x.alt})).slice(0,30),
+    body:(document.body?.innerText||"").replace(/\s+/g," ").trim().slice(0,2200),
+    htmlLength:document.documentElement.outerHTML.length
+   }));
+   console.log("PSE_COMPANY_LIVE_DETAIL_DEBUG source="+d.id+" "+JSON.stringify(debug).slice(0,11000));
    const found=d.media.filter(m=>dom.includes(m));
    if(found.length!==d.media.length)throw Error("Missing original Media refs in production article "+d.id+" count="+found.length);
    const body=(await p.locator("body").innerText()).replace(/\s+/g," ").trim();
