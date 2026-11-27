@@ -166,3 +166,4 @@ try{
  await writeFile(root+'/report.json',JSON.stringify(report,null,2)+'\n');
  await browser.close();
 }
+// Audit rerun requested 2026-11-27: compare current full 57-page Joomla Tin tong hop archive, native WP taxonomy 1746 and Astro SSR before any CMS write; preserve all existing articles.
