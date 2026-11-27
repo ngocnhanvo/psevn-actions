@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - .pse-tin-tong-hop-four-apply-request
+      - .pse-tin-tong-hop-four-apply-retry-request
 permissions:
   contents: read
 concurrency:
