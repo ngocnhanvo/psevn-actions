@@ -1,3 +1,5 @@
 2026-11-25: source-only full Astro master regression for 8aee3a7dc5b20d621bb2a463f5197b99847bce6e. Verify new editorial image provenance and responsive reuse, no CMS writes, build or deploy.
 
 2026-11-25 PSE Builder editorial image responsive parity full source CI against Astro master 5ec5a5427dedccce2cb508c06dbd51f2164f33aa. Previous source CI #45568526887 verified new image tests but reported 2 stale hotline source assertions; master now aligns tests. No build, FTP or CMS mutation in this CI.
+
+2026-11-27: verify Astro master efe7af2, parent-only company category WordPress REST exclusions; source CI only.
