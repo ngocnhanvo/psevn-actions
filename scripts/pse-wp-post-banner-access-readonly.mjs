@@ -1,6 +1,6 @@
 /** PSE authenticated admin capability audit. GET/read only: no post-new, save, upload, publish or banner writes. */
 import { chromium } from 'playwright';
-const envLines = String(process.env.ENV_FILE || '').split(/\r?\n).map(s => s.trim().replace(/^export\s+/, ''));
+const envLines = String(process.env.ENV_FILE || '').split(/\r?\n/).map(s => s.trim().replace(/^export\s+/, ''));
 function env(name) {
   const rows = envLines.filter(s => s.startsWith(name + '='));
   if (rows.length !== 1) throw new Error('Missing unique ' + name);
