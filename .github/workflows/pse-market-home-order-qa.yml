@@ -1,0 +1,25 @@
+name: PSE Joomla vs WordPress market home news ordering (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-market-home-order-qa-request
+permissions:
+  contents: read
+jobs:
+  compare:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'test(pse): audit home market news ordering'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - run: node --check scripts/pse-market-home-order-qa.mjs && node scripts/pse-market-home-order-qa.mjs
