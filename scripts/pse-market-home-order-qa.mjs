@@ -56,4 +56,7 @@ try{
  }));
  if(!matchesApi)throw Error("Astro home differs from WP date-desc; investigate build cache and source");
  if(!old.slice(0,5).every(x=>x.exists) || old[5]?.exists) throw Error("Original Joomla home five market slots differ from recorded baseline");
+const legacyTop5=old.slice(0,5).map(x=>normalize(x.title));
+if(JSON.stringify(actual)!==JSON.stringify(legacyTop5))throw Error("PSE_MARKET_NEWS_JOOMLA_ORDER=FAIL expected="+JSON.stringify(legacyTop5)+" actual="+JSON.stringify(actual));
+console.log("PSE_MARKET_NEWS_JOOMLA_ORDER=PASS; matched=5/5; source_module=148; source_sort=created_dsc");
 }finally{await browser.close();}
