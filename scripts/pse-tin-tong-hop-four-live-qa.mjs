@@ -86,7 +86,10 @@ try{
     data.headings.some(x=>/^(?:các bài viết khác|other posts)$/i.test(x))||
     /các\s+bài\s+viết\s+khác/i.test(data.text))
     throw Error("ASTRO_DETAIL_SOURCE_DATE_CONTENT_OR_RELATED_FAIL "+d.joomlaId+" "+JSON.stringify({
-     status:pageResult?.status(),date:data.date,images:data.images.length,textLen:data.text.length}));
+     status:pageResult?.status(),date:data.date,images:data.images.length,textLen:data.text.length,
+     expectedTitle:d.title,actualTitle:data.title,
+     relatedHeadings:data.headings.filter(x=>/các\\s+bài\\s+viết\\s+khác|other posts/i.test(x)).slice(0,5),
+     hasRelatedText:/các\\s+bài\\s+viết\\s+khác/i.test(data.text)}));
    for(const src of data.images){
     const u=new URL(src,url);
     if(u.origin!==web||!u.pathname.startsWith("/api/images/"))
