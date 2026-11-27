@@ -1,0 +1,28 @@
+name: PSE fifteen missing Joomla company articles original content media inventory READ ONLY
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-historical-media-inventory-request]
+permissions:
+  contents: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Verify original fifteen Joomla posts, images, external files and unsupported embeds
+        run: node --check scripts/pse-company-historical-media-inventory.mjs && node scripts/pse-company-historical-media-inventory.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-historical-source-inventory
+          path: artifacts/pse-company-news/historical-media-inventory.json
+          retention-days: 7
+          if-no-files-found: warn
