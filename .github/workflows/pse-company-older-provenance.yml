@@ -1,0 +1,35 @@
+name: PSE older 16 Joomla company posts exact original identity and import checkpoint audit
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-older-provenance-request]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  source:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pse-company-global-posts-parity
+          run-id: 45951534765
+          github-token: ${{ github.token }}
+          path: artifacts/source
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Resolve sixteen original Joomla Post IDs to immutable CMS migration checkpoint
+        run: node --check scripts/pse-company-older-provenance.mjs && node scripts/pse-company-older-provenance.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-older-provenance
+          path: artifacts/pse-company-news/older-provenance.json
+          retention-days: 7
+          if-no-files-found: warn
