@@ -39,6 +39,28 @@ async function getWithTransientRetry(url, options, label){
  }
  throw lastError||Error("Transient read-only request exhausted: "+label);
 }
+
+async function gotoWithTransientRetry(page,url,label,timeout=45000){
+ let lastError;
+ for(let attempt=1;attempt<=3;attempt++){
+  try{
+   const response=await page.goto(url,{waitUntil:"domcontentloaded",timeout});
+   if([429,502,503,504].includes(response?.status())&&attempt<3){
+    console.log("PSE_TTH_TRANSIENT_PAGE_RETRY="+JSON.stringify({label,attempt,http:response.status()}));
+    await sleep(1500*attempt);
+    continue;
+   }
+   return response;
+  }catch(error){
+   lastError=error;
+   const reason=String(error?.message||error);
+   if(!/ERR_TIMED_OUT|ERR_CONNECTION_RESET|TimeoutError|ECONNRESET|socket hang up|ERR_CONNECTION_CLOSED/i.test(reason)||attempt===3)throw error;
+   console.log("PSE_TTH_TRANSIENT_PAGE_RETRY="+JSON.stringify({label,attempt,reason:reason.slice(0,110)}));
+   await sleep(1500*attempt);
+  }
+ }
+ throw lastError||Error("Transient page navigation exhausted: "+label);
+}
 try{
  // Diagnose the source-owned, public HTML before any WordPress REST request.
  // This keeps a slow admin REST server from hiding a real article mismatch.
@@ -46,7 +68,7 @@ try{
  if(first){
   const probePage=await ctx.newPage();
   try{
-   const probeResp=await probePage.goto(web+"/"+first.slug,{waitUntil:"domcontentloaded",timeout:45000});
+   const probeResp=await gotoWithTransientRetry(probePage,web+"/"+first.slug,"article-probe-"+first.joomlaId,45000);
    const probe=await probePage.evaluate(()=>{
     const main=document.querySelector("main"),body=main?.querySelector("#article-content");
     const text=(body?.textContent||"").replace(/\\s+/g," ").trim();
@@ -100,7 +122,7 @@ try{
   const page=await ctx.newPage();
   const url=web+"/"+d.slug;
   try{
-   const pageResult=await page.goto(url,{waitUntil:"domcontentloaded",timeout:65000});
+   const pageResult=await gotoWithTransientRetry(page,url,"article-"+d.joomlaId,65000);
    const data=await page.evaluate(()=>{
     const main=document.querySelector("main"),body=main?.querySelector("#article-content");
     return{title:(main?.querySelector("h1")?.textContent||"").replace(/\s+/g," ").trim(),
