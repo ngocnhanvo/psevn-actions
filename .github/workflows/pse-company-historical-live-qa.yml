@@ -1,0 +1,28 @@
+name: PSE 15 original historical company Posts and 93 images live Astro parity QA
+on:
+  push:
+    branches: [main]
+    paths: [.pse-company-historical-live-qa-request]
+permissions:
+  contents: read
+jobs:
+  qa:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Check original Joomla source titles dates native content and all 93 optimized image HTTP responses
+        run: node --check scripts/pse-company-historical-live-qa.mjs && node scripts/pse-company-historical-live-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-company-historical-live-qa
+          path: artifacts/pse-company-news/live-historical-15-qa.json
+          retention-days: 7
+          if-no-files-found: warn
