@@ -1,0 +1,52 @@
+name: PSE four Joomla source IDs separate from translation roots (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-four-joomla-source-id-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): preserve Joomla IDs without hiding native Posts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - name: Validate exact four Joomla identity scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-four-joomla-source-id-repair.mjs
+          node --check scripts/pse-tth-updraft-backup-retry.mjs
+          test "$(cat .pse-four-joomla-source-id-request)" = "SOURCE_IDS=1746,1745,1744,1743;WP_IDS=83843,83845,83847,83849;FIELD=pse_joomla_source_id;APPROVED=YES"
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh database-only rollback checkpoint
+        run: node scripts/pse-tth-updraft-backup-retry.mjs
+      - name: Reconcile separate Joomla source identity fields, readback and Admin visibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PSE_TTH_VERIFIED_DB_BACKUP=yes
+          node scripts/pse-four-joomla-source-id-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-four-dedicated-joomla-source-id
+          path: artifacts/pse-four-joomla-source-id.json
+          retention-days: 14
+          if-no-files-found: warn
