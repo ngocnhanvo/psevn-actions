@@ -1,2 +1,2 @@
 MODE=AUDIT_PARENT
-Inspect unique WordPress shareholder parent 77022, redundant child 82063, route and native destination; read-only.
+Read-only preflight of 77022 / 82063 against real WordPress Header/vi and public archive, after workflow syntax repair.
