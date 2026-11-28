@@ -70,6 +70,7 @@ try{
    await field.fill(String(answer));
   }
   await page.locator('#wp-submit').click({noWaitAfter:true,timeout:90000});
+  await page.waitForFunction(() => location.pathname.startsWith('/wp-admin/') && !document.querySelector('#loginform'),null,{timeout:65000});
  }
  await visit('/wp-admin/edit.php?post_type=post','posts-list');
  if(page.url().includes('wp-login')||!await page.locator('#adminmenu').count())
