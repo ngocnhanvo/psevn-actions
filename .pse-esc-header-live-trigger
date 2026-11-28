@@ -1,4 +1,4 @@
-PSE shareholder hover/click menu release verification, 2026-11-28, QA iteration 3.
-Astro deployed 47cb71c457f77a244ae3796b6a33f61607f4bf16 run 46096452219 attempt 5 SUCCESS.
-WordPress 77022 canonical and native redundant 82063 deleted run 46112606212 SUCCESS.
-Verify shareholder specific desktop/mobile via Playwright first, then legacy Header parity and menu transition with hover-vs-touch separated. Read-only.
+PSE News menu 2026-11-28 postdeploy QA, read-only.
+WordPress Header/vi Menu Manager removed native item 83686 under Tin Cong ty parent 76996, News root 76995; CMS run 46113935458 SUCCESS, 48 -> 47 items.
+Astro production release run 46096452219 attempt 6 SUCCESS, source 47cb71c457f77a244ae3796b6a33f61607f4bf16.
+Verify News Tin Cong ty submenu has no Tất cả while preserving Tin tổng hợp, Hoạt động Chi bộ - HĐQT - BKS, Hoạt động Công đoàn - Đoàn TN - Nữ công, Đảng ủy. Check desktop hover 1440, mobile tap 390, and existing Header parity. NO CMS WRITE.
