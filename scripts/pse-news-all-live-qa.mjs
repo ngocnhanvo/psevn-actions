@@ -12,7 +12,7 @@ const origin=key=>{
   return u.origin;
 };
 const wp=origin("WC_URL"),front=origin("WC_URL_CLIENT");
-const norm=x=>String(x||"").trim().normalize("NFC").replace(/\s+/g," ").toLocaleLowerCase("vi");
+const norm=x=>String(x||"").trim().normalize("NFC").replace(/[–—]/g,"-").replace(/\s+/g," ").toLocaleLowerCase("vi");
 const browser=await chromium.launch({headless:true});
 try{
  const api=await browser.newPage();
