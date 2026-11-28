@@ -31,7 +31,7 @@ async function restPost(id){
  let last;
  for(let attempt=1;attempt<=2;attempt++){
   try{
-   const r=await ctx.request.get(wp+'/wp-json/wp/v2/posts/'+id+'?_fields=id,type,status,slug,title,date,categories,link',
+   const r=await ctx.request.get(wp+'/wp-json/wp/v2/posts/'+id+'?_fields=id,type,status,slug,title,date,categories,link,pse_joomla_source_title',
       {timeout:55000,failOnStatusCode:false});
    const payload=await r.json().catch(()=>null);
    if([500,502,503,504,429].includes(r.status())&&attempt===1){await pause(1500);continue}
@@ -82,7 +82,7 @@ try{
  for(const d of manifest.records){
   const r=await restPost(wpIds[d.joomlaId]);
   const p=r.data;
-  const info={joomlaId:d.joomlaId,wpId:wpIds[d.joomlaId],http:r.http,acfOriginPageId:p?.acf?.origin_page_id,
+  const info={joomlaId:d.joomlaId,wpId:wpIds[d.joomlaId],http:r.http,acfOriginPageId:p?.acf?.origin_page_id,restSourceTitle:p?.pse_joomla_source_title,
     type:p?.type,status:p?.status,slug:p?.slug,title:p?.title?.rendered,date:p?.date,
     expectedTitle:d.title,expectedDate:d.publishUp,categories:p?.categories,
     match:p?.id===wpIds[d.joomlaId]&&p?.slug===d.slug&&p?.date===d.publishUp&&p?.status==='publish'};
