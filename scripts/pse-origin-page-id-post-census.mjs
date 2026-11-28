@@ -117,6 +117,10 @@ try{
       if(index===1){
         expectedPages=Number(r.headers['x-wp-totalpages']);
         expectedCount=Number(r.headers['x-wp-total']);
+        if(expectedCount===0&&expectedPages===0){
+          report.coverage[status]={pages:0,expected:0,received:0};
+          break;
+        }
         if(!Number.isSafeInteger(expectedPages)||expectedPages<1||expectedPages>150)
           throw Error('WP_REST_TOTALPAGES_INVALID '+status);
         if(!Number.isSafeInteger(expectedCount))
