@@ -89,18 +89,40 @@ try{
   report.posts.push(info);
   console.log('PSE_ADMIN_SEARCH_REST_POST='+JSON.stringify(info));
  }
+ const publicList=await ctx.request.get(wp+'/wp-json/wp/v2/posts?status=publish&per_page=1&_fields=id',
+   {timeout:55000,failOnStatusCode:false});
+ report.wpRestPublishedTotal={http:publicList.status(),total:publicList.headers()['x-wp-total']||null};
+ for(const query of ['Lê Minh Hưng','PETROVIETNAM']){
+  const u=new URL('/wp-json/wp/v2/posts',wp);
+  u.searchParams.set('status','publish');u.searchParams.set('per_page','100');
+  u.searchParams.set('search',query);u.searchParams.set('_fields','id,title,slug,date');
+  const response=await ctx.request.get(u.href,{timeout:55000,failOnStatusCode:false});
+  const arr=await response.json().catch(()=>null);
+  const entry={query,http:response.status(),total:response.headers()['x-wp-total']||null,
+   includesNewPost:Array.isArray(arr)&&arr.some(x=>x.id===83843),
+   ids:Array.isArray(arr)?arr.map(x=>x.id).slice(0,25):[]};
+  report.restSearch??=[];
+  report.restSearch.push(entry);
+  console.log('PSE_ADMIN_SEARCH_REST_QUERY='+JSON.stringify(entry));
+ }
  const focus=manifest.records[0];
  const probes=[
   {label:'full-title',query:focus.title},
   {label:'short-title',query:'Lê Minh Hưng'},
   {label:'distinctive',query:'PETROVIETNAM'},
-  {label:'other-post',query:'BÌNH ĐẲNG GIỚI'}
+  {label:'other-post',query:'BÌNH ĐẲNG GIỚI'},
+  {label:'recent-all',query:null,orderby:'date',order:'desc'},
+  {label:'short-no-status',query:'Lê Minh Hưng',status:null},
+  {label:'short-lang-all',query:'Lê Minh Hưng',lang:'all'}
  ];
  for(const test of probes){
   const u=new URL('/wp-admin/edit.php',wp);
   u.searchParams.set('post_type','post');
-  u.searchParams.set('post_status','all');
-  u.searchParams.set('s',test.query);
+  if(test.status!==null)u.searchParams.set('post_status','all');
+  if(test.query!==null)u.searchParams.set('s',test.query);
+  if(test.lang)u.searchParams.set('lang',test.lang);
+  if(test.orderby)u.searchParams.set('orderby',test.orderby);
+  if(test.order)u.searchParams.set('order',test.order);
   const nav=await visit(u.pathname+u.search,'admin-'+test.label);
   const grid=await adminRows();
   const data={label:test.label,http:nav.http,urlPath:new URL(nav.url).pathname,query:test.query,
@@ -109,6 +131,15 @@ try{
   report.searches.push(data);
   console.log('PSE_ADMIN_SEARCH_QUERY='+JSON.stringify(data));
  }
+ try{
+  const view=await visit('/wp-admin/post.php?post=83843&action=edit','direct-edit-id-83843');
+  const editor=await page.evaluate(()=>({title:(document.querySelector('#title')?.value||
+    document.querySelector('.editor-post-title__input')?.textContent||'').slice(0,120),
+    postId:document.querySelector('#post_ID')?.value||null,
+    error:(document.querySelector('.wp-die-message')?.textContent||'').trim().slice(0,180)}));
+  report.directEdit={http:view.http,urlPath:new URL(view.url).pathname,...editor};
+  console.log('PSE_ADMIN_SEARCH_DIRECT_EDIT='+JSON.stringify(report.directEdit));
+ }catch(e){report.directEdit={error:String(e).slice(0,200)};}
  const exact=report.searches.find(x=>x.label==='full-title');
  const short=report.searches.find(x=>x.label==='short-title');
  const allRestOk=report.posts.every(x=>x.match&&x.type==='post');
