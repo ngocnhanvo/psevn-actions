@@ -82,7 +82,7 @@ try{
  for(const d of manifest.records){
   const r=await restPost(wpIds[d.joomlaId]);
   const p=r.data;
-  const info={joomlaId:d.joomlaId,wpId:wpIds[d.joomlaId],http:r.http,
+  const info={joomlaId:d.joomlaId,wpId:wpIds[d.joomlaId],http:r.http,acfOriginPageId:p?.acf?.origin_page_id,
     type:p?.type,status:p?.status,slug:p?.slug,title:p?.title?.rendered,date:p?.date,
     expectedTitle:d.title,expectedDate:d.publishUp,categories:p?.categories,
     match:p?.id===wpIds[d.joomlaId]&&p?.slug===d.slug&&p?.date===d.publishUp&&p?.status==='publish'};
@@ -92,6 +92,7 @@ try{
  const publicList=await ctx.request.get(wp+'/wp-json/wp/v2/posts?status=publish&per_page=1&_fields=id',
    {timeout:55000,failOnStatusCode:false});
  report.wpRestPublishedTotal={http:publicList.status(),total:publicList.headers()['x-wp-total']||null};
+ console.log('PSE_ADMIN_SEARCH_REST_TOTAL='+JSON.stringify(report.wpRestPublishedTotal));
  for(const query of ['Lê Minh Hưng','PETROVIETNAM']){
   const u=new URL('/wp-json/wp/v2/posts',wp);
   u.searchParams.set('status','publish');u.searchParams.set('per_page','100');
@@ -113,7 +114,10 @@ try{
   {label:'other-post',query:'BÌNH ĐẲNG GIỚI'},
   {label:'recent-all',query:null,orderby:'date',order:'desc'},
   {label:'short-no-status',query:'Lê Minh Hưng',status:null},
-  {label:'short-lang-all',query:'Lê Minh Hưng',lang:'all'}
+  {label:'short-lang-all',query:'Lê Minh Hưng',lang:'all'},
+  {label:'petrovietnam-full-admin',query:'PETROVIETNAM',fullAdmin:true},
+  {label:'short-full-admin',query:'Lê Minh Hưng',fullAdmin:true},
+  {label:'short-folder-all',query:'PETROVIETNAM',folder:'all'}
  ];
  for(const test of probes){
   const u=new URL('/wp-admin/edit.php',wp);
@@ -121,6 +125,8 @@ try{
   if(test.status!==null)u.searchParams.set('post_status','all');
   if(test.query!==null)u.searchParams.set('s',test.query);
   if(test.lang)u.searchParams.set('lang',test.lang);
+  if(test.fullAdmin)u.searchParams.set('esc_full_admin','1');
+  if(test.folder)u.searchParams.set('folder',test.folder);
   if(test.orderby)u.searchParams.set('orderby',test.orderby);
   if(test.order)u.searchParams.set('order',test.order);
   const nav=await visit(u.pathname+u.search,'admin-'+test.label);
