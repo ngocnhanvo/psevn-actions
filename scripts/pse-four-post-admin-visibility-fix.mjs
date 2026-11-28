@@ -92,12 +92,13 @@ try{
  for(const row of manifest.records){
   const expectedId=ids[row.joomlaId], result=await read(expectedId),p=result.data;
   const original=String(p?.acf?.origin_page_id??'');
+  const rootNow=original===''||original==='0';
   if(result.status!==200||p?.id!==expectedId||p?.type!=='post'||p?.status!=='publish'||
    p?.slug!==row.slug||p?.date!==row.publishUp||
    !p?.categories?.includes(1742)||!p?.categories?.includes(1746)||
    norm(p?.title?.raw||p?.title?.rendered)!==norm(row.title)||
    p?.acf?.action!=='PostDetails'||p?.acf?.key!=='ssr-post'||
-   (original!==''&&original!==String(row.joomlaId)))
+   (!rootNow&&original!==String(row.joomlaId)))
    throw Error('POST_IDENTITY_OR_SOURCE_METADATA_MISMATCH '+row.joomlaId+' WP '+expectedId);
   verified.push({row,id:expectedId,before:p,original,signature:essential(p)});
   console.log('PSE_ADMIN_ROOT_PRECHECK='+JSON.stringify({joomlaId:row.joomlaId,wpId:expectedId,
@@ -106,7 +107,7 @@ try{
  if(verified.length!==4)throw Error('Four-post preflight incomplete');
  report.status='APPLYING';
  for(const item of verified){
-  if(item.original===''){
+  if(item.original===''||item.original==='0'){
    report.skipped.push(item.id);
   }else{
    const updated=await api('/wp-json/wp/v2/posts/'+item.id,'POST',{acf:{origin_page_id:''}});
@@ -116,7 +117,7 @@ try{
   }
   const after=await read(item.id);
   if(after.status!==200||after.data?.id!==item.id||
-   String(after.data?.acf?.origin_page_id??'')!==''||
+   !['','0'].includes(String(after.data?.acf?.origin_page_id??''))||
    essential(after.data)!==item.signature)
    throw Error('POST_METADATA_READBACK_OR_DATA_PARITY_FAILED '+item.id);
   report.verified.push({joomlaId:item.row.joomlaId,wpId:item.id,originPageId:'',
