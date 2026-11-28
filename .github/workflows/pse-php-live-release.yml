@@ -56,6 +56,8 @@ jobs:
           php source-php/wp-content/plugins/github-trigger/tests/redirect-rewrite-regression.php
           php -l source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php
           php source-php/tests/pse-joomla-source-title-rest.php
+          php -l source-php/wp-content/mu-plugins/esc-multilingual-admin.php
+          php source-php/wp-content/mu-plugins/tests/multilingual-admin-regression.php
           php -l source-php/wp-content/mu-plugins/pse-post-routing-defaults.php
           php -l source-php/wp-content/mu-plugins/pse-published-post-search.php
           php -l source-php/wp-content/mu-plugins/pse-public-contact-form-id.php
@@ -127,6 +129,15 @@ jobs:
               fi
               export PSE_PHP_RELEASE_SCOPE=joomla-source-title
               echo "PSE_PHP_RELEASE_SCOPE=joomla-source-title source_verified=true files=1"
+            elif [[ "$request" =~ ^PSE_MULTILINGUAL_ADMIN_RELEASE_SHA=([0-9a-f]{40})$ ]]; then
+              expected_sha="${BASH_REMATCH[1]}"
+              actual_sha="$(git -C source-php rev-parse HEAD)"
+              if [[ "$expected_sha" != "$actual_sha" ]]; then
+                echo "::error::Multilingual Admin PHP release source SHA mismatch"
+                exit 1
+              fi
+              export PSE_PHP_RELEASE_SCOPE=multilingual-admin
+              echo "PSE_PHP_RELEASE_SCOPE=multilingual-admin source_verified=true files=1"
             fi
           fi
           python3 scripts/pse-php-live-release.py
