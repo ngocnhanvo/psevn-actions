@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Compare PSE deployed multilingual WP Admin filter against source, no FTP writes."""
-import ftplib, hashlib, io, os, ssl
+import ftplib, hashlib, io, os, ssl, difflib
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -37,6 +37,17 @@ try:
     print('PSE_MULTILINGUAL_ADMIN_LOCAL_SHA256='+hashlib.sha256(source).hexdigest())
     print('PSE_MULTILINGUAL_ADMIN_REMOTE_SHA256='+hashlib.sha256(remote).hexdigest())
     print('PSE_MULTILINGUAL_ADMIN_SOURCE_MATCH='+str(source==remote).upper())
+    def root_block(blob):
+        txt=blob.decode('utf-8','replace')
+        start=txt.index('function esc_ml_admin_filter_root_rows')
+        end=txt.index("add_action('pre_get_posts', 'esc_ml_admin_filter_root_rows'", start)
+        return txt[start:end].splitlines()
+    local_root=root_block(source)
+    remote_root=root_block(remote)
+    print('PSE_MULTILINGUAL_ADMIN_ROOT_BLOCK_MATCH='+str(local_root==remote_root).upper())
+    diff=list(difflib.unified_diff(local_root,remote_root,fromfile='source-root',tofile='installed-root'))
+    for line in diff[:90]:
+        print('PSE_MULTILINGUAL_ROOT_DIFF='+line[:210])
     for label,phrase in [('root_filter',b'esc_ml_admin_filter_root_rows'),
        ('root_empty',b"'value' => ''"),
        ('root_zero',b"'value' => '0'"),
