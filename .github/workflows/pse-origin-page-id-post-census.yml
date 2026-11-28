@@ -1,0 +1,38 @@
+name: PSE original Post origin_page_id census (READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-origin-page-id-post-census.mjs
+      - .github/workflows/pse-origin-page-id-post-census.yml
+permissions:
+  contents: read
+concurrency:
+  group: pse-origin-page-id-post-census-readonly
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - name: Validate audit (no CMS writes)
+        run: node --check scripts/pse-origin-page-id-post-census.mjs
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Census all WordPress Posts and verify translation parents
+        run: node scripts/pse-origin-page-id-post-census.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-origin-page-id-post-census
+          path: artifacts/pse-origin-page-id-post-census.json
+          retention-days: 14
+          if-no-files-found: warn
