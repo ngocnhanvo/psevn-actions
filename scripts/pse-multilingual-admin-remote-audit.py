@@ -37,6 +37,17 @@ try:
     print('PSE_MULTILINGUAL_ADMIN_LOCAL_SHA256='+hashlib.sha256(source).hexdigest())
     print('PSE_MULTILINGUAL_ADMIN_REMOTE_SHA256='+hashlib.sha256(remote).hexdigest())
     print('PSE_MULTILINGUAL_ADMIN_SOURCE_MATCH='+str(source==remote).upper())
+    if source != remote:
+        raise RuntimeError('Installed multilingual Admin root filter is not at latest reviewed source')
+    origin_source=Path('source-php/wp-content/mu-plugins/pse-legacy-article-seo-rest.php').read_bytes()
+    origin_buf=io.BytesIO()
+    ftp.retrbinary('RETR pse-legacy-article-seo-rest.php',origin_buf.write)
+    installed_origin=origin_buf.getvalue()
+    print('PSE_JOOMLA_SOURCE_ID_PHP_DEPLOYED='+str(origin_source==installed_origin).upper())
+    print('PSE_JOOMLA_SOURCE_ID_SEPARATED='+str(b"pse_joomla_source_id" in installed_origin).upper())
+    print('PSE_TEMP_ADMIN_SQL_DIAG_REMOVED='+str(b"pse-admin-query-diag" not in installed_origin).upper())
+    if origin_source != installed_origin or b"pse_joomla_source_id" not in installed_origin or b"pse-admin-query-diag" in installed_origin:
+        raise RuntimeError('Joomla source-ID release parity or diagnostic cleanup FAILED')
     def root_block(blob):
         txt=blob.decode('utf-8','replace')
         start=txt.index('function esc_ml_admin_filter_root_rows')
