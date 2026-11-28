@@ -1,5 +1,4 @@
-PSE shareholder navigation post-deploy QA, 2026-11-28
-Astro production SHA: 47cb71c457f77a244ae3796b6a33f61607f4bf16
-Production run: 46096452219 attempt 5 SUCCESS.
-WordPress native menu update: run 46112606212 SUCCESS; parent 77022 canonical, child 82063 deleted, other menu items preserved.
-Playwright read-only check desktop hover/menu link, mobile chevron+link and retained shareholder items; no CMS writes and no deployment.
+PSE shareholder navigation post-deploy QA retry 2026-11-28
+Production Astro SHA 47cb71c457f77a244ae3796b6a33f61607f4bf16, run 46096452219 attempt 5 SUCCESS.
+WordPress menu item 82063 deleted and parent 77022 canonical, CMS run 46112606212 SUCCESS.
+Earlier QA 46113053109 detected outdated Library arrow selector after semantic link+chevron split. Selector updated in scripts/pse-menu-transition-live-qa.mjs. Re-run read-only full menu navigation + shareholder desktop/mobile browser checks.
