@@ -1,4 +1,5 @@
-Read-only PSE Header postdeploy QA after Astro master acd5dc5c43d9b464181f5a5bc0d6f4af1c995f57.
-Production workflow: ngocnhanvo/psevn-actions run 46096452219 attempt 3 (success).
-Check desktop 1440px hover-open root and nested Library submenu, mouse click retains hover-open, and mobile 390px click navigation. Also verify live WordPress Header link parity and navigation overlay.
-No CMS writes, Astro build, or FTP changes from QA.
+PSE shareholder navigation post-deploy QA, 2026-11-28
+Astro production SHA: 47cb71c457f77a244ae3796b6a33f61607f4bf16
+Production run: 46096452219 attempt 5 SUCCESS.
+WordPress native menu update: run 46112606212 SUCCESS; parent 77022 canonical, child 82063 deleted, other menu items preserved.
+Playwright read-only check desktop hover/menu link, mobile chevron+link and retained shareholder items; no CMS writes and no deployment.
