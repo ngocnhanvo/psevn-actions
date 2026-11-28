@@ -1,2 +1,2 @@
-MODE=AUDIT_PARENT
-Read-only preflight of 77022 / 82063 against real WordPress Header/vi and public archive, after workflow syntax repair.
+MODE=APPLY_PARENT
+Owner request 2026-11-28: Tin tức cổ đông navigates to /tin-tuc-su-kien/thong-tin-co-dong, remove only native redundant Tất cả item 82063; preserve other Header items. Native WordPress write + independent readback.
