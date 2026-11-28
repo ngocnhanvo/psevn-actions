@@ -1,0 +1,30 @@
+name: PSE multilingual admin installed PHP contract (FTPS READ ONLY)
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/pse-multilingual-admin-remote-audit.py
+permissions:
+  contents: read
+jobs:
+  compare:
+    if: github.repository == 'ngocnhanvo/psevn-actions'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/checkout@v4
+        with:
+          repository: ngocnhanvo/psevn-php
+          ref: master
+          token: ${{ secrets.SOURCE_REPO_PAT }}
+          path: source-php
+          persist-credentials: false
+      - name: Verify installed root filter without modifying production
+        run: python3 scripts/pse-multilingual-admin-remote-audit.py
