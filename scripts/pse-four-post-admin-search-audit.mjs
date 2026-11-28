@@ -112,6 +112,9 @@ try{
   {label:'short-title',query:'Lê Minh Hưng'},
   {label:'distinctive',query:'PETROVIETNAM'},
   {label:'other-post',query:'BÌNH ĐẲNG GIỚI'},
+  {label:'joomla1745',query:'THÁNG HÀNH ĐỘNG VÌ BÌNH ĐẲNG GIỚI NĂM 2026'},
+  {label:'joomla1744',query:'THAY AVATAR'},
+  {label:'joomla1743',query:'TỰ HÀO 65 NĂM'},
   {label:'recent-all',query:null,orderby:'date',order:'desc'},
   {label:'short-no-status',query:'Lê Minh Hưng',status:null},
   {label:'short-lang-all',query:'Lê Minh Hưng',lang:'all'},
@@ -156,6 +159,10 @@ try{
   report.directEdit={http:view.http,urlPath:new URL(view.url).pathname,...editor};
   console.log('PSE_ADMIN_SEARCH_DIRECT_EDIT='+JSON.stringify(report.directEdit));
  }catch(e){report.directEdit={error:String(e).slice(0,200)};}
+ const visibleIds=[['full-title',83843],['joomla1745',83845],['joomla1744',83847],['joomla1743',83849]]
+  .map(([label,id])=>({label,id,found:!!report.searches.find(x=>x.label===label)?.rows.some(x=>x.id==='post-'+id)}));
+ report.adminVisibility=visibleIds;
+ console.log('PSE_ADMIN_SEARCH_FOUR_VISIBILITY='+JSON.stringify(visibleIds));
  const exact=report.searches.find(x=>x.label==='full-title');
  const short=report.searches.find(x=>x.label==='short-title');
  const allRestOk=report.posts.every(x=>x.match&&x.type==='post');
@@ -163,7 +170,8 @@ try{
   short?.targetFound&&!exact?.targetFound?'LONG_FULL_TITLE_SEARCH_DOES_NOT_MATCH_WHILE_SHORT_DOES':
   !short?.targetFound?'NATIVE_ADMIN_SEARCH_CANNOT_FIND_POST_WITH_SHORT_KEYWORD':
   'ADMIN_TITLE_SEARCH_MATCHED';
- report.status='PASS';
+ report.status=allRestOk&&visibleIds.every(x=>x.found)?'PASS':'FAILED';
+ if(report.status!=='PASS')process.exitCode=1;
  console.log('PSE_ADMIN_SEARCH_AUDIT='+JSON.stringify({status:report.status,diagnosis:report.diagnosis,
   allRestOk,fullFound:exact?.targetFound,shortFound:short?.targetFound}));
 }catch(e){
