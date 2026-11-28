@@ -30,7 +30,16 @@ try {
         root = page.locator("#mobile-menu-container button[data-menu-toggle]").filter({hasText:/TIN TỨC/i}).first();
       }
       if (!(await root.count())) throw Error("News menu root unavailable for " + width);
+      if (width === 1440) {
+        await root.hover();
+        if (await root.getAttribute("aria-expanded") !== "true")
+          throw Error("Desktop root menu did not open on hover");
+      }
+      // Playwright moves the pointer before clicking: an already hover-open
+      // desktop menu must remain open, while mobile still opens by click.
       await root.click();
+      if (await root.getAttribute("aria-expanded") !== "true")
+        throw Error("Menu collapsed unexpectedly on click at " + width);
       const panel = page.locator("#" + await root.getAttribute("aria-controls"));
       const unexpectedSynthetic = panel.locator('a[href]').filter({hasText:/^Xem tất cả TIN TỨC/i});
       if (await unexpectedSynthetic.count()) throw Error("Unexpected generated News View all link at " + width);
@@ -38,7 +47,14 @@ try {
         .locator(width === 1440 ? "button[data-submenu-trigger]" : "button[data-menu-toggle]")
         .filter({hasText:/^Thư viện$/i}).first();
       if (await libraryButton.count() !== 1) throw Error("Native Library parent missing in News menu on " + width);
+      if (width === 1440) {
+        await libraryButton.hover();
+        if (await libraryButton.getAttribute("aria-expanded") !== "true")
+          throw Error("Nested desktop menu did not open on hover");
+      }
       await libraryButton.click();
+      if (await libraryButton.getAttribute("aria-expanded") !== "true")
+        throw Error("Nested menu collapsed unexpectedly on click at " + width);
       const libraryPanel = page.locator("#" + await libraryButton.getAttribute("aria-controls"));
       const libraryTexts = (await libraryPanel.locator("a[href]").allTextContents()).map(x=>x.trim());
       if (libraryTexts.some(x=>/xem tất cả/i.test(x)) ||
