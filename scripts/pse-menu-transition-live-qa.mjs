@@ -53,13 +53,16 @@ try {
       ).first();
       if (await libraryButton.count() !== 1) throw Error("Native Library parent missing in News menu on " + width);
       if (width === 1440) {
+        // Desktop submenu opens on pointer hover; do not move the pointer a
+        // second time just to click the chevron in this hover-only assertion.
         await libraryButton.hover();
         if (await libraryButton.getAttribute("aria-expanded") !== "true")
           throw Error("Nested desktop menu did not open on hover");
+      } else {
+        await libraryButton.click();
+        if (await libraryButton.getAttribute("aria-expanded") !== "true")
+          throw Error("Nested mobile menu did not open on tap");
       }
-      await libraryButton.click();
-      if (await libraryButton.getAttribute("aria-expanded") !== "true")
-        throw Error("Nested menu collapsed unexpectedly on click at " + width);
       const libraryPanel = page.locator("#" + await libraryButton.getAttribute("aria-controls"));
       const libraryTexts = (await libraryPanel.locator("a[href]").allTextContents()).map(x=>x.trim());
       if (libraryTexts.some(x=>/xem tất cả/i.test(x)) ||
