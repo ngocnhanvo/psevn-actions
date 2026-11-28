@@ -43,9 +43,14 @@ try {
       const panel = page.locator("#" + await root.getAttribute("aria-controls"));
       const unexpectedSynthetic = panel.locator('a[href]').filter({hasText:/^Xem tất cả TIN TỨC/i});
       if (await unexpectedSynthetic.count()) throw Error("Unexpected generated News View all link at " + width);
-      const libraryButton = panel
-        .locator(width === 1440 ? "button[data-submenu-trigger]" : "button[data-menu-toggle]")
-        .filter({hasText:/^Thư viện$/i}).first();
+      // Linked submenu parents now expose the title in an <a> and a separate
+      // arrow-only button. Identify the control by its accessible name so both
+      // the old button-only and the new link-plus-arrow markup are covered.
+      const libraryButton = panel.locator(
+        width === 1440
+          ? 'button[data-submenu-trigger][aria-label="Mở mục con của Thư viện"]'
+          : 'button[data-menu-toggle][aria-label="Mở mục con của Thư viện"]'
+      ).first();
       if (await libraryButton.count() !== 1) throw Error("Native Library parent missing in News menu on " + width);
       if (width === 1440) {
         await libraryButton.hover();
