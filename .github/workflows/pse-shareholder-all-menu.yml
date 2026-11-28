@@ -30,13 +30,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -Eq '^MODE=(AUDIT_PARENT|APPLY_PARENT)
-          echo 'PSE_SHAREHOLDER_NATIVE_MENU_JOB=PASS NO_ASTRO_BUILD=PASS'
- .pse-shareholder-all-menu-request; then
-            node --check scripts/pse-shareholder-parent-navigation.mjs
-            node scripts/pse-shareholder-parent-navigation.mjs
-          else
-            node --check scripts/pse-shareholder-all-menu.mjs
-            node scripts/pse-shareholder-all-menu.mjs
-          fi
+          case "$(head -n 1 .pse-shareholder-all-menu-request)" in
+            MODE=AUDIT_PARENT|MODE=APPLY_PARENT)
+              node --check scripts/pse-shareholder-parent-navigation.mjs
+              node scripts/pse-shareholder-parent-navigation.mjs
+              ;;
+            *)
+              node --check scripts/pse-shareholder-all-menu.mjs
+              node scripts/pse-shareholder-all-menu.mjs
+              ;;
+          esac
           echo 'PSE_SHAREHOLDER_NATIVE_MENU_JOB=PASS NO_ASTRO_BUILD=PASS'
