@@ -27,7 +27,15 @@ if(wp===front)throw Error('WordPress and frontend origins must be distinct');
 const href=front+'/tin-tuc-su-kien/thong-tin-co-dong';
 const lower=s=>String(s||'').normalize('NFC').trim().replace(/\s+/g,' ').toLocaleLowerCase('vi');
 const flatten=(list,parent=0)=>list.flatMap(n=>[{...n,parentID:parent},...flatten(n.children||[],Number(n.id))]);
-const normalizeHref=s=>String(s||'').trim().replace(/\/+$/,'');
+const canonicalPath='/tin-tuc-su-kien/thong-tin-co-dong';
+const normalizeHref=s=>{
+ const raw=String(s||'').trim();
+ if(!raw)return '';
+ try{
+  const u=new URL(raw,front+'/');
+  return u.origin===front?u.pathname.replace(/\/+$/,''):raw.replace(/\/+$/,'');
+ }catch{return raw.replace(/\/+$/,'')}
+};
 const ids=list=>list.map(n=>Number(n.id)).sort((a,b)=>a-b).join(',');
 const browser=await chromium.launch({headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:900}});
@@ -85,15 +93,15 @@ try{
  const parent=branch[0];
  const all=current.filter(x=>lower(x.label)==='tất cả'&&x.parentID===Number(parent.id));
  if(all.length>1||(all.length===1&&(Number(all[0].id)!==82063||
-   (all[0].children||[]).length>0||normalizeHref(all[0].href)!==href)))
+   (all[0].children||[]).length>0||normalizeHref(all[0].href)!==canonicalPath)))
   throw Error('Redundant shareholder child identity or destination changed');
  const allItem=all[0]||null;
- const parentCorrect=parent.linkMode==='custom'&&normalizeHref(parent.href)===href;
+ const parentCorrect=parent.linkMode==='custom'&&normalizeHref(parent.href)===canonicalPath;
  if(!parentCorrect && !['none','page','custom'].includes(String(parent.linkMode||'')))
   throw Error('Unexpected parent link mode');
  // A different live target is never silently replaced.
  if(!parentCorrect&&String(parent.href||'').trim()&&
-    !['#','/'].includes(String(parent.href).trim())&&normalizeHref(parent.href)!==href)
+    !['#','/'].includes(String(parent.href).trim())&&normalizeHref(parent.href)!==canonicalPath)
   throw Error('Parent already points somewhere else: refuse overwrite');
  const baseline=ids(current);
  console.log('PSE_SHAREHOLDER_PARENT_PREFLIGHT='+JSON.stringify({
@@ -120,8 +128,8 @@ try{
      options:Array.from(select?.options||[]).map(o=>o.value)};
    },Number(parent.id));
    if(!fields.options.includes('custom')||!['none','page','custom'].includes(fields.select)||
-     (fields.custom&&!['#','/'].includes(fields.custom)&&normalizeHref(fields.custom)!==href)||
-     (fields.native&&!['#','/'].includes(fields.native)&&normalizeHref(fields.native)!==href))
+     (fields.custom&&!['#','/'].includes(fields.custom)&&normalizeHref(fields.custom)!==canonicalPath)||
+     (fields.native&&!['#','/'].includes(fields.native)&&normalizeHref(fields.native)!==canonicalPath))
     throw Error('Parent Menu Manager fields do not match safe source baseline');
    await Promise.all([
     page.waitForLoadState('domcontentloaded',{timeout:60000}),
@@ -144,7 +152,7 @@ try{
    ]);
    const afterSave=flatten((await readMenu()).items);
    const latest=afterSave.find(x=>Number(x.id)===Number(parent.id));
-   if(ids(afterSave)!==baseline||latest?.linkMode!=='custom'||normalizeHref(latest?.href)!==href)
+   if(ids(afterSave)!==baseline||latest?.linkMode!=='custom'||normalizeHref(latest?.href)!==canonicalPath)
     throw Error('Native parent Save Menu readback did not preserve menu identities; stop before delete');
    console.log('PSE_SHAREHOLDER_PARENT_URL_SAVE=PASS id='+parent.id);
   }
@@ -153,7 +161,7 @@ try{
   const preDelete=flatten((await readMenu()).items);
   const duplicate=preDelete.filter(x=>lower(x.label)==='tất cả'&&x.parentID===Number(parent.id));
   if(duplicate.length>1||(duplicate.length===1&&
-     (Number(duplicate[0].id)!==82063||normalizeHref(duplicate[0].href)!==href)))
+     (Number(duplicate[0].id)!==82063||normalizeHref(duplicate[0].href)!==canonicalPath)))
    throw Error('Child changed just before deletion');
   if(duplicate.length===1){
    const deleted=await api('/wp-json/wp/v2/menu-items/82063?force=true','DELETE');
@@ -164,7 +172,7 @@ try{
   const kept=preDelete.filter(x=>Number(x.id)!==82063);
   const updated=final.find(x=>Number(x.id)===Number(parent.id));
   if(ids(final)!==ids(kept)||updated?.linkMode!=='custom'||
-     normalizeHref(updated?.href)!==href||
+     normalizeHref(updated?.href)!==canonicalPath||
      final.some(x=>x.parentID===Number(parent.id)&&lower(x.label)==='tất cả'))
    throw Error('Shareholder final WordPress menu readback invalid');
   const preserved=kept.every(old=>{
