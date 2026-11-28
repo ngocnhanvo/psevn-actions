@@ -129,8 +129,18 @@ try{
   if(test.folder)u.searchParams.set('folder',test.folder);
   if(test.orderby)u.searchParams.set('orderby',test.orderby);
   if(test.order)u.searchParams.set('order',test.order);
+  if(test.label==='distinctive')u.searchParams.set('pse_admin_query_diag','1');
   const nav=await visit(u.pathname+u.search,'admin-'+test.label);
   const grid=await adminRows();
+  if(test.label==='distinctive'){
+   const diag=await page.evaluate(()=>{
+    const node=document.getElementById('pse-admin-query-diag');
+    if(!node?.textContent)return null;
+    try{return JSON.parse(node.textContent)}catch{return {invalid:true,preview:node.textContent.slice(0,200)}}
+   });
+   report.adminSqlDiagnostic=diag;
+   console.log('PSE_ADMIN_SQL_DIAGNOSTIC='+JSON.stringify(diag));
+  }
   const data={label:test.label,http:nav.http,urlPath:new URL(nav.url).pathname,query:test.query,
    searched: grid.searchValue, noItems:grid.noItems, rows:grid.rows,total: grid.total,
    targetFound:grid.rows.some(x=>x.id==='post-83843'),otherFound:grid.rows.some(x=>x.id==='post-83845')};
