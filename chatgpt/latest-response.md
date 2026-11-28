@@ -1,41 +1,38 @@
-# PSE — phản hồi ngày 27/11/2026, Asia/Ho_Chi_Minh
+# PSE — phản hồi ngày 28/11/2026 (Asia/Ho_Chi_Minh)
 
 Project: pse.vn
 Repository: ngocnhanvo/psevn-actions
 Branch: main
 Code mode: auto-build
 Source gateway: bypass
-Read-only audit workflow: #45936673048 SUCCESS
-Audit source commit: aa43d0bc5c695ad2d7f2fab7374c225b2f1caf43
-Report commit: b730be7e56d95ee60c066dc03468831357449527
-Status: PARTIAL — chưa xác minh bảng SQL gốc.
+Scope: Không tìm được 4 Joomla Posts đã nhập khi tìm trong WordPress Admin.
+Verified: DONE — WordPress Admin search 4/4 PASS; CMS Joomla source identity 4/4 PASS; reviewed PHP FTPS hashes PASS.
 
-## Nguyên văn phản hồi dự định gửi
+## Nguyên văn phản hồi cuối dự định gửi
 
-## Kết quả truy vết ban đầu
+### Đã kiểm chứng nguyên nhân
 
-Mình đã xác minh được một vị trí hiển thị trên website Joomla gốc:
+Ban đầu tìm nguyên tiêu đề bài “Thủ tướng Lê Minh Hưng…” trong WordPress Admin không ra, mặc dù cả 4 Post đều có `status=publish`, slug/WordPress ID và ngày xuất bản đúng. Kiểm thử WordPress REST và màn hình Admin độc lập đã tái hiện sự khác biệt.
 
-- **Trang:** https://pse.vn/ — Trang chủ.
-- **Khu vực:** “Liên kết hữu ích”.
-- **Cách hiển thị:** Một hộp chọn dạng dropdown (`select`), không phải danh sách bài viết trong mục “Tin MÙA VỤ THỊ TRƯỜNG”.
+Nguyên nhân được xác nhận bằng SQL production: bộ lọc chỉ hiển thị bài gốc trong `esc-multilingual-admin.php` chấp nhận `origin_page_id` không tồn tại, chuỗi rỗng hoặc `0`, nhưng ACF ghi một quan hệ rỗng thành `a:0:{}`. Vì vậy SQL Admin loại cả 4 bài dù REST và màn hình sửa bài mở được.
 
-Ở website Astro mới, khu vực “Liên kết hữu ích” được hiển thị thành các liên kết riêng, lấy dữ liệu từ ESC Table `pse_03_vi`, qua component `src/astro/tablepress/Pse_03.astro`.
+### Đã sửa lỗi trên production
 
-**Điểm chưa xác minh ở đầu lượt:** Năm tên miền khách đề cập trong ảnh có thực sự nằm trong dropdown Joomla này hay không, và chúng được lưu tại bảng/module nào của database gốc.
+- Bản vá PHP thêm chính xác giá trị ACF rỗng `a:0:{}` vào điều kiện bài gốc, vẫn ẩn bản dịch thực sự. GitHub Actions PHP release [#46094913853](https://github.com/ngocnhanvo/psevn-actions/actions/runs/46094913853) **SUCCESS**.
+- Playwright kiểm tra trực tiếp WordPress Admin [#46095066138](https://github.com/ngocnhanvo/psevn-actions/actions/runs/46095066138) **SUCCESS: 4/4 bài tìm được**, cả tìm nguyên tiêu đề và các từ khóa riêng.
+- Joomla ID 1746/1745/1744/1743 được chuyển sang trường nguồn riêng `pse_joomla_source_id`, không sử dụng `origin_page_id` dành cho bản dịch. WordPress metadata repair [#46095358937](https://github.com/ngocnhanvo/psevn-actions/actions/runs/46095358937) **SUCCESS** sau DB-only backup: 4/4 nguồn, 4/4 tiêu đề gốc, 4/4 tìm Admin, nội dung/ngày/danh mục/ảnh giữ nguyên.
+- PHP source identity release [#46095279755](https://github.com/ngocnhanvo/psevn-actions/actions/runs/46095279755) **SUCCESS**.
+- FTPS read-only [#46095566210](https://github.com/ngocnhanvo/psevn-actions/actions/runs/46095566210) xác nhận cả hai file PHP production trùng SHA source đã duyệt và mã chẩn đoán SQL tạm đã được gỡ.
+- Importer được sửa để các lần nhập sau lưu Joomla ID vào đúng trường riêng, không lặp lỗi. Không chạy nhập lại và không sinh Post trùng.
 
-## Kết quả kiểm thử trực tiếp (27/11/2026)
+Bốn WordPress Post: `83843`, `83845`, `83847`, `83849`. Giữ `publish_up` chính xác tới giây; riêng #1745 là **26/11/2026 08:50:00**.
 
-Workflow read-only Playwright [#45936673048](https://github.com/ngocnhanvo/psevn-actions/actions/runs/45936673048) đã **SUCCESS**. Joomla hiện dùng khối `div.moduletable` tên “Liên kết hữu ích” với `select name="jumpmenu"` và `onchange="MM_jumpMenu('window.open()',this,0)"`: chọn một mục thì mở URL trong cửa sổ/tab mới.
+Bây giờ có thể tải lại **WordPress → Bài viết**, tìm “Thủ tướng Lê Minh Hưng”, hoặc mở [bài 83843](https://admin-pse.webnvn.com/wp-admin/post.php?post=83843&action=edit).
 
-Có **7 liên kết thật** (cộng 1 placeholder): DPM, PVN, PVFC, DPM Miền Bắc, PCE Miền Trung, DPM Tây Nam Bộ, PVFCCo-SBD. URL và nhãn nguyên bản đều nằm trong [báo cáo kiểm chứng](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/reports/PSE_ORIGINAL_JOOMLA_EXTERNAL_LINKS_2026-11-27.md).
+[Checkpoint nghiệm thu](https://github.com/ngocnhanvo/psevn-actions/blob/main/docs/checkpoints/PSE_FOUR_POSTS_ADMIN_SEARCH_FIX_2026-11-28.md).
 
-Năm tên miền `vietfood.org.vn`, `giacaphe.com`, `dashsu.vn`, `thitruongphanbon.com`, `agromonitor.vn` **không xuất hiện** trong `option.value`, `a.href` hoặc HTML DOM trên hai trang Joomla đã kiểm tra: trang chủ và trang “Thông tin thị trường”. Trang “Thông tin thị trường” hiển thị danh sách bài báo, không có dropdown.
-
-Khối `moduletable` + HTML/JavaScript này phù hợp với **Custom HTML module**. Bảng cần xác minh trước tiên là `ckiv4_modules`, tiếp đến `ckiv4_modules_menu` / `ckiv4_menu`; **chưa được chứng minh bằng SQL**. File SQL gzip thuộc cuộc trò chuyện trước không được mount vào cuộc trò chuyện hiện tại; không suy đoán ID module hoặc lịch sử link.
-
-Đã lưu báo cáo, không sửa WP/Astro/PHP, không thêm liên kết hay build production.
+**Lưu ý:** các bài/ảnh Joomla khác trong dự án tổng thể vẫn có thể cần QA riêng; phạm vi lỗi tìm kiếm Admin này đã được sửa và nghiệm thu.
 
 Chế độ code: auto-build
 Cổng ghi source: bypass
-Trạng thái: PARTIAL — chưa hoàn tất
+Trạng thái: DONE — hoàn tất
