@@ -119,7 +119,8 @@ try {
       Number(deleted.body?.previous?.id)!==selectedId)
       throw Error("Native item delete failed HTTP "+deleted.http);
     const after=flatten((await readMenu()).items);
-    const actual=snapshot(after),expected=before.filter(x=>x.id!==selectedId);
+    const actual=snapshot(after),expected=before.filter(x=>x.id!==selectedId)
+      .map(x=>x.id===selectedParentId ? {...x,children:x.children-1} : x);
     if(JSON.stringify(actual)!==JSON.stringify(expected))
       throw Error("Unexpected menu change after delete: check CMS immediately");
     if(after.some(x=>Number(x.parentID)===selectedParentId&&normalize(x.label)==="tất cả"))
