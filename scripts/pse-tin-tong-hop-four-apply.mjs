@@ -192,13 +192,14 @@ try{
    body.images.length!==row.images||/các\s+bài\s+viết\s+khác/i.test(body.text))
    throw Error("JOOMLA_BODY_TITLE_IMAGE_OR_RELATED_CHANGED "+row.joomlaId);
   const posts=await api("/wp-json/wp/v2/posts?context=edit&status=any&slug="+encodeURIComponent(row.slug)+
-   "&per_page=20&_fields=id,slug,status,title,acf,categories,date,content,featured_media");
+   "&per_page=20&_fields=id,slug,status,title,acf,categories,date,content,featured_media,pse_joomla_source_id");
   if(posts.status!==200||!Array.isArray(posts.data)||posts.data.length>1)
    throw Error("NATIVE_WP_POST_SLUG_AMBIGUOUS "+row.joomlaId);
   const prior=posts.data[0]||null;
   if(prior&&((String(prior.acf?.origin_page_id||"")!==""&&String(prior.acf?.origin_page_id||"")!==String(row.joomlaId))||
    !prior.categories?.includes(1746)||!prior.categories?.includes(1742)||
-   !sameTitle(prior.title?.raw||prior.title?.rendered,row.title)))
+   !sameTitle(prior.title?.raw||prior.title?.rendered,row.title)||
+   (prior.pse_joomla_source_id&&String(prior.pse_joomla_source_id)!==String(row.joomlaId))))
    throw Error("WP_POST_IDENTITY_COLLISION "+row.joomlaId);
   originals.push({...row,body,prior});
   for(const url of body.images){
@@ -300,19 +301,20 @@ try{
    const created=await api("/wp-json/wp/v2/posts","POST",{
     title:row.title,slug:row.slug,date:row.publishUp,categories:[1742,1746],
     content:converted.html,excerpt,status:"draft",featured_media:featured,
-    pse_seo_description:excerpt,
-    acf:{action:"PostDetails",key:"ssr-post",origin_page_id:""}
+    pse_seo_description:excerpt,pse_joomla_source_id:String(row.joomlaId),
+    acf:{action:"PostDetails",key:"ssr-post"}
    });
    if(created.status!==201||!Number.isSafeInteger(Number(created.data?.id)))
     throw Error("WP_POST_DRAFT_CREATE_FAILED "+row.joomlaId+" status="+created.status);
    id=Number(created.data.id);
   }
   const read=id=>api("/wp-json/wp/v2/posts/"+id+
-   "?context=edit&_fields=id,status,slug,date,title,categories,acf,content,featured_media");
+   "?context=edit&_fields=id,status,slug,date,title,categories,acf,content,featured_media,pse_joomla_source_id,pse_joomla_source_title");
   const before=await read(id),post=before.data;
   if(before.status!==200||post.id!==id||post.slug!==row.slug||![row.created,row.publishUp].includes(post.date)||
    !sameTitle(post.title?.raw||post.title?.rendered,row.title)||
    post.acf?.action!=="PostDetails"||post.acf?.key!=="ssr-post"||
+   (post.pse_joomla_source_id&&String(post.pse_joomla_source_id)!==String(row.joomlaId))||
    (String(post.acf?.origin_page_id||"")!==""&&String(post.acf?.origin_page_id||"")!==String(row.joomlaId))||
    !post.categories?.includes(1742)||!post.categories?.includes(1746)||
    Number(post.featured_media||0)!==featured||
@@ -336,7 +338,8 @@ try{
     throw Error("WP_POST_PUBLISH_REFUSED "+row.joomlaId);
   }
   const after=await read(id);
-  if(after.status!==200||after.data?.status!=="publish"||after.data.date!==row.publishUp)
+  if(after.status!==200||after.data?.status!=="publish"||after.data.date!==row.publishUp||
+   String(after.data?.pse_joomla_source_id)!==String(row.joomlaId))
    throw Error("WP_PUBLISHED_LOCAL_SECOND_READBACK_FAILED "+row.joomlaId);
   report.posts.push({joomlaId:row.joomlaId,wpId:id,created:row.created,publishUp:row.publishUp,dateCorrected,images:expected.length,
    slug:row.slug,status:"publish"});
