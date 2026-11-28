@@ -1,0 +1,53 @@
+name: PSE 48 original Joomla Posts metadata repair (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-origin-page-id-48-repair-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): repair 48 original Post source references'
+    runs-on: ubuntu-latest
+    timeout-minutes: 38
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: \${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: \${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: \${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - name: Validate exact approved repair code and request
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-origin-page-id-48-repair.mjs
+          node --check scripts/pse-tth-updraft-backup-retry.mjs
+          test "$(cat .pse-origin-page-id-48-repair-request)" = "APPROVED=YES;WP_POSTS=48;SOURCE=JOOMLA;ROOT=origin_page_id;IDENTITY=pse_joomla_source_id"
+          node -e 'const m=require("./docs/source/pse-origin-page-id-48-repair-20261128.json"); if(m.records.length!==48||new Set(m.records.map(x=>x.wpId)).size!==48)process.exit(1)'
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh local database-only UpdraftPlus rollback backup
+        run: node scripts/pse-tth-updraft-backup-retry.mjs
+      - name: Correct source and translation root for exactly 48 WordPress Posts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PSE_ORIGIN_DB_BACKED_UP=yes
+          node scripts/pse-origin-page-id-48-repair.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-origin-page-id-48-repair
+          path: artifacts/pse-origin-page-id-48-repair.json
+          retention-days: 21
+          if-no-files-found: warn

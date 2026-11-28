@@ -1,0 +1,324 @@
+{
+  "schema": "pse-48-joomla-root-repair-v1",
+  "audit": "PSE_ORIGIN_PAGE_ID_POST_CENSUS_2026-11-28.md",
+  "records": [
+    {
+      "wpId": 83318,
+      "joomlaId": 980,
+      "title": "Công trình DTN kho chứa Đồng Nai",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83136,
+      "joomlaId": 990,
+      "title": "Đại hội chi đoàn 2010",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83036,
+      "joomlaId": 1053,
+      "title": "Ngày Hội Truyền Thống 2014",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 82865,
+      "joomlaId": 989,
+      "title": "Hội đồng cổ đông, lễ ra mắt và đón nhận ISO",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83696,
+      "joomlaId": 1741,
+      "title": "Phú Mỹ Đông Nam Bộ tổ chức Lễ công bố và trao quyết định về công tác cán bộ",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83698,
+      "joomlaId": 1739,
+      "title": "PHÚ MỸ ĐÔNG NAM BỘ: MỘT NGÀY THỨ BẢY ĐẦY Ý NGHĨA",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81628,
+      "joomlaId": 985,
+      "title": "Hình ảnh Marketing 2010",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81296,
+      "joomlaId": 988,
+      "title": "Đoàn thanh niên 2011",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81175,
+      "joomlaId": 986,
+      "title": "Hội thảo tổng kết vườn thực nghiệm ngày 3/6/2013",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81137,
+      "joomlaId": 993,
+      "title": "Ngày truyền thống",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81124,
+      "joomlaId": 997,
+      "title": "Trường Sa",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81115,
+      "joomlaId": 996,
+      "title": "Học văn hóa doanh nghiệp",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81106,
+      "joomlaId": 992,
+      "title": "Mẫu bao bì",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81102,
+      "joomlaId": 987,
+      "title": "Khai trương cửa hàng ngày 3/6",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81090,
+      "joomlaId": 991,
+      "title": "Ngày Hội Truyền Thống 2011",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81077,
+      "joomlaId": 995,
+      "title": "Phụ nữ Việt Nam",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 81064,
+      "joomlaId": 994,
+      "title": "Nhà đại đoàn kết",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83794,
+      "joomlaId": 1657,
+      "title": "Phú Mỹ Đông Nam Bộ tổ chức thành công Đại hội Đại biểu Công đoàn lần thứ VI, nhiệm kỳ 2025 – 2030",
+      "proof": "joomla_sql_20261127",
+      "slug": "phu-my-dong-nam-bo-to-chuc-thanh-cong-dai-hoi-dai-bieu-cong-doan-lan-thu-vi-nhiem-ky-2025-2030",
+      "date": "2025-10-21T06:50:40"
+    },
+    {
+      "wpId": 83796,
+      "joomlaId": 1644,
+      "title": "Trồng rừng giữ nước mùa mưa",
+      "proof": "joomla_sql_20261127",
+      "slug": "trong-rung-giu-nuoc-mua-mua",
+      "date": "2025-06-04T09:16:25"
+    },
+    {
+      "wpId": 83798,
+      "joomlaId": 1643,
+      "title": "Chào mừng Ngày Quốc tế Thiếu nhi 01/06/2025",
+      "proof": "joomla_sql_20261127",
+      "slug": "chao-mung-ngay-quoc-te-thieu-nhi-01-06-2025",
+      "date": "2025-06-04T09:02:01"
+    },
+    {
+      "wpId": 83471,
+      "joomlaId": 1640,
+      "title": "Những giai điệu đẹp về Đông Nam Bộ",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83800,
+      "joomlaId": 1633,
+      "title": "Trương Thanh Lương: Người “gieo” niềm tin trên vùng đất đỏ Tây Nguyên",
+      "proof": "joomla_sql_20261127",
+      "slug": "truong-thanh-luong-nguoi-gieo-niem-tin-tren-vung-dat-do-tay-nguyen",
+      "date": "2025-04-21T08:17:05"
+    },
+    {
+      "wpId": 83802,
+      "joomlaId": 1632,
+      "title": "Gặp mặt khách hàng kinh doanh Phân bón Phú Mỹ tiêu biểu khu vực Lâm Đồng năm 2025",
+      "proof": "joomla_sql_20261127",
+      "slug": "gap-mat-khach-hang-kinh-doanh-phan-bon-phu-my-tieu-bieu-khu-vuc-lam-dong-nam-2025",
+      "date": "2025-04-21T08:04:37"
+    },
+    {
+      "wpId": 83804,
+      "joomlaId": 1607,
+      "title": "Chương trình “Xuân yêu thương-Tết sẻ chia” tại Đắk Mil",
+      "proof": "joomla_sql_20261127",
+      "slug": "chuong-trinh-xuan-yeu-thuong-tet-se-chia-tai-dak-mil",
+      "date": "2025-01-16T12:44:44"
+    },
+    {
+      "wpId": 83806,
+      "joomlaId": 1605,
+      "title": "Di Linh :Trao tặng 150 phần quà Tết cho người dân xã Sơn Điền",
+      "proof": "joomla_sql_20261127",
+      "slug": "di-linh-trao-tang-150-phan-qua-tet-cho-nguoi-dan-xa-son-dien",
+      "date": "2025-01-14T08:35:35"
+    },
+    {
+      "wpId": 83808,
+      "joomlaId": 1589,
+      "title": "PVFCCo-PSE tổ chức chương trình “Bữa cơm Công đoàn”",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-pse-to-chuc-chuong-trinh-bua-com-cong-doan",
+      "date": "2024-08-22T09:15:52"
+    },
+    {
+      "wpId": 83810,
+      "joomlaId": 1588,
+      "title": "PVFCCo-PSE: Chuỗi hoạt động ý nghĩa kỷ niệm 16 năm thành lập Công ty (18/08/2008 – 18/08/2024)",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-pse-chuoi-hoat-dong-y-nghia-ky-niem-16-nam-thanh-lap-cong-ty-18-08-2008-18-08-2024",
+      "date": "2024-08-20T09:22:42"
+    },
+    {
+      "wpId": 83812,
+      "joomlaId": 1569,
+      "title": "PVFCCo-PSE tổ chức các hoạt động kỷ niệm Ngày Phụ nữ Việt Nam 20/10",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-pse-to-chuc-cac-hoat-dong-ky-niem-ngay-phu-nu-viet-nam-20-10",
+      "date": "2023-12-26T01:36:20"
+    },
+    {
+      "wpId": 83814,
+      "joomlaId": 1557,
+      "title": "PVFCCo-PSE tổ chức thành công phiên họp Đại hội đồng cổ đông thường niên năm 2023",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-pse-to-chuc-thanh-cong-phien-hop-dai-hoi-dong-co-dong-thuong-nien-nam-2023",
+      "date": "2023-04-27T04:39:44"
+    },
+    {
+      "wpId": 83816,
+      "joomlaId": 1538,
+      "title": "Phân bón Phú Mỹ ra mắt dòng sản phẩm chuyên dùng cho nông nghiệp đô thị",
+      "proof": "joomla_sql_20261127",
+      "slug": "phan-bon-phu-my-ra-mat-dong-san-pham-chuyen-dung-cho-nong-nghiep-do-thi",
+      "date": "2022-11-21T09:18:27"
+    },
+    {
+      "wpId": 83818,
+      "joomlaId": 1530,
+      "title": "PVFCCo SE: Nhiều hoạt động ý nghĩa kỷ niệm 14 năm thành lập Công ty (18/8/2008 – 18/8/2022)",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-se-nhieu-hoat-dong-y-nghia-ky-niem-14-nam-thanh-lap-cong-ty-18-8-2008-18-8-2022",
+      "date": "2022-08-24T08:16:40"
+    },
+    {
+      "wpId": 83820,
+      "joomlaId": 1517,
+      "title": "PVFCCo SE tổ chức Hội nghị Gặp mặt khách hàng kinh doanh phân bón Phú Mỹ năm 2022.",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-se-to-chuc-hoi-nghi-gap-mat-khach-hang-kinh-doanh-phan-bon-phu-my-nam-2022",
+      "date": "2022-05-24T06:17:36"
+    },
+    {
+      "wpId": 83822,
+      "joomlaId": 1494,
+      "title": "PVFCCo SE tổ chức Hội nghị tổng kết công tác Đảng, hoạt động kinh doanh năm 2021, triển khai kế hoạch công tác năm 2022 và Hội nghị người lao động năm 2022",
+      "proof": "joomla_sql_20261127",
+      "slug": "pvfcco-se-to-chuc-hoi-nghi-tong-ket-cong-tac-dang-hoat-dong-kinh-doanh-nam-2021-trien-khai-ke-hoach-cong-tac-nam-2022-va-hoi-nghi-nguoi-lao-dong-nam-2022",
+      "date": "2021-12-06T10:32:15"
+    },
+    {
+      "wpId": 83480,
+      "joomlaId": 1085,
+      "title": "PVFCCo SE thông báo về ngày đăng ký cuối cùng để thực hiện quyền tham dự Đại hội đồng cổ đông thường niên 2015",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83489,
+      "joomlaId": 370,
+      "title": "Triển vọng cây mắc ca",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83486,
+      "joomlaId": 348,
+      "title": "Phân bón giả hại nhà nông",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83483,
+      "joomlaId": 344,
+      "title": "Vì sao măng cụt ra trái cách năm?",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83476,
+      "joomlaId": 338,
+      "title": "PVFCCo SE chốt danh sách cổ đông để thực hiện quyền tham dự Đại hội đồng cổ đông thường niên 2013",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83438,
+      "joomlaId": 321,
+      "title": "Đoàn Thanh niên PVFCCo SE tham gia cuộc thi tìm hiểu về biển đảo",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83436,
+      "joomlaId": 240,
+      "title": "PVFCCo-SE tổ chức khóa học Văn hóa Doanh nghiệp",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83434,
+      "joomlaId": 230,
+      "title": "Chi đoàn PVFCCo-SE với Chương trình “Mỗi tin nhắn, một viên đá xây Trường Sa”",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83442,
+      "joomlaId": 229,
+      "title": "PVFCCo-SE: Tổ chức Lễ kỷ niệm 81 năm Ngày Phụ nữ Việt Nam 20/10",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83440,
+      "joomlaId": 227,
+      "title": "PVFCCo-SE với các hoạt động chào mừng Ngày truyền thống Tổng Công ty (21/09/2004 – 21/09/2011)",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83432,
+      "joomlaId": 226,
+      "title": "Thay đổi thiết kế bao bì 50kg Urea Phú Mỹ",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83430,
+      "joomlaId": 205,
+      "title": "PVFCCO-SE tổ chức Ngày hội truyền thống",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83499,
+      "joomlaId": 204,
+      "title": "NPK Phú Mỹ (16-16-8-13S) có mặt tại Bình Phước",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83516,
+      "joomlaId": 198,
+      "title": "Nhà máy Đạm Phú Mỹ đón tấn sản phẩm urê thứ 5 triệu",
+      "proof": "old_origin_inferred"
+    },
+    {
+      "wpId": 83638,
+      "joomlaId": 975,
+      "title": "Đại hội công đoàn nhiệm kỳ II 10/2013",
+      "proof": "old_origin_inferred"
+    }
+  ]
+}
