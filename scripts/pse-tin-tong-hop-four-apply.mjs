@@ -1,4 +1,6 @@
 /**
+ * Joomla source IDs are recorded in the source manifest; WordPress ACF
+ * origin_page_id is reserved for same-site multilingual translation parents.
  * Owner-approved native PSE WordPress restore: Joomla Tin tong hop #1743-1746.
  * Only these four native Posts and their exact-source 13 JPEGs can be created.
  * All originals must pass RSS ID/title/local-second/HTML/media checks before
@@ -194,7 +196,7 @@ try{
   if(posts.status!==200||!Array.isArray(posts.data)||posts.data.length>1)
    throw Error("NATIVE_WP_POST_SLUG_AMBIGUOUS "+row.joomlaId);
   const prior=posts.data[0]||null;
-  if(prior&&(String(prior.acf?.origin_page_id||"")!==String(row.joomlaId)||
+  if(prior&&((String(prior.acf?.origin_page_id||"")!==""&&String(prior.acf?.origin_page_id||"")!==String(row.joomlaId))||
    !prior.categories?.includes(1746)||!prior.categories?.includes(1742)||
    !sameTitle(prior.title?.raw||prior.title?.rendered,row.title)))
    throw Error("WP_POST_IDENTITY_COLLISION "+row.joomlaId);
@@ -299,7 +301,7 @@ try{
     title:row.title,slug:row.slug,date:row.publishUp,categories:[1742,1746],
     content:converted.html,excerpt,status:"draft",featured_media:featured,
     pse_seo_description:excerpt,
-    acf:{action:"PostDetails",key:"ssr-post",origin_page_id:String(row.joomlaId)}
+    acf:{action:"PostDetails",key:"ssr-post",origin_page_id:""}
    });
    if(created.status!==201||!Number.isSafeInteger(Number(created.data?.id)))
     throw Error("WP_POST_DRAFT_CREATE_FAILED "+row.joomlaId+" status="+created.status);
@@ -311,7 +313,7 @@ try{
   if(before.status!==200||post.id!==id||post.slug!==row.slug||![row.created,row.publishUp].includes(post.date)||
    !sameTitle(post.title?.raw||post.title?.rendered,row.title)||
    post.acf?.action!=="PostDetails"||post.acf?.key!=="ssr-post"||
-   String(post.acf?.origin_page_id||"")!==String(row.joomlaId)||
+   (String(post.acf?.origin_page_id||"")!==""&&String(post.acf?.origin_page_id||"")!==String(row.joomlaId))||
    !post.categories?.includes(1742)||!post.categories?.includes(1746)||
    Number(post.featured_media||0)!==featured||
    expected.some(url=>!String(post.content?.raw||"").includes(url)))
