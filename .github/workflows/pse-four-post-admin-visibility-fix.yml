@@ -1,0 +1,50 @@
+name: PSE four imported Joomla Posts visibility repair (GUARDED)
+on:
+  push:
+    branches: [main]
+    paths:
+      - .pse-four-post-admin-visibility-apply-request
+permissions:
+  contents: read
+concurrency:
+  group: pse-legacy-article-migration-single-writer
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: >-
+      github.repository == 'ngocnhanvo/psevn-actions' &&
+      github.ref == 'refs/heads/main' &&
+      github.event.head_commit.message == 'cms(pse): restore four imported Posts to native Admin list'
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
+    env:
+      ENV_FILE: ${{ secrets.ENV_FILE }}
+      WP_ADMIN_USERNAME: ${{ secrets.WP_ADMIN_USERNAME }}
+      WP_ADMIN_PASSWORD: ${{ secrets.WP_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, persist-credentials: false}
+      - name: Validate four-post provenance guard and repair source
+        run: |
+          set -euo pipefail
+          node --check scripts/pse-four-post-admin-visibility-fix.mjs
+          node --check scripts/pse-tth-updraft-backup-retry.mjs
+          test "$(cat .pse-four-post-admin-visibility-apply-request)" = "FIX=OWNER_APPROVED;POSTS=83843,83845,83847,83849;FIELD=origin_page_id;SOURCE=JOOMLA_101"
+      - run: npm install --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.64.0
+      - name: Fresh WordPress database backup before four metadata edits
+        run: node scripts/pse-tth-updraft-backup-retry.mjs
+      - name: Clear mistaken multilingual parent metadata on exactly four Joomla imports
+        run: |
+          set -euo pipefail
+          export PSE_TTH_VERIFIED_DB_BACKUP=yes
+          node scripts/pse-four-post-admin-visibility-fix.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pse-four-post-admin-visibility-repair
+          path: artifacts/pse-four-admin-visibility-fix.json
+          retention-days: 21
+          if-no-files-found: warn
