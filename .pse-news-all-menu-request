@@ -1,2 +1,4 @@
-MODE=AUDIT
-Read only: identify the unique WordPress native "Tất cả" item directly under Tin Công ty in Tin tức - Sự kiện. Log IDs and sibling preservation baseline.
+MODE=APPLY
+EXPECTED_ITEM_ID=83686
+EXPECTED_PARENT_ID=76996
+User requested removal of the redundant WordPress Menu Header/vi item Tất cả under Tin Công ty only. Read-before-delete and readback preservation required. No other menu item changes.
